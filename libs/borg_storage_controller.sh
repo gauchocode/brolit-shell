@@ -246,7 +246,7 @@ function restore_project_with_borg() {
             display --indent 8 --text "${chosen_archive}.tar.bz2" --tcolor YELLOW
             generate_tar_and_decompress "${chosen_archive}" "${chosen_domain}" "${project_install_type}"
 
-            local sql_file=$(find "${storage_box_directory}/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/database/${chosen_domain}" -maxdepth 1 -type f -name '*_dump.sql' -print -quit)
+            local sql_file=$(find "${storage_box_directory}/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/database/${chosen_domain}" -maxdepth 1 -type f -name '*.sql' -print -quit)
 
             if [[ -z ${sql_file} ]]; then
                 log_event "error" "SQL file not found at remote path: ${storage_box_directory}/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/database/${chosen_domain}" "false"
