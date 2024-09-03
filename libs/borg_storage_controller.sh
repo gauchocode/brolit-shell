@@ -224,6 +224,17 @@ function restore_project_with_borg() {
     # Create storage-box directory if not exists
     remote_domain_list=$(find "${storage_box_directory}/${BACKUP_BORG_GROUP}/${server_hostname}" -maxdepth 3 -mindepth 3 -type d -exec basename {} \; | sort)
 
+    # Llamar a la función para seleccionar el estado del proyecto (online u offline)
+    project_status=$(storage_remote_status_list)
+
+    if [[ $? -ne 0 ]]; then
+        log_event "error" "Failed to choose project status" "false"
+        exit 1
+    fi
+
+    log_event "info" "Selected project status: ${project_status}" "false"
+    
+
     chosen_domain="$(whiptail --title "BACKUP SELECTION" --menu "Choose a domain to work with" 20 78 10 $(for x in ${remote_domain_list}; do echo "${x} [D]"; done) --default-item "${SERVER_NAME}" 3>&1 1>&2 2>&3)"
 
     local project_name="$(project_get_name_from_domain "${chosen_domain}")"
