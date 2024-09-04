@@ -150,6 +150,15 @@ if [ "${BACKUP_BORG_STATUS}" == "enabled" ]; then
             else
                 echo "The file $archivo_yml exists."	
                 sleep 1
+
+                if [[ -f "${directorio}/${nombre_carpeta}/.env" ]]; then
+
+                    export $(grep -v '^#' "${directorio}/${nombre_carpeta}/.env" | xargs)
+                    mysql_database="${MYSQL_DATABASE}"
+                    container_name="${PROJECT_NAME}_mysql"
+                    mysql_user="${MYSQL_USER}"
+                    mysql_password="${MYSQL_PASSWORD}"
+                fi
             fi	
                 echo "Initializing repo"
                 ssh -p ${BACKUP_BORG_PORT} ${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER} "mkdir -p /home/applications/'$BACKUP_BORG_GROUP'/'$HOSTNAME'/projects-online/database/'$nombre_carpeta'"
@@ -158,7 +167,7 @@ if [ "${BACKUP_BORG_STATUS}" == "enabled" ]; then
                 borgmatic init --encryption=none --config "/etc/borgmatic.d/$archivo_yml"
 
             # Generate timestamp for the SQL dump file
-            now=$(date +"%Y-%m-%d")
+            now=$(date +"%Y-%m-%dT%H:%M:%S")
                 
             # dump
             dump_file="/var/www/${nombre_carpeta}/${mysql_database}_database_${now}.sql"
