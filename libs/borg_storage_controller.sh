@@ -222,7 +222,7 @@ function restore_project_with_borg() {
     local storage_box_directory="/mnt/storage-box"
 
     # Create storage-box directory if not exists
-    remote_domain_list=$(find "${storage_box_directory}/${BACKUP_BORG_GROUP}/${server_hostname}" -maxdepth 3 -mindepth 3 -type d -exec basename {} \; | sort)
+    remote_domain_list=$(find "${storage_box_directory}/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/site" -maxdepth 1 -mindepth 1 -type d -exec basename {} \; | sort | uniq)
 
     project_status=$(storage_remote_status_list)
 
@@ -245,12 +245,12 @@ function restore_project_with_borg() {
     chosen_domain="$(whiptail --title "BACKUP SELECTION" --menu "Choose a domain to work with" 20 78 10 $(for x in ${remote_domain_list}; do echo "${x} [D]"; done) --default-item "${SERVER_NAME}" 3>&1 1>&2 2>&3)"
 
     local project_name="$(project_get_name_from_domain "${chosen_domain}")"
-    local destination_dir="${PROJECTS_PATH}/${chosen_domain}"
 
-    if [[ -d $destination_dir ]]; then
-        local project_install_type="$(project_get_install_type "${destination_dir}")"
-    else
-        log_event "info" "${project_domain} not found - Downloading project" "false"
+    if [[ ${restore_type} == "project" ]]; then
+        local destination_dir="${PROJECTS_PATH}/${chosen_domain}/"
+    elif [[ ${restore_type} == "database" ]]; then
+        local destination_dir="${PROJECTS_PATH}/${chosen_domain}/"
+        mkdir -p "${destination_dir}"
     fi
 
     if [[ ${chosen_domain} != "" ]]; then
@@ -276,7 +276,7 @@ function restore_project_with_borg() {
 
                     echo "SQL file path: ${sql_file}"
 
-                    cp ${sql_file} "${destination_dir}"
+                    cp "${sql_file}" "${destination_dir}/$(basename ${sql_file})"
 
                     if [[ $? -eq 0 ]]; then
                         log_event "info" "SQL file restored successfully to ${local_project_path}" "false"
