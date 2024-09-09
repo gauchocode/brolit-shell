@@ -1360,10 +1360,10 @@ function docker_setup_configuration() {
   # TODO: Update .env values (PORTS, COMPOSE_PROJECT_NAME, PROJECT_NAME, PROJECT_DOMAIN, SHH_MASTER_USER, SSH_MASTER_PASS)
 
   # Update COMPOSE_PROJECT_NAME
-  sed -ie "s|^COMPOSE_PROJECT_NAME=.*$|COMPOSE_PROJECT_NAME=${project_name}_stack|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
+  sed -ie "s|^COMPOSE_PROJECT_NAME=.*$|COMPOSE_PROJECT_NAME=${project_stage}_${project_name}_stack|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
 
   # Update PROJECT_NAME
-  sed -ie "s|^PROJECT_NAME=.*$|PROJECT_NAME=${project_name}|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
+  sed -ie "s|^PROJECT_NAME=.*$|PROJECT_NAME=${project_name}_${project_stage}|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
 
   # Update PROJECT_DOMAIN
   sed -ie "s|^PROJECT_DOMAIN=.*$|PROJECT_DOMAIN=${project_domain_new}|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
@@ -1376,6 +1376,12 @@ function docker_setup_configuration() {
   project_passw="$(openssl rand -hex 12)"
   sed -ie "s|^SSH_MASTER_PASS=.*$|SSH_MASTER_PASS=${project_passw}|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
 
+  ## Update MYSQL DATABASE
+  sed -i -e "s|^MYSQL_DATABASE=.*$|MYSQL_DATABASE=${project_name}_${project_stage}|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
+
+  ## Update MYSQL DATABASE
+  sed -ie "s|^MYSQL_USER=.*$|MYSQL_USER=${project_name}_user|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
+  
   ## Will find the next port available from 81 to 350
   project_port="$(network_next_available_port "81" "350")"
 
@@ -1387,7 +1393,12 @@ function docker_setup_configuration() {
 
   # Rebuild docker image
   docker_compose_build "${project_install_path}/docker-compose.yml"
-  exitstatus=$?
+  if [[ $? -ne 0 ]]; then
+    log_event "error" "Docker rebuild failed." "true"
+    return 1
+  fi
+
+  log_event "info" "Docker setup configuration completed successfully." "true"
 
 }
 
@@ -1451,7 +1462,125 @@ function restore_project_backup() {
 
   if [[ ${project_install_type} == "docker"* ]]; then
 
-    docker_setup_configuration "${project_name}" "${project_install_path}" "${project_domain_new}" 
+    ## Get database information
+    db_name="$(project_get_configured_database "${project_install_path}" "${project_type}" "${project_install_type}")"
+
+    # Database backup full remote path
+    db_to_download="${project_backup_server}/projects-${project_backup_status}/database/${db_name}/${db_to_restore}"
+
+    if [[ -n ${db_name} && ${db_name} != "no-database" ]]; then
+
+      # Get backup rotation type (daily, weekly, monthly)
+      backup_rotation_type="$(backup_get_rotation_type "${project_backup_file}")"
+
+      # Get backup date
+      project_backup_date="$(backup_get_date "${project_backup_file}")"
+
+      ## Check ${backup_rotation_type}
+      if [[ ${backup_rotation_type} == "daily" ]]; then
+        db_to_restore="${db_name}_database_${project_backup_date}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+      else
+        db_to_restore="${db_name}_database_${project_backup_date}-${backup_rotation_type}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+      fi
+
+      # Database backup full remote path
+      db_to_download="${project_backup_server}/projects-${project_backup_status}/database/${db_name}/${db_to_restore}"
+
+      # Downloading Database Backup
+      storage_download_backup "${db_to_download}" "${BROLIT_TMP_DIR}"
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 1 ]]; then
+
+        # TODO: ask to download manually calling restore_database_backup or skip database restore part
+        whiptail_message_with_skip_option "RESTORE BACKUP" "Database backup not found. Do you want to select manually the database backup to restore?"
+
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+
+          # Get dropbox backup list
+          remote_backup_path="${project_backup_server}/projects-${project_backup_status}/database/${db_name}"
+          remote_backup_list="$(storage_list_dir "${remote_backup_path}")"
+
+          # Select Backup File
+          chosen_backup_to_restore="$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${remote_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)"
+          exitstatus=$?
+          if [[ ${exitstatus} -eq 1 ]]; then
+            database_restore_skipped="true"
+            display --indent 6 --text "- Restore project backup" --result "SKIPPED" --color YELLOW
+          fi
+
+        else
+          database_restore_skipped="true"
+          display --indent 6 --text "- Restore project backup" --result "SKIPPED" --color YELLOW
+
+        fi
+
+      fi
+
+      if [[ ${database_restore_skipped} != "true" ]]; then
+        # Decompress
+        decompress "${BROLIT_TMP_DIR}/${db_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
+
+        base_name="${db_to_restore%.tar.bz2}"
+
+        dump_file="${BROLIT_TMP_DIR}/${base_name}.sql"
+
+        mv "${dump_file}" "${PROJECTS_PATH}/${project_domain_new}/"
+
+      else
+
+        return 1
+
+      fi
+
+    else
+      # TODO: ask to download manually calling restore_database_backup or skip database restore part
+      project_db_status="disabled"
+
+    fi
+
+    MYSQL_DIR="${project_install_path}/mysql_data"
+    
+      if [[ -d ${MYSQL_DIR} ]]; then
+          echo "Delete ${MYSQL_DIR}"
+          rm -rf "${MYSQL_DIR}"
+      fi
+
+    docker_setup_configuration "${project_name}" "${project_install_path}" "${project_domain_new}"
+
+    # Read the .env file
+      if [[ -f "${PROJECTS_PATH}/${project_domain_new}/.env" ]]; then
+
+        export $(grep -v '^#' "${PROJECTS_PATH}/${project_domain_new}/.env" | xargs)
+
+        db_name="${MYSQL_DATABASE}"
+
+        container_name="${PROJECT_NAME}_mysql"
+        
+        mysql_user="${MYSQL_USER}"
+
+        mysql_user_passw="${MYSQL_PASSWORD}"
+
+      else
+
+        echo "Error: .env file not found in ${PROJECTS_PATH}/${project_domain_new}/."
+
+        return 1
+
+      fi
+
+    # Log before importing database
+    log_event "info" "Attempting to import database. Checking if Docker container ${container_name} is running." "false"
+
+    docker ps | grep "${container_name}"
+
+    if [[ $? -ne 0 ]]; then
+
+      log_event "error" "Docker container ${container_name} is not running." "true"
+
+      return 1
+
+    fi
 
   else
 
@@ -1561,5 +1690,13 @@ function restore_project_backup() {
 
   # Create/update brolit_project_conf.json file with project info
   project_update_brolit_config "${project_install_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db_status}" "${db_engine}" "${project_name}_${project_stage}" "localhost" "${db_user}" "${db_pass}" "${project_domain_new}" "" "" "" ""
+
+  dump_file="${PROJECTS_PATH}/${project_domain_new}/${base_name}.sql"
+
+  echo "Importing database..."
+
+  cat "${dump_file}" | docker exec -i "${container_name}" mysql -u "${mysql_user}" -p"${mysql_user_passw}" "${db_name}"
+  
+  echo "Import completed."
 
 }

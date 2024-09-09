@@ -770,6 +770,7 @@ function backup_databases() {
 # Arguments:
 #  ${1} = ${database}
 #  ${2} = ${db_engine}
+#  ${3} = ${container_name}
 #
 # Outputs:
 #  "backupfile backup_file_size" if ok, 1 if error
@@ -779,6 +780,7 @@ function backup_project_database() {
 
   local database="${1}"
   local db_engine="${2}"
+  local container_name="${3}"
 
   local export_result
 
@@ -799,12 +801,12 @@ function backup_project_database() {
   # Database engine
   if [[ ${db_engine} == "mysql" ]]; then
     ## Create dump file
-    mysql_database_export "${database}" "false" "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"
+    mysql_database_export "${database}" "${container_name}" "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"
   else
 
     if [[ ${db_engine} == "psql" ]]; then
       ## Create dump file
-      postgres_database_export "${database}" "false" "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"
+      postgres_database_export "${database}" "${container_name}" "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"
     fi
 
   fi
@@ -1001,6 +1003,93 @@ function backup_project() {
         fi
 
       fi
+
+    fi
+
+    log_break "false"
+
+    # Delete local backup
+    rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${backup_type:?}"
+    #log_event "info" "Deleting backup from server ..." "false"
+
+    # Log
+    log_break "false"
+    log_event "info" "Project backup finished!" "false"
+    display --indent 6 --text "- Project Backup" --result "DONE" --color GREEN
+
+    return ${got_error}
+
+  else
+
+    # Log
+    log_break "false"
+    log_event "error" "Something went wrong making the files backup" "false"
+    display --indent 6 --text "- Project Backup" --result "FAIL" --color RED
+    display --indent 8 --text "Something went wrong making the files backup" --tcolor RED
+
+    return 1
+
+  fi
+
+}
+
+################################################################################
+# Make project Backup
+#
+# Arguments:
+#  ${1} = ${project_domain}
+#  ${2} = ${backup_type} - (all,configs,sites,databases) - Default: all
+#
+# Outputs:
+#   0 if ok, 1 if error
+################################################################################
+
+function backup_docker_project() {
+
+  local project_domain="${1}"
+  local backup_type="${2}"
+
+  local got_error=0
+
+  local db_name
+  local db_engine
+  local backup_file
+  local project_type
+  local container_name
+
+  # Read the .env file
+  if [[ -f "${PROJECTS_PATH}/${project_domain}/.env" ]]; then
+
+    export $(grep -v '^#' "${PROJECTS_PATH}/${project_domain}/.env" | xargs)
+    db_name="${MYSQL_DATABASE}"
+    container_name="${PROJECT_NAME}_mysql"
+    db_engine="mysql"
+
+  else
+
+    echo "Error: .env file not found in ${PROJECTS_PATH}/${project_domain}/."
+
+    return 1
+
+  fi
+
+  # Backup files
+  log_subsection "Backup Project Files"
+  backup_file_size="$(backup_project_files "site" "${PROJECTS_PATH}" "${project_domain}")"
+
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    # Project Type
+    project_type="$(project_get_type "${PROJECTS_PATH}/${project_domain}")"
+
+    # Project install type
+    project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${project_domain}")"
+
+
+    if [[ ${project_install_type} == "docker"* && ${project_type} != "html" ]]; then
+
+        backup_project_database "${db_name}" "${db_engine}" "${container_name}"
 
     fi
 

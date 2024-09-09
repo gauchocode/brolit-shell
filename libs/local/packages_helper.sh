@@ -240,6 +240,7 @@ function package_check_required() {
   package_install_if_not "libio-socket-ssl-perl"
   package_install_if_not "ncdu"
   package_install_if_not "ppa-purge"
+  package_install_if_not "sshfs"
 
   # Log
   display --indent 6 --text "- Checking script dependencies" --result "DONE" --color GREEN
