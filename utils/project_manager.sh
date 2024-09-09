@@ -129,6 +129,7 @@ function project_manager_menu_new_project_type_utils() {
     "04)" "CREATE PROJECT DB  & USER"
     "05)" "PUT PROJECT ONLINE"
     "06)" "PUT PROJECT OFFLINE"
+    "07)" "DELETE PROJECT DOCKER"
   )
 
   chosen_project_utils_options="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_utils_options[@]}" 3>&1 1>&2 2>&3)"
@@ -234,6 +235,32 @@ function project_manager_menu_new_project_type_utils() {
     # PUT PROJECT OFFLINE
     [[ ${chosen_project_utils_options} == *"06"* ]] && project_change_status "offline"
 
+    # DELETE PROJECT DOCKER
+    if [[ ${chosen_project_utils_options} == *"07"* ]]; then
+      log_section "Project Delete"
+      log_subsection "Selecting Project to Delete"
+      
+      # List available projects
+      menu_title="PROJECT TO DELETE"
+      directory_browser "${menu_title}" "${PROJECTS_PATH}"
+      if [[ -z "${filepath}" || -z "${filename}" ]]; then
+        log_event "info" "Operation cancelled!" "false"
+        display --indent 6 --text "- Selecting project to delete" --result "SKIPPED" --color YELLOW
+        return 1
+      fi
+      
+      project_domain="${filename%/}"
+      log_event "info" "Selected project: ${project_domain}" "false"
+      
+      # Check if project is Docker
+      if [[ -d "${PROJECTS_PATH}/${project_domain}" && -f "${PROJECTS_PATH}/${project_domain}/docker-compose.yml" ]]; then
+        delete_docker_project "${project_domain}"
+      else
+        log_event "error" "The selected project is not a Docker project." "true"
+        display --indent 6 --text "- Project is not Docker" --result "FAIL" --color RED
+      fi
+    fi
+    
     prompt_return_or_finish
     project_manager_menu_new_project_type_utils
 
