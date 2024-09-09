@@ -86,10 +86,10 @@
                             {
                                 "user": "",
                                 "server": "",
-                                "port": "",
-                                "group": ""
+                                "port": ""
                             }
-                        ]
+                        ],
+                        "group": ""
                     }
                 ],
                 "dropbox": [
