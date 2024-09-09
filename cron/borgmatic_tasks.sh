@@ -19,34 +19,40 @@ source "${BROLIT_MAIN_DIR}/libs/local/project_helper.sh"
 source "${BROLIT_MAIN_DIR}/libs/commons.sh"
 source "${BROLIT_MAIN_DIR}/utils/brolit_configuration_manager.sh"
 
+BACKUP_BORG_USERS=()
+BACKUP_BORG_SERVERS=()
+BACKUP_BORG_PORTS=()
+
 function _brolit_configuration_load_backup_borg() {
     local server_config_file="${1}"
+    local number_of_servers=$(jq ".BACKUPS.methods[].borg[].config | length" /root/.brolit_conf.json)
 
     #Globals
-    declare -g BACKUP_BORG_USER
-    declare -g BACKUP_BORG_SERVER
-    declare -g BACKUP_BORG_PORT
     declare -g BACKUP_BORG_GROUP
 
     BACKUP_BORG_STATUS="$(_json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].status")"
 
     if [[ ${BACKUP_BORG_STATUS} == "enabled" ]]; then
 
-        BACKUP_BORG_USER="$(_json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].config[].user")"
-        [[ -z "${BACKUP_BORG_USER}" ]] && die "Error reading BACKUP_BORG_USER from server config file."
+        for i in $(eval echo {1..$number_of_servers})
+        do
+            BACKUP_BORG_USERS[$i]="$(_json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].config[$(($i-1))].user")"
+            [[ -z "${BACKUP_BORG_USERS[i]}" ]] && die "Error reading BACKUP_BORG_USER from server config file."
 
-        BACKUP_BORG_SERVER="$(_json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].config[].server")"
-        [[ -z "${BACKUP_BORG_SERVER}" ]] && die "Error reading BACKUP_BORG_SERVER from server config file."
+            BACKUP_BORG_SERVERS[$i]="$(_json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].config[$(($i-1))].server")"
+            [[ -z "${BACKUP_BORG_SERVERS[i]}" ]] && die "Error reading BACKUP_BORG_SERVER from server config file."
 
-        BACKUP_BORG_PORT="$(_json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].config[].port")"
-        [[ -z "${BACKUP_BORG_PORT}" ]] && die "Error reading BACKUP_BORG_PORT from server config file."
+            BACKUP_BORG_PORTS[$i]="$(_json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].config[$(($i-1))].port")"
+            [[ -z "${BACKUP_BORG_PORTS[i]}" ]] && die "Error reading BACKUP_BORG_PORT from server config file."
 
-        BACKUP_BORG_GROUP="$(_json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].config[].group")"
+        done
+
+        BACKUP_BORG_GROUP="$(_json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].group")"
         [[ -z "${BACKUP_BORG_GROUP}" ]] && die "Error reading BACKUP_BORG_GROUP from server config file."
 
     fi 
 
-    export BACKUP_BORG_STATUS BACKUP_BORG_USER BACKUP_BORG_SERVER BACKUP_BORG_PORT BACKUP_BORG_GROUP
+    export BACKUP_BORG_STATUS BACKUP_BORG_GROUP BACKUP_BORG_USERS BACKUP_BORG_SERVERS BACKUP_BORG_PORTS
 }
 
 
@@ -84,70 +90,90 @@ function _brolit_configuration_load_ntfy() {
 
 # Iteramos las carpetas sobre el directorio
 
-_brolit_configuration_load_backup_borg "/root/.brolit_conf.json"
-_brolit_configuration_load_ntfy "/root/.brolit_conf.json"
 
-if [ "${BACKUP_BORG_STATUS}" == "enabled" ]; then
 
-	for carpeta in "$directorio"/*; do
-		if [ -d "$carpeta" ]; then
-			nombre_carpeta=$(basename "$carpeta")
-			archivo_yml="$nombre_carpeta.yml"
-			project_install_type="$(_project_get_install_type "/var/www/${nombre_carpeta}")"
+function generate_config() {
 
-            #if [ ${project_install_type} == "default" ]; then
-            #    echo "Install type ${project_install_type}"
-            #    project_type="$(project_get_type "/var/www/${project_domain}")"
-            #    db_name="$(project_get_configured_database "${PROJECTS_PATH}/${nombre_carpeta}" "wordpress" "${project_install_type}")"
+    _brolit_configuration_load_backup_borg "/root/.brolit_conf.json"
+    _brolit_configuration_load_ntfy "/root/.brolit_conf.json"
 
-            #    echo "----------------- Project type: ${project_type} ------- "
-            #    echo "----------------- DB NAME: ${db_name} ----------------- "
-            #fi
+    if [ "${BACKUP_BORG_STATUS}" == "enabled" ]; then
+        local number_of_servers=$(jq ".BACKUPS.methods[].borg[].config | length" /root/.brolit_conf.json)
+    	for carpeta in "$directorio"/*; do
+    		if [ -d "$carpeta" ]; then
+    			nombre_carpeta=$(basename "$carpeta")
+    			archivo_yml="$nombre_carpeta.yml"
+    			project_install_type="$(_project_get_install_type "/var/www/${nombre_carpeta}")"
 
-			if [ $nombre_carpeta == "html" ]; then
-				continue
-			fi
+                #if [ ${project_install_type} == "default" ]; then
+                #    echo "Install type ${project_install_type}"
+                #    project_type="$(project_get_type "/var/www/${project_domain}")"
+                #    db_name="$(project_get_configured_database "${PROJECTS_PATH}/${nombre_carpeta}" "wordpress" "${project_install_type}")"
 
-            echo "------------------------ Project name: ${nombre_carpeta} ------------------------ "
+                #    echo "----------------- Project type: ${project_type} ------- "
+                #    echo "----------------- DB NAME: ${db_name} ----------------- "
+                #fi
 
-            if [ ! -f "/etc/borgmatic.d/$archivo_yml" ]; then
+    			if [ $nombre_carpeta == "html" ]; then
+    				continue
+    			fi
 
-                # Crea el archivo de configuracion
-                echo "El archivo $archivo_yml no existe"
-                echo "Generando"
-                sleep 2
+                echo "------------------------ Project name: ${nombre_carpeta} ------------------------ "
 
-                if [ ${project_install_type} == "default" ]; then
-                    echo "---- Project it's not dockerized, write the database name manually!! ----"
-                    cp "${BROLIT_MAIN_DIR}/config/borg/borgmatic.template-default.yml" "/etc/borgmatic.d/$archivo_yml"
+                if [ ! -f "/etc/borgmatic.d/$archivo_yml" ]; then
+
+                    # Crea el archivo de configuracion
+                    echo "El archivo $archivo_yml no existe"
+                    echo "Generando"
+                    sleep 2
+
+                    if [ ${project_install_type} == "default" ]; then
+                        echo "---- Project it's not dockerized, write the database name manually!! ----"
+                        cp "${BROLIT_MAIN_DIR}/config/borg/borgmatic.template-default.yml" "/etc/borgmatic.d/$archivo_yml"
+                    else
+                        cp "${BROLIT_MAIN_DIR}/config/borg/borgmatic.template.yml" "/etc/borgmatic.d/$archivo_yml"
+                    fi
+
+                    PROJECT=$nombre_carpeta yq -i '.constants.project = strenv(PROJECT)' "/etc/borgmatic.d/$archivo_yml"
+                    GROUP=$BACKUP_BORG_GROUP yq -i '.constants.group = strenv(GROUP)' "/etc/borgmatic.d/$archivo_yml"
+                    HOST=$HOSTNAME yq -i '.constants.hostname = strenv(HOST)' "/etc/borgmatic.d/$archivo_yml"
+
+                    for i in $(seq $number_of_servers -1 1)
+                    do
+                        sed -i '/^constants:/a\  port_'"$i"': '"${BACKUP_BORG_PORTS[i]}"' ' /etc/borgmatic.d/$archivo_yml
+                        sed -i '/^constants:/a\  server_'"$i"': '"${BACKUP_BORG_SERVERS[i]}"' ' /etc/borgmatic.d/$archivo_yml
+                        sed -i '/^constants:/a\  user_'"$i"': '"${BACKUP_BORG_USERS[i]}"' ' /etc/borgmatic.d/$archivo_yml
+
+                        ## Generamos la ssh url
+                        sed -i '/^repositories:/a\  - path: ssh:\/\/{user_'"$i"'}@{server_'"$i"'}:{port_'"$i"'}\/.\/applications\/{group}\/{hostname}\/projects-online\/site\/{project}\n    label: "{project}"' /etc/borgmatic.d/$archivo_yml 
+                    done
+
+                    NTFY_USER=$NOTIFICATION_NTFY_USERNAME yq -i '.constants.ntfy_username = strenv(NTFY_USER)' "/etc/borgmatic.d/$archivo_yml"
+                    NTFY_PASS=$NOTIFICATION_NTFY_PASSWORD yq -i '.constants.ntfy_password = strenv(NTFY_PASS)' "/etc/borgmatic.d/$archivo_yml"
+                    NTFY_SERVER=$NOTIFICATION_NTFY_SERVER yq -i '.constants.ntfy_server = strenv(NTFY_SERVER)' "/etc/borgmatic.d/$archivo_yml"
+                    NTFY_TOPIC=$NOTIFICATION_NTFY_TOPIC yq -i '.constants.ntfy_topic = strenv(NTFY_TOPIC)' "/etc/borgmatic.d/$archivo_yml"
+
+                    echo "File $archivo_yml generated."
+                    echo "Please wait 3 seconds..."
+                    sleep 3
                 else
-                    cp "${BROLIT_MAIN_DIR}/config/borg/borgmatic.template.yml" "/etc/borgmatic.d/$archivo_yml"
-                fi
+                    echo "The file $archivo_yml exists."	
+                    sleep 1
+                fi	
+                    echo "Initializing repo"
+                    for i in $(eval echo {1..$number_of_servers})
+                    do
+                        echo "Creating remote directory"
+                        ssh -p ${BACKUP_BORG_PORTS[i]} ${BACKUP_BORG_USERS[i]}@${BACKUP_BORG_SERVERS[i]} "mkdir -p /home/applications/'$BACKUP_BORG_GROUP'/'$HOSTNAME'/projects-online/site/'$nombre_carpeta'"
+                        sleep 1
+                    done
+                    sleep 1
+                    borgmatic init --encryption=none --config "/etc/borgmatic.d/$archivo_yml"
+    		fi
+    	done
+    else
+    	echo "Borg is not enabled"
+    fi
+}
 
-                PROJECT=$nombre_carpeta yq -i '.constants.project = strenv(PROJECT)' "/etc/borgmatic.d/$archivo_yml"
-                GROUP=$BACKUP_BORG_GROUP yq -i '.constants.group = strenv(GROUP)' "/etc/borgmatic.d/$archivo_yml"
-                HOST=$HOSTNAME yq -i '.constants.hostname = strenv(HOST)' "/etc/borgmatic.d/$archivo_yml"
-                USER=$BACKUP_BORG_USER yq -i '.constants.username = strenv(USER)' "/etc/borgmatic.d/$archivo_yml"
-                SERVER=$BACKUP_BORG_SERVER yq -i '.constants.server = strenv(SERVER)' "/etc/borgmatic.d/$archivo_yml"
-                PORT=$BACKUP_BORG_PORT yq -i '.constants.port = strenv(PORT)' "/etc/borgmatic.d/$archivo_yml"
-                NTFY_USER=$NOTIFICATION_NTFY_USERNAME yq -i '.constants.ntfy_username = strenv(NTFY_USER)' "/etc/borgmatic.d/$archivo_yml"
-                NTFY_PASS=$NOTIFICATION_NTFY_PASSWORD yq -i '.constants.ntfy_password = strenv(NTFY_PASS)' "/etc/borgmatic.d/$archivo_yml"
-                NTFY_SERVER=$NOTIFICATION_NTFY_SERVER yq -i '.constants.ntfy_server = strenv(NTFY_SERVER)' "/etc/borgmatic.d/$archivo_yml"
-                NTFY_TOPIC=$NOTIFICATION_NTFY_TOPIC yq -i '.constants.ntfy_topic = strenv(NTFY_TOPIC)' "/etc/borgmatic.d/$archivo_yml"
-
-                echo "File $archivo_yml generated."
-                echo "Please wait 3 seconds..."
-                sleep 3
-            else
-                echo "The file $archivo_yml exists."	
-                sleep 1
-            fi	
-                echo "Initializing repo"
-                ssh -p ${BACKUP_BORG_PORT} ${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER} "mkdir -p /home/applications/'$BACKUP_BORG_GROUP'/'$HOSTNAME'/projects-online/site/'$nombre_carpeta'"
-                sleep 1
-                borgmatic init --encryption=none --config "/etc/borgmatic.d/$archivo_yml"
-		fi
-	done
-else
-	echo "Borg is not enabled"
-fi
+generate_config
