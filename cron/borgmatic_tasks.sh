@@ -80,6 +80,9 @@ function _brolit_configuration_load_ntfy() {
 
         NOTIFICATION_NTFY_SERVER="$(_json_read_field "${server_config_file}" "NOTIFICATIONS.ntfy[].config[].server")"
         [[ -z ${NOTIFICATION_NTFY_SERVER} ]] && die "Error reading NOTIFICATION_NTFY_SERVER from server config file."
+
+        NOTIFICATION_NTFY_TOPIC="$(_json_read_field "${server_config_file}" "NOTIFICATIONS.ntfy[].config[].topic")"
+        [[ -z ${NOTIFICATION_NTFY_TOPIC} ]] && die "Error reading NOTIFICATION_NTFY_TOPIC from server config file."
     fi
 
     export NOTIFICATION_NTFY_STATUS NOTIFICATION_NTFY_USERNAME NOTIFICATION_NTFY_PASSWORD NOTIFICATION_NTFY_SERVER NOTIFICATION_NTFY_TOPIC
@@ -145,7 +148,7 @@ function generate_config() {
                         sed -i '/^constants:/a\  user_'"$i"': '"${BACKUP_BORG_USERS[i]}"' ' /etc/borgmatic.d/$archivo_yml
 
                         ## Generamos la ssh url
-                        sed -i '/^repositories:/a\  - path: ssh:\/\/{user_'"$i"'}@{server_'"$i"'}:{port_'"$i"'}\/.\/applications\/{group}\/{hostname}\/projects-online\/site\/{project}\n    label: "{project}"' /etc/borgmatic.d/$archivo_yml 
+                        sed -i '/^repositories:/a\  - path: ssh:\/\/{user_'"$i"'}@{server_'"$i"'}:{port_'"$i"'}\/.\/applications\/{group}\/{hostname}\/projects-online\/site\/{project}\n    label: "storage-{user_'"$i"'}"' /etc/borgmatic.d/$archivo_yml 
                     done
 
                     NTFY_USER=$NOTIFICATION_NTFY_USERNAME yq -i '.constants.ntfy_username = strenv(NTFY_USER)' "/etc/borgmatic.d/$archivo_yml"
@@ -160,20 +163,7 @@ function generate_config() {
                     echo "The file $archivo_yml exists."	
                     sleep 1
                     # Read the .env file
-                    if [[ -f "${directorio}/${nombre_carpeta}/.env" ]]; then
 
-                        export $(grep -v '^#' "${directorio}/${nombre_carpeta}/.env" | xargs)
-                        mysql_database="${MYSQL_DATABASE}"
-                        container_name="${PROJECT_NAME}_mysql"
-                        mysql_user="${MYSQL_USER}"
-                        mysql_password="${MYSQL_PASSWORD}"
-
-                    else
-
-                        echo "Error: .env file not found in ${directorio}/${nombre_carpeta}/."
-                        return 1
-
-                    fi
                 fi	
                     
                 echo "Initializing repo"
@@ -186,44 +176,63 @@ function generate_config() {
                 done
                 sleep 1
                 borgmatic init --encryption=none --config "/etc/borgmatic.d/$archivo_yml"
-		        
-                # Generate timestamp for the SQL dump file
-                now=$(date +"%Y-%m-%dT%H:%M:%S")
-                    
-                # dump
-                dump_file="/var/www/${nombre_carpeta}/${mysql_database}_database_${now}.sql"
-                echo "Generating database $dump_file..."
-                docker exec "$container_name" sh -c "mysqldump -u$mysql_user -p$mysql_password $mysql_database > /tmp/database_dump.sql"
-                docker cp "$container_name:/tmp/database_dump.sql" "$dump_file"
 
-                if [ -f "$dump_file" ]; then
-                     echo "Importing database from $dump_file..."
-                    docker exec -i "$container_name" mysql -u"$mysql_user" -p"$mysql_password" "$mysql_database" < "$dump_file"
-                    if [ $? -eq 0 ]; then
-                        echo "Database import completed successfully."
-                    else
-                        echo "Error during database import."
-                    fi
-                fi
+                #if [[ -f "${directorio}/${nombre_carpeta}/.env" ]]; then
 
-                scp -P ${BACKUP_BORG_PORT} "$dump_file" ${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:/home/applications/"$BACKUP_BORG_GROUP"/"$HOSTNAME"/projects-online/database/"$nombre_carpeta"
+                #    export $(grep -v '^#' "${directorio}/${nombre_carpeta}/.env" | xargs)
 
-                if [ $? -eq 0 ]; then
-                    echo "Dump uploaded successfully."
-                    if [ -f "$dump_file" ]; then
-                        echo "Deleting dump file: $dump_file"
-                        rm "$dump_file"
-                        if [ $? -eq 0 ]; then
-                            echo "Dump file deleted successfully."
-                        else
-                            echo "Error deleting dump file."
-                        fi
-                    else
-                        echo "Error: Dump file does not exist."
-                    fi
-                else
-                    echo "Error uploading dump to remote server."
-                fi
+                #    mysql_database="${MYSQL_DATABASE}"
+                #    container_name="${PROJECT_NAME}_mysql"
+                #    mysql_user="${MYSQL_USER}"
+                #    mysql_password="${MYSQL_PASSWORD}"
+
+                #else
+                #    echo "Error: .env file not found in ${directorio}/${nombre_carpeta}/."
+                #    return 1
+
+                #fi
+
+                ## Generate timestamp for the SQL dump file
+                #now=$(date +"%Y-%m-%d")
+                #    
+                ## dump
+                #dump_file="/var/www/${nombre_carpeta}/${mysql_database}_database_${now}.sql"
+                #echo "Generating database $dump_file..."
+                #docker exec "$container_name" sh -c "mysqldump -u$mysql_user -p$mysql_password $mysql_database > /tmp/database_dump.sql"
+                #docker cp "$container_name:/tmp/database_dump.sql" "$dump_file"
+
+                #if [ -f "$dump_file" ]; then
+                #     echo "Importing database from $dump_file..."
+                #    docker exec -i "$container_name" mysql -u"$mysql_user" -p"$mysql_password" "$mysql_database" < "$dump_file"
+                #    if [ $? -eq 0 ]; then
+                #        echo "Database import completed successfully."
+                #    else
+                #        echo "Error during database import."
+                #    fi
+                #fi
+
+                #for i in $(eval echo {1..$number_of_servers})
+                #do
+                #    scp -P ${BACKUP_BORG_PORTS[i]} "$dump_file" ${BACKUP_BORG_USERS[i]}@${BACKUP_BORG_SERVERS[i]}:/home/applications/"$BACKUP_BORG_GROUP"/"$HOSTNAME"/projects-online/database/"$nombre_carpeta"
+                #done 
+
+
+                #if [ $? -eq 0 ]; then
+                #    echo "Dump uploaded successfully."
+                #    if [ -f "$dump_file" ]; then
+                #        echo "Deleting dump file: $dump_file"
+                #        rm "$dump_file"
+                #        if [ $? -eq 0 ]; then
+                #            echo "Dump file deleted successfully."
+                #        else
+                #            echo "Error deleting dump file."
+                #        fi
+                #    else
+                #        echo "Error: Dump file does not exist."
+                #    fi
+                #else
+                #    echo "Error uploading dump to remote server."
+                #fi
             else
                 echo "Error: Dump file not generated."
             fi
