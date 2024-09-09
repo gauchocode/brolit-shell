@@ -2,9 +2,6 @@ constants:
     project: domain-example.com             # e.g: gauchocode.com  
     group: group_server                     # e.g: broobe-hosts
     hostname: hostname_server               # e.g: broobe-docker-host03-cmuse    
-    username: user 
-    server: server
-    port: port_to_connect
     ntfy_server: ntfy_server
     ntfy_username: ntfy_username
     ntfy_password: ntfy_password
@@ -16,9 +13,6 @@ source_directories:
     - /var/www/{project}
 
 repositories:
-  - path: ssh://{username}@{server}:{port}/./applications/{group}/{hostname}/projects-online/site/{project}
-    label: "{project}"
-
 exclude_patterns:
     - '*.o'
     - '*.log'
