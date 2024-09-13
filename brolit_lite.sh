@@ -2221,6 +2221,81 @@ BROLIT_VERSION="3.3.8"
 BROLIT_LITE_VERSION="3.3.8-132"
 
 ################################################################################
+# Show backups information
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   json file with backup information
+################################################################################
+
+function show_backup_information() {
+
+    local timestamp
+    local check_date
+    local backup_method
+    local projects_backup
+
+    local json_output_file
+
+    local storage_box_directory="/mnt/storage-box"
+
+    source /root/brolit-shell/libs/borg_storage_controller.sh
+
+    # Mount storage box
+    mount_storage_box "${storage_box_directory}"
+
+    # Set output file path
+    json_output_file="${BROLIT_LITE_OUTPUT_DIR}/show_backups_information.json"
+
+    # Initialize JSON string
+    local json_string="{ \"check_date\": \"$(date -u +"%Y-%m-%dT%H:%M:%S")\", \"backup_method\": \"borg\", \"projects_backup\": {"
+
+    # Loop through project directories in the mounted storage box
+    for project_directory in $(ls "${storage_box_directory}/home/applications/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/site"); do
+        local project_backup=""
+        
+        for backup_file in $(ls "${storage_box_directory}/home/applications/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/site/${project_directory}"); do
+            backup_date=$(echo "${backup_file}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')
+            
+            # Assume the database backup file follows the same naming convention
+            backup_db="${backup_date}_database_${project_directory}.tar.bz2"
+
+            if [[ -f "${storage_box_directory}/home/applications/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/site/${project_directory}/${backup_db}" ]]; then
+                backup_db="caeme.ar_database_2024-09-11.tar.bz2"
+            else
+                backup_db="not-found"
+            fi
+
+            backup_files="\"${backup_date}\": { \"files\": \"${backup_file}\", \"database\": \"${backup_db}\" }"
+            
+            if [[ -z ${project_backup} ]]; then
+                project_backup="${backup_files}"
+            else
+                project_backup="${project_backup}, ${backup_files}"
+            fi
+        done
+        
+        if [[ -n ${project_backup} ]]; then
+            json_string="${json_string}\"${project_directory}\": { ${project_backup} },"
+        fi
+    done
+
+    # Finalize JSON string
+    json_string="${json_string::-1} } }"
+
+    # Write JSON file
+    echo "${json_string}" > "${json_output_file}"
+
+    # Unmount storage box
+    umount_storage_box "${storage_box_directory}"
+
+    # Return JSON
+    cat "${json_output_file}"
+    
+}
+################################################################################
 # Show firewall status
 #
 # Arguments:
