@@ -2238,10 +2238,28 @@ function show_backup_information() {
     local projects_backup
 
     local json_output_file
-
+    local json_config_file="/root/.brolit_conf.json"
     local storage_box_directory="/mnt/storage-box"
 
     source /root/brolit-shell/libs/borg_storage_controller.sh
+    source /root/brolit-shell/libs/local/log_and_display_helper.sh
+    source /root/brolit-shell/utils/brolit_configuration_manager.sh
+    source /root/brolit-shell/libs/local/json_helper.sh
+
+   _brolit_configuration_load_backup_borg "/root/.brolit_conf.json"
+
+
+    # Usar la función _json_read_field para cargar valores del archivo JSON
+    BACKUP_BORG_USER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[].user")
+    BACKUP_BORG_SERVER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[].server")
+    BACKUP_BORG_PORT=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[].port")
+    BACKUP_BORG_GROUP=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[].group")
+
+    echo "BACKUP_BORG_USER=${BACKUP_BORG_USER}"
+    echo "BACKUP_BORG_SERVER=${BACKUP_BORG_SERVER}"
+    echo "BACKUP_BORG_PORT=${BACKUP_BORG_PORT}"
+    echo "BACKUP_BORG_GROUP=${BACKUP_BORG_GROUP}"
+    echo "HOSTNAME=${HOSTNAME}"
 
     # Mount storage box
     mount_storage_box "${storage_box_directory}"
@@ -2253,16 +2271,16 @@ function show_backup_information() {
     local json_string="{ \"check_date\": \"$(date -u +"%Y-%m-%dT%H:%M:%S")\", \"backup_method\": \"borg\", \"projects_backup\": {"
 
     # Loop through project directories in the mounted storage box
-    for project_directory in $(ls "${storage_box_directory}/home/applications/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/site"); do
+    for project_directory in $(ls "${storage_box_directory}/broobe-hosts/${HOSTNAME}/projects-online/site"); do
         local project_backup=""
         
-        for backup_file in $(ls "${storage_box_directory}/home/applications/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/site/${project_directory}"); do
+        for backup_file in $(ls "${storage_box_directory}/broobe-hosts/${HOSTNAME}/projects-online/site/${project_directory}"); do
             backup_date=$(echo "${backup_file}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')
             
             # Assume the database backup file follows the same naming convention
             backup_db="${backup_date}_database_${project_directory}.tar.bz2"
 
-            if [[ -f "${storage_box_directory}/home/applications/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/site/${project_directory}/${backup_db}" ]]; then
+            if [[ -f "${storage_box_directory}/broobe-hosts/${HOSTNAME}/projects-online/site/${project_directory}/${backup_db}" ]]; then
                 backup_db="caeme.ar_database_2024-09-11.tar.bz2"
             else
                 backup_db="not-found"
@@ -2295,6 +2313,7 @@ function show_backup_information() {
     cat "${json_output_file}"
     
 }
+
 ################################################################################
 # Show firewall status
 #
