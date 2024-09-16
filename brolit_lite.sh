@@ -1653,6 +1653,17 @@ function _brolit_shell_config() {
     ## Telegram notification config
     telegram_notification_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "NOTIFICATIONS.telegram[].status")"
 
+    ## Ntfy notification config
+    ntfy_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "NOTIFICATIONS.ntfy[].status")"
+
+    ## Discord notification config
+    discord_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "NOTIFICATIONS.discord[].status")"
+    if [[ ${discord_status} == "enabled" ]]; then
+        discord_webhook="$(_json_read_field "${BROLIT_CONFIG_FILE}" "NOTIFICATIONS.discord[].config[].webhook")"
+    else
+        discord_webhook="false"
+    fi
+
     ## Dropbox config
     backup_dropbox_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "BACKUPS.methods[].dropbox[].status")"
 
@@ -1663,7 +1674,7 @@ function _brolit_shell_config() {
     #smtp_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "BACKUPS.config[].methods[].smtp[].status")"
 
     # Return JSON part
-    echo "\"script_version\": \"${BROLIT_VERSION}\" , \"netdata_url\": \"${netdata_subdomain}\" , \"mail_notif\": \"${mail_notification_config}\" , \"telegram_notif\": \"${telegram_notification_status}\" , \"dropbox_enable\": \"${backup_dropbox_status}\" , \"cloudflare_enable\": \"${cloudflare_status}\" , \"smtp_server\": \"${mail_notification_smtp}\""
+    echo "\"script_version\": \"${BROLIT_VERSION}\" , \"netdata_url\": \"${netdata_subdomain}\" , \"mail_notif\": \"${mail_notification_config}\" , \"telegram_notif\": \"${telegram_notification_status}\" , \"ntfy_notif\": \"${ntfy_status}\" , \"discord_notif\": \"${discord_status}\" , \"dropbox_enable\": \"${backup_dropbox_status}\" , \"cloudflare_enable\": \"${cloudflare_status}\" , \"smtp_server\": \"${mail_notification_smtp}\""
 
 }
 
