@@ -2246,20 +2246,12 @@ function show_backup_information() {
     source /root/brolit-shell/utils/brolit_configuration_manager.sh
     source /root/brolit-shell/libs/local/json_helper.sh
 
-   _brolit_configuration_load_backup_borg "/root/.brolit_conf.json"
+    _brolit_configuration_load_backup_borg "/root/.brolit_conf.json"
 
-
-    # Usar la función _json_read_field para cargar valores del archivo JSON
     BACKUP_BORG_USER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[].user")
     BACKUP_BORG_SERVER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[].server")
     BACKUP_BORG_PORT=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[].port")
     BACKUP_BORG_GROUP=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[].group")
-
-    echo "BACKUP_BORG_USER=${BACKUP_BORG_USER}"
-    echo "BACKUP_BORG_SERVER=${BACKUP_BORG_SERVER}"
-    echo "BACKUP_BORG_PORT=${BACKUP_BORG_PORT}"
-    echo "BACKUP_BORG_GROUP=${BACKUP_BORG_GROUP}"
-    echo "HOSTNAME=${HOSTNAME}"
 
     # Mount storage box
     mount_storage_box "${storage_box_directory}"
@@ -2272,38 +2264,58 @@ function show_backup_information() {
 
     # Loop through project directories in the mounted storage box
     for project_directory in $(ls "${storage_box_directory}/broobe-hosts/${HOSTNAME}/projects-online/site"); do
+
         local project_backup=""
-        
-        for backup_file in $(ls "${storage_box_directory}/broobe-hosts/${HOSTNAME}/projects-online/site/${project_directory}"); do
-            backup_date=$(echo "${backup_file}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')
-            
-            # Assume the database backup file follows the same naming convention
-            backup_db="${backup_date}_database_${project_directory}.tar.bz2"
 
-            if [[ -f "${storage_box_directory}/broobe-hosts/${HOSTNAME}/projects-online/site/${project_directory}/${backup_db}" ]]; then
-                backup_db="caeme.ar_database_2024-09-11.tar.bz2"
-            else
-                backup_db="not-found"
-            fi
+        last_backup_file=$(borgmatic list --last 1 --format '{archive}{NL}' | grep "${project_directory}_site-files" | head -n 1)
 
-            backup_files="\"${backup_date}\": { \"files\": \"${backup_file}\", \"database\": \"${backup_db}\" }"
-            
-            if [[ -z ${project_backup} ]]; then
-                project_backup="${backup_files}"
-            else
-                project_backup="${project_backup}, ${backup_files}"
-            fi
-        done
-        
-        if [[ -n ${project_backup} ]]; then
-            json_string="${json_string}\"${project_directory}\": { ${project_backup} },"
+        if [[ -n "${last_backup_file}" ]]; then
+
+            backup_date=$(echo "${last_backup_file}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')
+
+            backup_files="\"${backup_date}\": { \"files\": \"${last_backup_file}\", \"database\": \"not-found\" }"
+
+        else
+
+            backup_files="\"not-found\": { \"files\": \"not-found\", \"database\": \"not-found\" }"
+
         fi
-    done
 
-    # Finalize JSON string
+        last_db_backup_file=$(ls -t "${storage_box_directory}/broobe-hosts/${HOSTNAME}/projects-online/database/${project_directory}/"*.sql | head -n 1)
+
+        if [[ -n "${last_db_backup_file}" ]]; then
+
+            backup_db=$(basename "${last_db_backup_file}")
+
+        else
+
+            backup_db="not-found"
+
+        fi
+
+        backup_files="\"${backup_date}\": { \"files\": \"${last_backup_file}\", \"database\": \"${backup_db}\" }"
+
+        if [[ -z ${project_backup} ]]; then
+
+            project_backup="${backup_files}"
+
+        else
+
+            project_backup="${project_backup}, ${backup_files}"
+
+        fi
+
+        if [[ -n ${project_backup} ]]; then
+
+            json_string="${json_string}\"${project_directory}\": { ${project_backup} },"
+
+        fi
+
+    done
+    
     json_string="${json_string::-1} } }"
 
-    # Write JSON file
+    
     echo "${json_string}" > "${json_output_file}"
 
     # Unmount storage box
