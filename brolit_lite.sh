@@ -2629,3 +2629,57 @@ function show_server_data() {
     cat "${json_output_file}"
 
 }
+
+################################################################################
+# Retrieve cron jobs
+#
+# Argments:
+#   none
+#
+# Outputs:
+#   JSON array of cron jobs with schedule, command, and type (user or system)
+################################################################################
+function retrieve_cron_jobs() {
+
+    local cron_jobs
+    local user_cron
+    local system_cron
+
+    cron_jobs="["
+
+    user_cron=$(crontab -l 2>/dev/null | grep -v '^\s*#' | grep -v '^\s*$')
+
+    system_cron=$(grep -v '^\s*#' /etc/crontab /etc/cron.d/* 2>/dev/null | grep -v '^\s*$')
+
+    if [[ ! -z "${user_cron}" ]]; then
+
+        while IFS= read -r cron_line; do
+        
+            cron_jobs+="{\"schedule\": \"$(echo "${cron_line}" | awk '{print $1,$2,$3,$4,$5}')\", \"command\": \"$(echo "${cron_line}" | cut -d ' ' -f6-)\", \"type\": \"user\"},"
+        
+        done <<< "$user_cron"
+    
+    fi
+
+
+    if [[ ! -z "${system_cron}" ]]; then
+        
+        while IFS= read -r cron_line; do
+
+            clean_schedule=$(echo "${cron_line}" | sed -E 's/^\/etc\/[^:]*://')
+            
+            if [[ $(echo "${clean_schedule}" | awk '{print NF}') -ge 6 ]]; then
+                
+                cron_jobs+="{\"schedule\": \"$(echo "${clean_schedule}" | awk '{print $1,$2,$3,$4,$5}')\", \"command\": \"$(echo "${clean_schedule}" | awk '{for(i=6;i<=NF;i++) printf $i" "; print ""}')\", \"type\": \"system\"},"
+            
+            fi
+        
+        done <<< "$system_cron"
+    
+    fi
+
+
+    cron_jobs="${cron_jobs%,}]"
+
+    echo "${cron_jobs}"
+}
