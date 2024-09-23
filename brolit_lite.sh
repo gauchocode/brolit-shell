@@ -2649,7 +2649,7 @@ function retrieve_cron_jobs() {
 
     user_cron=$(crontab -l 2>/dev/null | grep -v '^\s*#' | grep -v '^\s*$')
 
-    system_cron=$(grep -v '^\s*#' /etc/crontab /etc/cron.d/* 2>/dev/null | grep -v '^\s*$')
+    #system_cron=$(grep -v '^\s*#' /etc/crontab /etc/cron.d/* 2>/dev/null | grep -v '^\s*$')
 
     if [[ ! -z "${user_cron}" ]]; then
 
@@ -2662,21 +2662,21 @@ function retrieve_cron_jobs() {
     fi
 
 
-    if [[ ! -z "${system_cron}" ]]; then
+    #if [[ ! -z "${system_cron}" ]]; then
         
-        while IFS= read -r cron_line; do
+        #while IFS= read -r cron_line; do
 
-            clean_schedule=$(echo "${cron_line}" | sed -E 's/^\/etc\/[^:]*://')
+            #clean_schedule=$(echo "${cron_line}" | sed -E 's/^\/etc\/[^:]*://')
             
-            if [[ $(echo "${clean_schedule}" | awk '{print NF}') -ge 6 ]]; then
+            #if [[ $(echo "${clean_schedule}" | awk '{print NF}') -ge 6 ]]; then
                 
-                cron_jobs+="{\"schedule\": \"$(echo "${clean_schedule}" | awk '{print $1,$2,$3,$4,$5}')\", \"command\": \"$(echo "${clean_schedule}" | awk '{for(i=6;i<=NF;i++) printf $i" "; print ""}')\", \"type\": \"system\"},"
+                #cron_jobs+="{\"schedule\": \"$(echo "${clean_schedule}" | awk '{print $1,$2,$3,$4,$5}')\", \"command\": \"$(echo "${clean_schedule}" | awk '{for(i=6;i<=NF;i++) printf $i" "; print ""}')\", \"type\": \"system\"},"
             
-            fi
+            #fi
         
-        done <<< "$system_cron"
+        #done <<< "$system_cron"
     
-    fi
+    #fi
 
 
     cron_jobs="${cron_jobs%,}]"
