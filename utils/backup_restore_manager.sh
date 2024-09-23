@@ -172,6 +172,8 @@ function backup_manager_menu() {
         if [[ ${INSTALL_TYPE} == "docker-compose" ]]; then
 
           backup_docker_project "${DOMAIN}" "all"
+          
+          backup_project_with_borg "${DOMAIN}"
 
         else
 
