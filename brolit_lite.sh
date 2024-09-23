@@ -1653,8 +1653,22 @@ function _brolit_shell_config() {
     ## Telegram notification config
     telegram_notification_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "NOTIFICATIONS.telegram[].status")"
 
+    ## Ntfy notification config
+    ntfy_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "NOTIFICATIONS.ntfy[].status")"
+
+    ## Discord notification config
+    discord_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "NOTIFICATIONS.discord[].status")"
+    if [[ ${discord_status} == "enabled" ]]; then
+        discord_webhook="$(_json_read_field "${BROLIT_CONFIG_FILE}" "NOTIFICATIONS.discord[].config[].webhook")"
+    else
+        discord_webhook="false"
+    fi
+
     ## Dropbox config
     backup_dropbox_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "BACKUPS.methods[].dropbox[].status")"
+
+    ## Borg backup method
+    backup_borg_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "BACKUPS.methods[].borg[].status")"
 
     ## Cloudflare config
     cloudflare_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "DNS.cloudflare[].status")"
@@ -1663,7 +1677,7 @@ function _brolit_shell_config() {
     #smtp_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "BACKUPS.config[].methods[].smtp[].status")"
 
     # Return JSON part
-    echo "\"script_version\": \"${BROLIT_VERSION}\" , \"netdata_url\": \"${netdata_subdomain}\" , \"mail_notif\": \"${mail_notification_config}\" , \"telegram_notif\": \"${telegram_notification_status}\" , \"dropbox_enable\": \"${backup_dropbox_status}\" , \"cloudflare_enable\": \"${cloudflare_status}\" , \"smtp_server\": \"${mail_notification_smtp}\""
+    echo "\"script_version\": \"${BROLIT_VERSION}\" , \"netdata_url\": \"${netdata_subdomain}\" , \"mail_notif\": \"${mail_notification_config}\" , \"telegram_notif\": \"${telegram_notification_status}\" , \"ntfy_notif\": \"${ntfy_status}\" , \"discord_notif\": \"${discord_status}\" , \"dropbox_enable\": \"${backup_dropbox_status}\" , \"borg_enable\": \"${backup_borg_status}\" , \"cloudflare_enable\": \"${cloudflare_status}\" , \"smtp_server\": \"${mail_notification_smtp}\""
 
 }
 
@@ -2221,6 +2235,112 @@ BROLIT_VERSION="3.3.8"
 BROLIT_LITE_VERSION="3.3.8-132"
 
 ################################################################################
+# Show backups information
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   json file with backup information
+################################################################################
+
+function show_backup_information() {
+
+    local timestamp
+    local check_date
+    local backup_method
+    local projects_backup
+
+    local json_output_file
+    local json_config_file="/root/.brolit_conf.json"
+    local storage_box_directory="/mnt/storage-box"
+
+    source /root/brolit-shell/libs/borg_storage_controller.sh
+    source /root/brolit-shell/libs/local/log_and_display_helper.sh
+    source /root/brolit-shell/utils/brolit_configuration_manager.sh
+    source /root/brolit-shell/libs/local/json_helper.sh
+
+    _brolit_configuration_load_backup_borg "/root/.brolit_conf.json"
+
+    BACKUP_BORG_USER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[].user")
+    BACKUP_BORG_SERVER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[].server")
+    BACKUP_BORG_PORT=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[].port")
+    BACKUP_BORG_GROUP=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[].group")
+
+    # Mount storage box
+    mount_storage_box "${storage_box_directory}"
+
+    # Set output file path
+    json_output_file="${BROLIT_LITE_OUTPUT_DIR}/show_backups_information.json"
+
+    # Initialize JSON string
+    local json_string="{ \"check_date\": \"$(date -u +"%Y-%m-%dT%H:%M:%S")\", \"backup_method\": \"borg\", \"projects_backup\": {"
+
+    # Loop through project directories in the mounted storage box
+    for project_directory in $(ls "${storage_box_directory}/broobe-hosts/${HOSTNAME}/projects-online/site"); do
+
+        local project_backup=""
+
+        last_backup_file=$(borgmatic list --last 1 --format '{archive}{NL}' | grep "${project_directory}_site-files" | head -n 1)
+
+        if [[ -n "${last_backup_file}" ]]; then
+
+            backup_date=$(echo "${last_backup_file}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')
+
+            backup_files="\"${backup_date}\": { \"files\": \"${last_backup_file}\", \"database\": \"not-found\" }"
+
+        else
+
+            backup_files="\"not-found\": { \"files\": \"not-found\", \"database\": \"not-found\" }"
+
+        fi
+
+        last_db_backup_file=$(ls -t "${storage_box_directory}/broobe-hosts/${HOSTNAME}/projects-online/database/${project_directory}/"*.sql | head -n 1)
+
+        if [[ -n "${last_db_backup_file}" ]]; then
+
+            backup_db=$(basename "${last_db_backup_file}")
+
+        else
+
+            backup_db="not-found"
+
+        fi
+
+        backup_files="\"${backup_date}\": { \"files\": \"${last_backup_file}\", \"database\": \"${backup_db}\" }"
+
+        if [[ -z ${project_backup} ]]; then
+
+            project_backup="${backup_files}"
+
+        else
+
+            project_backup="${project_backup}, ${backup_files}"
+
+        fi
+
+        if [[ -n ${project_backup} ]]; then
+
+            json_string="${json_string}\"${project_directory}\": { ${project_backup} },"
+
+        fi
+
+    done
+    
+    json_string="${json_string::-1} } }"
+
+    
+    echo "${json_string}" > "${json_output_file}"
+
+    # Unmount storage box
+    umount_storage_box "${storage_box_directory}"
+
+    # Return JSON
+    cat "${json_output_file}"
+    
+}
+
+################################################################################
 # Show firewall status
 #
 # Arguments:
@@ -2508,4 +2628,58 @@ function show_server_data() {
     # Return JSON
     cat "${json_output_file}"
 
+}
+
+################################################################################
+# Retrieve cron jobs
+#
+# Argments:
+#   none
+#
+# Outputs:
+#   JSON array of cron jobs with schedule, command, and type (user or system)
+################################################################################
+function retrieve_cron_jobs() {
+
+    local cron_jobs
+    local user_cron
+    local system_cron
+
+    cron_jobs="["
+
+    user_cron=$(crontab -l 2>/dev/null | grep -v '^\s*#' | grep -v '^\s*$')
+
+    #system_cron=$(grep -v '^\s*#' /etc/crontab /etc/cron.d/* 2>/dev/null | grep -v '^\s*$')
+
+    if [[ ! -z "${user_cron}" ]]; then
+
+        while IFS= read -r cron_line; do
+        
+            cron_jobs+="{\"schedule\": \"$(echo "${cron_line}" | awk '{print $1,$2,$3,$4,$5}')\", \"command\": \"$(echo "${cron_line}" | cut -d ' ' -f6-)\", \"type\": \"user\"},"
+        
+        done <<< "$user_cron"
+    
+    fi
+
+
+    #if [[ ! -z "${system_cron}" ]]; then
+        
+        #while IFS= read -r cron_line; do
+
+            #clean_schedule=$(echo "${cron_line}" | sed -E 's/^\/etc\/[^:]*://')
+            
+            #if [[ $(echo "${clean_schedule}" | awk '{print NF}') -ge 6 ]]; then
+                
+                #cron_jobs+="{\"schedule\": \"$(echo "${clean_schedule}" | awk '{print $1,$2,$3,$4,$5}')\", \"command\": \"$(echo "${clean_schedule}" | awk '{for(i=6;i<=NF;i++) printf $i" "; print ""}')\", \"type\": \"system\"},"
+            
+            #fi
+        
+        #done <<< "$system_cron"
+    
+    #fi
+
+
+    cron_jobs="${cron_jobs%,}]"
+
+    echo "${cron_jobs}"
 }
