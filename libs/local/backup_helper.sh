@@ -912,6 +912,7 @@ function backup_project_with_borg() {
 
   if [[ ${project_install_type} == "docker"* && ${project_type} != "html" ]]; then
 
+    borg_backup_database "${project_domain}"
     # Esto ya hace backup de todo.
     borgmatic --verbosity 1 --config ${config_directory}
 
@@ -919,6 +920,80 @@ function backup_project_with_borg() {
   ## Faltaria para los projectos no dockerizados o sea "default"
 
 }
+
+################################################################################
+# Backup Database with Borg
+#
+# Arguments:
+#  ${1} = ${project_domain}
+#
+################################################################################
+
+function borg_backup_database() {
+
+  local project_domain="${1}"
+
+  if [[ -f "${PROJECTS_PATH}/${project_domain}/.env" ]]; then
+
+      export $(grep -v '^#' "${PROJECTS_PATH}/${project_domain}/.env" | xargs)
+
+      mysql_database="${MYSQL_DATABASE}"
+
+      container_name="${PROJECT_NAME}_mysql"
+
+      mysql_user="${MYSQL_USER}"
+      
+      mysql_password="${MYSQL_PASSWORD}"
+
+  else
+
+      echo "Error: .env file not found in ${PROJECTS_PATH}/${project_domain}."
+
+      return 1
+
+  fi
+
+  now=$(date +"%Y-%m-%dT%H:%M:%S")
+
+  dump_file="${PROJECTS_PATH}/${project_domain}/${mysql_database}_database_${now}.sql"
+
+  docker exec "$container_name" sh -c "mysqldump -u$mysql_user -p$mysql_password $mysql_database > /tmp/database_dump.sql"
+
+  docker cp "$container_name:/tmp/database_dump.sql" "$dump_file"
+
+  if [ -f "$dump_file" ]; then
+
+      compressed_dump_file="/var/www/${project_domain}/${mysql_database}_database_${now}.tar.gz"
+
+      compress "/var/www/${project_domain}" "${mysql_database}_database_${now}.sql" "$compressed_dump_file"
+      
+      if [ $? -eq 0 ]; then
+          
+          scp -P "${BACKUP_BORG_PORT}" "$compressed_dump_file" "${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:/home/applications/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/database/${project_domain}"
+
+          if [ $? -eq 0 ]; then
+              
+              rm "$compressed_dump_file"
+
+          else
+
+              return 1
+
+          fi
+
+      else
+
+          return 1
+
+      fi
+
+  else
+
+      return 1
+
+  fi
+}
+
 ################################################################################
 # Make project Backup
 #
