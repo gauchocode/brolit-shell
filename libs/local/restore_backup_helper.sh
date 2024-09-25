@@ -1505,37 +1505,78 @@ function restore_project_backup() {
           chosen_backup_to_restore="$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${remote_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)"
           exitstatus=$?
           if [[ ${exitstatus} -eq 1 ]]; then
+          
             database_restore_skipped="true"
+
             display --indent 6 --text "- Restore project backup" --result "SKIPPED" --color YELLOW
+
           fi
 
         else
+
           database_restore_skipped="true"
+
           display --indent 6 --text "- Restore project backup" --result "SKIPPED" --color YELLOW
 
         fi
 
       fi
 
-      if [[ ${database_restore_skipped} != "true" ]]; then
-        # Decompress
-        decompress "${BROLIT_TMP_DIR}/${db_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
+      if [[ ${database_restore_skipped} == "true" ]]; then
 
-        base_name="${db_to_restore%.tar.bz2}"
+          log_event "info" "Database restore skipped. Exiting restoration process." "false"
 
-        dump_file="${BROLIT_TMP_DIR}/${base_name}.sql"
+          return 0
 
-        mv "${dump_file}" "${PROJECTS_PATH}/${project_domain_new}/"
+      fi
 
-      else
+      if [[ ! -f "${BROLIT_TMP_DIR}/${db_to_restore}" ]]; then
 
-        return 1
+          log_event "error" "Backup file ${db_to_restore} not found in ${BROLIT_TMP_DIR}." "true"
+
+          database_restore_skipped="true"
+
+          return 1
+
+      fi
+
+      log_event "info" "Decompressing ${db_to_restore} to ${BROLIT_TMP_DIR}." "false"
+
+      decompress "${BROLIT_TMP_DIR}/${db_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
+    
+          if [[ $? -ne 0 ]]; then
+
+              log_event "error" "Failed to decompress ${db_to_restore}." "true"
+
+              database_restore_skipped="true"
+
+              return 1
+          fi
+
+      base_name="${db_to_restore%.tar.bz2}"
+
+      dump_file="${BROLIT_TMP_DIR}/${base_name}.sql"
+
+      if [[ ! -f "${dump_file}" ]]; then
+
+          log_event "error" "SQL dump file not found after decompression: ${dump_file}." "true"
+
+          return 1
+      fi
+
+      mv "${dump_file}" "${PROJECTS_PATH}/${project_domain_new}/"
+
+      if [[ $? -ne 0 ]]; then
+
+          log_event "error" "Failed to move SQL dump to project directory." "true"
+
+          return 1
 
       fi
 
     else
-      # TODO: ask to download manually calling restore_database_backup or skip database restore part
-      project_db_status="disabled"
+
+        return 1
 
     fi
 
