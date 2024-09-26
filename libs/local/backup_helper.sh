@@ -938,11 +938,8 @@ function borg_backup_database() {
       export $(grep -v '^#' "${PROJECTS_PATH}/${project_domain}/.env" | xargs)
 
       mysql_database="${MYSQL_DATABASE}"
-
       container_name="${PROJECT_NAME}_mysql"
-
       mysql_user="${MYSQL_USER}"
-      
       mysql_password="${MYSQL_PASSWORD}"
 
   else
@@ -953,9 +950,7 @@ function borg_backup_database() {
 
   fi
 
-  now=$(date +"%Y-%m-%dT%H:%M:%S")
-
-  dump_file="${PROJECTS_PATH}/${project_domain}/${mysql_database}_database_${now}.sql"
+  dump_file="${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.sql"
 
   docker exec "$container_name" sh -c "mysqldump -u$mysql_user -p$mysql_password $mysql_database > /tmp/database_dump.sql"
 
@@ -963,9 +958,9 @@ function borg_backup_database() {
 
   if [ -f "$dump_file" ]; then
 
-      compressed_dump_file="/var/www/${project_domain}/${mysql_database}_database_${now}.tar.gz"
+      compressed_dump_file="${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.tar.bz2"
 
-      compress "/var/www/${project_domain}" "${mysql_database}_database_${now}.sql" "$compressed_dump_file"
+      compress "${BROLIT_TMP_DIR}/${NOW}/" "${mysql_database}_database_${NOW}.sql" "${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.tar.bz2"
       
       if [ $? -eq 0 ]; then
           
@@ -973,7 +968,8 @@ function borg_backup_database() {
 
           if [ $? -eq 0 ]; then
               
-              rm "$compressed_dump_file"
+              rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.tar.bz2"
+              rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.sql"
 
           else
 

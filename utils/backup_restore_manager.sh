@@ -172,16 +172,14 @@ function backup_manager_menu() {
         if [[ ${INSTALL_TYPE} == "docker-compose" ]]; then
 
           backup_docker_project "${DOMAIN}" "all"
-          
-          backup_project_with_borg "${DOMAIN}"
 
         else
 
           backup_project "${DOMAIN}" "all"
-        
-          backup_project_with_borg "${DOMAIN}"
 
         fi
+
+        backup_project_with_borg "${DOMAIN}"
 
         # Sending notifications
         #mail_send_notification "${email_subject}" "${email_content}"
