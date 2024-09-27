@@ -690,6 +690,40 @@ function backup_all_databases() {
 }
 
 ################################################################################
+# Make all databases Backup
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  0 if ok, 1 if error
+################################################################################
+
+function backup_all_databases_docker() {
+
+    # Iterar sobre los subdirectorios en PROJECTS_PATH
+    for project_domain in "${PROJECTS_PATH}"/*; do
+        if [[ -d "${project_domain}" ]]; then
+            project_name=$(basename "${project_domain}")
+
+            # Llamar a la función backup_docker_project para cada proyecto
+            echo "Backing up project: ${project_name}"
+            backup_docker_project "${project_name}" "docker_backup"
+
+            # Verificar el estado de salida de la función
+            exitstatus=$?
+            if [[ ${exitstatus} -eq 0 ]]; then
+                echo "Backup for ${project_name} completed successfully."
+            else
+                echo "Backup for ${project_name} failed."
+            fi
+        fi
+    done
+}
+
+
+
+################################################################################
 # Make databases backup
 #
 # Arguments:
