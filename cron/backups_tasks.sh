@@ -42,7 +42,7 @@ log_section "Backup All"
 
 # Databases Backup
 database_backup_result="$(backup_all_databases)"
-
+docker_database_backup_result="$(backup_all_databases_docker)"
 # Files Backup
 files_backup_result="$(backup_all_files)"
 
