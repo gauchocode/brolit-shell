@@ -1636,8 +1636,10 @@ function _brolit_shell_config() {
     netdata_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "PACKAGES.netdata[].status")"
     if [[ ${netdata_status} == "enabled" ]]; then
         netdata_subdomain="$(_json_read_field "${BROLIT_CONFIG_FILE}" "PACKAGES.netdata[].config[].subdomain")"
+        netdata_status="true"
     else
         netdata_subdomain="false"
+        netdata_status="false"
     fi
 
     ## Mail notification config
@@ -1645,33 +1647,62 @@ function _brolit_shell_config() {
     if [[ ${mail_notification_status} == "enabled" ]]; then
         mail_notification_config="$(_json_read_field "${BROLIT_CONFIG_FILE}" "NOTIFICATIONS.email[].config[].maila")"
         mail_notification_smtp="$(_json_read_field "${BROLIT_CONFIG_FILE}" "NOTIFICATIONS.email[].config[].smtp_server")"
+        mail_notification_status="true"
     else
         mail_notification_config="false"
         mail_notification_smtp="false"
+        mail_notification_status="false"
     fi
 
     ## Telegram notification config
     telegram_notification_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "NOTIFICATIONS.telegram[].status")"
+    if [[ ${telegram_notification_status} == "enabled" ]]; then
+        telegram_notification_status="true"
+    else
+        telegram_notification_status="false"
+    fi
 
     ## Ntfy notification config
     ntfy_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "NOTIFICATIONS.ntfy[].status")"
+    if [[ ${ntfy_status} == "enabled" ]]; then
+        ntfy_status="true"
+    else
+        ntfy_status="false"
+    fi
 
     ## Discord notification config
     discord_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "NOTIFICATIONS.discord[].status")"
     if [[ ${discord_status} == "enabled" ]]; then
         discord_webhook="$(_json_read_field "${BROLIT_CONFIG_FILE}" "NOTIFICATIONS.discord[].config[].webhook")"
+        discord_status="true"
     else
         discord_webhook="false"
+        discord_status="false"
     fi
 
     ## Dropbox config
     backup_dropbox_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "BACKUPS.methods[].dropbox[].status")"
+    if [[ ${backup_dropbox_status} == "enabled" ]]; then
+        backup_dropbox_status="true"
+    else
+        backup_dropbox_status="false"
+    fi
 
     ## Borg backup method
     backup_borg_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "BACKUPS.methods[].borg[].status")"
+    if [[ ${backup_borg_status} == "enabled" ]]; then
+        backup_borg_status="true"
+    else
+        backup_borg_status="false"
+    fi
 
     ## Cloudflare config
     cloudflare_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "DNS.cloudflare[].status")"
+    if [[ ${cloudflare_status} == "enabled" ]]; then
+        cloudflare_status="true"
+    else
+        cloudflare_status="false"
+    fi
 
     ## SMTP Server config
     #smtp_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "BACKUPS.config[].methods[].smtp[].status")"
