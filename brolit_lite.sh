@@ -2076,9 +2076,7 @@ function _dropbox_get_backup() {
 
     local project_domain="${1}"
 
-    # TODO: if standard is respected $project_domain = project directory name
-    # Should change $1 for project_dir and then do something like "get_domain_from_project_config"
-
+    # Variables locales
     local project_name
     local project_db
     local dropbox_site_backup_path
@@ -2093,63 +2091,55 @@ function _dropbox_get_backup() {
 
     [[ -z ${project_domain} ]] && return 1
 
-    # First check if project is listed as ignored on brolit config
+    # Check if project is ignored
     if [[ $(_project_is_ignored "${project_domain}") == "true" ]]; then
-
-        backup_date="2022-11-14" #hardcoded date
+        backup_date="2022-11-14" # Hardcoded date for ignored projects
         backups_string="\"${backup_date}\":{\"files\":\"project-listed-as-ignored\",\"database\":\"project-listed-as-ignored\"}"
-
     else
+        # Remove domain extension to get project name
+        project_name="${project_domain%%.*}"  # Obtener el nombre del proyecto sin la extensión
 
-        project_type="$(_project_get_type "${PROJECTS_PATH}/${project_domain}")"
-        project_install_type="$(_project_get_install_type "${PROJECTS_PATH}/${project_domain}")"
-
-        project_db="$(_project_get_configured_database "${PROJECTS_PATH}/${project_domain}" "${project_type}" "${project_install_type}")"
-        exitstatus=$?
-        [[ ${exitstatus} -eq 1 ]] && project_db="error"
-
-        # Get dropbox backup list
+        # Get dropbox backup list for site
         dropbox_site_backup_path="${SERVER_NAME}/projects-online/site/${project_domain}"
         dropbox_site_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_site_backup_path}" | grep -Eo "${project_domain}_site-files_[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}.*")"
 
-        for backup_file in ${dropbox_site_backup_list}; do
+        # Array of project types
+        local project_types=("prod" "dev" "stage" "test" "beta" "demo")
 
+        for backup_file in ${dropbox_site_backup_list}; do
             backup_date="$(_backup_get_date "${backup_file}")"
 
-            if [[ ${project_db} != "error" && ${project_db} != "no-database" ]]; then
+            # Loop through possible project types to find the right database
+            for project_type in "${project_types[@]}"; do
 
-                # Database backup
+                project_db="${project_name}_${project_type}"  
                 backup_to_search="${project_db}_database_${backup_date}"
-                search_backup_db=$("${DROPBOX_UPLOADER}" -hq search "${backup_to_search}" | grep -E "${project_db}/${backup_to_search}" || ret="$?")
+
+                # Search for database backup
+                search_backup_db=$("${DROPBOX_UPLOADER}" -hq list "${SERVER_NAME}/projects-online/database/${project_db}/" | grep "${backup_to_search}" | awk '{print $NF}' || ret="$?")
                 backup_db="$(basename "${search_backup_db}")"
 
-                if [[ -n ${search_backup_db} ]]; then
+                # If we find a valid database backup, stop looking further
+                if [[ -n ${backup_db} ]]; then
                     backups_string="${backups_string}\"${backup_date}\":{\"files\":\"${backup_file}\",\"database\":\"${backup_db}\"} , "
-                else
-                    backups_string="${backups_string}\"${backup_date}\":{\"files\":\"${backup_file}\",\"database\":\"not-found\"} , "
+                    break
                 fi
+            done
 
-            else
-                # At this point ${project_db} == error or no-database
-                backups_string="${backups_string}\"${backup_date}\":{\"files\":\"${backup_file}\",\"database\":\"${project_db}\"} , "
-
+            # If no valid database is found after checking all types, mark as not-found
+            if [[ -z ${backup_db} ]]; then
+                backups_string="${backups_string}\"${backup_date}\":{\"files\":\"${backup_file}\",\"database\":\"not-found\"} , "
             fi
-
         done
 
         if [[ -n ${backups_string} ]]; then
-            # Remove 3 last chars
+            # Remove the last 3 characters
             backups_string="${backups_string::-3}"
-
-        #else
-        #    backups_string="\"something-went-wrong\":\"dropbox-empty-response\""
         fi
-
     fi
 
     # Return JSON
     echo "${backups_string}"
-
 }
 
 ################################################################################
@@ -2486,7 +2476,7 @@ function firewall_get_apps_details() {
     timestamp="$(_timestamp)"
 
     # Write JSON file
-    echo "{ \"${timestamp}\" :  ${json_string} }" >"${BROLIT_LITE_OUTPUT_DIR}/firewall_apps_details.json"
+    echo "{ \"check_date\": \"${timestamp}\", \"firewall_apps\": ${json_string} }" > "${BROLIT_LITE_OUTPUT_DIR}/firewall_apps_details.json"
 
     # Return JSON
     cat "${BROLIT_LITE_OUTPUT_DIR}/firewall_apps_details.json"
@@ -2523,8 +2513,7 @@ function list_packages_ready_to_upgrade() {
         timestamp="$(_timestamp)"
 
         # Write JSON file
-        echo "{ \"${timestamp}\" :  ${json_string} }" >"${json_output_file}"
-
+        echo "{ \"check_date\": \"${timestamp}\", \"packages_ready_to_upgrade\": ${json_string} }" > "${json_output_file}"
     fi
 
     # Return JSON
@@ -2649,8 +2638,7 @@ function show_server_data() {
         [[ -z ${server_databases} ]] && server_databases=""
 
         # Write JSON file
-        echo "{ \"${timestamp}\" : { \"server_info\": { ${server_info} }, \"server_pkgs\": { ${server_pkgs} }, \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] } }" >"${json_output_file}"
-
+        echo "{ \"check_date\": \"${timestamp}\", \"server_info\": { ${server_info} }, \"server_pkgs\": { ${server_pkgs} }, \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] } }" > "${json_output_file}"
         # Remove new lines
         echo "$(tr -d "\n\r" <"${json_output_file}")" >"${json_output_file}"
 
