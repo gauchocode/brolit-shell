@@ -972,6 +972,10 @@ function borg_backup_database() {
 
   local project_domain="${1}"
 
+  local json_config_file="/root/.brolit_conf.json"
+
+  source /root/brolit-shell/brolit_lite.sh
+
   if [[ -f "${PROJECTS_PATH}/${project_domain}/.env" ]]; then
 
       export $(grep -v '^#' "${PROJECTS_PATH}/${project_domain}/.env" | xargs)
@@ -1002,22 +1006,38 @@ function borg_backup_database() {
       compress "${BROLIT_TMP_DIR}/${NOW}/" "${mysql_database}_database_${NOW}.sql" "${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.tar.bz2"
       
       if [ $? -eq 0 ]; then
+
+          num_borg_configs=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config | length")
+
+          for ((i=0; i<num_borg_configs; i++)); do
+
+            BACKUP_BORG_USER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[$i].user")
+            BACKUP_BORG_SERVER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[$i].server")
+            BACKUP_BORG_PORT=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[$i].port")
+            BACKUP_BORG_GROUP=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].group")
+
+            echo "Performing backup on ${BACKUP_BORG_SERVER} with user ${BACKUP_BORG_USER} on port ${BACKUP_BORG_PORT}"
           
-          scp -P "${BACKUP_BORG_PORT}" "$compressed_dump_file" "${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:/home/applications/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/database/${project_domain}"
+            scp -P "${BACKUP_BORG_PORT}" "$compressed_dump_file" "${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:/home/applications/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/database/${project_domain}"
 
-          if [ $? -eq 0 ]; then
-              
-              rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.tar.bz2"
-              rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.sql"
+            if [ $? -eq 0 ]; then
 
-          else
+              echo "Backup successful on ${BACKUP_BORG_SERVER}"
 
+            else
+
+              echo "Backup failed for ${BACKUP_BORG_SERVER}"
               return 1
 
-          fi
+            fi
+
+          done
+              
+          rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.tar.bz2"
+          rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.sql"
 
       else
-
+          echo "Error compressing the database dump."
           return 1
 
       fi
