@@ -2283,82 +2283,83 @@ function show_backup_information() {
 
     _brolit_configuration_load_backup_borg "/root/.brolit_conf.json"
 
-    BACKUP_BORG_USER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[].user")
-    BACKUP_BORG_SERVER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[].server")
-    BACKUP_BORG_PORT=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[].port")
-    BACKUP_BORG_GROUP=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[].group")
-
-    # Mount storage box
-    mount_storage_box "${storage_box_directory}"
-
-    # Set output file path
-    json_output_file="${BROLIT_LITE_OUTPUT_DIR}/show_backups_information.json"
+    # Get number of Borg configurations
+    local borg_configs_count
+    borg_configs_count=$(jq '.BACKUPS.methods[].borg[].config | length' "${json_config_file}")
 
     # Initialize JSON string
     local json_string="{ \"check_date\": \"$(date -u +"%Y-%m-%dT%H:%M:%S")\", \"backup_method\": \"borg\", \"projects_backup\": {"
 
-    # Loop through project directories in the mounted storage box
-    for project_directory in $(ls "${storage_box_directory}/broobe-hosts/${HOSTNAME}/projects-online/site"); do
+    # Loop through each Borg configuration
+    for (( i=0; i<"${borg_configs_count}"; i++ )); do
 
-        local project_backup=""
+        # Get Borg configuration details
+        BACKUP_BORG_USER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[${i}].user")
+        BACKUP_BORG_SERVER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[${i}].server")
+        BACKUP_BORG_PORT=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[${i}].port")
+        BACKUP_BORG_GROUP=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].group")
 
-        last_backup_file=$(borgmatic list --last 1 --format '{archive}{NL}' | grep "${project_directory}_site-files" | head -n 1)
+        # Mount storage box
+        mount_storage_box "${storage_box_directory}"
 
-        if [[ -n "${last_backup_file}" ]]; then
+        # Loop through project directories in the mounted storage box
+        for project_directory in $(ls "${storage_box_directory}/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/site"); do
 
-            backup_date=$(echo "${last_backup_file}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')
+            local project_backup=""
+            local backup_files=""
+            local backup_date=""
+            local last_backup_file=""
+            local last_db_backup_file=""
+            local backup_db=""
 
-            backup_files="\"${backup_date}\": { \"files\": \"${last_backup_file}\", \"database\": \"not-found\" }"
+            # Get the last backup file for site files
+            last_backup_file=$(borgmatic list --last 1 --format '{archive}{NL}' | grep "${project_directory}_site-files" | head -n 1)
 
-        else
+            if [[ -n "${last_backup_file}" ]]; then
+                backup_date=$(echo "${last_backup_file}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')
+                backup_files="\"${backup_date}\": { \"files\": \"${last_backup_file}\", \"database\": \"not-found\" }"
+            else
+                backup_files="\"not-found\": { \"files\": \"not-found\", \"database\": \"not-found\" }"
+            fi
 
-            backup_files="\"not-found\": { \"files\": \"not-found\", \"database\": \"not-found\" }"
+            # Get the last database backup file
+            last_db_backup_file=$(ls -t "${storage_box_directory}/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/database/${project_directory}/"*.sql | head -n 1)
 
-        fi
+            if [[ -n "${last_db_backup_file}" ]]; then
+                backup_db=$(basename "${last_db_backup_file}")
+            else
+                backup_db="not-found"
+            fi
 
-        last_db_backup_file=$(ls -t "${storage_box_directory}/broobe-hosts/${HOSTNAME}/projects-online/database/${project_directory}/"*.sql | head -n 1)
+            backup_files="\"${backup_date}\": { \"files\": \"${last_backup_file}\", \"database\": \"${backup_db}\" }"
 
-        if [[ -n "${last_db_backup_file}" ]]; then
+            if [[ -z ${project_backup} ]]; then
+                project_backup="${backup_files}"
+            else
+                project_backup="${project_backup}, ${backup_files}"
+            fi
 
-            backup_db=$(basename "${last_db_backup_file}")
+            if [[ -n ${project_backup} ]]; then
+                json_string="${json_string}\"${project_directory}\": { ${project_backup} },"
+            fi
 
-        else
+        done
 
-            backup_db="not-found"
-
-        fi
-
-        backup_files="\"${backup_date}\": { \"files\": \"${last_backup_file}\", \"database\": \"${backup_db}\" }"
-
-        if [[ -z ${project_backup} ]]; then
-
-            project_backup="${backup_files}"
-
-        else
-
-            project_backup="${project_backup}, ${backup_files}"
-
-        fi
-
-        if [[ -n ${project_backup} ]]; then
-
-            json_string="${json_string}\"${project_directory}\": { ${project_backup} },"
-
-        fi
+        # Unmount storage box
+        umount_storage_box "${storage_box_directory}"
 
     done
-    
+
+    # Finalize JSON string
     json_string="${json_string::-1} } }"
 
-    
+    # Save JSON output to file
+    json_output_file="${BROLIT_LITE_OUTPUT_DIR}/show_backups_information.json"
     echo "${json_string}" > "${json_output_file}"
-
-    # Unmount storage box
-    umount_storage_box "${storage_box_directory}"
 
     # Return JSON
     cat "${json_output_file}"
-    
+
 }
 
 ################################################################################
