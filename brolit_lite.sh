@@ -2323,7 +2323,7 @@ function show_backup_information() {
             fi
 
             # Get the last database backup file
-            last_db_backup_file=$(ls -t "${storage_box_directory}/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/database/${project_directory}/"*.sql | head -n 1)
+            last_db_backup_file=$(ls -t "${storage_box_directory}/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/database/${project_directory}/"*.tar.bz2 | head -n 1)
 
             if [[ -n "${last_db_backup_file}" ]]; then
                 backup_db=$(basename "${last_db_backup_file}")
