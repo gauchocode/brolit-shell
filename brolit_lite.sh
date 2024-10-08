@@ -2203,7 +2203,7 @@ function dropbox_get_sites_backups() {
         fi
 
         # Write JSON file
-        echo "{ \"${timestamp}\" : { ${backup_projects} } }" >"${json_output_file}"
+        echo "{ \"check_date\": \"${timestamp}\" : { ${backup_projects} } }" >"${json_output_file}"
 
     fi
 
