@@ -2076,7 +2076,6 @@ function _dropbox_get_backup() {
 
     local project_domain="${1}"
 
-    # Variables locales
     local project_name
     local project_db
     local dropbox_site_backup_path
@@ -2096,8 +2095,8 @@ function _dropbox_get_backup() {
         backup_date="2022-11-14" # Hardcoded date for ignored projects
         backups_string="\"${backup_date}\":{\"files\":\"project-listed-as-ignored\",\"database\":\"project-listed-as-ignored\"}"
     else
-        # Remove domain extension to get project name
-        project_name="${project_domain%%.*}"  # Obtener el nombre del proyecto sin la extensión
+        # Extract project name (adjusted to get the second part of the domain)
+        project_name="$(echo "${project_domain}" | cut -d'.' -f2)"
 
         # Get dropbox backup list for site
         dropbox_site_backup_path="${SERVER_NAME}/projects-online/site/${project_domain}"
@@ -2118,6 +2117,13 @@ function _dropbox_get_backup() {
                 # Search for database backup
                 search_backup_db=$("${DROPBOX_UPLOADER}" -hq list "${SERVER_NAME}/projects-online/database/${project_db}/" | grep "${backup_to_search}" | awk '{print $NF}' || ret="$?")
                 backup_db="$(basename "${search_backup_db}")"
+
+                if [[ -z ${backup_db} ]]; then
+
+                    search_backup_db=$("${DROPBOX_UPLOADER}" -hq list "${SERVER_NAME}/projects-online/database/${project_name}_dev/" | grep "${backup_to_search}" | awk '{print $NF}' || ret="$?")
+                    backup_db="$(basename "${search_backup_db}")"
+
+                fi
 
                 # If we find a valid database backup, stop looking further
                 if [[ -n ${backup_db} ]]; then
