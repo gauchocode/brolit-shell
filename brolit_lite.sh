@@ -2645,7 +2645,7 @@ function show_server_data() {
         [[ -z ${server_databases} ]] && server_databases=""
 
         # Write JSON file
-        echo "{ \"check_date\": \"${timestamp}\", \"server_info\": ${server_info}, \"server_pkgs\": ${server_pkgs}, \"server_config\": ${server_config}, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] }" >"${json_output_file}"
+        echo "{ \"check_date\": \"${timestamp}\", \"server_info\": { ${server_info} }, \"server_pkgs\": { ${server_pkgs} }, \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] }" >"${json_output_file}"
         # Remove new lines
         echo "$(tr -d "\n\r" <"${json_output_file}")" >"${json_output_file}"
 
