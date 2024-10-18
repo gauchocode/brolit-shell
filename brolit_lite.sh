@@ -2295,7 +2295,7 @@ function show_backup_information() {
     borg_configs_count=$(jq '.BACKUPS.methods[].borg[].config | length' "${json_config_file}")
 
     # Initialize JSON string
-    local json_string="{ \"check_date\": \"$(date -u +"%Y-%m-%dT%H:%M:%S")\", \"backup_method\": \"borg\", \"projects_backup\": {"
+    local json_string="{ \"check_date\": \"$(date -u +"%Y-%m-%dT%H:%M:%S")\", \"backup_method\": \"borg\", \"projects_backup\": { "
 
     # Loop through each Borg configuration
     for (( i=0; i<"${borg_configs_count}"; i++ )); do
@@ -2310,7 +2310,7 @@ function show_backup_information() {
         mount_storage_box "${storage_box_directory}"
 
         # Loop through project directories in the mounted storage box
-        for project_directory in $(ls "${storage_box_directory}/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/site"); do
+        for project_directory in $(ls --color=never "${storage_box_directory}/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/site"); do
 
             local project_backup=""
             local backup_files=""
@@ -2320,7 +2320,7 @@ function show_backup_information() {
             local backup_db=""
 
             # Get the last backup file for site files
-            last_backup_file=$(borgmatic list --last 1 --format '{archive}{NL}' | grep "${project_directory}_site-files" | head -n 1)
+            last_backup_file=$(borgmatic list --last 1 --format '{archive}{NL}' | grep "${project_directory}_site-files" | head -n 1 | sed -r "s/\x1B\[[0-9;]*[mG]//g")
 
             if [[ -n "${last_backup_file}" ]]; then
                 backup_date=$(echo "${last_backup_file}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')
