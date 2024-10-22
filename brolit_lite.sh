@@ -2320,7 +2320,7 @@ function show_backup_information() {
             local backup_db=""
 
             # Get the last backup file for site files
-            last_backup_file=$(borgmatic list --last 1 --format '{archive}{NL}' | grep "${project_directory}_site-files" | head -n 1 | sed -r "s/\x1B\[[0-9;]*[mG]//g")
+            last_backup_file=$(borgmatic list --last 1 --format '{archive}{NL}' --match-archives "*" | grep "${project_directory}_site-files" | head -n 1 | sed -r "s/\x1B\[[0-9;]*[mG]//g")
 
             if [[ -n "${last_backup_file}" ]]; then
                 backup_date=$(echo "${last_backup_file}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')
