@@ -976,22 +976,29 @@ function borg_backup_database() {
 
   source /root/brolit-shell/brolit_lite.sh
 
-  if [[ -f "${PROJECTS_PATH}/${project_domain}/.env" ]]; then
+if [[ -f "${PROJECTS_PATH}/${project_domain}/.env" ]]; then
 
-      export $(grep -v '^#' "${PROJECTS_PATH}/${project_domain}/.env" | xargs)
+      # Detect if project is WordPress or Laravel, or skip database backup for other types
+      if [[ -d "${PROJECTS_PATH}/${project_domain}/wordpress" || -f "${PROJECTS_PATH}/${project_domain}/artisan" ]]; then
+          export $(grep -v '^#' "${PROJECTS_PATH}/${project_domain}/.env" | xargs)
 
-      mysql_database="${MYSQL_DATABASE}"
-      container_name="${PROJECT_NAME}_mysql"
-      mysql_user="${MYSQL_USER}"
-      mysql_password="${MYSQL_PASSWORD}"
+          mysql_database="${MYSQL_DATABASE}"
+          container_name="${PROJECT_NAME}_mysql"
+          mysql_user="${MYSQL_USER}"
+          mysql_password="${MYSQL_PASSWORD}"
+
+      else
+          echo "Skipping database backup: project ${project_domain} does not require a database backup."
+          return 0
+      fi
 
   else
 
       echo "Error: .env file not found in ${PROJECTS_PATH}/${project_domain}."
-
       return 1
 
   fi
+
 
   dump_file="${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.sql"
 
