@@ -2282,6 +2282,7 @@ function show_backup_information() {
     local json_output_file
     local json_config_file="/root/.brolit_conf.json"
     local storage_box_directory="/mnt/storage-box"
+    local project_directory_path="/var/www"
 
     source /root/brolit-shell/libs/borg_storage_controller.sh
     source /root/brolit-shell/libs/local/log_and_display_helper.sh
@@ -2311,6 +2312,9 @@ function show_backup_information() {
 
         # Loop through project directories in the mounted storage box
         for project_directory in $(ls --color=never "${storage_box_directory}/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/site"); do
+
+            # Verify if project exists in /var/www before including in JSON
+            if [[ -d "${project_directory_path}/${project_directory}" ]]; then
 
             local project_backup=""
             local backup_files=""
@@ -2348,6 +2352,8 @@ function show_backup_information() {
 
             if [[ -n ${project_backup} ]]; then
                 json_string="${json_string}\"${project_directory}\": { ${project_backup} },"
+            fi
+
             fi
 
         done
