@@ -2324,9 +2324,9 @@ function show_backup_information() {
 
             if [[ -n "${last_backup_file}" ]]; then
                 backup_date=$(echo "${last_backup_file}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')
-                backup_files="\"${backup_date}\": { \"files\": \"${last_backup_file}\", \"database\": \"not-found\" }"
+                backup_files="\"${backup_date}\": { \"files\": \"${last_backup_file}\", \"database\": \"empty\" }"
             else
-                backup_files="\"not-found\": { \"files\": \"not-found\", \"database\": \"not-found\" }"
+                backup_files="\"empty\": { \"files\": \"empty\", \"database\": \"empty\" }"
             fi
 
             # Get the last database backup file
@@ -2335,7 +2335,7 @@ function show_backup_information() {
             if [[ -n "${last_db_backup_file}" ]]; then
                 backup_db=$(basename "${last_db_backup_file}")
             else
-                backup_db="not-found"
+                backup_db="empty"
             fi
 
             backup_files="\"${backup_date}\": { \"files\": \"${last_backup_file}\", \"database\": \"${backup_db}\" }"
