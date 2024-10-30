@@ -2272,7 +2272,8 @@ BROLIT_LITE_VERSION="3.3.8-132"
 #   json file with backup information
 ################################################################################
 
-function show_backup_information() {
+show_backup_information() {
+
     local timestamp
     local check_date
     local backup_method
@@ -2280,7 +2281,6 @@ function show_backup_information() {
 
     local json_output_file
     local json_config_file="/root/.brolit_conf.json"
-    local cache_file="/root/brolit_cache.json"
     local storage_box_directory="/mnt/storage-box"
     local project_directory_path="/var/www"
 
@@ -2298,13 +2298,6 @@ function show_backup_information() {
     # Initialize JSON string
     local json_string="{ \"check_date\": \"$(date -u +"%Y-%m-%dT%H:%M:%S")\", \"backup_method\": \"borg\", \"projects_backup\": { "
 
-    # Load cache file if it exists
-    if [[ -f "${cache_file}" ]]; then
-        cache_json=$(cat "${cache_file}")
-    else
-        cache_json="{}"
-    fi
-
     # Loop through each Borg configuration
     for (( i=0; i<"${borg_configs_count}"; i++ )); do
 
@@ -2312,63 +2305,55 @@ function show_backup_information() {
         BACKUP_BORG_USER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[${i}].user")
         BACKUP_BORG_SERVER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[${i}].server")
         BACKUP_BORG_PORT=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[${i}].port")
-        BACKUP_BORG_GROUP=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[${i}].group")
+        BACKUP_BORG_GROUP=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].group")
 
         # Mount storage box
         mount_storage_box "${storage_box_directory}"
 
+        # Temporary file to store each parallel process output
+        temp_file=$(mktemp)
+
         # Loop through project directories in the mounted storage box
         for project_directory in $(ls --color=never "${storage_box_directory}/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/site"); do
 
-            # Verify if project exists in /var/www before including in JSON
+            (
+
             if [[ -d "${project_directory_path}/${project_directory}" ]]; then
+                local project_json=""
 
-                # Check cache for the project's last backup info
-                project_cache=$(echo "${cache_json}" | jq -r ".projects_backup.\"${project_directory}\"")
+                last_backup_file=$(borgmatic list --last 1 --format '{archive}{NL}' --match-archives "*" | grep "${project_directory}_site-files" | head -n 1 | sed -r "s/\x1B\[[0-9;]*[mG]//g")
 
-                # Initialize variables for backup info
-                local project_backup=""
-                local backup_files=""
-                local backup_date=""
-                local last_backup_file=""
-                local last_db_backup_file=""
-                local backup_db=""
-
-                if [[ "${project_cache}" != "null" ]]; then
-                    # Use cached data
-                    backup_files=$(echo "${project_cache}" | jq -r ".files")
-                    backup_db=$(echo "${project_cache}" | jq -r ".database")
-                    backup_date=$(echo "${project_cache}" | jq -r ".date")
+                if [[ -n "${last_backup_file}" ]]; then
+                    backup_date=$(echo "${last_backup_file}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')
+                    backup_files="\"${backup_date}\": { \"files\": \"${last_backup_file}\", \"database\": \"empty\" }"
                 else
-                    # Cache miss, retrieve data from Borg
-                    last_backup_file=$(borgmatic list --last 1 --format '{archive}{NL}' --match-archives "*" | grep "${project_directory}_site-files" | head -n 1 | sed -r "s/\x1B\[[0-9;]*[mG]//g")
-                    
-                    if [[ -n "${last_backup_file}" ]]; then
-                        backup_date=$(echo "${last_backup_file}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')
-                        backup_files="${last_backup_file}"
-                    else
-                        backup_files="empty"
-                    fi
-
-                    # Get the last database backup file
-                    last_db_backup_file=$(ls -t "${storage_box_directory}/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/database/${project_directory}/"*.tar.bz2 | head -n 1)
-                    if [[ -n "${last_db_backup_file}" ]]; then
-                        backup_db=$(basename "${last_db_backup_file}")
-                    else
-                        backup_db="empty"
-                    fi
-
-                    # Update cache
-                    cache_json=$(echo "${cache_json}" | jq ".projects_backup.\"${project_directory}\" = { \"files\": \"${backup_files}\", \"database\": \"${backup_db}\", \"date\": \"${backup_date}\" }")
+                    backup_files="\"empty\": { \"files\": \"empty\", \"database\": \"empty\" }"
                 fi
 
-                project_backup="\"${backup_date}\": { \"files\": \"${backup_files}\", \"database\": \"${backup_db}\" }"
+                last_db_backup_file=$(ls -t "${storage_box_directory}/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/database/${project_directory}/"*.tar.bz2 | head -n 1)
 
-                if [[ -n ${project_backup} ]]; then
-                    json_string="${json_string}\"${project_directory}\": { ${project_backup} },"
+                if [[ -n "${last_db_backup_file}" ]]; then
+                    backup_db=$(basename "${last_db_backup_file}")
+                else
+                    backup_db="empty"
                 fi
+
+                backup_files="\"${backup_date}\": { \"files\": \"${last_backup_file}\", \"database\": \"${backup_db}\" }"
+
+                project_json="\"${project_directory}\": { ${backup_files} }"
+                echo "${project_json}" >> "${temp_file}"
             fi
+            ) &
         done
+
+
+        wait
+
+        while read -r line; do
+            json_string="${json_string}${line},"
+        done < "${temp_file}"
+
+        rm -f "${temp_file}"
 
         # Unmount storage box
         umount_storage_box "${storage_box_directory}"
@@ -2381,9 +2366,6 @@ function show_backup_information() {
     # Save JSON output to file
     json_output_file="${BROLIT_LITE_OUTPUT_DIR}/show_backups_information.json"
     echo "${json_string}" > "${json_output_file}"
-
-    # Update cache file
-    echo "${cache_json}" > "${cache_file}"
 
     # Return JSON
     cat "${json_output_file}"
