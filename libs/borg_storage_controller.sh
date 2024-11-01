@@ -222,48 +222,119 @@ function restore_project_with_borg() {
     local storage_box_directory="/mnt/storage-box"
 
     # Create storage-box directory if not exists
-    remote_domain_list=$(find "${storage_box_directory}/${BACKUP_BORG_GROUP}/${server_hostname}" -maxdepth 3 -mindepth 3 -type d -exec basename {} \; | sort)
+    remote_domain_list=$(find "${storage_box_directory}/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/site" -maxdepth 1 -mindepth 1 -type d -exec basename {} \; | sort | uniq)
+
+    project_status=$(storage_remote_status_list)
+
+    if [[ $? -ne 0 ]]; then
+        log_event "error" "Failed to choose project status" "false"
+        exit 1
+    fi
+
+    log_event "info" "Selected project status: ${project_status}" "false"
+
+    restore_type=$(storage_remote_type_list)
+
+    if [[ $? -ne 0 ]]; then
+        log_event "error" "Failed to choose restore type" "false"
+        exit 1
+    fi
+
+    log_event "info" "Selected restore type: ${restore_type}" "false"
 
     chosen_domain="$(whiptail --title "BACKUP SELECTION" --menu "Choose a domain to work with" 20 78 10 $(for x in ${remote_domain_list}; do echo "${x} [D]"; done) --default-item "${SERVER_NAME}" 3>&1 1>&2 2>&3)"
 
     local project_name="$(project_get_name_from_domain "${chosen_domain}")"
-    local destination_dir="${PROJECTS_PATH}/${chosen_domain}"
 
-    if [[ -d $destination_dir ]]; then
-        local project_install_type="$(project_get_install_type "${destination_dir}")"
-    else
-        log_event "info" "${project_domain} not found - Downloading project" "false"
+    if [[ ${restore_type} == "project" ]]; then
+        local destination_dir="${PROJECTS_PATH}/${chosen_domain}/"
+    elif [[ ${restore_type} == "database" ]]; then
+        local destination_dir="${PROJECTS_PATH}/${chosen_domain}/"
+        mkdir -p "${destination_dir}"
     fi
 
     if [[ ${chosen_domain} != "" ]]; then
 
-        arhives="$(borg list --format '{archive}{NL}' ssh://${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}/./applications/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/site/${chosen_domain} | sort -r)"
+        if [[ ${restore_type} == "project" ]]; then
 
-        chosen_archive="$(whiptail --title "BACKUP SELECTION" --menu "Choose an archive to work with" 20 78 10 $(for x in ${arhives}; do echo "${x} [D]"; done) --default-item "${SERVER_NAME}" 3>&1 1>&2 2>&3)"
+            arhives="$(borg list --format '{archive}{NL}' ssh://${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}/./applications/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/site/${chosen_domain} | sort -r)"
 
-        if [[ ${chosen_archive} != "" ]]; then
-            display --indent 6 --text "- Selecting Project Backup" --result "DONE" --color GREEN
-            display --indent 8 --text "${chosen_archive}.tar.bz2" --tcolor YELLOW
-            generate_tar_and_decompress "${chosen_archive}" "${chosen_domain}" "${project_install_type}"
+            chosen_archive="$(whiptail --title "BACKUP SELECTION" --menu "Choose an archive to work with" 20 78 10 $(for x in ${arhives}; do echo "${x} [D]"; done) --default-item "${SERVER_NAME}" 3>&1 1>&2 2>&3)"
 
-            # If project_install_type == docker, build containers
-            if [[ ${project_install_type} == "docker"* ]]; then
-                log_subsection "Restore Files Backup"
-                docker_setup_configuration "${project_name}" "${destination_dir}" "${chosen_domain}"
-                docker_compose_build "${destination_dir}/docker-compose.yml"
+            if [[ ${chosen_archive} != "" ]]; then
+                display --indent 6 --text "- Selecting Project Backup" --result "DONE" --color GREEN
+                display --indent 8 --text "${chosen_archive}.tar.bz2" --tcolor YELLOW
+                generate_tar_and_decompress "${chosen_archive}" "${chosen_domain}" "${project_install_type}"
+
+                local sql_file=$(find "${storage_box_directory}/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/database/${chosen_domain}" -maxdepth 1 -type f -name '*.sql' -print -quit)
+
+                if [[ -z ${sql_file} ]]; then
+                    log_event "error" "SQL file not found at remote path: ${storage_box_directory}/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/database/${chosen_domain}" "false"
+                    display --indent 6 --text "- SQL file not found at remote path" --result "FAIL" --color RED
+                    exit 1
+                else
+
+                    echo "SQL file path: ${sql_file}"
+
+                    cp "${sql_file}" "${destination_dir}/$(basename ${sql_file})"
+
+                    if [[ $? -eq 0 ]]; then
+                        log_event "info" "SQL file restored successfully to ${local_project_path}" "false"
+                        display --indent 6 --text "- SQL file restored" --result "DONE" --color GREEN
+                    else
+                        log_event "error" "Error restoring SQL file from remote server" "false"
+                        display --indent 6 --text "- SQL file restore" --result "FAIL" --color RED
+                    fi
+
+                fi
+
+            else
+                display --indent 6 --text "- Selecting Project Backup" --result "SKIPPED" --color YELLOW
+                return 1
+            fi
+
+        elif [[ ${restore_type} == "database" ]]; then
+
+            local sql_file=$(find "${storage_box_directory}/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/database/${chosen_domain}" -maxdepth 1 -type f -name '*.sql' -print -quit)
+
+            if [[ -z ${sql_file} ]]; then
+                log_event "error" "SQL file not found at remote path: ${storage_box_directory}/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/database/${chosen_domain}" "false"
+                display --indent 6 --text "- SQL file not found at remote path" --result "FAIL" --color RED
+                exit 1
+            else
+                echo "SQL file path: ${sql_file}"
+                mkdir -p "${destination_dir}"
+                cp "${sql_file}" "${destination_dir}/$(basename ${sql_file})"
+
+                if [[ $? -eq 0 ]]; then
+                    log_event "info" "SQL file restored successfully to ${destination_dir}" "false"
+                    display --indent 6 --text "- SQL file restored" --result "DONE" --color GREEN
+                else
+                    log_event "error" "Error restoring SQL file from remote server" "false"
+                    display --indent 6 --text "- SQL file restore" --result "FAIL" --color RED
+                fi
+
+            fi
+        fi
+
+        # If project_install_type == docker, build containers
+        if [[ ${project_install_type} == "docker"* ]]; then
+            log_subsection "Restore Files Backup"
+            docker_setup_configuration "${project_name}" "${destination_dir}" "${chosen_domain}"
+            docker_compose_build "${destination_dir}/docker-compose.yml"
 
 
-                # Project domain configuration (webserver+certbot+DNS)
-                https_enable="$(project_update_domain_config "${project_domain_new}" "${project_type}" "${project_install_type}" "${project_port}")"
+            # Project domain configuration (webserver+certbot+DNS)
+            https_enable="$(project_update_domain_config "${project_domain_new}" "${project_type}" "${project_install_type}" "${project_port}")"
 
-                # TODO: if and old project with same domain was found, ask what to do (delete old project or skip this step)
+            # TODO: if and old project with same domain was found, ask what to do (delete old project or skip this step)
 
-                # Post-restore/install tasks
-                project_post_install_tasks "${project_install_path}" "${project_type}" "${project_install_type}" "${project_name}" "${project_stage}" "${db_pass}" "${project_domain}" "${project_domain_new}"
+            # Post-restore/install tasks
+            project_post_install_tasks "${project_install_path}" "${project_type}" "${project_install_type}" "${project_name}" "${project_stage}" "${db_pass}" "${project_domain}" "${project_domain_new}"
 
-                # Create/update brolit_project_conf.json file with project info
-                project_update_brolit_config "${project_install_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db_status}" "${db_engine}" "${project_name}_${project_stage}" "localhost" "${db_user}" "${db_pass}" "${project_domain_new}" "" "" "" ""
-            fi                
+            # Create/update brolit_project_conf.json file with project info
+            project_update_brolit_config "${project_install_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db_status}" "${db_engine}" "${project_name}_${project_stage}" "localhost" "${db_user}" "${db_pass}" "${project_domain_new}" "" "" "" ""
+        #fi                
         else
             display --indent 6 --text "- Selecting Project Backup" --result "SKIPPED" --color YELLOW
             return 1

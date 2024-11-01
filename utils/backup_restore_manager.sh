@@ -167,8 +167,18 @@ function backup_manager_menu() {
 
         DOMAIN="$(basename "${filepath}/${filename}")"
 
-        backup_project "${DOMAIN}" "all"
-        
+        INSTALL_TYPE=$(project_get_install_type "${filepath}/${filename}")
+
+        if [[ ${INSTALL_TYPE} == "docker-compose" ]]; then
+
+          backup_docker_project "${DOMAIN}" "all"
+
+        else
+
+          backup_project "${DOMAIN}" "all"
+
+        fi
+
         backup_project_with_borg "${DOMAIN}"
 
         # Sending notifications
