@@ -690,6 +690,45 @@ function backup_all_databases() {
 }
 
 ################################################################################
+# Make all databases Backup
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  0 if ok, 1 if error
+################################################################################
+
+function backup_all_databases_docker() {
+
+    for project_domain in "${PROJECTS_PATH}"/*; do
+
+        if [[ -d "${project_domain}" ]]; then
+
+            project_name=$(basename "${project_domain}")
+
+            echo "Backing up project: ${project_name}"
+
+            backup_docker_project "${project_name}" "docker_backup"
+ 
+            exitstatus=$?
+            if [[ ${exitstatus} -eq 0 ]]; then
+
+                echo "Backup for ${project_name} completed successfully."
+
+            else
+
+                echo "Backup for ${project_name} failed."
+
+            fi
+        fi
+        
+    done
+}
+
+
+
+################################################################################
 # Make databases backup
 #
 # Arguments:
@@ -770,6 +809,7 @@ function backup_databases() {
 # Arguments:
 #  ${1} = ${database}
 #  ${2} = ${db_engine}
+#  ${3} = ${container_name}
 #
 # Outputs:
 #  "backupfile backup_file_size" if ok, 1 if error
@@ -779,6 +819,7 @@ function backup_project_database() {
 
   local database="${1}"
   local db_engine="${2}"
+  local container_name="${3}"
 
   local export_result
 
@@ -799,12 +840,12 @@ function backup_project_database() {
   # Database engine
   if [[ ${db_engine} == "mysql" ]]; then
     ## Create dump file
-    mysql_database_export "${database}" "false" "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"
+    mysql_database_export "${database}" "${container_name}" "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"
   else
 
     if [[ ${db_engine} == "psql" ]]; then
       ## Create dump file
-      postgres_database_export "${database}" "false" "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"
+      postgres_database_export "${database}" "${container_name}" "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"
     fi
 
   fi
@@ -910,6 +951,7 @@ function backup_project_with_borg() {
 
   if [[ ${project_install_type} == "docker"* && ${project_type} != "html" ]]; then
 
+    borg_backup_database "${project_domain}"
     # Esto ya hace backup de todo.
     borgmatic --verbosity 1 --config ${config_directory}
 
@@ -917,6 +959,103 @@ function backup_project_with_borg() {
   ## Faltaria para los projectos no dockerizados o sea "default"
 
 }
+
+################################################################################
+# Backup Database with Borg
+#
+# Arguments:
+#  ${1} = ${project_domain}
+#
+################################################################################
+
+function borg_backup_database() {
+
+  local project_domain="${1}"
+
+  local json_config_file="/root/.brolit_conf.json"
+
+  source /root/brolit-shell/brolit_lite.sh
+
+if [[ -f "${PROJECTS_PATH}/${project_domain}/.env" ]]; then
+
+      # Detect if project is WordPress or Laravel, or skip database backup for other types
+      if [[ -d "${PROJECTS_PATH}/${project_domain}/wordpress" || -f "${PROJECTS_PATH}/${project_domain}/application" ]]; then
+          export $(grep -v '^#' "${PROJECTS_PATH}/${project_domain}/.env" | xargs)
+
+          mysql_database="${MYSQL_DATABASE}"
+          container_name="${PROJECT_NAME}_mysql"
+          mysql_user="${MYSQL_USER}"
+          mysql_password="${MYSQL_PASSWORD}"
+
+      else
+          echo "Skipping database backup: project ${project_domain} does not require a database backup."
+          return 0
+      fi
+
+  else
+
+      echo "Error: .env file not found in ${PROJECTS_PATH}/${project_domain}."
+      return 1
+
+  fi
+
+
+  dump_file="${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.sql"
+
+  docker exec "$container_name" sh -c "mysqldump -u$mysql_user -p$mysql_password $mysql_database > /tmp/database_dump.sql"
+
+  docker cp "$container_name:/tmp/database_dump.sql" "$dump_file"
+
+  if [ -f "$dump_file" ]; then
+
+      compressed_dump_file="${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.tar.bz2"
+
+      compress "${BROLIT_TMP_DIR}/${NOW}/" "${mysql_database}_database_${NOW}.sql" "${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.tar.bz2"
+      
+      if [ $? -eq 0 ]; then
+
+          num_borg_configs=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config | length")
+
+          for ((i=0; i<num_borg_configs; i++)); do
+
+            BACKUP_BORG_USER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[$i].user")
+            BACKUP_BORG_SERVER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[$i].server")
+            BACKUP_BORG_PORT=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[$i].port")
+            BACKUP_BORG_GROUP=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].group")
+
+            echo "Performing backup on ${BACKUP_BORG_SERVER} with user ${BACKUP_BORG_USER} on port ${BACKUP_BORG_PORT}"
+          
+            scp -P "${BACKUP_BORG_PORT}" "$compressed_dump_file" "${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:/home/applications/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/database/${project_domain}"
+
+            if [ $? -eq 0 ]; then
+
+              echo "Backup successful on ${BACKUP_BORG_SERVER}"
+
+            else
+
+              echo "Backup failed for ${BACKUP_BORG_SERVER}"
+              return 1
+
+            fi
+
+          done
+              
+          rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.tar.bz2"
+          rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.sql"
+
+      else
+          echo "Error compressing the database dump."
+          return 1
+
+      fi
+
+  else
+
+      return 1
+
+  fi
+}
+
 ################################################################################
 # Make project Backup
 #
@@ -1001,6 +1140,93 @@ function backup_project() {
         fi
 
       fi
+
+    fi
+
+    log_break "false"
+
+    # Delete local backup
+    rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${backup_type:?}"
+    #log_event "info" "Deleting backup from server ..." "false"
+
+    # Log
+    log_break "false"
+    log_event "info" "Project backup finished!" "false"
+    display --indent 6 --text "- Project Backup" --result "DONE" --color GREEN
+
+    return ${got_error}
+
+  else
+
+    # Log
+    log_break "false"
+    log_event "error" "Something went wrong making the files backup" "false"
+    display --indent 6 --text "- Project Backup" --result "FAIL" --color RED
+    display --indent 8 --text "Something went wrong making the files backup" --tcolor RED
+
+    return 1
+
+  fi
+
+}
+
+################################################################################
+# Make project Backup
+#
+# Arguments:
+#  ${1} = ${project_domain}
+#  ${2} = ${backup_type} - (all,configs,sites,databases) - Default: all
+#
+# Outputs:
+#   0 if ok, 1 if error
+################################################################################
+
+function backup_docker_project() {
+
+  local project_domain="${1}"
+  local backup_type="${2}"
+
+  local got_error=0
+
+  local db_name
+  local db_engine
+  local backup_file
+  local project_type
+  local container_name
+
+  # Read the .env file
+  if [[ -f "${PROJECTS_PATH}/${project_domain}/.env" ]]; then
+
+    export $(grep -v '^#' "${PROJECTS_PATH}/${project_domain}/.env" | xargs)
+    db_name="${MYSQL_DATABASE}"
+    container_name="${PROJECT_NAME}_mysql"
+    db_engine="mysql"
+
+  else
+
+    echo "Error: .env file not found in ${PROJECTS_PATH}/${project_domain}/."
+
+    return 1
+
+  fi
+
+  # Backup files
+  log_subsection "Backup Project Files"
+  backup_file_size="$(backup_project_files "site" "${PROJECTS_PATH}" "${project_domain}")"
+
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    # Project Type
+    project_type="$(project_get_type "${PROJECTS_PATH}/${project_domain}")"
+
+    # Project install type
+    project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${project_domain}")"
+
+
+    if [[ ${project_install_type} == "docker"* && ${project_type} != "html" ]]; then
+
+        backup_project_database "${db_name}" "${db_engine}" "${container_name}"
 
     fi
 
