@@ -307,3 +307,81 @@ function borg_installer_menu() {
 
     fi
 }
+
+##############################################################################
+# Borg backup database.
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if borg was installed, 1 on error.
+##############################################################################
+
+function borg_backup_database() {
+
+  local directorio="/var/www/"
+  local nombre_carpeta="gauchocode.com"
+
+  source /root/brolit-shell/libs/commons.sh
+    
+  # Verifica si existe el archivo .env
+  if [[ -f "${directorio}/${nombre_carpeta}/.env" ]]; then
+      # Exporta las variables del archivo .env
+      export $(grep -v '^#' "${directorio}/${nombre_carpeta}/.env" | xargs)
+      mysql_database="${MYSQL_DATABASE}"
+      container_name="${PROJECT_NAME}_mysql"
+      mysql_user="${MYSQL_USER}"
+      mysql_password="${MYSQL_PASSWORD}"
+  else
+      echo "Error: .env file not found in ${directorio}/${nombre_carpeta}/."
+      return 1
+  fi
+
+  # Generar timestamp para el archivo SQL dump
+  now=$(date +"%Y-%m-%dT%H:%M:%S")
+
+  # Realizar el dump
+  dump_file="/var/www/${nombre_carpeta}/${mysql_database}_database_${now}.sql"
+  echo "Generando dump de la base de datos en $dump_file..."
+  docker exec "$container_name" sh -c "mysqldump -u$mysql_user -p$mysql_password $mysql_database > /tmp/database_dump.sql"
+  docker cp "$container_name:/tmp/database_dump.sql" "$dump_file"
+
+  # Verifica si el dump fue generado correctamente
+  if [ -f "$dump_file" ]; then
+      echo "Dump generado con éxito en $dump_file."
+
+      # Comprimir el archivo SQL dump
+      compressed_dump_file="/var/www/${nombre_carpeta}/${mysql_database}_database_${now}.tar.gz"
+      echo "Comprimiendo el dump..."
+      compress "/var/www/${nombre_carpeta}" "${mysql_database}_database_${now}.sql" "$compressed_dump_file"
+      
+      if [ $? -eq 0 ]; then
+          echo "Dump comprimido exitosamente en $compressed_dump_file."
+          
+          # Subir el archivo dump comprimido al servidor de backups
+          echo "Subiendo dump comprimido a servidor de backups..."
+          scp -P "${BACKUP_BORG_PORT}" "$compressed_dump_file" "${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:/home/applications/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/database/${nombre_carpeta}"
+
+          # Verifica si la transferencia fue exitosa
+          if [ $? -eq 0 ]; then
+              echo "Dump comprimido subido exitosamente."
+              
+              # Eliminar el archivo dump comprimido localmente
+              echo "Eliminando dump comprimido local: $compressed_dump_file"
+              rm "$compressed_dump_file"
+              if [ $? -eq 0 ]; then
+                  echo "Dump comprimido eliminado localmente con éxito."
+              else
+                  echo "Error al eliminar el archivo dump comprimido local."
+              fi
+          else
+              echo "Error subiendo el dump comprimido al servidor de backups."
+          fi
+      else
+          echo "Error al comprimir el dump."
+      fi
+  else
+      echo "Error: no se pudo generar el dump de la base de datos."
+  fi
+}

@@ -2,10 +2,12 @@ constants:
     project: domain-example.com             # e.g: gauchocode.com  
     group: group_server                     # e.g: broobe-hosts
     hostname: hostname_server               # e.g: broobe-docker-host03-cmuse    
+    username: user 
+    server: server_or_IP
+    port: port_to_connect
     ntfy_server: ntfy_server
     ntfy_username: ntfy_username
     ntfy_password: ntfy_password
-    loki_url: loki_url
 
 # List of source directories and files to back up. Globs and tildes
 # are expanded. Do not backslash spaces in path names.
@@ -13,6 +15,9 @@ source_directories:
     - /var/www/{project}
 
 repositories:
+  - path: ssh://{username}@{server}:{port}/./applications/{group}/{hostname}/projects-online/site/{project}
+    label: "{project}"
+
 exclude_patterns:
     - '*.o'
     - '*.log'
@@ -57,36 +62,9 @@ checks:
 
 check_last: 3
 
-# before_actions:
-    # - echo Starting actions.
-
-# List of one or more shell commands or scripts to execute before
-# creating a backup, run once per repository.
 before_backup:
     - echo "Arrancando backup" 
 
-# List of one or more shell commands or scripts to execute before
-# pruning, run once per repository.
-# before_prune:
-    # - echo Starting pruning.
-
-# List of one or more shell commands or scripts to execute before
-# compaction, run once per repository.
-# before_compact:
-    # - echo Starting compaction.
-
-# List of one or more shell commands or scripts to execute before
-# consistency checks, run once per repository.
-# before_check:
-    # - echo Starting checks.
-
-# List of one or more shell commands or scripts to execute before
-# extracting a backup, run once per repository.
-# before_extract:
-    # - echo Starting extracting.
-
-# List of one or more shell commands or scripts to execute after
-# creating a backup, run once per repository.
 after_backup:
     - echo "Backup terminado!"
 
@@ -150,10 +128,6 @@ ntfy:
     # "finish", and/or "fail". Defaults to pinging for failure
     # only.
     states:
+        - start
+        - finish
         - fail
-loki:
-    url: __loki_url:3100/loki/api/v1/push
-    labels:
-        app: borgmatic
-        project: __config
-        hostname: __hostname
