@@ -2272,7 +2272,7 @@ BROLIT_LITE_VERSION="3.3.8-132"
 #   json file with backup information
 ################################################################################
 
-function show_backup_information() {
+show_backup_information() {
 
     local timestamp
     local check_date
@@ -2310,53 +2310,50 @@ function show_backup_information() {
         # Mount storage box
         mount_storage_box "${storage_box_directory}"
 
+        # Temporary file to store each parallel process output
+        temp_file=$(mktemp)
+
         # Loop through project directories in the mounted storage box
         for project_directory in $(ls --color=never "${storage_box_directory}/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/site"); do
 
-            # Verify if project exists in /var/www before including in JSON
+            (
+
             if [[ -d "${project_directory_path}/${project_directory}" ]]; then
+                local project_json=""
 
-            local project_backup=""
-            local backup_files=""
-            local backup_date=""
-            local last_backup_file=""
-            local last_db_backup_file=""
-            local backup_db=""
+                last_backup_file=$(/root/.local/bin/borgmatic list --last 1 --format '{archive}{NL}' --match-archives "*" | grep "${project_directory}_site-files" | head -n 1 | sed -r "s/\x1B\[[0-9;]*[mG]//g")
 
-            # Get the last backup file for site files
-            last_backup_file=$(borgmatic list --last 1 --format '{archive}{NL}' --match-archives "*" | grep "${project_directory}_site-files" | head -n 1 | sed -r "s/\x1B\[[0-9;]*[mG]//g")
+                if [[ -n "${last_backup_file}" ]]; then
+                    backup_date=$(echo "${last_backup_file}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')
+                    backup_files="\"${backup_date}\": { \"files\": \"${last_backup_file}\", \"database\": \"empty\" }"
+                else
+                    backup_files="\"empty\": { \"files\": \"empty\", \"database\": \"empty\" }"
+                fi
 
-            if [[ -n "${last_backup_file}" ]]; then
-                backup_date=$(echo "${last_backup_file}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')
-                backup_files="\"${backup_date}\": { \"files\": \"${last_backup_file}\", \"database\": \"empty\" }"
-            else
-                backup_files="\"empty\": { \"files\": \"empty\", \"database\": \"empty\" }"
+                last_db_backup_file=$(ls -t "${storage_box_directory}/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/database/${project_directory}/"*.tar.bz2 | head -n 1)
+
+                if [[ -n "${last_db_backup_file}" ]]; then
+                    backup_db=$(basename "${last_db_backup_file}")
+                else
+                    backup_db="empty"
+                fi
+
+                backup_files="\"${backup_date}\": { \"files\": \"${last_backup_file}\", \"database\": \"${backup_db}\" }"
+
+                project_json="\"${project_directory}\": { ${backup_files} }"
+                echo "${project_json}" >> "${temp_file}"
             fi
-
-            # Get the last database backup file
-            last_db_backup_file=$(ls -t "${storage_box_directory}/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/database/${project_directory}/"*.tar.bz2 | head -n 1)
-
-            if [[ -n "${last_db_backup_file}" ]]; then
-                backup_db=$(basename "${last_db_backup_file}")
-            else
-                backup_db="empty"
-            fi
-
-            backup_files="\"${backup_date}\": { \"files\": \"${last_backup_file}\", \"database\": \"${backup_db}\" }"
-
-            if [[ -z ${project_backup} ]]; then
-                project_backup="${backup_files}"
-            else
-                project_backup="${project_backup}, ${backup_files}"
-            fi
-
-            if [[ -n ${project_backup} ]]; then
-                json_string="${json_string}\"${project_directory}\": { ${project_backup} },"
-            fi
-
-            fi
-
+            ) &
         done
+
+
+        wait
+
+        while read -r line; do
+            json_string="${json_string}${line},"
+        done < "${temp_file}"
+
+        rm -f "${temp_file}"
 
         # Unmount storage box
         umount_storage_box "${storage_box_directory}"
@@ -2372,7 +2369,6 @@ function show_backup_information() {
 
     # Return JSON
     cat "${json_output_file}"
-
 }
 
 ################################################################################
