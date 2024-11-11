@@ -132,7 +132,10 @@ function wordfencecli_malware_scan() {
     local license
 
     # Build the Wordfence CLI Docker image
-    build_wordfencecli_docker_image
+    if [[ "$(docker images -q wordfence-cli:latest 2> /dev/null)" == "" ]]; then
+        log_event "info" "Building Wordfence CLI Docker image..." "false"
+        build_wordfencecli_docker_image
+    fi
 
     # Read license 
     license="$(wordfencecli_read_license)"
