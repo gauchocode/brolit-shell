@@ -250,6 +250,8 @@ function system_add_floating_IP() {
         cp "${BROLIT_MAIN_DIR}/config/networking/60-floating-ip.yaml" /etc/netplan/60-floating-ip.yaml
         sed -i "s#your.float.ing.ip#${floating_IP}#" /etc/netplan/60-floating-ip.yaml
         display --indent 6 --text "- Making network config changes" --result "DONE" --color GREEN
+        chmod 600 /etc/netplan/*.yaml
+        log_event "info" "Permissions updated for Netplan configuration files" "false"
 
         netplan apply
 
