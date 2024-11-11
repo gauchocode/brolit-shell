@@ -979,7 +979,7 @@ function borg_backup_database() {
 if [[ -f "${PROJECTS_PATH}/${project_domain}/.env" ]]; then
 
       # Detect if project is WordPress or Laravel, or skip database backup for other types
-      if [[ -d "${PROJECTS_PATH}/${project_domain}/wordpress" || -f "${PROJECTS_PATH}/${project_domain}/artisan" ]]; then
+      if [[ -d "${PROJECTS_PATH}/${project_domain}/wordpress" || -f "${PROJECTS_PATH}/${project_domain}/application" ]]; then
           export $(grep -v '^#' "${PROJECTS_PATH}/${project_domain}/.env" | xargs)
 
           mysql_database="${MYSQL_DATABASE}"
