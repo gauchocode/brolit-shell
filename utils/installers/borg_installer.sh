@@ -63,6 +63,8 @@ function borg_installer() {
     package_install "pipx"
     borgmatic_installer
 
+    install_ssh_key_on_storages
+
     exitstatus=$?
 
     if [[ ${exitstatus} -ne 0 ]]; then
@@ -174,6 +176,10 @@ function borgmatic_installer() {
 
     display --indent 6 --text "- Updating repositories"
 
+    sudo apt install python3-venv -y > /dev/null 2>&1
+
+    wget -q https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq && chmod +x /usr/bin/yq > /dev/null 2>&1
+
     # Update repositories
     sudo pipx install borgmatic > /dev/null 2>&1
 
@@ -197,5 +203,56 @@ function borgmatic_installer() {
 
         return 1
     
+    fi
+}
+
+##############################################################################
+# Install SSH public key on storage box using configuration from .brolit_conf.json
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if the key is installed successfully, 1 on error.
+##############################################################################
+
+function install_ssh_key_on_storages() {
+    local config_file="/root/.brolit_conf.json"
+    local ssh_key_path="~/.ssh/id_rsa.pub"
+
+    if [[ ! -f ~/.ssh/id_rsa ]]; then
+        log_event "warning" "RSA key pair not found. Please generate one using ssh-keygen." "true"
+        display --indent 6 --text "- RSA key check" --result "MISSING" --color RED
+        return 1
+    else
+        display --indent 6 --text "- RSA key check" --result "EXISTS" --color GREEN
+    fi
+
+    if [[ -f "${config_file}" ]]; then
+        storages=$(jq -r '.storages[] | @base64' "${config_file}")
+
+        for storage in ${storages}; do
+            _jq() {
+                echo "${storage}" | base64 --decode | jq -r "${1}"
+            }
+
+            local ssh_user=$(_jq '.user')
+            local ssh_host=$(_jq '.host')
+            local ssh_port=$(_jq '.port')
+
+            cat "${ssh_key_path}" | ssh -p"${ssh_port}" "${ssh_user}@${ssh_host}" install-ssh-key
+            local exitstatus=$?
+            if [[ ${exitstatus} -eq 0 ]]; then
+                log_event "info" "RSA public key installed on ${ssh_host}" "false"
+                display --indent 6 --text "- Installing public key on ${ssh_host}" --result "DONE" --color GREEN
+            else
+                log_event "error" "Failed to install RSA public key on ${ssh_host}" "true"
+                display --indent 6 --text "- Installing public key on ${ssh_host}" --result "FAILED" --color RED
+            fi
+        done
+    else
+        log_event "error" "Configuration file ${config_file} not found" "true"
+        display --indent 6 --text "- Loading configuration file" --result "FAILED" --color RED
+        return 1
     fi
 }
