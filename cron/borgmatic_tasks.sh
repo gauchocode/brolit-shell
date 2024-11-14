@@ -9,6 +9,8 @@ BROLIT_MAIN_DIR=$(cd "$(dirname "${BROLIT_MAIN_DIR}")" && pwd)
 
 directorio="/var/www"
 
+mkdir -p /etc/borgmatic.d
+
 if [ ! -d "$directorio" ]; then
 	echo "The directory '$directorio' doesn't exists"
 	exit 1
