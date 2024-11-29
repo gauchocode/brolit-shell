@@ -2386,33 +2386,41 @@ function firewall_show_status() {
     local ufw_status=""
 
     # ufw app list, replace space with "-" and "/n" with space
-    ufw_status="$(ufw status | sed -n '1 p' | cut -d " " -f 2 | tr " " "-" | sed -z 's/\n/ /g' | sed -z 's/--//g')"
+    #ufw_status="$(ufw status | sed -n '1 p' | cut -d " " -f 2 | tr " " "-" | sed -z 's/\n/ /g' | sed -z 's/--//g')"
+    ufw_status="$(ufw status | sed -n '1 p' | awk '{print $2}')"
+
+    if [[ ${ufw_status} == "active" ]]; then
+        ufw_status="true"
+    else
+        ufw_status="false"
+    fi
 
     # Details begins at line 5
-    counter=5
-    ufw_status_line="$(ufw status | sed -n "${counter} p" | cut -d "-" -f 2 | tr " " ";" | sed -z 's/;;//g')"
-    while [ -n "${ufw_status_line}" ]; do
-        ufw_status_line="$(ufw status | sed -n "${counter} p" | cut -d "-" -f 2 | tr " " ";" | sed -z 's/;;//g')"
-        ufw_status_details="${ufw_status_details} ${ufw_status_line}"
-        counter=$(($counter + 1))
-    done
+    #counter=5
+    #ufw_status_line="$(ufw status | sed -n "${counter} p" | cut -d "-" -f 2 | tr " " ";" | sed -z 's/;;//g')"
+    #while [ -n "${ufw_status_line}" ]; do
+        #ufw_status_line="$(ufw status | sed -n "${counter} p" | cut -d "-" -f 2 | tr " " ";" | sed -z 's/;;//g')"
+        #ufw_status_details="${ufw_status_details} ${ufw_status_line}"
+        #counter=$(($counter + 1))
+    #done
 
     # String to JSON
-    json_string="$(_jsonify_output "key-value" "ufw-status" "${ufw_status}")"
+    #json_string="$(_jsonify_output "key-value" "ufw-status" "${ufw_status}")"
 
-    if [[ -n ${ufw_status_details} ]]; then
+    #if [[ -n ${ufw_status_details} ]]; then
 
-        json_string_d="$(_jsonify_output "value-list" "${ufw_status_details}")"
-
-        # Return JSON
-        echo "${json_string},{\"ufw-details\": ${json_string_d}}"
-
-    else
+        #json_string_d="$(_jsonify_output "value-list" "${ufw_status_details}")"
 
         # Return JSON
-        echo "${json_string},{\"ufw-details\": \"empty-response\"}"
+        #echo "${json_string},{\"ufw-details\": ${json_string_d}}"
 
-    fi
+    #else
+
+        # Return JSON
+        #echo "${json_string},{\"ufw-details\": \"empty-response\"}"
+
+    #fi
+    echo "{\"firewall_status\": ${ufw_status}}"
 
 }
 
