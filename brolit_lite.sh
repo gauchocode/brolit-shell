@@ -1630,9 +1630,6 @@ function _cronjob_install() {
 # Should be deprecated?
 function _brolit_shell_config() {
 
-    local firewall_status
-    firewall_status="$(firewall_show_status)"
-
     # Read brolit_conf.json
 
     ## Netdata subdomain
@@ -1711,7 +1708,7 @@ function _brolit_shell_config() {
     #smtp_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "BACKUPS.config[].methods[].smtp[].status")"
 
     # Return JSON part
-    echo "\"script_version\": \"${BROLIT_VERSION}\" , \"netdata_url\": \"${netdata_subdomain}\" , \"firewall_status\": \"${firewall_status}\" , \"mail_notif\": \"${mail_notification_config}\" , \"telegram_notif\": \"${telegram_notification_status}\" , \"ntfy_notif\": \"${ntfy_status}\" , \"discord_notif\": \"${discord_status}\" , \"dropbox_enable\": \"${backup_dropbox_status}\" , \"borg_enable\": \"${backup_borg_status}\" , \"cloudflare_enable\": \"${cloudflare_status}\" , \"smtp_server\": \"${mail_notification_smtp}\""
+    echo "\"script_version\": \"${BROLIT_VERSION}\" , \"netdata_url\": \"${netdata_subdomain}\" , \"mail_notif\": \"${mail_notification_config}\" , \"telegram_notif\": \"${telegram_notification_status}\" , \"ntfy_notif\": \"${ntfy_status}\" , \"discord_notif\": \"${discord_status}\" , \"dropbox_enable\": \"${backup_dropbox_status}\" , \"borg_enable\": \"${backup_borg_status}\" , \"cloudflare_enable\": \"${cloudflare_status}\" , \"smtp_server\": \"${mail_notification_smtp}\""
 
 }
 
@@ -1751,6 +1748,9 @@ function _serverinfo() {
     local public_ip
     local public_ipv6
     local local_ip
+    local firewall_status
+
+    firewall_status=$(firewall_show_status)
 
     local_ip="$(ip route get 1 | awk '{print $(NF-2);exit}')"
 
@@ -1775,12 +1775,12 @@ function _serverinfo() {
     if [[ -z ${public_ip} ]]; then
 
         # Return JSON part
-        echo "\"server_name\": \"${SERVER_NAME}\" , \"distro\": \"${distro}\" , \"cpu_cores\": \"${cpu_cores}\" , \"ram_avail\": \"${ram_amount}\" , ${disks_info}"
+        echo "\"server_name\": \"${SERVER_NAME}\" , \"distro\": \"${distro}\" , \"cpu_cores\": \"${cpu_cores}\" , \"ram_avail\": \"${ram_amount}\" , ${disks_info}" , \"firewall_status\": \"${firewall_status}\"
 
     else
 
         # Return JSON part
-        echo "\"server_name\": \"${SERVER_NAME}\" , \"floating_ip\": \"${local_ip}\" , \"distro\": \"${distro}\" , \"cpu_cores\": \"${cpu_cores}\" , \"ram_avail\": \"${ram_amount}\" , ${disks_info}"
+        echo "\"server_name\": \"${SERVER_NAME}\" , \"floating_ip\": \"${local_ip}\" , \"distro\": \"${distro}\" , \"cpu_cores\": \"${cpu_cores}\" , \"ram_avail\": \"${ram_amount}\" , ${disks_info}" , , \"firewall_status\": \"${firewall_status}\"
 
     fi
 
@@ -2390,7 +2390,7 @@ function firewall_show_status() {
 
     # ufw app list, replace space with "-" and "/n" with space
     #ufw_status="$(ufw status | sed -n '1 p' | cut -d " " -f 2 | tr " " "-" | sed -z 's/\n/ /g' | sed -z 's/--//g')"
-    ufw_status="$(ufw status | sed -n '1 p' | awk '{print $2}')"
+    ufw_status=$(ufw status | grep -oP "Status:\s+\K\w+")
 
     if [[ ${ufw_status} == "active" ]]; then
         ufw_status="true"
