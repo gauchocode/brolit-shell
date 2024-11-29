@@ -28,8 +28,6 @@ function it_utils_menu() {
     "13)" "INSTALL WELCOME MESSAGE"
     "14)" "ADD BROLIT UI INTEGRATION"
     "15)" "ENABLE SSH ROOT ACCESS"
-    "16)" "GENERATE RSA SSH KEY"
-
   )
   chosen_it_util_options="$(whiptail --title "IT UTILS" --menu "Choose a script to Run" 20 78 10 "${it_util_options[@]}" 3>&1 1>&2 2>&3)"
 
@@ -171,18 +169,6 @@ function it_utils_menu() {
 
     fi
 
-    # GENERATE RSA SSH KEY
-    if [[ ${chosen_it_util_options} == *"16"* ]]; then
-        log_subsection "Generate RSA SSH Key"
-        generate_ssh_key
-        exitstatus=$?
-        if [[ ${exitstatus} -eq 0 ]]; then
-            display --indent 6 --text "- RSA SSH key generation" --result "DONE" --color GREEN
-        else
-            display --indent 6 --text "- RSA SSH key generation" --result "FAILED" --color RED
-        fi
-    fi
-
     prompt_return_or_finish
     it_utils_menu
 
@@ -313,35 +299,4 @@ function menu_security_custom_scan() {
 
   fi
 
-}
-
-function generate_ssh_key() {
-    local ssh_key_path="$HOME/.ssh/id_rsa"
-
-    if [[ ! -d "$HOME/.ssh" ]]; then
-        mkdir -p "$HOME/.ssh"
-        chmod 700 "$HOME/.ssh"
-        log_event "info" "Created .ssh directory with correct permissions" "false"
-    fi
-
-    if [[ ! -f ${ssh_key_path} ]]; then
-        display --indent 6 --text "- Generating RSA SSH key"
-        ssh-keygen -t rsa -b 4096 -N "" -f ${ssh_key_path}
-        
-        if [[ $? -ne 0 ]]; then
-            clear_previous_lines "1"
-            display --indent 6 --text "- Generating RSA SSH key" --result "FAILED" --color RED
-            log_event "error" "Failed to generate RSA SSH key" "false"
-            return 1
-        else
-            clear_previous_lines "1"
-            display --indent 6 --text "- Generating RSA SSH key" --result "DONE" --color GREEN
-            log_event "info" "RSA SSH key generated at ${ssh_key_path}" "false"
-        fi
-    else
-        display --indent 6 --text "- RSA SSH key already exists" --result "SKIPPED" --color YELLOW
-        log_event "info" "RSA SSH key already exists at ${ssh_key_path}" "false"
-    fi
-
-    return 0
 }
