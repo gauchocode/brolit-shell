@@ -1630,6 +1630,9 @@ function _cronjob_install() {
 # Should be deprecated?
 function _brolit_shell_config() {
 
+    local firewall_status
+    firewall_status="$(firewall_show_status)"
+
     # Read brolit_conf.json
 
     ## Netdata subdomain
@@ -1708,7 +1711,7 @@ function _brolit_shell_config() {
     #smtp_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "BACKUPS.config[].methods[].smtp[].status")"
 
     # Return JSON part
-    echo "\"script_version\": \"${BROLIT_VERSION}\" , \"netdata_url\": \"${netdata_subdomain}\" , \"mail_notif\": \"${mail_notification_config}\" , \"telegram_notif\": \"${telegram_notification_status}\" , \"ntfy_notif\": \"${ntfy_status}\" , \"discord_notif\": \"${discord_status}\" , \"dropbox_enable\": \"${backup_dropbox_status}\" , \"borg_enable\": \"${backup_borg_status}\" , \"cloudflare_enable\": \"${cloudflare_status}\" , \"smtp_server\": \"${mail_notification_smtp}\""
+    echo "\"script_version\": \"${BROLIT_VERSION}\" , \"netdata_url\": \"${netdata_subdomain}\" , \"firewall_status\": \"${firewall_status}\" , \"mail_notif\": \"${mail_notification_config}\" , \"telegram_notif\": \"${telegram_notification_status}\" , \"ntfy_notif\": \"${ntfy_status}\" , \"discord_notif\": \"${discord_status}\" , \"dropbox_enable\": \"${backup_dropbox_status}\" , \"borg_enable\": \"${backup_borg_status}\" , \"cloudflare_enable\": \"${cloudflare_status}\" , \"smtp_server\": \"${mail_notification_smtp}\""
 
 }
 
@@ -2420,7 +2423,6 @@ function firewall_show_status() {
         #echo "${json_string},{\"ufw-details\": \"empty-response\"}"
 
     #fi
-    echo "${ufw_status}"
 
 }
 
@@ -2603,8 +2605,6 @@ function show_server_data() {
 
         server_info="$(_serverinfo)"
 
-        firewall_status="$(firewall_show_status)"
-
         server_config="$(_brolit_shell_config)"
 
         server_pkgs="$(_packages_get_data)"
@@ -2658,7 +2658,7 @@ function show_server_data() {
         [[ -z ${server_databases} ]] && server_databases=""
 
         # Write JSON file
-        echo "{ \"check_date\": \"${timestamp}\", \"server_info\": { ${server_info} }, \"firewall_status\": ${firewall_status} }, \"server_pkgs\": { ${server_pkgs} }, \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] }" >"${json_output_file}"
+        echo "{ \"check_date\": \"${timestamp}\", \"server_info\": { ${server_info} }, \"server_pkgs\": { ${server_pkgs} }, \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] }" >"${json_output_file}"
         # Remove new lines
         echo "$(tr -d "\n\r" <"${json_output_file}")" >"${json_output_file}"
 
