@@ -2420,7 +2420,7 @@ function firewall_show_status() {
         #echo "${json_string},{\"ufw-details\": \"empty-response\"}"
 
     #fi
-    echo "{\"firewall_status\": ${ufw_status}}"
+    echo "${ufw_status}"
 
 }
 
