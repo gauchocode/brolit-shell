@@ -1780,7 +1780,7 @@ function _serverinfo() {
     else
 
         # Return JSON part
-        echo "\"server_name\": \"${SERVER_NAME}\" , \"floating_ip\": \"${local_ip}\" , \"distro\": \"${distro}\" , \"cpu_cores\": \"${cpu_cores}\" , \"ram_avail\": \"${ram_amount}\" , ${disks_info}" , , \"firewall_status\": \"${firewall_status}\"
+        echo "\"server_name\": \"${SERVER_NAME}\" , \"floating_ip\": \"${local_ip}\" , \"distro\": \"${distro}\" , \"cpu_cores\": \"${cpu_cores}\" , \"ram_avail\": \"${ram_amount}\" , ${disks_info}" , \"firewall_status\": \"${firewall_status}\"
 
     fi
 
@@ -2390,13 +2390,15 @@ function firewall_show_status() {
 
     # ufw app list, replace space with "-" and "/n" with space
     #ufw_status="$(ufw status | sed -n '1 p' | cut -d " " -f 2 | tr " " "-" | sed -z 's/\n/ /g' | sed -z 's/--//g')"
-    ufw_status=$(ufw status | grep -oP "Status:\s+\K\w+")
+    ufw_status=$(ufw status | sed 's/\x1b\[[0-9;]*m//g' | awk '/Status:/ {print $2}')
 
     if [[ ${ufw_status} == "active" ]]; then
         ufw_status="true"
     else
         ufw_status="false"
     fi
+
+    echo "${ufw_status}"
 
     # Details begins at line 5
     #counter=5
