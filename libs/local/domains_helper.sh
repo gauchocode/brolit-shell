@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.8
+# Version: 3.3.9
 ################################################################################
 #
 # Domains Helper: useful utils to work with domains.
