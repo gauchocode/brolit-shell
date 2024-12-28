@@ -1,5 +1,3 @@
-version: '3.1'
-
 services:
 
     mysql:
@@ -51,7 +49,8 @@ services:
             - webserver
         image: wordpress:cli
         working_dir: /wordpress
-        user: xfs # This is required to run wordpress-cli with the same user-id as wordpress. 
+        #user: xfs
+        user: ${APP_USER_ID}:${APP_GROUP_ID} # This is required to run wordpress-cli with the same user-id as wordpress.
         volumes:
             - ${WWW_DATA_DIR}:/wordpress
         networks:
@@ -97,5 +96,5 @@ services:
 
 networks:
   internal:
-    name: ${PROJECT_NAME}_network
+    name: ${PROJECT_NAME}_net
     driver: bridge
