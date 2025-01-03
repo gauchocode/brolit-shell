@@ -1,15 +1,23 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.8
+# Version: 3.3.9
 ################################################################################
 #
 # Ref: https://github.com/wordfence/wordfence-cli
 #
 
+LAST_SCAN_DATE_FILE="/root/brolit-shell/tmp/last_scan_date.txt"
+
+SCAN_STATUS_FILE="/root/brolit-shell/tmp/scan_status.txt"
+
+echo "In Progress" > $SCAN_STATUS_FILE
+
 _security_tasks() {
 
   log_section "Security Tasks"
+
+  SCAN_STATUS="No Issues"
 
   for project_dir in "${PROJECTS_PATH}"/*; do
 
@@ -25,6 +33,8 @@ _security_tasks() {
         log_event "info" "Wordfence-cli found malware files in ${project_dir}! Please check result file." "false"
 
         send_notification "⚠️ ${SERVER_NAME}" "Wordfence-cli found malware files in ${project_dir}! Please check result file on server." ""
+
+        SCAN_STATUS="Found Issues"
 
       else
 
@@ -47,11 +57,19 @@ _security_tasks() {
 
     send_notification "⚠️ ${SERVER_NAME}" "Clamav found malware files! Please check result file on server." ""
 
+    SCAN_STATUS="Found Issues"
+
   else
 
     log_event "info" "Clamav has not found malware files" "false"
 
   fi
+
+  date "+%Y-%m-%d %H:%M:%S" > $LAST_SCAN_DATE_FILE
+
+  echo "${SCAN_STATUS}" > $SCAN_STATUS_FILE
+
+  log_event "info" "Scan completed with status: ${SCAN_STATUS}" "false"
 
   ## Commented this, if scand finds too many false positives
 
