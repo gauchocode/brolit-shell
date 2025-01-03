@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.8
+# Version: 3.3.9
 ################################################################################
 #
 # Ref: https://github.com/wordfence/wordfence-cli
@@ -151,7 +151,7 @@ function wordfencecli_malware_scan() {
         display --indent 6 --text "- Starting wordfence-cli malware scan on: ${directory_to_scan}"
 
         # Malware Scan command
-        docker run -v /var/www:/var/www wordfence-cli:latest malware-scan ${scan_option} --accept-terms --license ${license} "${directory_to_scan}"
+        docker run -v /var/www:/var/www -v /root/brolit-shell/tmp:/output wordfence-cli:latest malware-scan ${scan_option} --workers $(echo $(( $(nproc) / 2 ))) --accept-terms --license ${license} "${directory_to_scan}" --output-path /output/$(basename "${directory_to_scan}")_scan.csv
 
     else
 
