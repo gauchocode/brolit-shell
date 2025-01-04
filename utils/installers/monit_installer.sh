@@ -97,6 +97,12 @@ function monit_configure() {
   # Copy monitrc file
   cat "${BROLIT_MAIN_DIR}/config/monit/monitrc" >"/etc/monit/monitrc"
 
+  # Copy docker-mysql config file
+  cp "${BROLIT_MAIN_DIR}/config/monit/docker-mysql" "/etc/monit/conf.d/docker-mysql"
+
+  # Create symbolic link in conf-enabled
+  ln -s "/etc/monit/conf.d/docker-mysql" "/etc/monit/conf-enabled/docker-mysql"
+
   if [[ ${PACKAGES_MONIT_CONFIG_HTTPD_STATUS} == "enabled" ]]; then
 
     # Replace httpd user
@@ -205,4 +211,67 @@ function monit_configure() {
   log_event "info" "Monit configured" "false"
   display --indent 6 --text "- Monit configuration" --result "DONE" --color GREEN
 
+}
+
+################################################################################
+# Monit installer menu
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  nothing
+################################################################################
+
+function monit_installer_menu() {
+
+    local monit_installer_options
+    local chosen_monit_installer_option
+
+    monit_bin="$(package_is_installed "monit")"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 1 ]]; then
+
+        monit_installer_options=(
+            "01)" "INSTALL MONIT"
+        )
+
+        chosen_monit_installer_option="$(whiptail --title "MONIT INSTALLER" --menu "Choose an option" 20 78 10 "${monit_installer_options[@]}" 3>&1 1>&2 2>&3)"
+
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+
+            if [[ ${chosen_monit_installer_option} == *"01"* ]]; then
+                log_subsection "Monit Installer"
+                monit_installer
+                monit_configure
+            fi
+
+        fi
+
+    else
+
+        monit_installer_options=(
+            "01)" "UNINSTALL MONIT"
+            "02)" "RECONFIGURE MONIT"
+        )
+        chosen_monit_installer_option="$(whiptail --title "MONIT INSTALLER" --menu "Choose an option" 20 78 10 "${monit_installer_options[@]}" 3>&1 1>&2 2>&3)"
+
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+
+            if [[ ${chosen_monit_installer_option} == *"01"* ]]; then
+                log_subsection "Monit Installer"
+                monit_purge
+            fi
+
+            if [[ ${chosen_monit_installer_option} == *"02"* ]]; then
+                log_subsection "Monit Installer"
+                monit_configure
+            fi
+
+        fi
+
+    fi
 }
