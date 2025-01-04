@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.9
+# Version: 3.3.10
 ################################################################################
 #
 # Notification Controller: Send notification to configured apps.
