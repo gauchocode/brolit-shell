@@ -31,7 +31,6 @@
 
 - [ ] Borg support.
 - [ ] Core: PHP composer support (installer).
-- [ ] Restore-project: big refactor.
 - [ ] Core: Generate project config file (/etc/brolit/domain_conf.json).
 - [ ] Postgres: Better postgres support. On "DATABASE MANAGEMENT" Menu, add Database Engine selection.
 
@@ -49,7 +48,6 @@
 
 ## For release 3.5
 
-- [ ] Backups: Borg support.
 - [ ] Core: Resolve small "TODOs" comments.
 - [ ] Core: Main menu should not show options that are disabled on .brolit_conf.json
 - [ ] Core: Add borg & borgmatic support.
@@ -61,17 +59,11 @@
 - [ ] Nginx: Multidomain support for nginx.
 - [ ] MySQL: Rename database (with and without WP).
 - [ ] PHP: php_reconfigure maybe PHP config files need to have specific version template.
-- [ ] Nginx: Better nginx config. 
-        Ref https://www.digitalocean.com/community/tools/nginx
 - [ ] Core: Create a way to check if nginx, php, and mysql are configured with the script recommendations.
-- [ ] Core: Docker support (create project from backup).
-        https://github.com/urre/wordpress-nginx-docker-compose
-        https://serverfault.com/questions/1009841/backup-of-dockerized-wordpress
 - [ ] Core: Add support to create projects with a database on different server.
         https://www.digitalocean.com/community/tutorials/automating-the-deployment-of-a-scalable-wordpress-site
         https://spinupwp.com/scaling-wordpress-dedicated-database-server/
 - [ ] Core: maybe with could ask for database user nomenclature. Today is "PROJECTNAME_user" and it could be "PROJECTNAME_PROJECTSTATE_user".
-- [ ] Backups: On backup failure, the email must show what files fails and what files are correct backuped.
 - [ ] Backups: Implement on restore_from_backup easy way to restore all sites.
 - [ ] Scheduled options: backups, malware scans, image optimizations and wp actions (core and plugins updates, checksum and wp re-installation).
 - [ ] Refactor of RESTORE_FROM_SOURCE and complete server config restore.
@@ -105,11 +97,10 @@
 ## For release 3.7
 
 - [ ] Core: Make new standard directory structure for projects "${PROJECTS_PATH}/${SUBDOMAIN}/public". Logs could be stored on "${PROJECTS_PATH}/${SUBDOMAIN}/log"
-- [ ] MySQL: Optimization script.
-- [ ] Backups: Rsync support on mounted device or with SSH config.
-- [ ] PHP: Option to change php version on installed site.
+- [ ] MySQL: Optimization script
+- [ ] PHP: Option to change php version on project
         https://easyengine.io/blog/easyengine-v4-0-15-released/
-- [ ] Installers: Option to select netdata metrics to be reported.
+- [ ] Installers: Option to select netdata metrics to be reported
         https://docs.netdata.cloud/health/notifications/discord/
 - [ ] Include network (lan and internet) tests with iperf and speedtest-cli.
 - [ ] Database Management: Add suport to create databases and users on other server.
