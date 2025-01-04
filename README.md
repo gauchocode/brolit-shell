@@ -31,7 +31,7 @@ BROLIT-SHELL is a server management tool built on **BASH**, designed to expedien
 * Email and Telegram notifications for system alerts.
 * Additional features and tools for enhanced server management.
 
-### :dart: New features! (since v 3.3.9)
+### :dart: New features! (since v 3.3.10)
 * Enhanced Docker Integration:
   * Facilitates backing up, restoring, and deploying new projects within Docker containers.
   * Offers WordPress-cli support specifically tailored for Docker environments.
