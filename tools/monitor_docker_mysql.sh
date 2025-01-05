@@ -1,19 +1,21 @@
 #!/bin/bash
 
 # Get a list of all running containers with "mysql" in their name
-containers=$(docker ps --filter "name=mysql" --format "{{.ID}}")
+running_containers=$(docker ps --filter "ancestor=mysql" --format "{{.Names}}")
 
-# Loop through each container and check its status
-if [ -n "$containers" ]; then
-  for container in $containers; do
-    status=$(docker inspect --format '{{.State.Running}}' "$container")
-    if [ "$status" != "true" ]; then
-      #echo "Container $container is not running"
-      exit 1
-    fi
-  done
-  exit 0
+if [[ -z "$running_containers" ]]; then
+    #echo "No MySQL containers are running."
+    exit 1
 else
-  #echo "No MySQL containers found"
-  exit 0
+    # Loop through each container and check its status
+    for container in $running_containers; do
+        # Chequear si el contenedor responde a un simple query
+        if ! docker exec "$container" mysqladmin ping -h 127.0.0.1 --silent; then
+            #echo "MySQL container $container is not responding."
+            exit 1
+        fi
+    done
 fi
+
+#echo "All MySQL containers are running and responding."
+exit 0
