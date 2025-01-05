@@ -100,9 +100,6 @@ function monit_configure() {
   # Copy docker-mysql config file
   cp "${BROLIT_MAIN_DIR}/config/monit/docker-mysql" "/etc/monit/conf.d/docker-mysql"
 
-  # Create symbolic link in conf-enabled
-  ln -s "/etc/monit/conf.d/docker-mysql" "/etc/monit/conf-enabled/docker-mysql"
-
   if [[ ${PACKAGES_MONIT_CONFIG_HTTPD_STATUS} == "enabled" ]]; then
 
     # Replace httpd user
