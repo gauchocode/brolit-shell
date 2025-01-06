@@ -26,6 +26,9 @@ function php_get_distro_default_version() {
   elif [[ ${DISTRO_V} -eq "2204" ]]; then
     php_v="8.1" #Ubuntu 22.04 LTS Default
 
+  elif [[ ${DISTRO_V} -eq "2404" ]]; then
+    php_v="8.3" #Ubuntu 24.04 LTS Default
+
   else
     # Log
     display --indent 6 --text "- Checking distro version" --result "WARNING" --color YELLOW
