@@ -245,7 +245,7 @@ function system_add_floating_IP() {
 
     log_event "info" "Trying to add ${floating_IP} as floating ip on Ubuntu ${ubuntu_v}" "false"
 
-    if [[ ${ubuntu_v} == "2004" || ${ubuntu_v} == "2204" ]]; then
+    if [[ ${ubuntu_v} == "2004" || ${ubuntu_v} == "2204" || ${ubuntu_v} == "2404" ]]; then
 
         cp "${BROLIT_MAIN_DIR}/config/networking/60-floating-ip.yaml" /etc/netplan/60-floating-ip.yaml
         sed -i "s#your.float.ing.ip#${floating_IP}#" /etc/netplan/60-floating-ip.yaml
@@ -263,9 +263,9 @@ function system_add_floating_IP() {
 
     else
 
-        log_event "error" "This script only works on Ubuntu 22.04, 20.04 or 18.04 ... Exiting" "false"
+        log_event "error" "This script only works on Ubuntu 24.04, 22.04, 20.04 or 18.04 ... Exiting" "false"
         display --indent 6 --text "- Making network config changes" --result "FAIL" --color RED
-        display --indent 8 --text "This script works on Ubuntu 22.04, 20.04 or 18.04"
+        display --indent 8 --text "This script works on Ubuntu 24.04, 22.04, 20.04 or 18.04"
 
         return 1
 
