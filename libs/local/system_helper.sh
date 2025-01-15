@@ -263,9 +263,9 @@ function system_add_floating_IP() {
 
     else
 
-        log_event "error" "This script only works on Ubuntu 24.04, 22.04, 20.04 or 18.04 ... Exiting" "false"
+        log_event "error" "This script only works on Ubuntu 24.04, 22.04 or 20.04 ... Exiting" "false"
         display --indent 6 --text "- Making network config changes" --result "FAIL" --color RED
-        display --indent 8 --text "This script works on Ubuntu 24.04, 22.04, 20.04 or 18.04"
+        display --indent 8 --text "This script works on Ubuntu 24.04, 22.04 or 20.04"
 
         return 1
 

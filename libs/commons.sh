@@ -325,14 +325,14 @@ function _check_distro() {
 
   if [[ ${DISTRO} == "Ubuntu" ]]; then
 
-    MIN_V="$(echo "18.04" | awk -F "." '{print $1$2}')"
+    MIN_V="$(echo "20.04" | awk -F "." '{print $1$2}')"
     DISTRO_V="$(get_ubuntu_version)"
 
     log_event "info" "Actual linux distribution: ${DISTRO} ${DISTRO_V}" "false"
 
     if [[ ! ${DISTRO_V} -ge ${MIN_V} ]]; then
 
-      log_event "warning" "Ubuntu version must be 18.04, 20.04, 22.04 or 24.04! Use this script only for backup or restore purpose." "true"
+      log_event "warning" "Ubuntu version must be 20.04, 22.04 or 24.04! Use this script only for backup or restore purpose." "true"
 
       spinner_start "Script starts in 3 seconds ..."
       sleep 3
