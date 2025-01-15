@@ -1,7 +1,7 @@
 # MySQL
 check process mysql with pidfile /var/run/mysqld/mysqld.pid
-    start program = "/etc/init.d/mysql start"
-    stop program = "/etc/init.d/mysql stop"
+    start program = "/usr/bin/systemctl start mysql"
+    stop program = "/usr/bin/systemctl stop mysql"
     if failed unixsocket /var/run/mysqld/mysqld.sock then restart
     if cpu > 90% for 5 cycles then alert
     if cpu > 90% for 5 cycles then restart
