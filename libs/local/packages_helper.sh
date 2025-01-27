@@ -148,8 +148,8 @@ function package_install() {
   # Will remove all apt-get command output
   # sudo DEBIAN_FRONTEND=noninteractive apt-get install PACKAGE -y -qq < /dev/null > /dev/null
 
-  # apt command
-  sudo DEBIAN_FRONTEND=noninteractive apt-get --yes install "${package}" -qq </dev/null >/dev/null
+  # apt command in silent mode
+  DEBIAN_FRONTEND=noninteractive apt-get --yes install "${package}" -qq </dev/null >/dev/null
 
   exitstatus=$?
   if [[ $exitstatus -eq 0 ]]; then
