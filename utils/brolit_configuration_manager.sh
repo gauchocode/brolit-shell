@@ -47,8 +47,7 @@ function _brolit_configuration_load_server_config() {
     fi
 
     if [[ ${SERVER_ROLE_WEBSERVER} != "enabled" ]] && [[ ${SERVER_ROLE_DATABASE} != "enabled" ]]; then
-        log_event "warning" "No server role enabled." "true"
-        #exit 1
+        display --indent 6 --text "- No server role enabled" --result "WARNING" --color YELLOW
     fi
 
     # Read optional vars from server config file
