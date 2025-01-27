@@ -340,10 +340,15 @@ function _check_distro() {
 
     else
 
-      if [[ ${DISTRO} == "Pop!_OS" ]]; then
+      if [[ ${DISTRO} == "Pop!_OS" || ${DISTRO} == "Debian" ]]; then
 
-        log_event "warning" "BROLIT Shell has partial support for Pop!_OS, some features may not work as expected!" "true"
+        log_event "warning" "BROLIT Shell has partial support for Debian, some features may not work as expected!" "true"
+      
+      else
 
+        log_event "error" "Only Ubuntu 20.04, 22.04 or 24.04 are supported! Exiting ..." "false"
+        return 0
+      
       fi
 
     fi
