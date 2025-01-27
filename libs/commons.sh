@@ -338,18 +338,18 @@ function _check_distro() {
       sleep 3
       spinner_stop $?
 
+    fi
+
+  else
+
+    if [[ ${DISTRO} == "Pop!_OS" || ${DISTRO} == "Debian" ]]; then
+
+      log_event "warning" "BROLIT Shell has partial support for Debian, some features may not work as expected!" "true"
+
     else
 
-      if [[ ${DISTRO} == "Pop!_OS" || ${DISTRO} == "Debian" ]]; then
-
-        log_event "warning" "BROLIT Shell has partial support for Debian, some features may not work as expected!" "true"
-      
-      else
-
-        log_event "error" "Only Ubuntu 20.04, 22.04 or 24.04 are supported! Exiting ..." "true"
-        return 0
-      
-      fi
+      log_event "error" "Only Ubuntu 20.04, 22.04 or 24.04 are supported! Exiting ..." "true"
+      return 0
 
     fi
 
@@ -1603,7 +1603,7 @@ function compress() {
 
     # Log
     clear_previous_lines "2"
-    
+
     display --indent 6 --text "- Compressing ${to_backup_string}" --result "DONE" --color GREEN
     display --indent 6 --text "- Testing backup file" --result "SKIPPED" --color YELLOW
 
@@ -1640,7 +1640,7 @@ function brolit_borgmatic_cronjob_install() {
     log_event "info" "Cron file for root does not exist, creating ..." "false"
 
     touch $borgmatic_cron_file
-    echo "50 00 * * * root PATH=$PATH:/usr/bin:/usr/local/bin /root/.local/bin/borgmatic --verbosity -1 --syslog-verbosity 1" >> $borgmatic_cron_file
+    echo "50 00 * * * root PATH=$PATH:/usr/bin:/usr/local/bin /root/.local/bin/borgmatic --verbosity -1 --syslog-verbosity 1" >>$borgmatic_cron_file
 
     chmod +x $borgmatic_cron_file
 
@@ -2031,13 +2031,13 @@ function menu_cron_script_tasks() {
     if [[ ${chosen_type} == *"02"* ]]; then
 
       # BORGMATIC-TASKS
-      suggested_cron="0 * * * *" # Every hour 
+      suggested_cron="0 * * * *" # Every hour
       scheduled_time="$(whiptail_input "CRON BORGMATIC-TASKS" "Insert a cron expression for selected task:" "${suggested_cron}")"
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
         # Borgmatic jobs
         brolit_cronjob_install "${BROLIT_MAIN_DIR}/cron/borgmatic_tasks.sh" "0 * * * *"
-        brolit_borgmatic_cronjob_install 
+        brolit_borgmatic_cronjob_install
       fi
 
     fi
