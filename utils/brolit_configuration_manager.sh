@@ -47,8 +47,7 @@ function _brolit_configuration_load_server_config() {
     fi
 
     if [[ ${SERVER_ROLE_WEBSERVER} != "enabled" ]] && [[ ${SERVER_ROLE_DATABASE} != "enabled" ]]; then
-        log_event "error" "At least one server role need to be defined." "true"
-        log_event "error" "Please edit the file .brolit_conf.json and execute BROLIT again." "true"
+        log_event "warning" "No server role enabled." "true"
         exit 1
     fi
 
