@@ -346,7 +346,7 @@ function _check_distro() {
       
       else
 
-        log_event "error" "Only Ubuntu 20.04, 22.04 or 24.04 are supported! Exiting ..." "false"
+        log_event "error" "Only Ubuntu 20.04, 22.04 or 24.04 are supported! Exiting ..." "true"
         return 0
       
       fi
