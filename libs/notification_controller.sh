@@ -14,7 +14,7 @@
 # Arguments:
 #   ${1} = {notification_title}
 #   ${2} = {notification_content}
-#   ${3} = {notification_type}
+#   ${3} = {notification_type} - Options: "alert", "info", "success"
 #
 # Outputs:
 #   0 if it utils were installed, 1 on error.
@@ -34,13 +34,13 @@ function send_notification() {
 
     if [[ ${NOTIFICATION_DISCORD_STATUS} == "enabled" ]]; then
     
-        discord_send_notification "${notification_title}" "${notification_content}"
+        discord_send_notification "${notification_title}" "${notification_content}" "${notification_type}"
     
     fi
 
     if [[ ${NOTIFICATION_NTFY_STATUS} == "enabled" ]]; then
 
-        ntfy_send_notification "${notification_title}" "${notification_content}"
+        ntfy_send_notification "${notification_title}" "${notification_content}" "${notification_type}"
 
     fi
 

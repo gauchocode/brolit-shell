@@ -25,7 +25,25 @@ function discord_send_notification() {
 
     local notification_title="${1}"
     local notification_content="${2}"
-    #local notification_type="${3}"
+    local notification_type="${3}"
+
+    # Format content based on notification type
+    case "${notification_type}" in
+
+        "alert")
+            notification_content=":warning: ${notification_content}"
+            ;;
+        "info")
+            notification_content=":information_source: ${notification_content}"
+            ;;
+        "success")
+            notification_content=":white_check_mark: ${notification_content}"
+            ;;
+        *)
+            # Default format
+            ;;
+            
+    esac
 
     # Replace all <br/> occurrences with "\n"
     notification_content="${notification_content//<br\/>/\\n}"

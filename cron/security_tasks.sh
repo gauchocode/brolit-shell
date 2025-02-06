@@ -11,7 +11,7 @@ LAST_SCAN_DATE_FILE="/root/brolit-shell/tmp/last_scan_date.txt"
 
 SCAN_STATUS_FILE="/root/brolit-shell/tmp/scan_status.txt"
 
-echo "In Progress" > $SCAN_STATUS_FILE
+echo "In Progress" >$SCAN_STATUS_FILE
 
 _security_tasks() {
 
@@ -23,29 +23,29 @@ _security_tasks() {
 
     if [[ -d "$project_dir" ]]; then
 
-    if [[ -d "$project_dir/wordpress" || ( -f "$project_dir/index.php" && -d "$project_dir/wp-content" ) ]]; then
+      if [[ -d "$project_dir/wordpress" || (-f "$project_dir/index.php" && -d "$project_dir/wp-content") ]]; then
 
-      # Wordfence-cli Scan
-      wordfencecli_scan_result="$(wordfencecli_malware_scan "${project_dir}" "true")"
+        # Wordfence-cli Scan
+        wordfencecli_scan_result="$(wordfencecli_malware_scan "${project_dir}" "true")"
 
-      if [[ ${wordfencecli_scan_result} == "true" ]]; then
+        if [[ ${wordfencecli_scan_result} == "true" ]]; then
 
-        log_event "info" "Wordfence-cli found malware files in ${project_dir}! Please check result file." "false"
+          log_event "info" "Wordfence-cli found malware files in ${project_dir}! Please check result file." "false"
+          send_notification "⚠️ ${SERVER_NAME}" "Wordfence-cli found malware files in ${project_dir}! Please check result file on server." "alert"
 
-        send_notification "⚠️ ${SERVER_NAME}" "Wordfence-cli found malware files in ${project_dir}! Please check result file on server." ""
+          SCAN_STATUS="Found Issues"
 
-        SCAN_STATUS="Found Issues"
+        else
 
-      else
+          log_event "info" "Wordfence-cli has not found malware files in ${project_dir}" "false"
+          send_notification "🟢 ${SERVER_NAME}" "Wordfence-cli did not find any malware files in ${project_dir}. No action needed." "info"
 
-        log_event "info" "Wordfence-cli has not found malware files in ${project_dir}" "false"
-
-        #send_notification "🟢 ${SERVER_NAME}" "Wordfence-cli did not find any malware files in ${project_dir}. No action needed." ""
-
+        fi
+        
       fi
-    fi
 
     fi
+
   done
 
   # Clamav Scan
@@ -54,20 +54,20 @@ _security_tasks() {
   if [[ ${clamscan_result} == "true" ]]; then
 
     log_event "info" "Clamav found malware files! Please check result file." "false"
-
-    send_notification "⚠️ ${SERVER_NAME}" "Clamav found malware files! Please check result file on server." ""
+    send_notification "⚠️ ${SERVER_NAME}" "Clamav found malware files! Please check result file on server." "alert"
 
     SCAN_STATUS="Found Issues"
 
   else
 
     log_event "info" "Clamav has not found malware files" "false"
+    send_notification "⚠️ ${SERVER_NAME}" "Clamav has not found malware files on server. No action needed." "info"
 
   fi
 
-  date "+%Y-%m-%d %H:%M:%S" > $LAST_SCAN_DATE_FILE
+  date "+%Y-%m-%d %H:%M:%S" >$LAST_SCAN_DATE_FILE
 
-  echo "${SCAN_STATUS}" > $SCAN_STATUS_FILE
+  echo "${SCAN_STATUS}" >$SCAN_STATUS_FILE
 
   log_event "info" "Scan completed with status: ${SCAN_STATUS}" "false"
 
@@ -77,7 +77,7 @@ _security_tasks() {
   #custom_scan_result="$(security_custom_scan "${PROJECTS_PATH}")"
   #if [[ ${custom_scan_result} != "" ]]; then
   #
-  #    send_notification "⚠️ ${SERVER_NAME}" "Custom scan result: ${custom_scan_result}" ""
+  #    send_notification "⚠️ ${SERVER_NAME}" "Custom scan result: ${custom_scan_result}" "alert"
   #
   #fi
 

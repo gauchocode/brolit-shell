@@ -99,7 +99,7 @@ function backup_manager_menu() {
 
       # Sending notifications
       mail_send_notification "${email_subject}" "${mail_html}"
-      send_notification "✅ ${SERVER_NAME}" "Task: 'Backup All' completed." ""
+      send_notification "✅ ${SERVER_NAME}" "Task: 'Backup All' completed." "success"
 
     fi
     
@@ -123,7 +123,7 @@ function backup_manager_menu() {
 
       # Sending notifications
       mail_send_notification "${email_subject}" "${email_content}"
-      send_notification "✅ ${SERVER_NAME}" "Task: 'Databases Backup' completed." ""
+      send_notification "✅ ${SERVER_NAME}" "Task: 'Databases Backup' completed." "success"
 
     fi
 
@@ -149,7 +149,7 @@ function backup_manager_menu() {
 
       # Sending notifications
       mail_send_notification "${email_subject}" "${email_content}"
-      send_notification "✅ ${SERVER_NAME}" "Task: 'Files Backup' completed." ""
+      send_notification "✅ ${SERVER_NAME}" "Task: 'Files Backup' completed." "success"
 
     fi
 
@@ -183,7 +183,7 @@ function backup_manager_menu() {
 
         # Sending notifications
         #mail_send_notification "${email_subject}" "${email_content}"
-        send_notification "✅ ${SERVER_NAME}" "Task: 'Project Backup' completed." ""
+        send_notification "✅ ${SERVER_NAME}" "Task: 'Project Backup' completed." "success"
 
       else
 
@@ -209,14 +209,14 @@ function backup_manager_menu() {
         display --indent 6 --text "- Docker Volumes Backup" --result "FAILED" --color RED
 
         # Send notification
-        send_notification "❌ ${SERVER_NAME} " "Docker Volumes Backup failed." ""
+        send_notification "❌ ${SERVER_NAME} " "Docker Volumes Backup failed." "alert"
 
         return 1
 
       fi
 
       # Send notification
-      send_notification "✅ ${SERVER_NAME} " "Task: 'Docker Volumes Backup' completed." ""
+      send_notification "✅ ${SERVER_NAME} " "Task: 'Docker Volumes Backup' completed." "success"
 
     fi
 
@@ -344,7 +344,7 @@ function restore_docker_volume() {
       log_event "info" "Docker volume restore completed for ${docker_volume}" "false"
       
       # Send notification
-      send_notification "✅ ${SERVER_NAME} " "Docker volume restore completed for ${docker_volume}." ""
+      send_notification "✅ ${SERVER_NAME} " "Docker volume restore completed for ${docker_volume}." "success"
   
       return 0
       
@@ -356,7 +356,7 @@ function restore_docker_volume() {
       display --indent 6 --text "- Docker volume restore" --result "FAILED" --color RED
   
       # Send notification
-      send_notification "❌ ${SERVER_NAME} " "Docker volume restore failed for ${docker_volume}." ""
+      send_notification "❌ ${SERVER_NAME} " "Docker volume restore failed for ${docker_volume}." "alert"
   
       return 1
 
