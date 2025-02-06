@@ -592,7 +592,7 @@ function restore_backup_from_public_url() {
   BODY_DB='Database: '${project_name}'_'${project_stage}'<br/>Database User: '${project_name}'_user <br/>Database User Pass: '${database_user_passw}'<br/>'
   HTMLCLOSE='</body></html>'
 
-  mail_send_notification "✅ ${SERVER_NAME} - Project ${project_name} restored!" "${HTMLOPEN} ${BODY_SRV_MIG} ${BODY_DB} ${BODY_CLF} ${HTMLCLOSE}"
+  mail_send_notification "✅ ${SERVER_NAME} - Project ${project_name} restored!" "${HTMLOPEN} ${BODY_SRV_MIG} ${BODY_DB} ${BODY_CLF} ${HTMLCLOSE}" "success"
 
 }
 
@@ -673,7 +673,7 @@ function restore_backup_from_storage() {
       [[ $? -eq 1 ]] && display --indent 6 --text "- Project Restore" --result "SKIPPED" --color YELLOW && return 1
 
       # Send notification
-      send_notification "✅ ${SERVER_NAME}" "Project ${chosen_project} restored!" "0"
+      send_notification "✅ ${SERVER_NAME}" "Project ${chosen_project} restored!" "success"
 
       ;;
 
