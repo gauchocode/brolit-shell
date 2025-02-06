@@ -1081,6 +1081,6 @@ define('WP_REDIS_HOST','redis');\n" "${project_path}/wordpress/wp-config.php"
     display --indent 8 --text "for domain ${project_domain}"
 
     # Send notification
-    send_notification "✅ ${SERVER_NAME}" "New ${project_type} project (docker) installation for '${project_domain}' finished ok!" ""
+    send_notification "✅ ${SERVER_NAME}" "New ${project_type} project (docker) installation for '${project_domain}' finished ok!" "success"
 
 }
