@@ -47,7 +47,7 @@ function ntfy_send_notification() {
     log_event "debug" "${CURL} -H 'Title: ${notification_title}' -H 'Priority: ${priority}' -d '${notification_content}' -u '${NOTIFICATION_NTFY_USERNAME}:${NOTIFICATION_NTFY_PASSWORD}' '${NOTIFICATION_NTFY_SERVER}/${NOTIFICATION_NTFY_TOPIC}'" "false"
 
     # Ntfy command with priority
-    ${CURL} -H "Title: ${notification_title}" -H "Priority: ${priority}" -d "${notification_content}" -u "${NOTIFICATION_NTFY_USERNAME}:${NOTIFICATION_NTFY_PASSWORD}" "${NOTIFICATION_NTFY_SERVER}/${NOTIFICATION_NTFY_TOPIC}"
+    ${CURL} -H "Title: ${notification_title}" -H "Priority: ${priority}" -d "${notification_content}" -u "${NOTIFICATION_NTFY_USERNAME}:${NOTIFICATION_NTFY_PASSWORD}" "${NOTIFICATION_NTFY_SERVER}/${NOTIFICATION_NTFY_TOPIC}" > /dev/null 2>&1
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then

@@ -2040,7 +2040,7 @@ function project_install() {
   display --indent 8 --text "for domain ${project_domain}"
 
   # Send notification
-  send_notification "✅ ${SERVER_NAME}" "New ${project_type} project installation for '${project_domain}' finished ok!" "success"
+  send_notification "${SERVER_NAME}" "New ${project_type} project installation for '${project_domain}' finished ok!" "success"
 
 }
 
@@ -2114,7 +2114,7 @@ function project_delete_files() {
       copy_files "/etc/nginx/sites-available/${project_domain}" "${BROLIT_TMP_DIR}"
 
       # Send notification
-      send_notification "⚠️ ${SERVER_NAME}" "Project files for '${project_domain}' deleted." "info"
+      send_notification "${SERVER_NAME}" "Project files for '${project_domain}' deleted." "info"
 
       return 0
 
@@ -2196,7 +2196,7 @@ function project_delete_database() {
         database_drop "${chosen_database}" "${database_engine}"
 
         # Send notification
-        send_notification "⚠️ ${SERVER_NAME}" "Project database'${chosen_database}' deleted!" "info"
+        send_notification "${SERVER_NAME}" "Project database'${chosen_database}' deleted!" "info"
 
       fi
 
@@ -2461,7 +2461,7 @@ function delete_docker_project() {
       database_drop "${db_name}" "${db_engine}" "${container_name}"
 
       # Send notification
-      send_notification "⚠️ ${SERVER_NAME}" "Project database'${db_name}' deleted!" "info"
+      send_notification "${SERVER_NAME}" "Project database'${db_name}' deleted!" "info"
 
     fi
 

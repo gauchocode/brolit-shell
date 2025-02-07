@@ -31,17 +31,17 @@ _security_tasks() {
         if [[ ${wordfencecli_scan_result} == "true" ]]; then
 
           log_event "info" "Wordfence-cli found malware files in ${project_dir}! Please check result file." "false"
-          send_notification "⚠️ ${SERVER_NAME}" "Wordfence-cli found malware files in ${project_dir}! Please check result file on server." "alert"
+          send_notification "${SERVER_NAME}" "Wordfence-cli found malware files in ${project_dir}! Please check result file on server." "alert"
 
           SCAN_STATUS="Found Issues"
 
         else
 
           log_event "info" "Wordfence-cli has not found malware files in ${project_dir}" "false"
-          send_notification "🟢 ${SERVER_NAME}" "Wordfence-cli did not find any malware files in ${project_dir}. No action needed." "info"
+          send_notification "${SERVER_NAME}" "Wordfence-cli did not find any malware files in ${project_dir}. No action needed." "info"
 
         fi
-        
+
       fi
 
     fi
@@ -54,14 +54,14 @@ _security_tasks() {
   if [[ ${clamscan_result} == "true" ]]; then
 
     log_event "info" "Clamav found malware files! Please check result file." "false"
-    send_notification "⚠️ ${SERVER_NAME}" "Clamav found malware files! Please check result file on server." "alert"
+    send_notification "${SERVER_NAME}" "Clamav found malware files! Please check result file on server." "alert"
 
     SCAN_STATUS="Found Issues"
 
   else
 
     log_event "info" "Clamav has not found malware files" "false"
-    send_notification "⚠️ ${SERVER_NAME}" "Clamav has not found malware files on server. No action needed." "info"
+    send_notification "${SERVER_NAME}" "Clamav has not found malware files on server. No action needed." "info"
 
   fi
 
@@ -77,7 +77,7 @@ _security_tasks() {
   #custom_scan_result="$(security_custom_scan "${PROJECTS_PATH}")"
   #if [[ ${custom_scan_result} != "" ]]; then
   #
-  #    send_notification "⚠️ ${SERVER_NAME}" "Custom scan result: ${custom_scan_result}" "alert"
+  #    send_notification "${SERVER_NAME}" "Custom scan result: ${custom_scan_result}" "alert"
   #
   #fi
 
