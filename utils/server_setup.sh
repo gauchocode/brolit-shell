@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.10
+# Version: 3.3.11
 ################################################################################
 #
 # Server Setup: Perform server setup actions.
@@ -189,11 +189,11 @@ function server_app_setup() {
                 # Remove old docker packages
                 docker_purge
                 # Install docker
-                if [[ ${BROLIT_SETUP_CONFIG_CONTAINER_ENGINE} == "docker" ]]; then
+                if [[ ${CONTAINER_ENGINE} == "docker" ]]; then
                     docker_installer
                     # Restart docker service
                     service docker restart
-                elif [[ ${BROLIT_SETUP_CONFIG_CONTAINER_ENGINE} == "podman" ]]; then
+                elif [[ ${CONTAINER_ENGINE} == "podman" ]]; then
                     podman_installer
                 fi
             fi

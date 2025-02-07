@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.10
+# Version: 3.3.11
 ################################################################################
 #
 # MySQL Helper: Perform mysql actions.
@@ -219,10 +219,10 @@ function mysql_list_databases() {
 
         # Get MYSQL_USER and MYSQL_PASSWORD from container
         ## Ref: https://www.baeldung.com/ops/docker-get-environment-variable
-        mysql_container_user="$(docker exec -i "${container_name}" printenv MYSQL_USER)"
-        mysql_container_user_pssw="$(docker exec -i "${container_name}" printenv MYSQL_PASSWORD)"
+        mysql_container_user="$(${CONTAINER_ENGINE} exec -i "${container_name}" printenv MYSQL_USER)"
+        mysql_container_user_pssw="$(${CONTAINER_ENGINE} exec -i "${container_name}" printenv MYSQL_PASSWORD)"
 
-        mysql_exec="docker exec -i ${container_name} mysql -u${mysql_container_user} -p${mysql_container_user_pssw}"
+        mysql_exec="${CONTAINER_ENGINE} exec -i ${container_name} mysql -u${mysql_container_user} -p${mysql_container_user_pssw}"
 
     else
 
@@ -293,10 +293,10 @@ function mysql_users_list() {
 
         # Get MYSQL_USER and MYSQL_PASSWORD from container
         ## Ref: https://www.baeldung.com/ops/docker-get-environment-variable
-        mysql_container_user="$(docker exec -i "${container_name}" printenv MYSQL_USER)"
-        mysql_container_user_pssw="$(docker exec -i "${container_name}" printenv MYSQL_PASSWORD)"
+        mysql_container_user="$(${CONTAINER_ENGINE} exec -i "${container_name}" printenv MYSQL_USER)"
+        mysql_container_user_pssw="$(${CONTAINER_ENGINE} exec -i "${container_name}" printenv MYSQL_PASSWORD)"
 
-        mysql_exec="docker exec -i ${container_name} mysql -u${mysql_container_user} -p${mysql_container_user_pssw}"
+        mysql_exec="${CONTAINER_ENGINE} exec -i ${container_name} mysql -u${mysql_container_user} -p${mysql_container_user_pssw}"
 
     else
 
@@ -882,10 +882,10 @@ function mysql_database_import() {
 
         # Get MYSQL_USER and MYSQL_PASSWORD from container
         ## Ref: https://www.baeldung.com/ops/docker-get-environment-variable
-        mysql_container_user="$(docker exec -i "${container_name}" printenv MYSQL_USER)"
-        mysql_container_user_pssw="$(docker exec -i "${container_name}" printenv MYSQL_PASSWORD)"
+        mysql_container_user="$(${CONTAINER_ENGINE} exec -i "${container_name}" printenv MYSQL_USER)"
+        mysql_container_user_pssw="$(${CONTAINER_ENGINE} exec -i "${container_name}" printenv MYSQL_PASSWORD)"
 
-        mysql_exec="docker exec -i ${container_name} mysql -u${mysql_container_user} -p${mysql_container_user_pssw}"
+        mysql_exec="${CONTAINER_ENGINE} exec -i ${container_name} mysql -u${mysql_container_user} -p${mysql_container_user_pssw}"
 
     else
 
@@ -957,10 +957,10 @@ function mysql_database_export() {
 
         # Get MYSQL_USER and MYSQL_PASSWORD from container
         ## Ref: https://www.baeldung.com/ops/docker-get-environment-variable
-        mysql_container_user="$(docker exec -i "${container_name}" printenv MYSQL_USER)"
-        mysql_container_user_pssw="$(docker exec -i "${container_name}" printenv MYSQL_PASSWORD)"
+        mysql_container_user="$(${CONTAINER_ENGINE} exec -i "${container_name}" printenv MYSQL_USER)"
+        mysql_container_user_pssw="$(${CONTAINER_ENGINE} exec -i "${container_name}" printenv MYSQL_PASSWORD)"
 
-        mysql_exec="docker exec -i ${container_name} mysqldump -u${mysql_container_user} -p${mysql_container_user_pssw}"
+        mysql_exec="${CONTAINER_ENGINE} exec -i ${container_name} mysqldump -u${mysql_container_user} -p${mysql_container_user_pssw}"
 
     else
 

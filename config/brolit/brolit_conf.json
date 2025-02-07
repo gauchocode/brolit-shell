@@ -2,7 +2,7 @@
     "BROLIT_SETUP": {
         "config": [
             {
-                "version": "3.10.6",
+                "version": "3.11.1",
                 "debug": "true",
                 "skip_test": "true",
                 "tmp_dir": "tmp",

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.10
+# Version: 3.3.11
 ################################################################################
 #
 # Server Config Manager: Brolit server configuration management.
@@ -1605,7 +1605,7 @@ function _brolit_configuration_load_docker() {
     declare -g PACKAGES_DOCKER_STATUS
     declare -g CONTAINER_ENGINE
 
-    CONTAINER_ENGINE="${BROLIT_SETUP_CONFIG_CONTAINER_ENGINE}"
+    CONTAINER_ENGINE="${CONFIGURED_CONTAINER_ENGINE}"
     if [[ -z ${CONTAINER_ENGINE} ]]; then
         CONTAINER_ENGINE="docker"
     fi
@@ -2030,6 +2030,7 @@ function brolit_configuration_setup_check() {
     declare -g DEBUG
     declare -g SKIPTESTS
     declare -g BROLIT_TMP_DIR
+    declare -g CONFIGURED_CONTAINER_ENGINE
 
     # Read vars from server config file
 
@@ -2051,6 +2052,13 @@ function brolit_configuration_setup_check() {
         CHECKPKGS="$(json_read_field "${server_config_file}" "BROLIT_SETUP.config[].check_packages")"
         if [[ ${CHECKPKGS} != "true" && ${CHECKPKGS} != "false" ]]; then
             die "check_packages value should be 'true' or 'false'"
+        fi
+    fi
+
+    if [[ -z ${CONFIGURED_CONTAINER_ENGINE} ]]; then
+        CONFIGURED_CONTAINER_ENGINE="$(json_read_field "${server_config_file}" "BROLIT_SETUP.config[].container_engine")"
+        if [[ ${CONFIGURED_CONTAINER_ENGINE} != "docker" && ${CONFIGURED_CONTAINER_ENGINE} != "podman" ]]; then
+            die "container_engine value should be 'docker' or 'podman'"
         fi
     fi
 

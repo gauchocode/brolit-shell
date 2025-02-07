@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.10
+# Version: 3.3.11
 ################################################################################
 #
 # Postgres Helper: Perform postgres actions.
@@ -217,10 +217,10 @@ function postgres_list_databases() {
 
         # Get POSTGRES_USER and POSTGRES_PASSWORD from container
         ## Ref: https://www.baeldung.com/ops/docker-get-environment-variable
-        psql_container_user="$(docker exec -i "${container_name}" printenv POSTGRES_USER)"
-        psql_container_user_pssw="$(docker exec -i "${container_name}" printenv POSTGRES_PASSWORD)"
+        psql_container_user="$(${CONTAINER_ENGINE} exec -i "${container_name}" printenv POSTGRES_USER)"
+        psql_container_user_pssw="$(${CONTAINER_ENGINE} exec -i "${container_name}" printenv POSTGRES_PASSWORD)"
         # Set psql_exec
-        psql_exec="docker exec -i ${container_name} env PGPASSWORD=${psql_container_user_pssw} psql -U ${psql_container_user} --quiet"
+        psql_exec="${CONTAINER_ENGINE} exec -i ${container_name} env PGPASSWORD=${psql_container_user_pssw} psql -U ${psql_container_user} --quiet"
 
     else
         # Set psql_exec
@@ -295,10 +295,10 @@ function postgres_users_list() {
 
         # Get POSTGRES_USER and POSTGRES_PASSWORD from container
         ## Ref: https://www.baeldung.com/ops/docker-get-environment-variable
-        psql_container_user="$(docker exec -i "${container_name}" printenv POSTGRES_USER)"
-        psql_container_user_pssw="$(docker exec -i "${container_name}" printenv POSTGRES_PASSWORD)"
+        psql_container_user="$(${CONTAINER_ENGINE} exec -i "${container_name}" printenv POSTGRES_USER)"
+        psql_container_user_pssw="$(${CONTAINER_ENGINE} exec -i "${container_name}" printenv POSTGRES_PASSWORD)"
         # Set psql_exec
-        psql_exec="docker exec -i ${container_name} env PGPASSWORD=${psql_container_user_pssw} psql -U ${psql_container_user} --quiet"
+        psql_exec="${CONTAINER_ENGINE} exec -i ${container_name} env PGPASSWORD=${psql_container_user_pssw} psql -U ${psql_container_user} --quiet"
 
     else
         # Set psql_exec
@@ -876,10 +876,10 @@ function postgres_database_import() {
 
         # Get POSTGRES_USER and POSTGRES_PASSWORD from container
         ## Ref: https://www.baeldung.com/ops/docker-get-environment-variable
-        psql_container_user="$(docker exec -i "${container_name}" printenv POSTGRES_USER)"
-        psql_container_user_pssw="$(docker exec -i "${container_name}" printenv POSTGRES_PASSWORD)"
+        psql_container_user="$(${CONTAINER_ENGINE} exec -i "${container_name}" printenv POSTGRES_USER)"
+        psql_container_user_pssw="$(${CONTAINER_ENGINE} exec -i "${container_name}" printenv POSTGRES_PASSWORD)"
         # Set psql_exec
-        psql_exec="docker exec -i ${container_name} env PGPASSWORD=${psql_container_user_pssw} psql -U ${psql_container_user} --quiet"
+        psql_exec="${CONTAINER_ENGINE} exec -i ${container_name} env PGPASSWORD=${psql_container_user_pssw} psql -U ${psql_container_user} --quiet"
 
     else
         # Set psql_exec
@@ -949,10 +949,10 @@ function postgres_database_export() {
 
         # Get POSTGRES_USER and POSTGRES_PASSWORD from container
         ## Ref: https://www.baeldung.com/ops/docker-get-environment-variable
-        psql_container_user="$(docker exec -i "${container_name}" printenv POSTGRES_USER)"
-        psql_container_user_pssw="$(docker exec -i "${container_name}" printenv POSTGRES_PASSWORD)"
+        psql_container_user="$(${CONTAINER_ENGINE} exec -i "${container_name}" printenv POSTGRES_USER)"
+        psql_container_user_pssw="$(${CONTAINER_ENGINE} exec -i "${container_name}" printenv POSTGRES_PASSWORD)"
         # Set psql_exec
-        psql_exec="docker exec -i ${container_name} env PGPASSWORD=${psql_container_user_pssw} pg_dump -U ${psql_container_user}"
+        psql_exec="${CONTAINER_ENGINE} exec -i ${container_name} env PGPASSWORD=${psql_container_user_pssw} pg_dump -U ${psql_container_user}"
 
     else
         # Set psql_exec
