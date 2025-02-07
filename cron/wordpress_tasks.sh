@@ -75,7 +75,7 @@ _wordpress_cronned_tasks() {
           done <"${wpcli_core_verify_results}"
 
           # Send notification
-          send_notification "⛔ ${SERVER_NAME}" "WordPress checksum failed for site ${project_name}:\n\n${notification_text}" ""
+          send_notification "${SERVER_NAME}" "WordPress checksum failed for site ${project_name}:\n\n${notification_text}" ""
 
           # Log
           log_event "error" "WordPress Checksum failed!" "false"
