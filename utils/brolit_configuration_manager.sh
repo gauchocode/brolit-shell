@@ -1603,6 +1603,12 @@ function _brolit_configuration_load_docker() {
     # Globals
     declare -g DOCKER
     declare -g PACKAGES_DOCKER_STATUS
+    declare -g CONTAINER_ENGINE
+
+    CONTAINER_ENGINE="${BROLIT_SETUP_CONFIG_CONTAINER_ENGINE}"
+    if [[ -z ${CONTAINER_ENGINE} ]]; then
+        CONTAINER_ENGINE="docker"
+    fi
 
     PACKAGES_DOCKER_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.docker[].status")"
 
@@ -1623,7 +1629,7 @@ function _brolit_configuration_load_docker() {
 
     fi
 
-    export DOCKER PACKAGES_DOCKER_STATUS
+    export DOCKER PACKAGES_DOCKER_STATUS CONTAINER_ENGINE
 
 }
 

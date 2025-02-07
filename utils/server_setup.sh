@@ -189,13 +189,18 @@ function server_app_setup() {
                 # Remove old docker packages
                 docker_purge
                 # Install docker
-                docker_installer
-                # Restart docker service
-                service docker restart
+                if [[ ${BROLIT_SETUP_CONFIG_CONTAINER_ENGINE} == "docker" ]]; then
+                    docker_installer
+                    # Restart docker service
+                    service docker restart
+                elif [[ ${BROLIT_SETUP_CONFIG_CONTAINER_ENGINE} == "podman" ]]; then
+                    podman_installer
+                fi
             fi
         else
             # Purge docker packages
             docker_purge
+            podman_purge
         fi
 
         ;;

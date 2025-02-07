@@ -4,39 +4,10 @@
 # Version: 3.3.10
 ################################################################################
 #
-# Docker Helper: Perform docker actions.
+# Docker Helper: Perform container actions.
 #
 ################################################################################
 
-################################################################################
-# Get docker version.
-#
-# Arguments:
-#   none
-#
-# Outputs:
-#   ${docker_version} if ok, 1 on error.
-################################################################################
-
-function docker_version() {
-
-    local docker_version
-    local docker
-
-    docker="$(package_is_installed "docker-ce")"
-    if [[ -n ${docker} ]]; then
-
-        docker_version="$(docker version --format '{{.Server.Version}}')"
-
-        echo "${docker_version}" && return 0
-
-    else
-
-        return 1
-
-    fi
-
-}
 
 ################################################################################
 # Execute a docker compose pull
@@ -53,23 +24,23 @@ function docker_compose_pull() {
     local compose_file="${1}"
 
     # Log
-    display --indent 6 --text "- Pulling docker stack images"
-    log_event "debug" "Running: docker compose -f ${compose_file} pull" "false"
+    display --indent 6 --text "- Pulling container stack images"
+    log_event "debug" "Running: ${CONTAINER_ENGINE} compose -f ${compose_file} pull" "false"
 
-    # Execute docker compose command
+    # Execute container compose command
     ## Options:
     ##    -f, --force   Don't ask to confirm removal
     ##    -s, --stop    Stop the containers, if required, before removing
     ##    -v            Remove any anonymous volumes attached to containers
-    docker compose -f "${compose_file}" pull >/dev/null 2>&1
+    ${CONTAINER_ENGINE} compose -f "${compose_file}" pull >/dev/null 2>&1
     exitstatus=$?
 
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Log
         clear_previous_lines "1"
-        display --indent 6 --text "- Pulling docker stack images" --result "DONE" --color GREEN
-        log_event "info" "Docker stack pulled ok" "false"
+        display --indent 6 --text "- Pulling container stack images" --result "DONE" --color GREEN
+        log_event "info" "Container stack pulled ok" "false"
 
         return 0
 
@@ -77,8 +48,8 @@ function docker_compose_pull() {
 
         # Log
         clear_previous_lines "1"
-        display --indent 6 --text "- Pulling docker stack images" --result "FAIL" --color RED
-        log_event "error" "Docker stack pull failed" "false"
+        display --indent 6 --text "- Pulling container stack images" --result "FAIL" --color RED
+        log_event "error" "Container stack pull failed" "false"
 
         return 1
 
@@ -103,19 +74,19 @@ function docker_compose_up() {
     local exitstatus
 
     # Log
-    display --indent 6 --text "- Starting docker stack ..."
-    log_event "debug" "Running: docker compose -f ${compose_file} up --detach" "false"
+    display --indent 6 --text "- Starting container stack ..."
+    log_event "debug" "Running: ${CONTAINER_ENGINE} compose -f ${compose_file} up --detach" "false"
 
     # Execute docker compose command
-    docker compose -f "${compose_file}" up --detach >/dev/null 2>&1
+    ${CONTAINER_ENGINE} compose -f "${compose_file}" up --detach >/dev/null 2>&1
     exitstatus=$?
 
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Log
         clear_previous_lines "1"
-        display --indent 6 --text "- Starting docker stack ..." --result "DONE" --color GREEN
-        log_event "info" "Docker stack started" "false"
+        display --indent 6 --text "- Starting container stack ..." --result "DONE" --color GREEN
+        log_event "info" "Container stack started" "false"
 
         return 0
 
@@ -123,8 +94,8 @@ function docker_compose_up() {
 
         # Log
         clear_previous_lines "1"
-        display --indent 6 --text "- Starting docker stack ..." --result "FAIL" --color RED
-        log_event "error" "Docker stack start failed" "false"
+        display --indent 6 --text "- Starting container stack ..." --result "FAIL" --color RED
+        log_event "error" "Container stack start failed" "false"
 
         return 1
 
@@ -149,20 +120,20 @@ function docker_compose_build() {
     local exitstatus
 
     # Log
-    display --indent 6 --text "- Pulling docker stack ..."
-    log_event "debug" "Running: docker compose -f ${compose_file} pull" "false"
+    display --indent 6 --text "- Pulling container stack ..."
+    log_event "debug" "Running: ${CONTAINER_ENGINE} compose -f ${compose_file} pull" "false"
 
     # Execute docker compose command
-    docker compose -f "${compose_file}" pull >/dev/null 2>&1
-    [[ $? -eq 1 ]] && display --indent 6 --text "- Pulling docker stack ..." --result "FAIL" --color RED && return 1
+    ${CONTAINER_ENGINE} compose -f "${compose_file}" pull >/dev/null 2>&1
+    [[ $? -eq 1 ]] && display --indent 6 --text "- Pulling container stack ..." --result "FAIL" --color RED && return 1
 
     # Log
     clear_previous_lines "2"
-    spinner_start "- Building docker stack ..."
-    log_event "debug" "Running: docker compose -f ${compose_file} up --detach --build" "false"
+    spinner_start "- Building container stack ..."
+    log_event "debug" "Running: ${CONTAINER_ENGINE} compose -f ${compose_file} up --detach --build" "false"
 
     # Execute docker compose command
-    docker compose -f "${compose_file}" up --detach --build >/dev/null 2>&1
+    ${CONTAINER_ENGINE} compose -f "${compose_file}" up --detach --build >/dev/null 2>&1
     
     exitstatus=$?
     spinner_stop "${exitstatus}"
@@ -171,8 +142,8 @@ function docker_compose_build() {
 
         # Log
         clear_previous_lines "1"
-        display --indent 6 --text "- Building docker stack" --result "DONE" --color GREEN
-        log_event "info" "Docker stack restored" "false"
+        display --indent 6 --text "- Building container stack" --result "DONE" --color GREEN
+        log_event "info" "Container stack restored" "false"
 
         return 0
 
@@ -180,8 +151,8 @@ function docker_compose_build() {
 
         # Log
         clear_previous_lines "1"
-        display --indent 6 --text "- Building docker stack" --result "FAIL" --color RED
-        log_event "error" "Docker stack restore failed" "false"
+        display --indent 6 --text "- Building container stack" --result "FAIL" --color RED
+        log_event "error" "Container stack restore failed" "false"
 
         return 1
 
@@ -204,19 +175,19 @@ function docker_compose_stop() {
     local compose_file="${1}"
     
     # Log
-    display --indent 6 --text "- Stopping docker stack ..."
-    log_event "debug" "Running: docker compose -f ${compose_file} stop" "false" 
+    display --indent 6 --text "- Stopping container stack ..."
+    log_event "debug" "Running: ${CONTAINER_ENGINE} compose -f ${compose_file} stop" "false" 
 
     # Execute docker compose command
-    docker compose -f "${compose_file}" stop >/dev/null 2>&1
+    ${CONTAINER_ENGINE} compose -f "${compose_file}" stop >/dev/null 2>&1
     exitstatus=$?
 
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Log
         clear_previous_lines "1"
-        display --indent 6 --text "- Stopping docker stack" --result "DONE" --color GREEN
-        log_event "info" "Docker stack stopped" "false"
+        display --indent 6 --text "- Stopping container stack" --result "DONE" --color GREEN
+        log_event "info" "Container stack stopped" "false"
 
         return 0
 
@@ -248,23 +219,23 @@ function docker_compose_rm() {
     local compose_file="${1}"
 
     # Log
-    display --indent 6 --text "- Deleting docker stack ..."
-    log_event "debug" "Running: docker compose -f ${compose_file} rm --force --volumes" "false"
+    display --indent 6 --text "- Deleting container stack ..."
+    log_event "debug" "Running: ${CONTAINER_ENGINE} compose -f ${compose_file} rm --force --volumes" "false"
 
     # Execute docker compose command
     ## Options:
     ##    -f, --force   Don't ask to confirm removal
     ##    -s, --stop    Stop the containers, if required, before removing
     ##    -v            Remove any anonymous volumes attached to containers
-    docker compose -f "${compose_file}" rm --force --volumes >/dev/null 2>&1
+    ${CONTAINER_ENGINE} compose -f "${compose_file}" rm --force --volumes >/dev/null 2>&1
     exitstatus=$?
 
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Log success
         clear_previous_lines "1"
-        display --indent 6 --text "- Deleting docker stack ..." --result "DONE" --color GREEN
-        log_event "info" "Docker stack deleted" "false"
+        display --indent 6 --text "- Deleting container stack ..." --result "DONE" --color GREEN
+        log_event "info" "Container stack deleted" "false"
 
         return 0
 
@@ -272,8 +243,8 @@ function docker_compose_rm() {
 
         # Log failure
         clear_previous_lines "1"
-        display --indent 6 --text "- Deleting docker stack ..." --result "FAIL" --color RED
-        log_event "error" "Docker stack delete failed" "false"
+        display --indent 6 --text "- Deleting container stack ..." --result "FAIL" --color RED
+        log_event "error" "Container stack delete failed" "false"
 
         return 1
 
@@ -295,8 +266,8 @@ function docker_list_containers() {
 
     local docker_containers
 
-    # List docker containers.
-    docker_containers="$(docker ps -a --format '{{.Names}}')"
+    # List docker containers
+    docker_containers="$(${CONTAINER_ENGINE} ps -a --format '{{.Names}}')"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -328,7 +299,7 @@ function docker_stop_container() {
     local docker_stop_container
 
     # Stop docker container
-    docker_stop_container="$(docker stop "${container_to_stop}")"
+    docker_stop_container="$(${CONTAINER_ENGINE} stop "${container_to_stop}")"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -358,7 +329,7 @@ function docker_list_images() {
     local docker_images
 
     # Docker list images
-    docker_images="$(docker images --format '{{.Repository}}:{{.Tag}}')"
+    docker_images="$(${CONTAINER_ENGINE} images --format '{{.Repository}}:{{.Tag}}')"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -389,7 +360,7 @@ function docker_get_container_id() {
 
     local container_id
 
-    container_id="$(docker ps | grep "${image_name}" | awk '{print $1;}')"
+    container_id="$(${CONTAINER_ENGINE} ps | grep "${image_name}" | awk '{print $1;}')"
 
     if [[ -n ${container_id} ]]; then
 
@@ -421,7 +392,7 @@ function docker_delete_image() {
     local docker_delete_image
 
     # Docker delete image
-    docker_delete_image="$(docker rmi "${image_to_delete}")"
+    docker_delete_image="$(${CONTAINER_ENGINE} rmi "${image_to_delete}")"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -448,7 +419,7 @@ function docker_delete_image() {
 
 function docker_system_prune() {
 
-    echo "Docker system prune: $(docker system prune)"
+    echo "System prune: $(${CONTAINER_ENGINE} system prune)"
 
 }
 
@@ -472,11 +443,11 @@ function docker_mysql_database_import() {
 
     # Log
     display --indent 6 --text "- Importing database"
-    log_event "debug" "Running: docker exec -i \"${container_name}\" mysql -u\"${mysql_user}\" -p\"${mysql_user_passw}\" ${mysql_database} < ${dump_file}" "false"
+    log_event "debug" "Running: ${CONTAINER_ENGINE} exec -i \"${container_name}\" mysql -u\"${mysql_user}\" -p\"${mysql_user_passw}\" ${mysql_database} < ${dump_file}" "false"
 
     # Docker run
     # Example: docker exec -i db mysql -uroot -pexample wordpress < dump.sql
-    docker exec -i "${container_name}" mysql -u"${mysql_user}" -p"${mysql_user_passw}" "${mysql_database}" <"${dump_file}"
+    ${CONTAINER_ENGINE} exec -i "${container_name}" mysql -u"${mysql_user}" -p"${mysql_user_passw}" "${mysql_database}" <"${dump_file}"
 
     # Log
     clear_previous_lines "1"
@@ -504,10 +475,10 @@ function docker_mysql_database_export() {
 
     # Docker run
     # Example: docker exec -i db mysqldump -uroot -pexample wordpress > dump.sql
-    log_event "debug" "Running: docker exec -i \"${container_name}\" mysql -u\"${mysql_user}\" -p\"${mysql_user_passw}\" ${mysql_database} > ${dump_file}" "false"
+    log_event "debug" "Running: ${CONTAINER_ENGINE} exec -i \"${container_name}\" mysql -u\"${mysql_user}\" -p\"${mysql_user_passw}\" ${mysql_database} > ${dump_file}" "false"
 
     # Docker command
-    docker exec -i "${container_name}" mysqldump -u"${mysql_user}" -p"${mysql_user_passw}" "${mysql_database}" >"${dump_file}"
+    ${CONTAINER_ENGINE} exec -i "${container_name}" mysqldump -u"${mysql_user}" -p"${mysql_user_passw}" "${mysql_database}" >"${dump_file}"
 
 }
 
@@ -595,7 +566,7 @@ function docker_restore_project() {
     if [[ -d ${PROJECTS_PATH}/${project_domain} ]]; then
 
         # Warning message
-        whiptail --title "Warning" --yesno "A docker project already exist for this domain. Do you want to restore the current backup on this docker stack? A backup of current directory will be stored on BROLIT tmp folder." 10 60 3>&1 1>&2 2>&3
+        whiptail --title "Warning" --yesno "A docker project already exist for this domain. Do you want to restore the current backup on this container stack? A backup of current directory will be stored on BROLIT tmp folder." 10 60 3>&1 1>&2 2>&3
 
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
@@ -633,8 +604,8 @@ function docker_restore_project() {
 
         # Move project files to wordpress folder
         move_files "${BROLIT_TMP_DIR}/${project_domain}" "${PROJECTS_PATH}/${project_domain}/wordpress"
-        [[ $? -eq 1 ]] && display --indent 6 --text "- Import files into docker volume" --result "ERROR" --color RED && return 1
-        display --indent 6 --text "- Import files into docker volume" --result "DONE" --color GREEN
+        [[ $? -eq 1 ]] && display --indent 6 --text "- Import files into container volume" --result "ERROR" --color RED && return 1
+        display --indent 6 --text "- Import files into container volume" --result "DONE" --color GREEN
 
         # Make a copy of wp-config.php
         cp "${PROJECTS_PATH}/${project_domain}/wordpress/wp-config.php" "${PROJECTS_PATH}/${project_domain}/wordpress/wp-config.php.bak"
@@ -699,9 +670,9 @@ function docker_restore_project() {
     # Docker MySQL database import
     docker_mysql_database_import "${project_name}_mysql" "${project_name}_user" "${db_user_pass}" "${project_name}_prod" "${BROLIT_TMP_DIR}/${project_backup}"
 
-    display --indent 6 --text "- Import database into docker volume" --result "DONE" --color GREEN
+    display --indent 6 --text "- Import database into container volume" --result "DONE" --color GREEN
 
-    # Read wp-config to get WP DATABASE PREFIX and replace on docker .env file
+    # Read wp-config to get WP DATABASE PREFIX and replace on container .env file
     #database_prefix_to_restore="$(wp_config_get_option "${BROLIT_TMP_DIR}/${chosen_project}" "table_prefix")"
     database_prefix_to_restore="$(cat "${PROJECTS_PATH}/${project_domain}/wordpress/wp-config.php.bak" | grep "\$table_prefix" | cut -d \' -f 2)"
     if [[ -n ${database_prefix_to_restore} ]]; then
@@ -721,7 +692,7 @@ function docker_restore_project() {
         # Pull
         docker_compose_pull "${PROJECTS_PATH}/${project_domain}/docker-compose.yml"
 
-        # Rebuild docker image
+        # Rebuild container image
         docker_compose_build "${PROJECTS_PATH}/${project_domain}/docker-compose.yml"
 
     fi
@@ -812,7 +783,7 @@ function docker_project_install() {
 
     fi
 
-    # Project Port (docker internal)
+    # Project Port (container internal)
     ## Will find the next port available from 81 to 250
     port_available="$(network_next_available_port "81" "350")"
 

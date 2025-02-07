@@ -24,6 +24,13 @@
 function docker_installer() {
 
     local docker_bin
+    local container_engine
+
+    # Skip if container engine is not docker
+    if [[ "${CONTAINER_ENGINE}" != "docker" ]]; then
+        log_event "info" "Skipping docker installation, using podman" "false"
+        return 0
+    fi
 
     docker_bin="$(package_is_installed "docker-ce")"
 
@@ -66,7 +73,7 @@ function docker_installer() {
 function docker_purge() {
 
     # Remove docker and dependencies
-    for pkg in docker docker-ce docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do
+    for pkg in docker docker-ce docker.io docker-doc docker-compose docker-compose-v2 containerd runc; do
         package_purge ${pkg}
     done
 

@@ -6,7 +6,8 @@
                 "debug": "true",
                 "skip_test": "true",
                 "tmp_dir": "tmp",
-                "check_packages": "true"
+                "check_packages": "true",
+                "container_engine": "docker"
             }
         ]
     },
