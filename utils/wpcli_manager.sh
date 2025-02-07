@@ -192,7 +192,7 @@ function wpcli_main_menu() {
 
       wpcli_core_reinstall "${wp_site}" "${project_install_type}" ""
       exitstatus=$?
-      [[ ${exitstatus} -eq 0 ]] && send_notification "⚠️ ${SERVER_NAME}" "WordPress re-installed on: ${wp_site}" "info"
+      [[ ${exitstatus} -eq 0 ]] && send_notification "${SERVER_NAME}" "WordPress re-installed on: ${wp_site}" "info"
 
     fi
 

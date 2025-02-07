@@ -64,7 +64,7 @@ for site in ${all_sites}; do
       display --indent 2 --text "- Testing ${project_name}" --result "DOWN" --color RED
 
       # Send notification
-      send_notification "⛔ ${SERVER_NAME}" "Website ${project_name} is offline"
+      send_notification "${SERVER_NAME}" "Website ${project_name} is offline"
 
     fi
 
