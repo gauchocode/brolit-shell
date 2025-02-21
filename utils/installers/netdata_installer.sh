@@ -53,6 +53,7 @@ function _netdata_alerts_configuration() {
 function _netdata_required_packages() {
 
   local ubuntu_version
+  local install_log="/var/log/brolit/netdata_install.log"
 
   ubuntu_version="$(get_ubuntu_version)"
 
@@ -60,17 +61,23 @@ function _netdata_required_packages() {
 
   if [[ ${ubuntu_version} == "2004" || ${ubuntu_version} == "2204" ]]; then
 
-    apt-get --yes install curl python3-mysqldb python3-pip lm-sensors libmnl-dev netcat openssl -qq >/dev/null
+    # Redirect all package management output to log file
+    {
+      apt-get -y remove netdata >/dev/null 2>&1 || true
+      apt-get -y autoremove >/dev/null 2>&1 || true
+      apt-get -y update >/dev/null 2>&1
+      apt-get -y install netdata-repo >/dev/null 2>&1
+      apt-get -y update >/dev/null 2>&1
+      apt-get -y install netdata >/dev/null 2>&1
+    } >> "${install_log}" 2>&1
+
+    display --indent 6 --text "- Installing netdata required packages" --result "DONE" --color GREEN
 
   else
 
     return 1
 
   fi
-
-  # Log
-  clear_previous_lines "1"
-  display --indent 6 --text "- Installing netdata required packages" --result "DONE" --color GREEN
 
 }
 
@@ -103,7 +110,7 @@ function _netdata_email_config() {
   send_email="$(grep "^${KEY}${delimiter}" "${health_alarm_notify_conf}" | cut -f2- -d"${delimiter}")"
 
   KEY="DEFAULT_RECIPIENT_EMAIL"
-  default_recipient_email="$(grep "^${KEY}${delimiter}" "${health_alarm_notify_conf}" | cut -f2- -d"${delimiter}")"
+  default_recipient_email="$(grep "^${KEY}${delimiter}" "${health_alarm_notify_notify_conf}" | cut -f2- -d"${delimiter}")"
 
   send_email="YES"
   sed -i "s/^\(SEND_EMAIL\s*=\s*\).*\$/\1\"${send_email}\"/" ${health_alarm_notify_conf}
@@ -197,95 +204,190 @@ function _netdata_telegram_config() {
 #  nothing
 ################################################################################
 
-function netdata_installer() {  
+function netdata_installer() {
 
   declare -g NETDATA_INSTALL_DIR
+  local claim_token=""
+  local claim_rooms=""
 
   log_subsection "Netdata Installer"
 
-  _netdata_required_packages
+  # Create log directory if it doesn't exist
+  mkdir -p "/var/log/brolit" >/dev/null 2>&1
+  local install_log="/var/log/brolit/netdata_install.log"
 
-  log_event "info" "Installing Netdata ..." "false"
-  display --indent 6 --text "- Downloading and compiling netdata"
+  # Clear the screen and show initial message
+  clear_previous_lines "2"
+  printf "\e[34m    [·] Netdata Installer\e[0m\n"
+  echo "    —————————————————————————————————————————————————————"
 
-  # Download and run
-  bash <(curl -Ss https://my-netdata.io/kickstart.sh) --dont-wait --disable-telemetry &>/dev/null
+  # Cleanup existing installation
+  {
+    systemctl stop netdata >/dev/null 2>&1 || true
+    apt-get -y remove netdata >/dev/null 2>&1 || true
+    apt-get -y autoremove >/dev/null 2>&1 || true
+    rm -rf /opt/netdata
+    rm -rf /etc/netdata
+    rm -rf /var/log/netdata
+    rm -rf /var/cache/netdata
+    rm -rf /var/lib/netdata
+    rm -rf /usr/lib/netdata
+    rm -rf /usr/libexec/netdata
+    rm -rf /usr/share/netdata
+    rm -rf /usr/lib/systemd/system/netdata.service
+    systemctl daemon-reload
+  } >> "${install_log}" 2>&1
 
-  netdata_installer_exitstatus=$?
+  # Install required packages
+  display --indent 6 --text "- Installing netdata required packages"
+  {
+    _netdata_required_packages
+  } >> "${install_log}" 2>&1
+  display --indent 6 --text "- Installing netdata required packages" --result "DONE" --color GREEN
 
-  # Kill netdata and copy service
-  #killall netdata && cp system/netdata.service /etc/systemd/system/
-
-  # Some operating systems will use /opt/netdata/etc/netdata/ as the config directory
-  [[ -d "/etc/netdata" ]] && NETDATA_INSTALL_DIR="/etc/netdata" || NETDATA_INSTALL_DIR="/opt/netdata/etc/netdata"
-
-  if [[ ${netdata_installer_exitstatus} -eq 0 ]]; then
-
-    # Check if claim token is set
-    if [[ ${PACKAGES_NETDATA_CONFIG_CLAIM_TOKEN} != "" ]]; then
-
-      # Execute claim script
-      wget -O /tmp/netdata-kickstart.sh https://my-netdata.io/kickstart.sh && sh /tmp/netdata-kickstart.sh --nightly-channel --claim-token "${PACKAGES_NETDATA_CONFIG_CLAIM_TOKEN}" --claim-rooms "${PACKAGES_NETDATA_CONFIG_CLAIM_ROOMS}" --claim-url https://app.netdata.cloud
+  # Ask for claim token if not set in config
+  if [[ -z "${PACKAGES_NETDATA_CONFIG_CLAIM_TOKEN}" ]]; then
+    echo ""
+    echo "To connect this node to Netdata Cloud, you need a claim token."
+    echo "You can get this token from: https://app.netdata.cloud"
+    echo ""
+    read -p "Enter your Netdata claim token (press Enter to skip): " claim_token
     
+    if [[ ! -z "$claim_token" ]]; then
+      echo ""
+      echo "Enter your Netdata claim room ID (not the room name)."
+      echo "You can find the room ID in the URL when viewing the room in Netdata Cloud:"
+      echo "Example: https://app.netdata.cloud/spaces/...</space-id>/rooms/<room-id>"
+      echo "Just enter the <room-id> part"
+      echo ""
+      read -p "Room ID: " claim_rooms
     fi
-
-    # Check if Web Admin is enabled
-    if [[ ${PACKAGES_NETDATA_CONFIG_WEB_ADMIN} == "enabled" ]]; then
-      # Log
-      clear_previous_lines "1"
-      log_event "info" "Netdata installation finished" "false"
-      display --indent 6 --text "- Downloading and compiling netdata" --result "DONE" --color GREEN
-
-      # If nginx is installed
-      nginx_command="$(command -v nginx)"
-      if [[ -x ${nginx_command} ]]; then
-
-        # Netdata nginx proxy configuration
-        nginx_server_create "${PACKAGES_NETDATA_CONFIG_SUBDOMAIN}" "netdata" "single" ""
-
-        # Nginx Auth
-        nginx_generate_encrypted_auth "${PACKAGES_NETDATA_CONFIG_USER}" "${PACKAGES_NETDATA_CONFIG_USER_PASS}"
-
-        if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
-
-          # Confirm ROOT_DOMAIN
-          root_domain="$(domain_get_root "${PACKAGES_NETDATA_CONFIG_SUBDOMAIN}")"
-
-          # Cloudflare API
-          cloudflare_set_record "${root_domain}" "${PACKAGES_NETDATA_CONFIG_SUBDOMAIN}" "A" "false" "${SERVER_IP}"
-
-          exitstatus=$?
-          if [[ ${exitstatus} -eq 0 ]]; then
-
-            if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
-              # Wait 2 seconds for DNS update
-              sleep 2
-              # HTTPS with Certbot
-              certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${PACKAGES_NETDATA_CONFIG_SUBDOMAIN}"
-
-            fi
-
-          fi
-
-        fi
-
-        display --indent 6 --text "- Netdata installation" --result "DONE" --color GREEN
-
-      fi
-
-      export NETDATA_INSTALL_DIR
-
-    else
-
-      return 0
-
-    fi
-
   else
-
-    return 1
-
+    claim_token="${PACKAGES_NETDATA_CONFIG_CLAIM_TOKEN}"
+    claim_rooms="${PACKAGES_NETDATA_CONFIG_CLAIM_ROOMS}"
   fi
+
+  display --indent 6 --text "- Downloading and installing netdata"
+
+  # Download and run installation with output redirected to log
+  {
+    # Download the kickstart script
+    wget -O /tmp/netdata-kickstart.sh https://get.netdata.cloud/kickstart.sh >> "${install_log}" 2>&1
+
+    # Prepare installation command
+    local install_cmd="bash /tmp/netdata-kickstart.sh --non-interactive --stable-channel"
+    
+    # Add claim parameters if token is provided
+    if [[ ! -z "$claim_token" ]]; then
+      install_cmd+=" --claim-token ${claim_token}"
+      if [[ ! -z "$claim_rooms" ]]; then
+        install_cmd+=" --claim-rooms ${claim_rooms}"
+      fi
+      install_cmd+=" --claim-url https://app.netdata.cloud"
+    fi
+
+    # Run the installation command
+    eval "${install_cmd}" >> "${install_log}" 2>&1
+  }
+
+  # Determine the installation directory
+  if [[ -d "/etc/netdata" ]]; then
+    NETDATA_INSTALL_DIR="/etc/netdata"
+  elif [[ -d "/opt/netdata/etc/netdata" ]]; then
+    NETDATA_INSTALL_DIR="/opt/netdata/etc/netdata"
+  else
+    log_event "error" "Netdata installation directory not found" "false"
+    display --indent 6 --text "- Netdata installation" --result "ERROR" --color RED
+    return 1
+  fi
+
+  # Configure MySQL monitoring
+  display --indent 6 --text "- Creating MySQL user: netdata"
+  if create_mysql_user "netdata" "netdata" >> "${install_log}" 2>&1; then
+    display --indent 6 --text "- Creating MySQL user: netdata" --result "DONE" --color GREEN
+  else
+    display --indent 6 --text "- Creating MySQL user: netdata" --result "WARNING" --color YELLOW
+    log_event "warning" "MySQL user might already exist" "false"
+  fi
+
+  display --indent 6 --text "- Granting privileges to netdata"
+  if grant_mysql_privileges "netdata" "netdata" >> "${install_log}" 2>&1; then
+    display --indent 6 --text "- Granting privileges to netdata" --result "DONE" --color GREEN
+  fi
+
+  display --indent 6 --text "- MySQL configuration"
+  if configure_mysql_netdata >> "${install_log}" 2>&1; then
+    display --indent 6 --text "- MySQL configuration" --result "DONE" --color GREEN
+  fi
+
+  # Check if mysql or mariadb are enabled
+  if [[ ${PACKAGES_MARIADB_STATUS} == "enabled" ]] || [[ ${PACKAGES_MYSQL_STATUS} == "enabled" ]]; then
+    ## MySQL
+    mysql_user_create "netdata" "" "localhost" || true  # Continue even if user exists
+    mysql_user_grant_privileges "netdata" "*" "localhost"
+
+    ## Copy mysql config if the source file exists
+    if [[ -f "${BROLIT_MAIN_DIR}/config/netdata/python.d/mysql.conf" ]]; then
+      cp "${BROLIT_MAIN_DIR}/config/netdata/python.d/mysql.conf" "${NETDATA_INSTALL_DIR}/python.d/mysql.conf"
+    fi
+
+    log_event "info" "MySQL config done!" "false"
+    display --indent 6 --text "- MySQL configuration" --result "DONE" --color GREEN
+  fi
+
+  # Configure web log if nginx is installed
+  nginx_command="$(command -v nginx)"
+  if [[ -x ${nginx_command} ]]; then
+    {
+      if [[ -f "${BROLIT_MAIN_DIR}/config/netdata/python.d/web_log.conf" ]]; then
+        cp "${BROLIT_MAIN_DIR}/config/netdata/python.d/web_log.conf" "${NETDATA_INSTALL_DIR}/python.d/web_log.conf"
+      fi
+    } >> "${install_log}" 2>&1
+    display --indent 6 --text "- Nginx Web Log configuration" --result "DONE" --color GREEN
+  fi
+
+  # Copy health configuration files
+  {
+    for health_conf in cpu web_log mysql php-fpm; do
+      if [[ -f "${BROLIT_MAIN_DIR}/config/netdata/health.d/${health_conf}.conf" ]]; then
+        cp "${BROLIT_MAIN_DIR}/config/netdata/health.d/${health_conf}.conf" "${NETDATA_INSTALL_DIR}/health.d/${health_conf}.conf"
+      fi
+    done
+  } >> "${install_log}" 2>&1
+  display --indent 6 --text "- Health alarm configuration" --result "DONE" --color GREEN
+
+  # Configure email notifications
+  {
+    configure_email_notifications
+  } >> "${install_log}" 2>&1
+  display --indent 6 --text "- Configuring Email notifications" --result "DONE" --color GREEN
+
+  # Final configuration
+  {
+    if [[ ! -z "$claim_token" ]]; then
+      # Download and run installation with output redirected to log
+      wget -O /tmp/netdata-kickstart.sh https://get.netdata.cloud/kickstart.sh
+      
+      # Prepare installation command
+      local install_cmd="bash /tmp/netdata-kickstart.sh --non-interactive --stable-channel"
+      install_cmd+=" --claim-token ${claim_token}"
+      if [[ ! -z "$claim_rooms" ]]; then
+        install_cmd+=" --claim-rooms ${claim_rooms}"
+      fi
+      install_cmd+=" --claim-url https://app.netdata.cloud"
+      
+      # Run the installation command
+      eval "${install_cmd}"
+    fi
+    
+    # Ensure netdata service is enabled and running
+    systemctl enable netdata >/dev/null 2>&1
+    systemctl restart netdata >/dev/null 2>&1
+  } >> "${install_log}" 2>&1
+  display --indent 6 --text "- Configuring netdata" --result "DONE" --color GREEN
+
+  export NETDATA_INSTALL_DIR
+  return 0
 
 }
 
