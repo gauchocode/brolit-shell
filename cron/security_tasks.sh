@@ -38,7 +38,7 @@ _security_tasks() {
         else
 
           log_event "info" "Wordfence-cli has not found malware files in ${project_dir}" "false"
-          send_notification "${SERVER_NAME}" "Wordfence-cli did not find any malware files in ${project_dir}. No action needed." "info"
+          #send_notification "${SERVER_NAME}" "Wordfence-cli did not find any malware files in ${project_dir}. No action needed." "info"
 
         fi
 
@@ -61,7 +61,7 @@ _security_tasks() {
   else
 
     log_event "info" "Clamav has not found malware files" "false"
-    send_notification "${SERVER_NAME}" "Clamav has not found malware files on server. No action needed." "info"
+    #send_notification "${SERVER_NAME}" "Clamav has not found malware files on server. No action needed." "info"
 
   fi
 
