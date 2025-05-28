@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.2
+# Version: 3.3.10
 #############################################################################
 #
 # Backup Helper: Perform backup actions.
@@ -21,12 +21,10 @@
 function backup_get_filename() {
 
   local backup_prefix_name="${1}"
-  local backup_date="${2}"
-  local backup_extension="${3}"
+  local backup_extension="${2}"
 
   local daysago
   local backup_file
-  local backup_file_old
   local backup_keep_daily
   local daysago
 
@@ -34,12 +32,10 @@ function backup_get_filename() {
   if [[ $((10#$MONTH_DAY)) -eq 1 && $((10#$BACKUP_RETENTION_KEEP_MONTHLY)) -gt 0 ]]; then
     ## On first month day do
     backup_file="${backup_prefix_name}_${NOW}-monthly.${backup_extension}"
-    backup_file_old="${backup_prefix_name}_${MONTHSAGO}-monthly.${backup_extension}"
   else
     ## On saturdays do
     if [[ $((10#$WEEK_DAY)) -eq 6 && $((10#$BACKUP_RETENTION_KEEP_WEEKLY)) -gt 0 ]]; then
       backup_file="${backup_prefix_name}_${NOW}-weekly.${backup_extension}"
-      backup_file_old="${backup_prefix_name}_${WEEKSAGO}-weekly.${backup_extension}"
     else
       if [[ $((10#$WEEK_DAY)) -eq 7 && $((10#$BACKUP_RETENTION_KEEP_WEEKLY)) -gt 0 ||
         $((10#$MONTH_DAY)) -eq 2 && $((10#$BACKUP_RETENTION_KEEP_MONTHLY)) -gt 0 ]]; then
@@ -47,24 +43,17 @@ function backup_get_filename() {
         backup_keep_daily=$((BACKUP_RETENTION_KEEP_DAILY - 1))
         daysago="$(date --date="${backup_keep_daily} days ago" +"%Y-%m-%d")"
         backup_file="${backup_prefix_name}_${NOW}.${backup_extension}"
-        backup_file_old="${backup_prefix_name}_${daysago}.${backup_extension}"
       else
         ## On any regular day do
         backup_file="${backup_prefix_name}_${NOW}.${backup_extension}"
-        backup_file_old="${backup_prefix_name}_${DAYSAGO}.${backup_extension}"
       fi
     fi
   fi
 
   log_event "debug" "backup_get_filename: backup_file=${backup_file}" "false"
-  log_event "debug" "backup_get_filename: backup_file_old=${backup_file_old}" "false"
 
   # Return
-  if [[ ${backup_date} == "old" ]]; then
-    echo "${backup_file_old}"
-  else
-    echo "${backup_file}"
-  fi
+  echo "${backup_file}"
 
 }
 
@@ -140,17 +129,14 @@ function backup_server_config() {
   local directory_to_backup="${4}"
 
   local backup_file
-  local backup_file_old
-  local daysago
-  local remote_path
+  local storage_path
   local backup_keep_daily
-  local upload_result
+  local storage_result
 
   if [[ -n ${backup_path} ]]; then
 
     backup_prefix_name="${bk_sup_type}-${backup_type}-files"
-    backup_file="$(backup_get_filename "${backup_prefix_name}" "actual" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
-    backup_file_old="$(backup_get_filename "${backup_prefix_name}" "old" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
+    backup_file="$(backup_get_filename "${backup_prefix_name}" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
 
     # Log
     display --indent 6 --text "- Files backup for ${YELLOW}${bk_sup_type}${ENDCOLOR}"
@@ -169,7 +155,7 @@ function backup_server_config() {
       display --indent 8 --text "Final backup size: ${YELLOW}${backup_file_size}${ENDCOLOR}"
 
       # Remote Path
-      remote_path="${SERVER_NAME}/server-config/${bk_sup_type}"
+      storage_path="${SERVER_NAME}/server-config/${bk_sup_type}"
 
       # Create folder structure
       storage_create_dir "${SERVER_NAME}"
@@ -177,13 +163,13 @@ function backup_server_config() {
       storage_create_dir "${SERVER_NAME}/server-config/${bk_sup_type}"
 
       # Uploading backup files
-      upload_result="$(storage_upload_backup "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "${remote_path}")"
+      storage_result="$(storage_upload_backup "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "${storage_path}" "${backup_file_size}")"
 
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
         # Deleting old backup file
-        storage_delete_backup "${remote_path}/${backup_file_old}"
+        storage_delete_old_backups "${storage_path}"
 
         # Deleting tmp backup file
         rm --force "${BROLIT_TMP_DIR}/${NOW}/${backup_file}"
@@ -194,12 +180,7 @@ function backup_server_config() {
       else
 
         # Log
-        log_event "debug" "storage_upload_backup return: ${upload_result}" "false"
-
-        # Error
-        #got_error=1
-        error_type="upload_error"
-        error_msg="Error running storage upload backup on: ${upload_result}."
+        log_event "debug" "storage_upload_backup return: ${storage_result}" "false"
 
         # Return
         echo "${error_type};${error_msg}" && return 1
@@ -356,118 +337,6 @@ function backup_all_server_configs() {
 }
 
 ################################################################################
-# Make Mailcow Backup
-#
-# Arguments:
-#  ${1} = ${directory_to_backup} - Path folder to Backup
-#
-# Outputs:
-#   0 if ok, 1 if error
-################################################################################
-
-function backup_mailcow() {
-
-  local directory_to_backup="${1}"
-
-  # VAR $backup_type rewrited
-  local backup_type="mailcow"
-  local mailcow_backup_result
-  local storage_path
-  local backup_prefix_name
-  local backup_file
-  local backup_file_old
-
-  log_subsection "Mailcow Backup"
-
-  if [[ -n ${MAILCOW_DIR} ]]; then
-
-    backup_prefix_name="${backup_type}-files"
-    backup_file="$(backup_get_filename "${backup_prefix_name}" "actual" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
-    backup_file_old="$(backup_get_filename "${backup_prefix_name}" "old" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
-
-    log_event "info" "Trying to make a backup of ${MAILCOW_DIR} ..." "false"
-    display --indent 6 --text "- Making ${YELLOW}${MAILCOW_DIR}${ENDCOLOR} backup" --result "DONE" --color GREEN
-
-    # Small hack for pass backup directory to backup_and_restore.sh
-    MAILCOW_BACKUP_LOCATION="${MAILCOW_DIR}"
-    export MAILCOW_BACKUP_LOCATION
-
-    # Run built-in script for backup Mailcow
-    "${MAILCOW_DIR}/helper-scripts/backup_and_restore.sh" backup all
-    mailcow_backup_result=$?
-    if [[ ${mailcow_backup_result} -eq 0 ]]; then
-
-      # Small trick to get Mailcow backup base dir
-      cd "${MAILCOW_DIR}"
-      cd mailcow-*
-
-      # New MAILCOW_BACKUP_LOCATION
-      MAILCOW_BACKUP_LOCATION="$(basename "${PWD}")"
-
-      # Back
-      cd ..
-
-      log_event "info" "Making ${BACKUP_CONFIG_COMPRESSION_EXTENSION} from: ${MAILCOW_DIR}/${MAILCOW_BACKUP_LOCATION} ..." "false"
-
-      # Tar file
-      (${TAR} -cf - --directory="${MAILCOW_DIR}" "${MAILCOW_BACKUP_LOCATION}" | pv --width 70 -ns "$(du -sb "${MAILCOW_DIR}/${MAILCOW_BACKUP_LOCATION}" | awk '{print $1}')" | lbzip2 >"${MAILCOW_TMP_BK}/${backup_file}")
-
-      # Log
-      clear_previous_lines "1"
-      log_event "info" "Testing backup file: ${backup_file} ..." "false"
-
-      # Test backup file
-      lbzip2 --test "${MAILCOW_TMP_BK}/${backup_file}"
-
-      lbzip2_result=$?
-      if [[ ${lbzip2_result} -eq 0 ]]; then
-
-        log_event "info" "${MAILCOW_TMP_BK}/${backup_file} backup created" "false"
-
-        # New folder with ${SERVER_NAME}
-        storage_create_dir "${SERVER_NAME}"
-        storage_create_dir "${SERVER_NAME}/${backup_type}"
-
-        storage_path="/${SERVER_NAME}/projects-online/${backup_type}"
-
-        # Upload new backup
-        upload_result="$(storage_upload_backup "${MAILCOW_TMP_BK}/${backup_file}" "${storage_path}")"
-
-        exitstatus=$?
-        if [[ ${exitstatus} -eq 0 ]]; then
-
-          # Remove old backup
-          storage_delete_backup "${storage_path}/${backup_file_old}" "false"
-
-          # Remove old backups from server
-          rm --recursive --force "${MAILCOW_DIR}/${MAILCOW_BACKUP_LOCATION:?}"
-          rm --recursive --force "${MAILCOW_TMP_BK}/${backup_file:?}"
-
-          log_event "info" "Mailcow backup finished" "false"
-
-        fi
-
-      fi
-
-    else
-
-      log_event "error" "Can't make the backup!" "false" &&
-        return 1
-
-    fi
-
-  else
-
-    log_event "error" "Directory '${MAILCOW_DIR}' doesnt exists!" "false"
-    return 1
-
-  fi
-
-  log_break "true"
-
-}
-
-################################################################################
 # Make sites files Backup
 #
 # Arguments:
@@ -548,9 +417,6 @@ function backup_all_projects_files() {
   # Deleting old backup files
   rm --recursive --force "${BROLIT_TMP_DIR:?}/${NOW}"
 
-  # DUPLICITY
-  backup_duplicity
-
   # Configure Files Backup Section for Email Notification
   mail_backup_section "${error_msg}" "${error_type}" "files" "${backuped_files_list[@]}"
 
@@ -582,6 +448,50 @@ function backup_all_files() {
 }
 
 ################################################################################
+# Make all files Backup with Borg
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  0 if ok, 1 if error
+################################################################################
+
+
+function backup_all_files_with_borg() {
+
+  if [[ ${BACKUP_BORG_STATUS} == "enabled" ]]; then
+    # BACKUP ALL PROJECTS WITH BORG
+    borgmatic --verbosity 1 --list --stats
+  else
+    log_event "error" "borg backup support is not enabled" "false"
+    display --indent 6 --text "- backup with borg" --result "FAIL" --color RED
+  fi
+
+}
+
+################################################################################
+# Make files Backup with Borg
+#
+# Arguments:
+#  ${1} = ${backup_type} - Backup Type (site_configs or sites)
+#  ${2} = ${backup_path} - Path where directories to backup are stored
+#  ${3} = ${directory_to_backup} - The specific folder/file to backup
+#
+# Outputs:
+#  0 if ok, 1 if error
+################################################################################
+function backup_project_files_borg() {
+
+  local group_name="${1}"
+  local backup_type="${2}"
+  local directory_to_backup="${3}" 
+
+  storage_create_dir "/home/applications/${group_name}/${SERVER_NAME}/projects-online/${backup_type}/${directory_to_backup}"
+
+}
+
+################################################################################
 # Make files Backup
 #
 # Arguments:
@@ -600,15 +510,14 @@ function backup_project_files() {
   local directory_to_backup="${3}"
 
   local backup_file
-  local backup_file_old
   local backup_prefix_name
-  local storage_path
   local exclude_parameters
+  local storage_path
+  local storage_result
 
   # Backups file names
   backup_prefix_name="${directory_to_backup}_${backup_type}-files"
-  backup_file="$(backup_get_filename "${backup_prefix_name}" "actual" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
-  backup_file_old="$(backup_get_filename "${backup_prefix_name}" "old" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
+  backup_file="$(backup_get_filename "${backup_prefix_name}" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
 
   # Create directory structure
   storage_create_dir "${SERVER_NAME}"
@@ -616,7 +525,7 @@ function backup_project_files() {
   storage_create_dir "${SERVER_NAME}/projects-online/${backup_type}"
   storage_create_dir "${SERVER_NAME}/projects-online/${backup_type}/${directory_to_backup}"
 
-  remote_path="${SERVER_NAME}/projects-online/${backup_type}/${directory_to_backup}"
+  storage_path="${SERVER_NAME}/projects-online/${backup_type}/${directory_to_backup}"
 
   if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" || ${BACKUP_SFTP_STATUS} == "enabled" ]]; then
 
@@ -646,17 +555,16 @@ function backup_project_files() {
       clear_previous_lines "1"
       display --indent 6 --text "- Files backup for ${YELLOW}${directory_to_backup}${ENDCOLOR}" --result "DONE" --color GREEN
       display --indent 8 --text "Final backup size: ${YELLOW}${backup_file_size}${ENDCOLOR}"
-
       log_event "info" "Backup ${BROLIT_TMP_DIR}/${NOW}/${backup_file} created, final size: ${backup_file_size}" "false"
 
       # Upload backup
-      upload_result="$(storage_upload_backup "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "${remote_path}")"
+      storage_result="$(storage_upload_backup "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "${storage_path}" "${backup_file_size}")"
 
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        # Delete old backup from Dropbox
-        storage_delete_backup "${remote_path}/${backup_file_old}"
+        # Delete old backups
+        storage_delete_old_backups "${storage_path}"
 
         # Delete temp backup
         rm --force "${BROLIT_TMP_DIR}/${NOW}/${backup_file}"
@@ -667,6 +575,14 @@ function backup_project_files() {
         # Return
         echo "${backup_file_size}" && return 0
 
+      else
+
+        # Log
+        log_event "debug" "storage_upload_backup return: ${storage_result}" "false"
+
+        # Return
+        echo "${error_type};${error_msg}" && return 1
+
       fi
 
     else
@@ -674,54 +590,13 @@ function backup_project_files() {
       # Log
       clear_previous_lines "1"
       display --indent 6 --text "- Files backup for ${directory_to_backup}" --result "FAIL" --color RED
+      display --indent 8 --text "Please see the log file" --tcolor RED
+      log_event "error" "Something went wrong making a backup of ${directory_to_backup}." "false"
+      log_event "debug" "compress result: ${compress_result}" "false"
 
       return 1
 
     fi
-
-  fi
-
-}
-
-################################################################################
-# Duplicity Backup (BETA)
-#
-# Arguments:
-#  none
-#
-# Outputs:
-#   0 if ok, 1 if error
-################################################################################
-
-function backup_duplicity() {
-
-  if [[ ${BACKUP_DUPLICITY_STATUS} == "enabled" ]]; then
-
-    log_event "warning" "duplicity backup is in BETA state" "true"
-
-    # Check if DUPLICITY is installed
-    package_install_if_not "duplicity"
-
-    # Get all directories
-    all_sites="$(get_all_directories "${PROJECTS_PATH}")"
-
-    # Loop in to Directories
-    for i in ${all_sites}; do
-
-      log_event "debug" "Running: duplicity --full-if-older-than \"${BACKUP_DUPLICITY_CONFIG_BACKUP_FREQUENCY}\" -v4 --no-encryption\" ${PROJECTS_PATH}\"\"${i}\" file://\"${BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH}\"\"${i}\"" "true"
-
-      duplicity --full-if-older-than "${BACKUP_DUPLICITY_CONFIG_BACKUP_FREQUENCY}" -v4 --no-encryption" ${PROJECTS_PATH}""${i}" file://"${BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH}""${i}"
-      exitstatus=$?
-
-      log_event "debug" "exitstatus=$?" "false"
-
-      # TODO: should only remove old entries only if ${exitstatus} -eq 0
-      duplicity remove-older-than "${BACKUP_DUPLICITY_CONFIG_FULL_LIFE}" --force "${BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH}"/"${i}"
-
-    done
-
-    [ $exitstatus -eq 0 ] && echo "*** DUPLICITY SUCCESS ***" >>"${LOG}"
-    [ $exitstatus -ne 0 ] && echo "*** DUPLICITY ERROR ***" >>"${LOG}"
 
   fi
 
@@ -815,6 +690,45 @@ function backup_all_databases() {
 }
 
 ################################################################################
+# Make all databases Backup
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  0 if ok, 1 if error
+################################################################################
+
+function backup_all_databases_docker() {
+
+    for project_domain in "${PROJECTS_PATH}"/*; do
+
+        if [[ -d "${project_domain}" ]]; then
+
+            project_name=$(basename "${project_domain}")
+
+            echo "Backing up project: ${project_name}"
+
+            backup_docker_project "${project_name}" "docker_backup"
+ 
+            exitstatus=$?
+            if [[ ${exitstatus} -eq 0 ]]; then
+
+                echo "Backup for ${project_name} completed successfully."
+
+            else
+
+                echo "Backup for ${project_name} failed."
+
+            fi
+        fi
+        
+    done
+}
+
+
+
+################################################################################
 # Make databases backup
 #
 # Arguments:
@@ -894,6 +808,8 @@ function backup_databases() {
 #
 # Arguments:
 #  ${1} = ${database}
+#  ${2} = ${db_engine}
+#  ${3} = ${container_name}
 #
 # Outputs:
 #  "backupfile backup_file_size" if ok, 1 if error
@@ -903,13 +819,14 @@ function backup_project_database() {
 
   local database="${1}"
   local db_engine="${2}"
+  local container_name="${3}"
 
   local export_result
 
   local dump_file
   local backup_file
-  local backup_file_old
-
+  local storage_path
+  local storage_result
   local error_type
   local error_msg
 
@@ -917,19 +834,18 @@ function backup_project_database() {
 
   # Backups file names
   backup_prefix_name="${database}_database"
-  dump_file="$(backup_get_filename "${backup_prefix_name}" "actual" "sql")"
-  backup_file="$(backup_get_filename "${backup_prefix_name}" "actual" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
-  backup_file_old="$(backup_get_filename "${backup_prefix_name}" "old" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
+  dump_file="$(backup_get_filename "${backup_prefix_name}" "sql")"
+  backup_file="$(backup_get_filename "${backup_prefix_name}" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
 
   # Database engine
   if [[ ${db_engine} == "mysql" ]]; then
     ## Create dump file
-    mysql_database_export "${database}" "false" "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"
+    mysql_database_export "${database}" "${container_name}" "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"
   else
 
     if [[ ${db_engine} == "psql" ]]; then
       ## Create dump file
-      postgres_database_export "${database}" "false" "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"
+      postgres_database_export "${database}" "${container_name}" "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"
     fi
 
   fi
@@ -953,14 +869,14 @@ function backup_project_database() {
       storage_create_dir "/${SERVER_NAME}/projects-online/database/${database}"
 
       # Upload database backup
-      remote_path="/${SERVER_NAME}/projects-online/database/${database}"
-      upload_result="$(storage_upload_backup "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "${remote_path}")"
+      storage_path="/${SERVER_NAME}/projects-online/database/${database}"
+      storage_result="$(storage_upload_backup "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "${storage_path}" "${backup_file_size}")"
 
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
         # Delete old backup from storage
-        storage_delete_backup "/${SERVER_NAME}/projects-online/database/${database}/${backup_file_old}"
+        storage_delete_old_backups "${storage_path}"
 
         # Delete local temp files
         rm --force "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"
@@ -972,7 +888,7 @@ function backup_project_database() {
       else
 
         error_type="upload_backup"
-        error_msg="Error uploading file: ${backup_file}. Upload result: ${upload_result}"
+        error_msg="Error uploading file: ${backup_file}. Upload result: ${storage_result}"
 
         log_event "error" "${error_msg}" "false"
 
@@ -1001,6 +917,143 @@ function backup_project_database() {
 
   fi
 
+}
+
+################################################################################
+# Make project Backup with Borg
+#
+# Arguments:
+#  ${1} = ${project_domain}
+#
+# Outputs:
+#  "backupfile backup_file_size" if ok, 1 if error
+################################################################################
+
+function backup_project_with_borg() {
+
+  local project_domain="${1}"
+  #local backup_type="${2}"
+  local config_directory="/etc/borgmatic.d/${project_domain}.yml"
+
+  local got_error=0
+
+  #local db_stage
+  #local db_name
+  #local db_engine
+  #local backup_file
+  #local project_type
+
+  # Backup files
+  log_subsection "Backup Project Files"
+  #backup_file_size="$(backup_project_files "site" "${PROJECTS_PATH}" "${project_domain}")"
+
+  project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${project_domain}")"
+
+  if [[ ${project_install_type} == "docker"* && ${project_type} != "html" ]]; then
+
+    borg_backup_database "${project_domain}"
+    # Esto ya hace backup de todo.
+    borgmatic --verbosity 1 --config ${config_directory}
+
+  fi
+  ## Faltaria para los projectos no dockerizados o sea "default"
+
+}
+
+################################################################################
+# Backup Database with Borg
+#
+# Arguments:
+#  ${1} = ${project_domain}
+#
+################################################################################
+
+function borg_backup_database() {
+
+  local project_domain="${1}"
+
+  local json_config_file="/root/.brolit_conf.json"
+
+  source /root/brolit-shell/brolit_lite.sh
+
+if [[ -f "${PROJECTS_PATH}/${project_domain}/.env" ]]; then
+
+      # Detect if project is WordPress or Laravel, or skip database backup for other types
+      if [[ -d "${PROJECTS_PATH}/${project_domain}/wordpress" || -f "${PROJECTS_PATH}/${project_domain}/application" ]]; then
+          export $(grep -v '^#' "${PROJECTS_PATH}/${project_domain}/.env" | xargs)
+
+          mysql_database="${MYSQL_DATABASE}"
+          container_name="${PROJECT_NAME}_mysql"
+          mysql_user="${MYSQL_USER}"
+          mysql_password="${MYSQL_PASSWORD}"
+
+      else
+          echo "Skipping database backup: project ${project_domain} does not require a database backup."
+          return 0
+      fi
+
+  else
+
+      echo "Error: .env file not found in ${PROJECTS_PATH}/${project_domain}."
+      return 1
+
+  fi
+
+
+  dump_file="${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.sql"
+
+  docker exec "$container_name" sh -c "mysqldump -u$mysql_user -p$mysql_password $mysql_database > /tmp/database_dump.sql"
+
+  docker cp "$container_name:/tmp/database_dump.sql" "$dump_file"
+
+  if [ -f "$dump_file" ]; then
+
+      compressed_dump_file="${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.tar.bz2"
+
+      compress "${BROLIT_TMP_DIR}/${NOW}/" "${mysql_database}_database_${NOW}.sql" "${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.tar.bz2"
+      
+      if [ $? -eq 0 ]; then
+
+          num_borg_configs=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config | length")
+
+          for ((i=0; i<num_borg_configs; i++)); do
+
+            BACKUP_BORG_USER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[$i].user")
+            BACKUP_BORG_SERVER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[$i].server")
+            BACKUP_BORG_PORT=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[$i].port")
+            BACKUP_BORG_GROUP=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].group")
+
+            echo "Performing backup on ${BACKUP_BORG_SERVER} with user ${BACKUP_BORG_USER} on port ${BACKUP_BORG_PORT}"
+          
+            scp -P "${BACKUP_BORG_PORT}" "$compressed_dump_file" "${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:/home/applications/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/database/${project_domain}"
+
+            if [ $? -eq 0 ]; then
+
+              echo "Backup successful on ${BACKUP_BORG_SERVER}"
+
+            else
+
+              echo "Backup failed for ${BACKUP_BORG_SERVER}"
+              return 1
+
+            fi
+
+          done
+              
+          rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.tar.bz2"
+          rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.sql"
+
+      else
+          echo "Error compressing the database dump."
+          return 1
+
+      fi
+
+  else
+
+      return 1
+
+  fi
 }
 
 ################################################################################
@@ -1092,13 +1145,100 @@ function backup_project() {
 
     log_break "false"
 
-    # Delete backup from server
+    # Delete local backup
     rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${backup_type:?}"
     #log_event "info" "Deleting backup from server ..." "false"
 
     # Log
     log_break "false"
-    log_event "info" "Project Backup done" "false"
+    log_event "info" "Project backup finished!" "false"
+    display --indent 6 --text "- Project Backup" --result "DONE" --color GREEN
+
+    return ${got_error}
+
+  else
+
+    # Log
+    log_break "false"
+    log_event "error" "Something went wrong making the files backup" "false"
+    display --indent 6 --text "- Project Backup" --result "FAIL" --color RED
+    display --indent 8 --text "Something went wrong making the files backup" --tcolor RED
+
+    return 1
+
+  fi
+
+}
+
+################################################################################
+# Make project Backup
+#
+# Arguments:
+#  ${1} = ${project_domain}
+#  ${2} = ${backup_type} - (all,configs,sites,databases) - Default: all
+#
+# Outputs:
+#   0 if ok, 1 if error
+################################################################################
+
+function backup_docker_project() {
+
+  local project_domain="${1}"
+  local backup_type="${2}"
+
+  local got_error=0
+
+  local db_name
+  local db_engine
+  local backup_file
+  local project_type
+  local container_name
+
+  # Read the .env file
+  if [[ -f "${PROJECTS_PATH}/${project_domain}/.env" ]]; then
+
+    export $(grep -v '^#' "${PROJECTS_PATH}/${project_domain}/.env" | xargs)
+    db_name="${MYSQL_DATABASE}"
+    container_name="${PROJECT_NAME}_mysql"
+    db_engine="mysql"
+
+  else
+
+    echo "Error: .env file not found in ${PROJECTS_PATH}/${project_domain}/."
+
+    return 1
+
+  fi
+
+  # Backup files
+  log_subsection "Backup Project Files"
+  backup_file_size="$(backup_project_files "site" "${PROJECTS_PATH}" "${project_domain}")"
+
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    # Project Type
+    project_type="$(project_get_type "${PROJECTS_PATH}/${project_domain}")"
+
+    # Project install type
+    project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${project_domain}")"
+
+
+    if [[ ${project_install_type} == "docker"* && ${project_type} != "html" ]]; then
+
+        backup_project_database "${db_name}" "${db_engine}" "${container_name}"
+
+    fi
+
+    log_break "false"
+
+    # Delete local backup
+    rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${backup_type:?}"
+    #log_event "info" "Deleting backup from server ..." "false"
+
+    # Log
+    log_break "false"
+    log_event "info" "Project backup finished!" "false"
     display --indent 6 --text "- Project Backup" --result "DONE" --color GREEN
 
     return ${got_error}

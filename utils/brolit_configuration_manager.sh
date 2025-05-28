@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.2
+# Version: 3.3.10
 ################################################################################
 #
 # Server Config Manager: Brolit server configuration management.
@@ -47,9 +47,7 @@ function _brolit_configuration_load_server_config() {
     fi
 
     if [[ ${SERVER_ROLE_WEBSERVER} != "enabled" ]] && [[ ${SERVER_ROLE_DATABASE} != "enabled" ]]; then
-        log_event "error" "At least one server role need to be defined." "true"
-        log_event "error" "Please edit the file .brolit_conf.json and execute BROLIT again." "true"
-        exit 1
+        display --indent 6 --text "- No server role enabled" --result "WARNING" --color YELLOW
     fi
 
     # Read optional vars from server config file
@@ -166,6 +164,48 @@ function _brolit_configuration_load_backup_dropbox() {
 }
 
 ################################################################################
+# Private: load borg backup configuration
+#
+# Arguments:
+#   ${1} = ${server_config_file}
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function _brolit_configuration_load_backup_borg() {
+    local server_config_file="${1}"
+
+    #Globals
+    declare -g BACKUP_BORG_STATUS
+    declare -g BACKUP_BORG_USER
+    declare -g BACKUP_BORG_SERVER
+    declare -g BACKUP_BORG_PORT
+    declare -g BACKUP_BORG_GROUP
+
+    BACKUP_BORG_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].status")"
+
+    if [[ ${BACKUP_BORG_STATUS} == "enabled" ]]; then
+
+        BACKUP_BORG_USER="$(json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].config[].user")"
+        [[ -z "${BACKUP_BORG_USER}" ]] && die "Error reading BACKUP_BORG_USER from server config file."
+
+        BACKUP_BORG_SERVER="$(json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].config[].server")"
+        [[ -z "${BACKUP_BORG_SERVER}" ]] && die "Error reading BACKUP_BORG_SERVER from server config file."
+
+        BACKUP_BORG_PORT="$(json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].config[].port")"
+        [[ -z "${BACKUP_BORG_PORT}" ]] && die "Error reading BACKUP_BORG_PORT from server config file."
+
+        BACKUP_BORG_GROUP="$(json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].config[].group")"
+        [[ -z "${BACKUP_BORG_GROUP}" ]] && die "Error reading BACKUP_BORG_GROUP from server config file."
+
+    fi 
+
+    export BACKUP_BORG_STATUS BACKUP_BORG_USER BACKUP_BORG_SERVER BACKUP_BORG_PORT BACKUP_BORG_GROUP
+}
+
+
+################################################################################
 # Private: load local backup configuration
 #
 # Arguments:
@@ -197,108 +237,6 @@ function _brolit_configuration_load_backup_local() {
 }
 
 ################################################################################
-# Private: load s3 backup configuration
-#
-# Arguments:
-#   ${1} = ${server_config_file}
-#
-# Outputs:
-#   nothing
-################################################################################
-
-function _brolit_configuration_load_backup_s3() {
-
-    local server_config_file="${1}"
-
-    # Globals
-    declare -g BACKUP_S3_STATUS
-    declare -g BACKUP_S3_BUCKET
-    declare -g BACKUP_S3_ENDPOINT_URL
-    declare -g BACKUP_S3_ACCESS_KEY
-    declare -g BACKUP_S3_SECRET_KEY
-    declare -g BACKUP_S3_CONFIG_BACKUP_DESTINATION_PATH
-    #declare -g BACKUP_S3_CONFIG_BACKUP_FREQUENCY
-    #declare -g BACKUP_S3_CONFIG_FULL_LIFE
-
-    BACKUP_S3_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.methods[].s3[].status")"
-
-    if [[ ${BACKUP_S3_STATUS} == "enabled" ]]; then
-
-        # Required
-        BACKUP_S3_BUCKET="$(json_read_field "${server_config_file}" "BACKUPS.methods[].s3[].config[].bucket")"
-        [[ -z "${BACKUP_S3_BUCKET}" ]] && die "Error reading BACKUP_S3_BUCKET from server config file."
-
-        BACKUP_S3_ENDPOINT_URL="$(json_read_field "${server_config_file}" "BACKUPS.methods[].s3[].config[].endpoint_url")"
-        [[ -z "${BACKUP_S3_ENDPOINT_URL}" ]] && die "Error reading BACKUP_S3_ENDPOINT_URL from server config file."
-
-        BACKUP_S3_ACCESS_KEY="$(json_read_field "${server_config_file}" "BACKUPS.methods[].s3[].config[].access_key")"
-        [[ -z "${BACKUP_S3_ACCESS_KEY}" ]] && die "Error reading BACKUP_S3_ACCESS_KEY from server config file."
-
-        BACKUP_S3_SECRET_KEY="$(json_read_field "${server_config_file}" "BACKUPS.methods[].s3[].config[].secret_key")"
-        [[ -z "${BACKUP_S3_SECRET_KEY}" ]] && die "Error reading BACKUP_S3_SECRET_KEY from server config file."
-
-        BACKUP_S3_CONFIG_BACKUP_DESTINATION_PATH="$(json_read_field "${server_config_file}" "BACKUPS.methods[].s3[].config[].backup_path")"
-        [[ -z "${BACKUP_S3_CONFIG_BACKUP_DESTINATION_PATH}" ]] && die "Error reading BACKUP_S3_CONFIG_BACKUP_DESTINATION_PATH from server config file."
-
-        #BACKUP_S3_CONFIG_BACKUP_FREQUENCY="$(json_read_field "${server_config_file}" "BACKUPS.methods[].s3[].config[].backup_frequency")"
-        #if [ -z "${BACKUP_S3_CONFIG_BACKUP_FREQUENCY}" ]; then
-        #    log_event "error" "Missing required config vars for s3 backup method" "true"
-        #    exit 1
-        #fi
-
-        #BACKUP_S3_CONFIG_FULL_LIFE="$(json_read_field "${server_config_file}" "BACKUPS.methods[].s3[].config[].backup_full_life")"
-        #if [ -z "${BACKUP_S3_CONFIG_FULL_LIFE}" ]; then
-        #    log_event "error" "Missing required config vars for s3 backup method" "true"
-        #    exit 1
-        #fi
-
-    fi
-
-    export BACKUP_S3_STATUS BACKUP_S3_BUCKET BACKUP_S3_ENDPOINT_URL BACKUP_S3_ACCESS_KEY BACKUP_S3_SECRET_KEY BACKUP_S3_CONFIG_BACKUP_DESTINATION_PATH
-
-}
-
-################################################################################
-# Private: load duplicity backup configuration
-#
-# Arguments:
-#   ${1} = ${server_config_file}
-#
-# Outputs:
-#   nothing
-################################################################################
-
-function _brolit_configuration_load_backup_duplicity() {
-
-    local server_config_file="${1}"
-
-    # Globals
-    declare -g BACKUP_DUPLICITY_STATUS
-    declare -g BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH
-    declare -g BACKUP_DUPLICITY_CONFIG_BACKUP_FREQUENCY
-    declare -g BACKUP_DUPLICITY_CONFIG_FULL_LIFE
-
-    BACKUP_DUPLICITY_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.methods[].duplicity[].status")"
-
-    if [[ ${BACKUP_DUPLICITY_STATUS} == "enabled" ]]; then
-
-        # Required
-        BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH="$(json_read_field "${server_config_file}" "BACKUPS.methods[].duplicity[].config[].backup_destination_path")"
-        [[ -z "${BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH}" ]] && die "Error reading BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH from server config file."
-
-        BACKUP_DUPLICITY_CONFIG_BACKUP_FREQUENCY="$(json_read_field "${server_config_file}" "BACKUPS.methods[].duplicity[].config[].backup_frequency")"
-        [[ -z "${BACKUP_DUPLICITY_CONFIG_BACKUP_FREQUENCY}" ]] && die "Error reading BACKUP_DUPLICITY_CONFIG_BACKUP_FREQUENCY from server config file."
-
-        BACKUP_DUPLICITY_CONFIG_FULL_LIFE="$(json_read_field "${server_config_file}" "BACKUPS.methods[].duplicity[].config[].backup_full_life")"
-        [[ -z "${BACKUP_DUPLICITY_CONFIG_FULL_LIFE}" ]] && die "Error reading BACKUP_DUPLICITY_CONFIG_FULL_LIFE from server config file."
-
-    fi
-
-    export BACKUP_DUPLICITY_STATUS BACKUP_DUPLICITY_CONFIG_BACKUP_DESTINATION_PATH BACKUP_DUPLICITY_CONFIG_BACKUP_FREQUENCY BACKUP_DUPLICITY_CONFIG_FULL_LIFE
-
-}
-
-################################################################################
 # Private: load backup retentions configuration
 #
 # Arguments:
@@ -318,7 +256,10 @@ function _brolit_configuration_load_backup_config() {
     declare -g BACKUP_CONFIG_SERVER_CFG_STATUS
     declare -g BACKUP_CONFIG_ADDITIONAL_DIRS
     declare -g BACKUP_CONFIG_FOLLOW_SYMLINKS
+    declare -g BACKUP_CONFIG_COMPRESSION_TEST
     declare -g BACKUP_CONFIG_COMPRESSION_TYPE
+    declare -g BACKUP_CONFIG_COMPRESSION_LEVEL
+    declare -g BACKUP_CONFIG_COMPRESSION_CORES
     declare -g BACKUP_CONFIG_COMPRESSION_EXTENSION
 
     declare -g IGNORED_PROJECTS_LIST #".wp-cli,.ssh,.local,.cert,html,phpmyadmin"
@@ -347,7 +288,7 @@ function _brolit_configuration_load_backup_config() {
     [[ -z ${BACKUP_CONFIG_SERVER_CFG_STATUS} ]] && die "Error reading BACKUP_CONFIG_SERVER_CFG_STATUS from server config file."
 
     ## Backup config compression_type
-    BACKUP_CONFIG_COMPRESSION_TYPE="$(json_read_field "${server_config_file}" "BACKUPS.config[].compression_type")"
+    BACKUP_CONFIG_COMPRESSION_TYPE="$(json_read_field "${server_config_file}" "BACKUPS.config[].compression[].type")"
     if [[ -z ${BACKUP_CONFIG_COMPRESSION_TYPE} ]]; then
         die "Error reading BACKUP_CONFIG_COMPRESSION_TYPE from server config file."
 
@@ -355,7 +296,7 @@ function _brolit_configuration_load_backup_config() {
 
         case ${BACKUP_CONFIG_COMPRESSION_TYPE} in
 
-        lbzip2)
+        lbzip2|pigz)
             BACKUP_CONFIG_COMPRESSION_EXTENSION="tar.bz2"
             ;;
 
@@ -372,9 +313,13 @@ function _brolit_configuration_load_backup_config() {
 
     fi
 
+    BACKUP_CONFIG_COMPRESSION_LEVEL="$(json_read_field "${server_config_file}" "BACKUPS.config[].compression[].level")"
+    BACKUP_CONFIG_COMPRESSION_CORES="$(json_read_field "${server_config_file}" "BACKUPS.config[].compression[].cores")"
+    BACKUP_CONFIG_COMPRESSION_TEST="$(json_read_field "${server_config_file}" "BACKUPS.config[].compression[].test")"
+
     export BACKUP_CONFIG_PROJECTS_STATUS BACKUP_CONFIG_DATABASES_STATUS BACKUP_CONFIG_SERVER_CFG_STATUS BACKUP_CONFIG_ADDITIONAL_DIRS
-    export BACKUP_CONFIG_FOLLOW_SYMLINKS BACKUP_CONFIG_COMPRESSION_TYPE BACKUP_CONFIG_COMPRESSION_EXTENSION
-    export IGNORED_PROJECTS_LIST EXCLUDED_FILES_LIST EXCLUDED_DATABASES_LIST
+    export BACKUP_CONFIG_FOLLOW_SYMLINKS BACKUP_CONFIG_COMPRESSION_TYPE BACKUP_CONFIG_COMPRESSION_EXTENSION BACKUP_CONFIG_COMPRESSION_LEVEL BACKUP_CONFIG_COMPRESSION_CORES
+    export BACKUP_CONFIG_COMPRESSION_TEST IGNORED_PROJECTS_LIST EXCLUDED_FILES_LIST EXCLUDED_DATABASES_LIST
 
 }
 
@@ -485,6 +430,50 @@ function _brolit_configuration_load_email() {
     fi
 
     export NOTIFICATION_EMAIL_STATUS NOTIFICATION_EMAIL_MAILA NOTIFICATION_EMAIL_SMTP_SERVER NOTIFICATION_EMAIL_SMTP_PORT NOTIFICATION_EMAIL_SMTP_TLS NOTIFICATION_EMAIL_SMTP_USER NOTIFICATION_EMAIL_SMTP_UPASS
+
+}
+
+################################################################################
+# Private: load ntfy notifications configuration
+#
+# Arguments:
+#   ${1} = ${server_config_file}
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function _brolit_configuration_load_ntfy() {
+
+    local server_config_file="${1}"
+
+
+    # Globals
+    declare -g NOTIFICATION_NTFY_STATUS
+    declare -g NOTIFICATION_NTFY_USERNAME
+    declare -g NOTIFICATION_NTFY_PASSWORD
+    declare -g NOTIFICATION_NTFY_SERVER
+    declare -g NOTIFICATION_NTFY_TOPIC
+    
+    NOTIFICATION_NTFY_STATUS="$(json_read_field "${server_config_file}" "NOTIFICATIONS.ntfy[].status")"
+
+    if [[ ${NOTIFICATION_NTFY_STATUS} == "enabled" ]]; then
+
+        # Required
+        NOTIFICATION_NTFY_USERNAME="$(json_read_field "${server_config_file}" "NOTIFICATIONS.ntfy[].config[].username")"
+        [[ -z ${NOTIFICATION_NTFY_USERNAME} ]] && die "Error reading NOTIFICATION_NTFY_USERNAME from server config file."
+
+        NOTIFICATION_NTFY_PASSWORD="$(json_read_field "${server_config_file}" "NOTIFICATIONS.ntfy[].config[].password")"
+        [[ -z ${NOTIFICATION_NTFY_PASSWORD} ]] && die "Error reading NOTIFICATION_NTFY_PASSWORD from server config file."
+
+        NOTIFICATION_NTFY_SERVER="$(json_read_field "${server_config_file}" "NOTIFICATIONS.ntfy[].config[].server")"
+        [[ -z ${NOTIFICATION_NTFY_SERVER} ]] && die "Error reading NOTIFICATION_NTFY_SERVER from server config file."
+
+        NOTIFICATION_NTFY_TOPIC="$(json_read_field "${server_config_file}" "NOTIFICATIONS.ntfy[].config[].topic")"
+        [[ -z ${NOTIFICATION_NTFY_TOPIC} ]] && die "Error reading NOTIFICATION_NTFY_TOPIC from server config file."
+    fi
+
+    export NOTIFICATION_NTFY_STATUS NOTIFICATION_NTFY_USERNAME NOTIFICATION_NTFY_PASSWORD NOTIFICATION_NTFY_SERVER NOTIFICATION_NTFY_TOPIC
 
 }
 
@@ -665,6 +654,41 @@ function _brolit_configuration_load_cloudflare() {
     export SUPPORT_CLOUDFLARE_STATUS SUPPORT_CLOUDFLARE_EMAIL SUPPORT_CLOUDFLARE_API_KEY
 
 }
+
+################################################################################
+# Private: load borg configuration
+#
+# Arguments:
+#   ${1} = ${server_config_file}
+#
+# Outputs:
+#   nothing
+
+function _brolit_configuration_load_borg () {
+    local server_config_file="${1}"
+
+    # Globals
+    declare -g PACKAGES_BORG_STATUS
+
+    # BORG
+    borg_bin="$(package_is_installed "borgbackup")"
+    exitstatus=$?
+
+    PACKAGES_BORG_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.borg[].status")"
+
+    if [[ ${PACKAGES_BORG_STATUS} == "enabled" ]]; then
+
+        [[ ${exitstatus} -eq 1 || -z ${borg_bin} ]] && pkg_config_changes_detected "borg" "true"
+
+    else
+
+        [[ ${exitstatus} -eq 0 && -n ${borg_bin} ]] && pkg_config_changes_detected "borg" "true"
+
+    fi
+
+    export PACKAGES_BORG_STATUS
+}
+
 
 ################################################################################
 # Private: load nginx configuration
@@ -1184,14 +1208,19 @@ function _brolit_configuration_load_netdata() {
     declare -g PACKAGES_NETDATA_CONFIG_SUBDOMAIN
     declare -g PACKAGES_NETDATA_CONFIG_USER
     declare -g PACKAGES_NETDATA_CONFIG_USER_PASS
+    declare -g PACKAGES_NETDATA_CONFIG_CLAIM_TOKEN
+    declare -g PACKAGES_NETDATA_CONFIG_CLAIM_ROOMS
     declare -g PACKAGES_NETDATA_NOTIFICATION_ALARM_LEVEL
     declare -g PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_STATUS
     declare -g PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_BOT_TOKEN
     declare -g PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_CHAT_ID
 
     NETDATA="$(which netdata)"
-    NETDATA_PR="$(pgrep netdata)"                          # This will detect if a netdata process is running, but could be a docker container
-    NETDATA_DOCKER="$(docker ps -q --filter name=netdata)" # This will detect if a netdata docker container is running
+    NETDATA_PR="$(pgrep netdata)" # This will detect if a netdata process is running, but could be a docker container
+    # If docker is installed
+    if [[ -x "$(command -v docker)" ]]; then
+        NETDATA_DOCKER="$(docker ps -q --filter name=netdata)" # This will detect if a netdata docker container is running
+    fi
 
     PACKAGES_NETDATA_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].status")"
     PACKAGES_NETDATA_CONFIG_WEB_ADMIN="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].config[].web_admin")"
@@ -1227,6 +1256,10 @@ function _brolit_configuration_load_netdata() {
 
         fi
 
+        # Optional
+        PACKAGES_NETDATA_CONFIG_CLAIM_TOKEN="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].config[].claim_token")"
+        PACKAGES_NETDATA_CONFIG_CLAIM_ROOMS="$(json_read_field "${server_config_file}" "PACKAGES.netdata[].config[].claim_rooms")"
+
         # Checking if Netdata is not installed
         [[ ! -x "${NETDATA}" && -z "${NETDATA_PR}" && -z ${NETDATA_DOCKER} ]] && pkg_config_changes_detected "netdata" "true"
 
@@ -1239,76 +1272,7 @@ function _brolit_configuration_load_netdata() {
 
     export PACKAGES_NETDATA_STATUS PACKAGES_NETDATA_CONFIG_WEB_ADMIN PACKAGES_NETDATA_CONFIG_SUBDOMAIN PACKAGES_NETDATA_CONFIG_USER PACKAGES_NETDATA_CONFIG_USER_PASS PACKAGES_NETDATA_NOTIFICATION_ALARM_LEVEL
     export PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_STATUS PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_BOT_TOKEN PACKAGES_NETDATA_NOTIFICATION_TELEGRAM_CHAT_ID
-
-}
-
-################################################################################
-# Private: load netdata agent configuration
-#
-# Arguments:
-#   ${1} = ${server_config_file}
-#
-# Outputs:
-#   nothing
-################################################################################
-
-function _brolit_configuration_load_netdata_agent() {
-
-    local server_config_file="${1}"
-
-    local docker
-    local docker_installed
-
-    # Globals
-    declare -g NETDATA_AGENT
-    declare -g PACKAGES_NETDATA_AGENT_STATUS
-    declare -g PACKAGES_NETDATA_AGENT_CONFIG_PORT
-
-    declare -g NETDATA_AGENT_PATH="/root/agent_netdata"
-
-    PACKAGES_NETDATA_AGENT_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.netdata_agent[].status")"
-
-    if [[ ${PACKAGES_NETDATA_AGENT_STATUS} == "enabled" ]]; then
-
-        docker="$(package_is_installed "docker.io")"
-        docker_installed="$?"
-        if [[ ${docker_installed} -eq 0 ]]; then
-            log_event "debug" "Docker installed on: ${docker}. Now checking if Netdata Agent image is present..." "false"
-            NETDATA_AGENT="$(docker_get_container_id "agent_netdata")"
-        else
-            # Netdata agent requires docker
-            die "In order to install Netdata Agent, docker and docker-compose must be installed."
-        fi
-
-        [[ ${docker_installed} -eq 1 ]] && die "In order to install Netdata Agent, docker and docker-compose must be installed."
-
-        # Required
-        PACKAGES_NETDATA_AGENT_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.netdata_agent[].version")"
-        [[ -z ${PACKAGES_NETDATA_AGENT_VERSION} ]] && die "Error reading PACKAGES_NETDATA_AGENT_VERSION from config file"
-
-        PACKAGES_NETDATA_AGENT_CONFIG_PORT="$(json_read_field "${server_config_file}" "PACKAGES.netdata_agent[].config[].port")"
-        [[ -z ${PACKAGES_NETDATA_AGENT_CONFIG_PORT} ]] && die "Error reading PACKAGES_NETDATA_AGENT_CONFIG_PORT from config file"
-
-        PACKAGES_NETDATA_AGENT_CONFIG_DOMAIN="$(json_read_field "${server_config_file}" "PACKAGES.netdata_agent[].config[].domain")"
-        [[ -z ${PACKAGES_NETDATA_AGENT_CONFIG_DOMAIN} ]] && die "Error reading PACKAGES_NETDATA_AGENT_CONFIG_DOMAIN from config file"
-
-        PACKAGES_NETDATA_AGENT_CONFIG_CLAIM_TOKEN="$(json_read_field "${server_config_file}" "PACKAGES.netdata_agent[].config[].claim_token")"
-        [[ -z ${PACKAGES_NETDATA_AGENT_CONFIG_CLAIM_TOKEN} ]] && die "Error reading PACKAGES_NETDATA_AGENT_CONFIG_CLAIM_TOKEN from config file"
-
-        # Optional
-        PACKAGES_NETDATA_AGENT_CONFIG_CLAIM_ROOMS="$(json_read_field "${server_config_file}" "PACKAGES.netdata_agent[].config[].claim_rooms")"
-
-        # Checking if Netdata Agent is not installed
-        [[ -z ${NETDATA_AGENT} ]] && pkg_config_changes_detected "netdata_agent" "true"
-
-    else
-
-        # Checking if Netdata Agent is installed
-        [[ -n ${NETDATA_AGENT} ]] && pkg_config_changes_detected "netdata_agent" "true"
-
-    fi
-
-    export NETDATA_AGENT NETDATA_AGENT_PATH PACKAGES_NETDATA_AGENT_STATUS PACKAGES_NETDATA_AGENT_CONFIG_PORT PACKAGES_NETDATA_AGENT_CONFIG_CLAIM_ROOMS
+    export PACKAGES_NETDATA_CONFIG_CLAIM_TOKEN PACKAGES_NETDATA_CONFIG_CLAIM_ROOMS
 
 }
 
@@ -1336,21 +1300,27 @@ function _brolit_configuration_load_grafana() {
     declare -g PACKAGES_GRAFANA_CONFIG_PORT
 
     GRAFANA="$(which grafana-server)"
-    GRAFANA_PR="$(pgrep grafana)"                          # This will detect if a grafana process is running, but could be a docker container
-    GRAFANA_DOCKER="$(docker ps -q --filter name=grafana)" # This will detect if a grafana docker container is running
+    GRAFANA_PR="$(pgrep grafana)" # This will detect if a grafana process is running, but could be a docker container
+    # If docker is installed
+    if [[ -x "$(command -v docker)" ]]; then
+        GRAFANA_DOCKER="$(docker ps -q --filter name=grafana)" # This will detect if a grafana docker container is running
+    fi
 
     PACKAGES_GRAFANA_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.grafana[].status")"
 
     if [[ ${PACKAGES_GRAFANA_STATUS} == "enabled" ]]; then
 
-        docker="$(package_is_installed "docker.io")"
+        # Check if docker package are installed
+        docker="$(package_is_installed "docker-ce")"
         docker_installed="$?"
         if [[ ${docker_installed} -eq 0 ]]; then
             log_event "debug" "Docker installed on: ${docker}. Now checking if Grafana image is present..." "false"
-            NETDATA_AGENT="$(docker_get_container_id "grafana")"
+            GRAFANA="$(docker_get_container_id "grafana")"
         else
-            # Grafana requires docker
-            die "In order to install Grafana, docker and docker-compose must be installed."
+            if [[ ${CHECKPKGS} == "true" ]]; then
+                # Grafana requires docker
+                die "In order to install Grafana, docker must be installed."
+            fi
         fi
 
         PACKAGES_GRAFANA_CONFIG_SUBDOMAIN="$(json_read_field "${server_config_file}" "PACKAGES.grafana[].config[].subdomain")"
@@ -1398,21 +1368,27 @@ function _brolit_configuration_load_loki() {
     declare -g PACKAGES_LOKI_CONFIG_PORT
 
     LOKI="$(which loki)"
-    LOKI_PR="$(pgrep loki)"                          # This will detect if a loki process is running, but could be a docker container
-    LOKI_DOCKER="$(docker ps -q --filter name=loki)" # This will detect if a loki docker container is running
+    LOKI_PR="$(pgrep loki)" # This will detect if a loki process is running, but could be a docker container
+    # If docker is installed
+    if [[ -x "$(command -v docker)" ]]; then
+        LOKI_DOCKER="$(docker ps -q --filter name=loki)" # This will detect if a loki docker container is running
+    fi
 
     PACKAGES_LOKI_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.loki[].status")"
 
     if [[ ${PACKAGES_LOKI_STATUS} == "enabled" ]]; then
 
-        docker="$(package_is_installed "docker.io")"
+        # Check if docker or package are installed
+        docker="$(package_is_installed "docker-ce")"
         docker_installed="$?"
         if [[ ${docker_installed} -eq 0 ]]; then
             log_event "debug" "Docker installed on: ${docker}. Now checking if Loki image is present..." "false"
-            NETDATA_AGENT="$(docker_get_container_id "loki")"
+            LOKI="$(docker_get_container_id "loki")"
         else
-            # Loki requires docker
-            die "In order to install Loki, docker and docker-compose must be installed."
+            if [[ ${CHECKPKGS} == "true" ]]; then
+                # Loki requires docker
+                die "In order to install Loki, docker must be installed."
+            fi
         fi
 
         PACKAGES_LOKI_CONFIG_SUBDOMAIN="$(json_read_field "${server_config_file}" "PACKAGES.loki[].config[].subdomain")"
@@ -1461,8 +1437,9 @@ function _brolit_configuration_load_promtail() {
     declare -g PACKAGES_PROMTAIL_CONFIG_LOKI_URL
     declare -g PACKAGES_PROMTAIL_CONFIG_LOKI_PORT
 
-    PROMTAIL="$(pgrep promtail)"
-    PROMTAIL_DOCKER="$(docker ps -q --filter name=promtail)"
+    #PROMTAIL="$(pgrep promtail)"
+    PROMTAIL="/opt/promtail/promtail-linux-amd64"
+    PROMTAIL_CONFIG_FILE="/opt/promtail/config-promtail.yml"
 
     PACKAGES_PROMTAIL_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.promtail[].status")"
 
@@ -1489,16 +1466,17 @@ function _brolit_configuration_load_promtail() {
         fi
 
         # Checking if Promtail is not installed
-        [[ -z "${PROMTAIL}" && -z ${PROMTAIL_DOCKER} ]] && pkg_config_changes_detected "promtail" "true"
+        #[[ -z "${PROMTAIL}" && ! -f ${PROMTAIL_CONFIG_FILE} ]] && pkg_config_changes_detected "promtail" "true"
+        [[ ! -f "${PROMTAIL}" || ! -f ${PROMTAIL_CONFIG_FILE} ]] && pkg_config_changes_detected "promtail" "true"
 
     else
 
         # Checking if Promtail is installed
-        [[ -n "${PROMTAIL}" && -n ${PROMTAIL_DOCKER} ]] && pkg_config_changes_detected "promtail" "true"
+        [[ -f "${PROMTAIL}" && -f ${PROMTAIL_CONFIG_FILE} ]] && pkg_config_changes_detected "promtail" "true"
 
     fi
 
-    export PROMTAIL PROMTAIL_DOCKER PACKAGES_PROMTAIL_STATUS PACKAGES_PROMTAIL_VERSION PACKAGES_PROMTAIL_CONFIG_PORT PACKAGES_PROMTAIL_CONFIG_HOSTNAME PACKAGES_PROMTAIL_CONFIG_LOKI_URL PACKAGES_PROMTAIL_CONFIG_LOKI_PORT
+    export PROMTAIL PROMTAIL_CONFIG_FILE PACKAGES_PROMTAIL_STATUS PACKAGES_PROMTAIL_VERSION PACKAGES_PROMTAIL_CONFIG_PORT PACKAGES_PROMTAIL_CONFIG_HOSTNAME PACKAGES_PROMTAIL_CONFIG_LOKI_URL PACKAGES_PROMTAIL_CONFIG_LOKI_PORT
 
 }
 
@@ -1570,12 +1548,12 @@ function _brolit_configuration_load_zabbix() {
 
     # Globals
     declare -g ZABBIX
-    declare -g ZABBIX_PR
+    #declare -g ZABBIX_PR
     declare -g PACKAGES_ZABBIX_STATUS
     declare -g PACKAGES_ZABBIX_CONFIG_SUBDOMAIN
 
     ZABBIX="$(which zabbix)"
-    ZABBIX_PR="$(pgrep zabbix)"
+    #ZABBIX_PR="$(pgrep zabbix)"
 
     PACKAGES_ZABBIX_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.zabbix[].status")"
 
@@ -1590,18 +1568,20 @@ function _brolit_configuration_load_zabbix() {
         fi
 
         # Checking if Cockpit is not installed
-        [[ ! -x "${ZABBIX}" && -z "${ZABBIX_PR}" ]] && pkg_config_changes_detected "zabbix" "true"
+        [[ ! -x "${ZABBIX}" ]] && pkg_config_changes_detected "zabbix" "true"
 
     else
 
         # Checking if Cockpit is installed
-        [[ -x "${ZABBIX}" || -n "${ZABBIX_PR}" ]] && pkg_config_changes_detected "zabbix" "true"
+        [[ -x "${ZABBIX}" ]] && pkg_config_changes_detected "zabbix" "true"
 
     fi
 
     export ZABBIX PACKAGES_ZABBIX_STATUS PACKAGES_ZABBIX_CONFIG_SUBDOMAIN
 
 }
+
+
 
 ################################################################################
 # Private: load docker configuration
@@ -1619,35 +1599,31 @@ function _brolit_configuration_load_docker() {
 
     local exitstatus
     local docker_installed
-    local docker_compose_installed
 
     # Globals
     declare -g DOCKER
     declare -g PACKAGES_DOCKER_STATUS
-    declare -g DOCKER_COMPOSE
 
     PACKAGES_DOCKER_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.docker[].status")"
 
     # Docker
-    DOCKER="$(package_is_installed "docker.io")"
+    # Check if docker package are installed
+    DOCKER="$(package_is_installed "docker-ce")"
     docker_installed="$?"
-    # Docker Compose
-    DOCKER_COMPOSE="$(package_is_installed "docker-compose")"
-    docker_compose_installed="$?"
 
     if [[ ${PACKAGES_DOCKER_STATUS} == "enabled" ]]; then
 
         # Checking if pkg is not installed
-        [[ ${docker_installed} -eq 1 || ${docker_compose_installed} -eq 1 ]] && pkg_config_changes_detected "docker" "true"
+        [[ ${docker_installed} -eq 1 ]] && pkg_config_changes_detected "docker" "true"
 
     else
 
         # Checking if pkg is installed
-        [[ ${docker_installed} -eq 0 || ${docker_compose_installed} -eq 0 ]] && pkg_config_changes_detected "docker" "true"
+        [[ ${docker_installed} -eq 0 ]] && pkg_config_changes_detected "docker" "true"
 
     fi
 
-    export DOCKER PACKAGES_DOCKER_STATUS DOCKER_COMPOSE
+    export DOCKER PACKAGES_DOCKER_STATUS
 
 }
 
@@ -1677,7 +1653,8 @@ function _brolit_configuration_load_portainer() {
 
     PACKAGES_PORTAINER_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.portainer[].status")"
 
-    docker="$(package_is_installed "docker.io")"
+    # Check if docker package are installed
+    docker="$(package_is_installed "docker-ce")"
     docker_installed="$?"
     if [[ ${docker_installed} -eq 0 ]]; then
         log_event "debug" "Docker installed on: ${docker}. Now checking if Portainer image is present..." "false"
@@ -1686,7 +1663,11 @@ function _brolit_configuration_load_portainer() {
 
     if [[ ${PACKAGES_PORTAINER_STATUS} == "enabled" ]]; then
 
-        [[ ${docker_installed} -eq 1 ]] && die "In order to install Portainer, docker and docker-compose must be installed."
+        if [[ ${docker_installed} -eq 1 ]]; then
+            if [[ ${CHECKPKGS} == "true" ]]; then
+                die "In order to install Portainer, docker must be installed."
+            fi
+        fi
 
         PACKAGES_PORTAINER_CONFIG_PORT="$(json_read_field "${server_config_file}" "PACKAGES.portainer[].config[].port")"
         PACKAGES_PORTAINER_CONFIG_NGINX="$(json_read_field "${server_config_file}" "PACKAGES.portainer[].config[].nginx_proxy")"
@@ -1744,7 +1725,8 @@ function _brolit_configuration_load_portainer_agent() {
 
     PACKAGES_PORTAINER_AGENT_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.portainer_agent[].status")"
 
-    docker="$(package_is_installed "docker.io")"
+    # Check if docker package are installed
+    docker="$(package_is_installed "docker-ce")"
     docker_installed="$?"
     if [[ ${docker_installed} -eq 0 ]]; then
         log_event "debug" "Docker installed on: ${docker}. Now checking if Portainer Agent image is present..." "false"
@@ -1753,7 +1735,11 @@ function _brolit_configuration_load_portainer_agent() {
 
     if [[ ${PACKAGES_PORTAINER_AGENT_STATUS} == "enabled" ]]; then
 
-        [[ ${docker_installed} -eq 1 ]] && die "In order to install Portainer Agent, docker and docker-compose must be installed."
+        if [[ ${docker_installed} -eq 1 ]]; then
+            if [[ ${CHECKPKGS} == "true" ]]; then
+                die "In order to install Portainer Agent, docker must be installed."
+            fi
+        fi
 
         PACKAGES_PORTAINER_AGENT_CONFIG_PORT="$(json_read_field "${server_config_file}" "PACKAGES.portainer_agent[].config[].port")"
         [[ -z ${PACKAGES_PORTAINER_AGENT_CONFIG_PORT} ]] && die "Error reading PACKAGES_PORTAINER_AGENT_CONFIG_PORT from config file"
@@ -1769,72 +1755,6 @@ function _brolit_configuration_load_portainer_agent() {
     fi
 
     export PORTAINER_AGENT PORTAINER_AGENT_PATH PACKAGES_PORTAINER_AGENT_STATUS PACKAGES_PORTAINER_AGENT_CONFIG_PORT
-
-}
-
-################################################################################
-# Private: load mailcow configuration
-#
-# Arguments:
-#   ${1} = ${server_config_file}
-#
-# Outputs:
-#   nothing
-################################################################################
-
-function _brolit_configuration_load_mailcow() {
-
-    local server_config_file="${1}"
-
-    local docker
-    local docker_installed
-
-    # Globals
-    declare -g MAILCOW
-    declare -g PACKAGES_MAILCOW_STATUS
-    declare -g PACKAGES_MAILCOW_CONFIG_SUBDOMAIN
-    declare -g PACKAGES_MAILCOW_CONFIG_PORT
-
-    ## MAILCOW BACKUP
-    declare -g MAILCOW_DIR="/opt/mailcow-dockerized/"
-    declare -g MAILCOW_TMP_BK="${BROLIT_MAIN_DIR}/tmp/mailcow"
-
-    PACKAGES_MAILCOW_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.mailcow[].status")"
-
-    docker="$(package_is_installed "docker.io")"
-    docker_installed="$?"
-    if [[ ${docker_installed} -eq 0 ]]; then
-        log_event "debug" "Docker installed on: ${docker}. Now checking if Portainer image is present..." "false"
-        MAILCOW="$(docker_get_container_id "mailcow")"
-    fi
-
-    if [[ ${PACKAGES_MAILCOW_STATUS} == "enabled" ]]; then
-
-        if [[ ${docker_installed} -eq 1 ]]; then
-            log_event "error" "In order to install Portainer, docker and docker-compose must be installed." "true"
-            exit 1
-        fi
-
-        PACKAGES_MAILCOW_CONFIG_PORT="$(json_read_field "${server_config_file}" "PACKAGES.mailcow[].config[].port")"
-        PACKAGES_MAILCOW_CONFIG_SUBDOMAIN="$(json_read_field "${server_config_file}" "PACKAGES.mailcow[].config[].subdomain")"
-
-        # Check if all required vars are set
-        if [[ -z ${PACKAGES_MAILCOW_CONFIG_SUBDOMAIN} ]] || [[ -z ${PACKAGES_MAILCOW_CONFIG_PORT} ]]; then
-            log_event "error" "Missing required config vars for mailcow support" "true"
-            exit 1
-        fi
-
-        # Checking if Portainer is not installed
-        [[ -z ${MAILCOW} ]] && pkg_config_changes_detected "mailcow" "true"
-
-    else
-
-        # Checking if Portainer is installed
-        [[ -n ${MAILCOW} ]] && pkg_config_changes_detected "mailcow" "true"
-
-    fi
-
-    export MAILCOW MAILCOW_DIR MAILCOW_TMP_BK PACKAGES_MAILCOW_STATUS PACKAGES_MAILCOW_CONFIG_SUBDOMAIN PACKAGES_MAILCOW_CONFIG_PORT
 
 }
 
@@ -2182,23 +2102,20 @@ function brolit_configuration_load() {
     #### BACKUPS Method: dropbox
     _brolit_configuration_load_backup_dropbox "${server_config_file}"
 
+    #### BACKUPS Method: borg
+    _brolit_configuration_load_backup_borg "${server_config_file}"
+
     #### BACKUPS Method: sftp
     _brolit_configuration_load_backup_sftp "${server_config_file}"
 
     #### BACKUPS Method: local
     _brolit_configuration_load_backup_local "${server_config_file}"
 
-    #### BACKUPS Method: s3
-    _brolit_configuration_load_backup_s3 "${server_config_file}"
-
-    # TODO:
-    #### BACKUPS Method: duplicity
-    #_brolit_configuration_load_backup_duplicity "${server_config_file}"
-
-    #### if all required vars are disabled, show error
+    #### If all required vars are disabled, show error
     if [[ ${BACKUP_DROPBOX_STATUS} != "enabled" ]] &&
         [[ ${BACKUP_SFTP_STATUS} != "enabled" ]] &&
         [[ ${BACKUP_S3_STATUS} != "enabled" ]] &&
+        [[ ${BACKUP_BORG_STATUS} != "enabled" ]] &&
         [[ ${BACKUP_LOCAL_STATUS} != "enabled" ]]; then
         log_event "warning" "No backup method enabled" "false"
         display --indent 6 --text "- Backup method selected" --result "NONE" --color RED
@@ -2222,6 +2139,9 @@ function brolit_configuration_load() {
 
     ### Discord
     _brolit_configuration_load_discord "${server_config_file}"
+
+    ## ntfy
+    _brolit_configuration_load_ntfy "${server_config_file}"
 
     ## SECURITY
     SECURITY_STATUS="$(json_read_field "${server_config_file}" "SECURITY.status")"
@@ -2264,7 +2184,7 @@ function brolit_configuration_load() {
         [[ ${PACKAGES_MYSQL_STATUS} != "enabled" ]] &&
         [[ ${PACKAGES_POSTGRES_STATUS} != "enabled" ]] &&
         [[ ${SERVER_ROLE_DATABASE} == "enabled" ]]; then
-        log_event "warning" "No database engine is enabled" "true"
+        log_event "warning" "Server role defined as 'database' but no database engine is enabled" "true"
         exit 1
     fi
 
@@ -2273,6 +2193,9 @@ function brolit_configuration_load() {
 
     ### php-fpm
     _brolit_configuration_load_php "${server_config_file}"
+
+    ## borg
+    _brolit_configuration_load_borg "${server_config_file}"
 
     ### certbot
     _brolit_configuration_load_certbot "${server_config_file}"
@@ -2285,11 +2208,10 @@ function brolit_configuration_load() {
 
     ### netdata
     _brolit_configuration_load_netdata "${server_config_file}"
-    _brolit_configuration_load_netdata_agent "${server_config_file}"
 
     ### grafana
     _brolit_configuration_load_grafana "${server_config_file}"
-    
+
     ### loki
     _brolit_configuration_load_loki "${server_config_file}"
 
@@ -2307,9 +2229,6 @@ function brolit_configuration_load() {
 
     ### portainer agent
     _brolit_configuration_load_portainer_agent "${server_config_file}"
-
-    ### mailcow
-    #_brolit_configuration_load_mailcow "${server_config_file}"
 
     ### custom
     _brolit_configuration_load_custom_pkgs "${server_config_file}"

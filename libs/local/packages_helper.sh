@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.2
+# Version: 3.3.10
 ################################################################################
 #
 # Packages Helper: Perform apt actions.
@@ -148,8 +148,8 @@ function package_install() {
   # Will remove all apt-get command output
   # sudo DEBIAN_FRONTEND=noninteractive apt-get install PACKAGE -y -qq < /dev/null > /dev/null
 
-  # apt command
-  sudo DEBIAN_FRONTEND=noninteractive apt-get --yes install "${package}" -qq </dev/null >/dev/null
+  # apt command in silent mode
+  DEBIAN_FRONTEND=noninteractive apt-get --yes install "${package}" -qq </dev/null >/dev/null
 
   exitstatus=$?
   if [[ $exitstatus -eq 0 ]]; then
@@ -227,6 +227,7 @@ function package_check_required() {
   # Install packages if not
   package_install_if_not "pv"
   package_install_if_not "bc"
+  package_install_if_not "pigz"
   package_install_if_not "lbzip2"
   package_install_if_not "zip"
   package_install_if_not "unzip"
@@ -239,6 +240,7 @@ function package_check_required() {
   package_install_if_not "libio-socket-ssl-perl"
   package_install_if_not "ncdu"
   package_install_if_not "ppa-purge"
+  package_install_if_not "sshfs"
 
   # Log
   display --indent 6 --text "- Checking script dependencies" --result "DONE" --color GREEN

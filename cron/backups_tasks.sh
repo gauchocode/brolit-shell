@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.2
+# Version: 3.3.10
 ################################################################################
 
 ### Main dir check
@@ -42,7 +42,19 @@ log_section "Backup All"
 
 # Databases Backup
 database_backup_result="$(backup_all_databases)"
-
+docker_database_backup_result="$(backup_all_databases_docker)"
+# Borg Backup for Databases (loop through all projects in /var/www)
+for project_domain in $(ls /var/www); do
+    log_event "info" "Starting Borg backup for project: ${project_domain}" "false"
+    
+    borg_backup_database "${project_domain}"
+    
+    if [[ $? -eq 0 ]]; then
+        log_event "info" "Borg backup for ${project_domain} completed successfully." "false"
+    else
+        log_event "error" "Borg backup for ${project_domain} failed." "false"
+    fi
+done
 # Files Backup
 files_backup_result="$(backup_all_files)"
 

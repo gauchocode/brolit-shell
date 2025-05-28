@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.2
+# Version: 3.3.10
 ################################################################################
 
 ### Main dir check
@@ -19,4 +19,6 @@ source "${BROLIT_MAIN_DIR}/brolit_lite.sh"
 show_server_data "true"
 dropbox_get_sites_backups "true"
 firewall_get_apps_details "true"
-list_packages_to_upgrade "true"
+list_packages_ready_to_upgrade "true"
+show_backup_information "true"
+retrieve_cron_jobs "true"

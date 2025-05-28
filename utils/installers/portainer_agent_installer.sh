@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.2
+# Version: 3.3.10
 ################################################################################
 #
 # Portainer Agent Installer
@@ -26,8 +26,12 @@ function portainer_agent_installer() {
 
     package_update
 
-    package_install_if_not "docker.io"
-    package_install_if_not "docker-compose"
+    # Check if docker package are installed
+    docker="$(package_is_installed "docker-ce")"
+    docker_installed="$?"
+    if [[ ${docker_installed} -eq 1 ]]; then
+        docker_installer
+    fi
 
     # Force update brolit_conf.json
     PACKAGES_DOCKER_STATUS="enabled"
@@ -52,10 +56,8 @@ function portainer_agent_installer() {
         # Enable port in firewall
         firewall_allow "${PACKAGES_PORTAINER_AGENT_CONFIG_PORT}"
 
-        # Run docker-compose pull on specific directory
+        # Run docker-compose
         docker_compose_pull "${PORTAINER_AGENT_PATH}/docker-compose.yml"
-
-        # Run docker-compose up -d on specific directory
         docker_compose_up "${PORTAINER_AGENT_PATH}/docker-compose.yml"
 
         clear_previous_lines "3"

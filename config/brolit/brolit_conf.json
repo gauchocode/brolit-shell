@@ -2,7 +2,7 @@
     "BROLIT_SETUP": {
         "config": [
             {
-                "version": "3.10.5",
+                "version": "3.10.6",
                 "debug": "true",
                 "skip_test": "true",
                 "tmp_dir": "tmp",
@@ -60,10 +60,17 @@
                         ]
                     }
                 ],
-                "compression_type": "lbzip2",
+                "compression": [
+                    {
+                        "type": "lbzip2",
+                        "level": "5",
+                        "cores": "",
+                        "test": "true"
+                    }
+                ],
                 "retention": [
                     {
-                        "keep_daily": "7",
+                        "keep_daily": "3",
                         "keep_weekly": "0",
                         "keep_monthly": "0"
                     }
@@ -72,6 +79,19 @@
         ],
         "methods": [
             {
+                "borg": [
+                    {
+                        "status": "disabled",
+                        "config": [
+                            {
+                                "user": "",
+                                "server": "",
+                                "port": ""
+                            }
+                        ],
+                        "group": ""
+                    }
+                ],
                 "dropbox": [
                     {
                         "status": "disabled",
@@ -105,32 +125,6 @@
                             }
                         ]
                     }
-                ],
-                "s3": [
-                    {
-                        "status": "disabled",
-                        "config": [
-                            {
-                                "bucket": "",
-                                "backup_path": "",
-                                "endpoint_url": "",
-                                "access_key": "",
-                                "secret_key": ""
-                            }
-                        ]
-                    }
-                ],
-                "duplicity": [
-                    {
-                        "status": "disabled",
-                        "config": [
-                            {
-                                "backup_path": "",
-                                "backup_frequency": "7D",
-                                "backup_full_life": "14D"
-                            }
-                        ]
-                    }
                 ]
             }
         ]
@@ -150,6 +144,19 @@
                     }
                 ]
             }
+        ],
+        "ntfy": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "username": "",
+                        "password": "",
+                        "server": "",
+                        "topic": ""
+                    }
+                ]
+            } 
         ],
         "discord": [
             {
@@ -315,12 +322,12 @@
         ],
         "docker": [
             {
-                "status": "disabled",
-                "compose": [
-                    {
-                        "status": "enabled"
-                    }
-                ]
+                "status": "disabled"
+            }
+        ],
+        "borg": [
+            {
+                "status": "disabled"
             }
         ],
         "portainer": [
@@ -355,7 +362,9 @@
                         "web_admin": "disabled",
                         "subdomain": "",
                         "user": "",
-                        "user_pass": ""
+                        "user_pass": "",
+                        "claim_token": "",
+                        "claim_room": ""
                     }
                 ],
                 "notifications": [
@@ -383,20 +392,6 @@
                                 ]
                             }
                         ]
-                    }
-                ]
-            }
-        ],
-        "netdata_agent": [
-            {
-                "status": "disabled",
-                "version": "latest",
-                "config": [
-                    {
-                        "port": "9001",
-                        "subdomain": "",
-                        "claim_token": "",
-                        "claim_room": ""
                     }
                 ]
             }
@@ -463,18 +458,6 @@
                 ]
             }
         ],
-        "mailcow": [
-            {
-                "status": "disabled",
-                "version": "latest",
-                "config": [
-                    {
-                        "port": "default",
-                        "subdomain": ""
-                    }
-                ]
-            }
-        ],
         "custom": [
             {
                 "status": "disabled",
@@ -483,7 +466,8 @@
                         "vim": "true",
                         "lynis": "true",
                         "clamav": "true",
-                        "bat": "true"
+                        "bat": "true",
+                        "htop": "true"
                     }
                 ]
             }

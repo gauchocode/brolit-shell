@@ -1,0 +1,223 @@
+constants:
+    project: domain-example.com             # e.g: gauchocode.com  
+    group: group_server                     # e.g: broobe-hosts
+    hostname: hostname_server               # e.g: broobe-docker-host03-cmuse    
+    username: user 
+    server: server_or_IP
+    port: port_to_connect
+    ntfy_server: ntfy_server
+    ntfy_username: ntfy_username
+    ntfy_password: ntfy_password
+    loki_url: loki_url
+
+# List of source directories and files to back up. Globs and tildes
+# are expanded. Do not backslash spaces in path names.
+source_directories:
+    - /var/www/{project}
+
+repositories:
+  - path: ssh://{username}@{server}:{port}/./applications/{group}/{hostname}/projects-online/site/{project}
+    label: "{project}"
+
+exclude_patterns:
+    - '*.o'
+    - '*.log'
+    - '*.tmp'
+    - '*.cache'
+    - '*.git'
+    # - '*.pyc'
+    # - /home/*/.cache
+    # - '*/.vim*.tmp'
+    # - /etc/ssl
+    # - /home/user/path with spaces
+
+archive_name_format: '{project}_site-files-{now:%Y-%m-%dT%H:%M:%S}'
+# Keep all archives within this time interval.
+keep_within: 2m # two months of backup
+
+# Number of secondly archives to keep.
+# keep_secondly: 60
+
+# Number of minutely archives to keep.
+# keep_minutely: 60
+
+# Number of hourly archives to keep.
+# keep_hourly: 24
+
+# Number of daily archives to keep.
+# keep_daily: 7
+
+# Number of weekly archives to keep.
+# keep_weekly: 4
+
+# Number of monthly archives to keep.
+keep_monthly: 6
+
+# Number of yearly archives to keep.
+keep_yearly: 1
+
+checks:
+    - name: archives
+    - name: repository
+      frequency: 2 weeks
+
+check_last: 3
+
+# before_actions:
+    # - echo Starting actions.
+
+# List of one or more shell commands or scripts to execute before
+# creating a backup, run once per repository.
+before_backup:
+    - echo "Arrancando backup" 
+
+# List of one or more shell commands or scripts to execute before
+# pruning, run once per repository.
+# before_prune:
+    # - echo Starting pruning.
+
+# List of one or more shell commands or scripts to execute before
+# compaction, run once per repository.
+# before_compact:
+    # - echo Starting compaction.
+
+# List of one or more shell commands or scripts to execute before
+# consistency checks, run once per repository.
+# before_check:
+    # - echo Starting checks.
+
+# List of one or more shell commands or scripts to execute before
+# extracting a backup, run once per repository.
+# before_extract:
+    # - echo Starting extracting.
+
+# List of one or more shell commands or scripts to execute after
+# creating a backup, run once per repository.
+after_backup:
+    - echo "Backup terminado!"
+
+mysql_databases:
+    # Database name (required if using this hook). Or "all" to
+    # dump all databases on the host. Note that using this
+    # database hook implicitly enables both read_special and
+    # one_file_system (see above) to support dump and restore
+    # streaming.
+    - name: ${database}
+
+      # Database hostname to connect to. Defaults to connecting
+      # via local Unix socket.
+      # hostname: localhost
+
+      # Database hostname to restore to. Defaults to the
+      # "hostname" option.
+      # restore_hostname: database.example.org
+
+      # Port to connect to. Defaults to 3306.
+      # port: 3306
+
+      # Port to restore to. Defaults to the "port" option.
+      # restore_port: 5433
+
+      # Username with which to connect to the database. Defaults
+      # to the username of the current user.
+      username: root
+
+      # Username with which to restore the database. Defaults to
+      # the "username" option.
+      # restore_username: pilar_prod
+
+      # Password with which to connect to the database. Omitting
+      # a password will only work if MySQL is configured to
+      # trust the configured username without a password.
+      # password: ${PILAR_PROD}
+
+      # Password with which to connect to the restore database.
+      # Defaults to the "password" option.
+      # restore_password: trustsome1
+
+      # Database dump output format. Currently only "sql" is
+      # supported. Defaults to "sql" for a single database. Or,
+      # when database name is "all" and format is blank, dumps
+      # all databases to a single file. But if a format is
+      # specified with an "all" database name, dumps each
+      # database to a separate file of that format, allowing
+      # more convenient restores of individual databases.
+      format: sql
+
+      # Use the "--add-drop-database" flag with mysqldump,
+      # causing the database to be dropped right before restore.
+      # Defaults to true.
+      add_drop_database: true
+
+      # Additional mysqldump options to pass directly to the
+      # dump command, without performing any validation on them.
+      # See mysqldump documentation for details.
+      options: --no-tablespaces    
+
+on_error:
+    - echo Error during create/prune/compact/check.
+
+ntfy:
+    # The topic to publish to. See https://ntfy.sh/docs/publish/
+    # for details.
+    topic: backups_broobe
+
+    # The address of your self-hosted ntfy.sh instance.
+    server: https://ntfy.broobe.net
+
+    # The username used for authentication.
+    username: broobe
+
+    # The password used for authentication.
+    password: 
+
+    start:
+        # The title of the message.
+        title: Arrancando backup!
+
+        # The message body to publish.
+        message: Proyecto {project} - Server {hostname}
+
+        # The priority to set.
+        priority: default
+
+        # Tags to attach to the message.
+        tags: rotating_light
+
+    finish:
+        # The title of the message.
+        title: Backup terminado!
+
+        # The message body to publish.
+        message: Backup de {project} terminado! 
+
+        # The priority to set.
+        priority: default
+
+        # Tags to attach to the message.
+        tags: white_check_mark
+
+    fail:
+        # The title of the message.
+        title: Backup error!
+
+        # The message body to publish.
+        message: Los backups de {project} han fallado. Ver logs
+
+        # The priority to set.
+        priority: high
+
+        # Tags to attach to the message.
+        tags: x
+
+    # List of one or more monitoring states to ping for: "start",
+    # "finish", and/or "fail". Defaults to pinging for failure
+    # only.
+    states:
+        - fail
+loki:
+    url: {loki_url}:3100/loki/api/v1/push
+    labels:
+        app: borgmatic
+        project: __config
+        hostname: __hostname
