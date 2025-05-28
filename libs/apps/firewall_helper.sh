@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.2
+# Version: 3.3.10
 ################################################################################
 #
 # Firewall Helper: Perform firewall actions.
@@ -200,8 +200,6 @@ function firewall_allow() {
             # Log
             log_event "info" "Allowing ${service} on firewall" "false"
             log_event "info" "Skipping adding existing rule" "false"
-            #display --indent 2 --text "- Allowing ${service} on firewall" --result "SKIP" --color YELLOW
-            #display --indent 4 --text "Skipping adding existing rule"
 
             return 0
 

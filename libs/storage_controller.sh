@@ -1,29 +1,10 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.2
+# Version: 3.3.10
 ################################################################################
 #
 # Storage Controller: Controller to upload and download backups.
-#
-################################################################################
-
-################################################################################
-#
-# Important: Backup/Restore utils selection.
-#
-#   Backup Uploader:
-#       Simple way to upload backup file to this cloud service.
-#
-#   Rclone:
-#       Good way to store backups on a SFTP Server and cloud services.
-#       Option to "sync" files.
-#       Read: https://forum.rclone.org/t/incremental-backups-and-efficiency-continued/10763
-#
-#   Duplicity:
-#       Best way to backup projects of 10GBs+. Incremental backups.
-#       Need to use SFTP option (non native cloud services support).
-#       Read: https://zertrin.org/how-to/installation-and-configuration-of-duplicity-for-encrypted-sftp-remote-backup/
 #
 ################################################################################
 
@@ -66,6 +47,7 @@ function storage_list_dir() {
 
     if [[ ${storage_result} -eq 0 && -n ${remote_list} ]]; then
 
+        # Return
         echo "${remote_list}" && return 0
 
     else
@@ -77,11 +59,10 @@ function storage_list_dir() {
 }
 
 ################################################################################
-# Create directory (dropbox, sftp, etc)
+# Create directory (dropbox, sftp, ssh, etc)
 #
 # Arguments:
-#   ${1} = {file_to_download}
-#   ${2} = {remote_directory}
+#   ${1} = {remote_directory}
 #
 # Outputs:
 #   0 if it utils were installed, 1 on error.
@@ -101,6 +82,11 @@ function storage_create_dir() {
     if [[ ${BACKUP_LOCAL_STATUS} == "enabled" ]]; then
 
         mkdir --force "${BACKUP_LOCAL_CONFIG_BACKUP_PATH}/${remote_directory}"
+
+    fi
+    if [[ ${BACKUP_BORG_STATUS} == "enabled" ]]; then
+
+        ssh -p "${BACKUP_BORG_PORT}" "${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}" "mkdir -p /home/applications/${BACKUP_BORG_GROUP}/${remote_directory}"
 
     fi
 
@@ -164,6 +150,7 @@ function storage_move() {
 # Arguments:
 #   ${1} = {file_to_upload}
 #   ${2} = {remote_directory}
+#   ${3} = {file_to_upload_size}
 #
 # Outputs:
 #   0 if it utils were installed, 1 on error.
@@ -173,15 +160,32 @@ function storage_upload_backup() {
 
     local file_to_upload="${1}"
     local remote_directory="${2}"
+    local file_to_upload_size="${3}"
 
     local got_error=0
     local error_type
+    local storage_space_free
+
+    # Only numbers
+    file_to_upload_size="$(echo "${file_to_upload_size}" | sed -E 's/[^0-9.]+//g')"
 
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
-        dropbox_upload "${file_to_upload}" "${remote_directory}"
+        # Check if account has enough space
+        storage_space_free="$(dropbox_account_space_free)"
 
-        [[ $? -eq 1 ]] && error_type="dropbox" && got_error=1
+        # Log
+        log_event "debug" "Dropbox account space free: ${storage_space_free}" "false"
+        log_event "debug" "File to upload size: ${file_to_upload_size}" "false"
+
+        # Compare
+        ## Need to do this because Bash doesn't support floating point arithmetic on [[]]
+        result=$(echo "${storage_space_free} < ${file_to_upload_size}" | bc)
+        [[ ${result} -eq 1 ]] && error_type="dropbox_space" && got_error=1
+
+        # Upload
+        dropbox_upload "${file_to_upload}" "${remote_directory}"
+        [[ $? -eq 1 ]] && error_type="dropbox_upload" && got_error=1
 
     fi
     if [[ ${BACKUP_LOCAL_STATUS} == "enabled" ]]; then
@@ -205,6 +209,7 @@ function storage_upload_backup() {
 
     [[ ${error_type} != "none" ]] && echo "${error_type}"
 
+    # Return
     return ${got_error}
 
 }
@@ -214,7 +219,7 @@ function storage_upload_backup() {
 #
 # Arguments:
 #   ${1} = {file_to_download}
-#   ${2} = {remote_directory}
+#   ${2} = {local_directory}
 #
 # Outputs:
 #   0 if it utils were installed, 1 on error.
@@ -223,27 +228,36 @@ function storage_upload_backup() {
 function storage_download_backup() {
 
     local file_to_download="${1}"
-    local remote_directory="${2}"
+    local local_directory="${2}"
 
     local got_error=0
-    local error_type="none"
+    local error_type
+    local backup_date
+    #local local_space_free
 
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
-        dropbox_download "${file_to_download}" "${remote_directory}"
-        [[ $? -eq 1 ]] && error_type="dropbox" && got_error=1
+        # Check if local storage has enough space
+        #local_space_free="$(calculate_disk_usage "${MAIN_VOL}")"
+        
+        # Check date from file to download
+        backup_date="$(dropbox_get_modified_date "${file_to_download}")"
 
-    fi
-    if [[ ${BACKUP_RCLONE_STATUS} == "enabled" ]]; then
+        # Show whiptail message
+        whiptail_message_with_skip_option "Backup date" "\n\nThis backup date is: ${backup_date}\n\nDo you want to continue?"
+        [[ $? -eq 1 ]] && error_type="dropbox_skipped" && return 1
 
-        rclone_download "${file_to_download}" "${remote_directory}"
-        [[ $? -eq 1 ]] && error_type="rsync" && got_error=1
+        # Download
+        dropbox_download "${file_to_download}" "${local_directory}"
+        [[ $? -eq 1 ]] && error_type="dropbox_download" && got_error=1
 
     fi
 
     [[ ${error_type} != "none" ]] && echo "${error_type}"
 
+    # Return
     return ${got_error}
+
 }
 
 ################################################################################
@@ -253,20 +267,23 @@ function storage_download_backup() {
 #   ${1} = {file_to_delete}
 #
 # Outputs:
-#   0 if it utils were installed, 1 on error.
+#   0 on success, 1 on error.
 ################################################################################
 
 function storage_delete_backup() {
 
     local file_to_delete="${1}"
+    #local force_delete="${2}" # or should be a global var?
+
+    local force_delete="true"
 
     local got_error=0
-    #local error_msg="none"
     local error_type="none"
+    #local error_msg="none"
 
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
-        dropbox_delete "${file_to_delete}" "false"
+        dropbox_delete "${file_to_delete}" "${force_delete}"
         [[ $? -eq 1 ]] && error_type="dropbox" && got_error=1
 
     fi
@@ -280,7 +297,100 @@ function storage_delete_backup() {
 
     [[ ${error_type} != "none" ]] && echo "${error_type}"
 
+    # Return
     return ${got_error}
+
+}
+
+################################################################################
+# Delete old backups on configured storage (dropbox, sftp, etc)
+#
+# Arguments:
+#   ${1} = {storage_path}
+#
+# Outputs:
+#   0 on success, 1 on error.
+################################################################################
+
+function storage_delete_old_backups() {
+
+    local storage_path="${1}"
+
+    # Configuration for backup retention
+    local keep_daily=${BACKUP_RETENTION_KEEP_DAILY}
+    local keep_weekly=${BACKUP_RETENTION_KEEP_WEEKLY}
+    local keep_monthly=${BACKUP_RETENTION_KEEP_MONTHLY}
+
+    # List all storage backups
+    backup_list="$(storage_list_dir "${storage_path}")"
+
+    # Delete old storage backups
+    ## Transform backup_list into comma separated list
+    backup_list="$(echo "${backup_list}" | tr '\n' ',')"
+
+    # Log
+    log_event "info" "Preparing to delete old backups" "false"
+    display --indent 6 --text "- Preparing to delete old backups" --result "DONE" --color GREEN
+
+    # Convert the string to an array
+    IFS=',' read -ra filenames <<<"$backup_list"
+
+    # Arrays to hold various types of backups
+    declare -a daily_backups
+    declare -a weekly_backups
+    declare -a monthly_backups
+
+    # Categorize backups into daily, weekly, and monthly
+    for i in "${filenames[@]}"; do
+        if [[ $i == *"-weekly"* ]]; then
+            weekly_backups+=("$i")
+        elif [[ $i == *"-monthly"* ]]; then
+            monthly_backups+=("$i")
+        else
+            daily_backups+=("$i")
+        fi
+    done
+
+    # Sort the arrays
+    sorted_daily=($(printf '%s\n' "${daily_backups[@]}" | sort -r))
+    sorted_weekly=($(printf '%s\n' "${weekly_backups[@]}" | sort -r))
+    sorted_monthly=($(printf '%s\n' "${monthly_backups[@]}" | sort -r))
+
+    # Log
+    #log_event "debug" "Daily backups: ${sorted_daily[@]}" "false"
+    #log_event "debug" "Weekly backups: ${sorted_weekly[@]}" "false"
+    #log_event "debug" "Monthly backups: ${sorted_monthly[@]}" "false"
+
+    # Log
+    display --indent 6 --text "- Deleting old files from storage"
+
+    # Delete old daily backups
+    if [ ${#sorted_daily[@]} -gt $keep_daily ]; then
+        to_delete_daily=("${sorted_daily[@]:$keep_daily}")
+        for i in "${to_delete_daily[@]}"; do
+            storage_delete_backup "${storage_path}/${i}"
+        done
+    fi
+
+    # Delete old weekly backups
+    if [ ${#sorted_weekly[@]} -gt $keep_weekly ]; then
+        to_delete_weekly=("${sorted_weekly[@]:$keep_weekly}")
+        for i in "${to_delete_weekly[@]}"; do
+            storage_delete_backup "${storage_path}/${i}"
+        done
+    fi
+
+    # Delete old monthly backups
+    if [ ${#sorted_monthly[@]} -gt $keep_monthly ]; then
+        to_delete_monthly=("${sorted_monthly[@]:$keep_monthly}")
+        for i in "${to_delete_monthly[@]}"; do
+            storage_delete_backup "${storage_path}/${i}"
+        done
+    fi
+
+    # Log
+    clear_previous_lines "1"
+    display --indent 6 --text "- Deleting old files from storage" --result "DONE" --color GREEN
 
 }
 
@@ -299,6 +409,9 @@ function storage_remote_server_list() {
     local remote_server_list # list servers directories
     local chosen_server      # whiptail var
 
+    # Log
+    log_event "info" "Running server selection menu" "false"
+
     # Server selection
     remote_server_list="$(storage_list_dir "/")"
 
@@ -314,8 +427,10 @@ function storage_remote_server_list() {
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
+            # Log
             log_event "debug" "chosen_server: ${chosen_server}" "false"
 
+            # Return
             echo "${chosen_server}" && return 0
 
         else
@@ -326,8 +441,10 @@ function storage_remote_server_list() {
 
     else
 
+        # Log
         log_event "error" "Storage list dir failed. Output: ${remote_server_list}. Exit status: ${exitstatus}" "false"
 
+        # Return
         return 1
 
     fi
@@ -349,14 +466,21 @@ function storage_remote_type_list() {
     local remote_type_list
     local chosen_restore_type
 
-    # List options
-    remote_type_list="project site database" # TODO: need to implement "other"
+    # Log
+    log_event "info" "Running backup type selection menu" "false"
 
-    chosen_restore_type="$(whiptail --title "BACKUP SELECTION" --menu "Choose a backup type. You can choose restore an entire project or only site files, database or config." 20 78 10 $(for x in ${remote_type_list}; do echo "${x} [D]"; done) 3>&1 1>&2 2>&3)"
+    # List options
+    remote_type_list="project site database docker-volume"
+
+    chosen_restore_type="$(whiptail --title "BACKUP TYPE SELECTION" --menu "Choose a backup type. You can choose restore an entire project or only site files, database or config." 20 78 10 $(for x in ${remote_type_list}; do echo "${x} [D]"; done) 3>&1 1>&2 2>&3)"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
+        # Log
+        log_event "debug" "chosen_restore_type: ${chosen_restore_type}" "false"
+
+        # Return
         echo "${chosen_restore_type}" && return 0
 
     else
@@ -382,7 +506,8 @@ function storage_remote_status_list() {
     local remote_status_list
     local chosen_restore_status
 
-    log_event "debug" "Backup status selection" "false"
+    # Log
+    log_event "debug" "Running backup status selection" "false"
 
     # List options
     remote_status_list=("01) Online 02) Offline")
@@ -393,19 +518,31 @@ function storage_remote_status_list() {
     if [[ ${exitstatus} -eq 0 ]]; then
 
         if [[ ${chosen_restore_status} == *"01"* ]]; then
+
+            # Log
             log_event "debug" "chosen_restore_status: online" "false"
+
+            # Return
             echo "online" && return 0
+
         fi
 
         if [[ ${chosen_restore_status} == *"02"* ]]; then
+
+            # Log
             log_event "debug" "chosen_restore_status: offline" "false"
+
+            # Return
             echo "offline" && return 0
+
         fi
 
     else
 
+        # Log
         log_event "debug" "Backup status selection skipped." "false"
 
+        # Return
         return 1
 
     fi
@@ -433,6 +570,9 @@ function storage_backup_selection() {
     local remote_backup_list
     local chosen_backup_file
 
+    # Log
+    log_event "info" "Running backup selection menu" "false"
+
     # Get dropbox folders list
     storage_project_list="$(storage_list_dir "${remote_backup_path}/${remote_backup_type}")"
 
@@ -444,13 +584,20 @@ function storage_backup_selection() {
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Log
+        log_event "debug" "chosen_project: ${chosen_project}" "false"
+
         # Get backup list
         remote_backup_path="${remote_backup_path}/${remote_backup_type}/${chosen_project}"
         remote_backup_list="$(storage_list_dir "${remote_backup_path}")"
 
     else
 
+        # Log
         display --indent 6 --text "- Selecting Project Backup" --result "SKIPPED" --color YELLOW
+
+        # Return        
         return 1
 
     fi
@@ -464,17 +611,22 @@ function storage_backup_selection() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
+        # Log
         display --indent 6 --text "- Selecting project Backup" --result "DONE" --color GREEN
         display --indent 8 --text "${chosen_backup_file}" --tcolor YELLOW
 
         # Remote backup path
         chosen_backup_file="${remote_backup_path}/${chosen_backup_file}"
 
-        echo "${chosen_backup_file}"
+        # Return
+        echo "${chosen_backup_file}" && return 0
 
-     else
+    else
 
+        # Log
         display --indent 6 --text "- Selecting Project Backup" --result "SKIPPED" --color YELLOW
+
+        # Return
         return 1
 
     fi

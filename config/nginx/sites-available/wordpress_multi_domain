@@ -8,7 +8,7 @@ server {
     root /var/www/domain.com;
     index index.php;
 
-    ### LOG
+    ### BROLIT_LOG_FILE
     error_log   /var/log/nginx/domain.com-error.log;
 
     location / {

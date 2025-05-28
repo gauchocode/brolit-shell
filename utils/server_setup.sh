@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.2
+# Version: 3.3.10
 ################################################################################
 #
 # Server Setup: Perform server setup actions.
@@ -169,33 +169,12 @@ function server_app_setup() {
 
         ;;
 
-    "netdata")
+    "borg")
 
-        if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
-            netdata_installer
-            netdata_configuration
+        if [[ ${PACKAGES_BORG_STATUS} == "enabled" ]]; then
+            borg_installer
         else
-            netdata_uninstaller
-        fi
-
-        ;;
-
-    "cockpit")
-
-        if [[ ${PACKAGES_COCKPIT_STATUS} == "enabled" ]]; then
-            cockpit_installer
-        else
-            cockpit_purge
-        fi
-
-        ;;
-
-    "zabbix")
-
-        if [[ ${PACKAGES_ZABBIX_STATUS} == "enabled" ]]; then
-            zabbix_installer
-        else
-            zabbix_purge
+            borg_purge
         fi
 
         ;;
@@ -203,12 +182,20 @@ function server_app_setup() {
     "docker")
 
         if [[ ${PACKAGES_DOCKER_STATUS} == "enabled" ]]; then
-            log_subsection "Docker Installer"
-            package_install_if_not "docker.io"
-            package_install_if_not "docker-compose"
+            # Check if docker package are installed
+            package_is_installed "docker-ce"
+            docker_installed="$?"
+            if [[ ${docker_installed} -eq 1 ]]; then
+                # Remove old docker packages
+                docker_purge
+                # Install docker
+                docker_installer
+                # Restart docker service
+                service docker restart
+            fi
         else
-            package_purge "docker.io"
-            package_purge "docker-compose"
+            # Purge docker packages
+            docker_purge
         fi
 
         ;;
@@ -245,19 +232,51 @@ function server_app_setup() {
 
         ;;
 
-    "mailcow")
+    "loki")
 
-        if [[ ${PACKAGES_MAILCOW_STATUS} == "enabled" ]]; then
-            mailcow_installer
-            mailcow_configure
+        if [[ ${PACKAGES_LOKI_STATUS} == "enabled" ]]; then
+            #loki_installer
+            echo "Loki installer not implemented yet"
         else
-            mailcow_purge
+            #loki_purge
+            echo "Loki purge not implemented yet"
+        fi
+
+        ;;
+
+    "netdata")
+
+        if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
+            netdata_installer
+            netdata_configuration
+        else
+            netdata_uninstaller
+        fi
+
+        ;;
+
+    "cockpit")
+
+        if [[ ${PACKAGES_COCKPIT_STATUS} == "enabled" ]]; then
+            cockpit_installer
+        else
+            cockpit_purge
+        fi
+
+        ;;
+
+    "zabbix")
+
+        if [[ ${PACKAGES_ZABBIX_STATUS} == "enabled" ]]; then
+            zabbix_installer
+        else
+            zabbix_purge
         fi
 
         ;;
 
     *)
-        echo "App not supported yet."
+        log_event "warning" "App ${app_setup} is not supported yet" "true"
         ;;
 
     esac

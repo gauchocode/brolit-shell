@@ -1,12 +1,12 @@
 server:
-  http_listen_port: ${PROMTAIL_PORT}
+  http_listen_port: PROMTAIL_PORT
   grpc_listen_port: 0
 
 positions:
   filename: /tmp/positions.yml
 
 clients:
-  - url: ${LOKI_HOST_URL}:${LOKI_PORT_URL}/loki/api/v1/push
+  - url: LOKI_HOST_URL:LOKI_PORT_URL/loki/api/v1/push
 
 scrape_configs:
   # system logs

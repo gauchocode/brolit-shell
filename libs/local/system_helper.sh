@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.2
+# Version: 3.3.10
 ################################################################################
 #
 # System Helper: Perform system actions.
@@ -245,13 +245,15 @@ function system_add_floating_IP() {
 
     log_event "info" "Trying to add ${floating_IP} as floating ip on Ubuntu ${ubuntu_v}" "false"
 
-    if [[ "${ubuntu_v}" == "1804" ]]; then
+    if [[ ${ubuntu_v} == "2004" || ${ubuntu_v} == "2204" || ${ubuntu_v} == "2404" ]]; then
 
-        cp "${BROLIT_MAIN_DIR}/config/networking/60-my-floating-ip.cfg" /etc/network/interfaces.d/60-my-floating-ip.cfg
-        sed -i "s#your.float.ing.ip#${floating_IP}#" /etc/network/interfaces.d/60-my-floating-ip.cfg
+        cp "${BROLIT_MAIN_DIR}/config/networking/60-floating-ip.yaml" /etc/netplan/60-floating-ip.yaml
+        sed -i "s#your.float.ing.ip#${floating_IP}#" /etc/netplan/60-floating-ip.yaml
         display --indent 6 --text "- Making network config changes" --result "DONE" --color GREEN
+        chmod 600 /etc/netplan/*.yaml
+        log_event "info" "Permissions updated for Netplan configuration files" "false"
 
-        service networking restart
+        netplan apply
 
         log_event "info" "New IP ${floating_IP} added" "false"
         display --indent 6 --text "- Restarting networking service" --result "DONE" --color GREEN
@@ -261,29 +263,11 @@ function system_add_floating_IP() {
 
     else
 
-        if [[ ${ubuntu_v} == "2004" || ${ubuntu_v} == "2204" ]]; then
+        log_event "error" "This script only works on Ubuntu 24.04, 22.04 or 20.04 ... Exiting" "false"
+        display --indent 6 --text "- Making network config changes" --result "FAIL" --color RED
+        display --indent 8 --text "This script works on Ubuntu 24.04, 22.04 or 20.04"
 
-            cp "${BROLIT_MAIN_DIR}/config/networking/60-floating-ip.yaml" /etc/netplan/60-floating-ip.yaml
-            sed -i "s#your.float.ing.ip#${floating_IP}#" /etc/netplan/60-floating-ip.yaml
-            display --indent 6 --text "- Making network config changes" --result "DONE" --color GREEN
-
-            netplan apply
-
-            log_event "info" "New IP ${floating_IP} added" "false"
-            display --indent 6 --text "- Restarting networking service" --result "DONE" --color GREEN
-            display --indent 8 --text "New IP ${floating_IP} added"
-
-            return 0
-
-        else
-
-            log_event "error" "This script only works on Ubuntu 22.04, 20.04 or 18.04 ... Exiting" "false"
-            display --indent 6 --text "- Making network config changes" --result "FAIL" --color RED
-            display --indent 8 --text "This script works on Ubuntu 22.04, 20.04 or 18.04"
-
-            return 1
-
-        fi
+        return 1
 
     fi
 

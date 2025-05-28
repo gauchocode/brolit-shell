@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.2
+# Version: 3.3.10
 ################################################################################
 #
 # Backup/Restore Manager: Perform backup and restore actions.
@@ -28,6 +28,7 @@ function backup_manager_menu() {
     "02)" "BACKUP DATABASES"
     "03)" "BACKUP FILES"
     "04)" "BACKUP PROJECT"
+    "05)" "BACKUP DOCKER VOLUMES (BETA)"
   )
 
   chosen_backup_type="$(whiptail --title "SELECT BACKUP TYPE" --menu " " 20 78 10 "${backup_options[@]}" 3>&1 1>&2 2>&3)"
@@ -35,6 +36,7 @@ function backup_manager_menu() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
+    # BACKUP ALL
     if [[ ${chosen_backup_type} == *"01"* ]]; then
 
       # BACKUP_ALL
@@ -48,6 +50,9 @@ function backup_manager_menu() {
 
       # Files Backup
       backup_all_files
+
+      # Configs Backup
+      backup_all_files_with_borg
 
       # Footer
       mail_footer "${SCRIPT_V}"
@@ -94,10 +99,11 @@ function backup_manager_menu() {
 
       # Sending notifications
       mail_send_notification "${email_subject}" "${mail_html}"
-      send_notification "✅ ${SERVER_NAME}" "Task: 'Backup All' completed." ""
+      send_notification "${SERVER_NAME}" "Task: 'Backup All' completed." "success"
 
     fi
-
+    
+    # BACKUP DATABASES
     if [[ ${chosen_backup_type} == *"02"* ]]; then
 
       # DATABASE_BACKUP
@@ -117,9 +123,11 @@ function backup_manager_menu() {
 
       # Sending notifications
       mail_send_notification "${email_subject}" "${email_content}"
-      send_notification "✅ ${SERVER_NAME}" "Task: 'Databases Backup' completed." ""
+      send_notification "${SERVER_NAME}" "Task: 'Databases Backup' completed." "success"
 
     fi
+
+    # BACKUP FILES
     if [[ ${chosen_backup_type} == *"03"* ]]; then
 
       # FILES_BACKUP
@@ -141,10 +149,11 @@ function backup_manager_menu() {
 
       # Sending notifications
       mail_send_notification "${email_subject}" "${email_content}"
-      send_notification "✅ ${SERVER_NAME}" "Task: 'Files Backup' completed." ""
+      send_notification "${SERVER_NAME}" "Task: 'Files Backup' completed." "success"
 
     fi
 
+    # BACKUP PROJECT
     if [[ ${chosen_backup_type} == *"04"* ]]; then
 
       # PROJECT_BACKUP
@@ -158,11 +167,23 @@ function backup_manager_menu() {
 
         DOMAIN="$(basename "${filepath}/${filename}")"
 
-        backup_project "${DOMAIN}" "all"
+        INSTALL_TYPE=$(project_get_install_type "${filepath}/${filename}")
+
+        if [[ ${INSTALL_TYPE} == "docker-compose" ]]; then
+
+          backup_docker_project "${DOMAIN}" "all"
+
+        else
+
+          backup_project "${DOMAIN}" "all"
+
+        fi
+
+        backup_project_with_borg "${DOMAIN}"
 
         # Sending notifications
         #mail_send_notification "${email_subject}" "${email_content}"
-        send_notification "✅ ${SERVER_NAME}" "Task: 'Project Backup' completed." ""
+        send_notification "${SERVER_NAME}" "Task: 'Project Backup' completed." "success"
 
       else
 
@@ -172,9 +193,174 @@ function backup_manager_menu() {
 
     fi
 
+    # BACKUP DOCKER VOLUMES
+    if [[ ${chosen_backup_type} == *"05"* ]]; then
+
+      # DOCKER_VOLUMES_BACKUP
+      log_section "Docker Volumes Backup"
+
+      # Docker Volumes Backup
+      catch_error="$(backup_all_docker_volumes)"
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 1 ]]; then
+
+        # Log
+        log_event "error" "Docker Volumes Backup failed: ${catch_error}" "false"
+        display --indent 6 --text "- Docker Volumes Backup" --result "FAILED" --color RED
+
+        # Send notification
+        send_notification "${SERVER_NAME} " "Docker Volumes Backup failed." "alert"
+
+        return 1
+
+      fi
+
+      # Send notification
+      send_notification "${SERVER_NAME} " "Task: 'Docker Volumes Backup' completed." "success"
+
+    fi
+
   fi
 
   menu_main_options
+
+}
+
+################################################################################
+# Backup All Docker Volumes
+#
+# Arguments:
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function backup_all_docker_volumes() {
+
+  local remote_path
+  local volumes_to_backup
+
+  local exitstatus=0
+  local error_msg=""
+  local error_type=""
+
+  # Remote Path
+  remote_path="${SERVER_NAME}/projects-online/docker-volume"
+
+  # Get a list of all Docker volumes
+  volumes_to_backup="$(docker volume ls --format "{{.Name}}")"
+
+  # If there are no volumes to backup, exit
+  if [[ -z "${volumes_to_backup}" ]]; then
+
+    # Log
+    display --indent 6 --text "- Docker volumes backup" --result "SKIPPED" --color YELLOW
+    display --indent 8 --text "- No Docker volumes to backup" --tcolor YELLOW
+    log_event "info" "No Docker volumes to backup" "false"
+
+    return 0
+
+  fi
+
+  # Create remote path directory
+  storage_create_dir "${remote_path}"
+
+  # Loop through volumes
+  while IFS= read -r volume; do
+
+    # Log
+    display --indent 6 --text "- Creating backup for ${volume}"
+
+    # Create backup file
+    ## Runs a temporary Docker container that has access to the volume and the backup directory, and uses tar to create a backup file of the volume.
+    "$(docker run --rm -v "${volume}:/volume" -v "${BROLIT_TMP_DIR}:/backup" alpine tar -cjf "/backup/${volume}-${NOW}.tar.bz2" -C /volume ./)"
+
+    # Check if backup file was created
+    if [[ -f "${BROLIT_TMP_DIR}/${volume}-${NOW}.tar.bz2" ]]; then
+
+      # Log
+      clear_previous_lines "2"
+      display --indent 6 --text "- Creating backup for ${volume}" --result "OK" --color GREEN
+
+      # Create remote path directory
+      storage_create_dir "${remote_path}/${volume}"
+
+      # Upload backup file to Dropbox
+      storage_upload_backup "${BROLIT_TMP_DIR}/${volume}-${NOW}.tar.bz2" "${remote_path}/${volume}" ""
+
+    else
+
+      # Log
+      display --indent 6 --text "- Creating backup for ${volume}" --result "FAILED" --color RED
+      display --indent 8 --text "Please read the log file" --tcolor YELLOW
+      log_event "debug" "Command executed: docker run --rm -v ${volume}:/volume -v ${BROLIT_TMP_DIR}:/backup alpine tar -cjf /backup/${volume}-${NOW}.tar.bz2 -C /volume ./" "false"
+      log_event "error" "Docker volume backup failed for ${volume}" "false"
+
+      exitstatus=1
+      error_msg="${volume},${error_msg}"
+      error_type="docker_volume_backup"
+
+    fi
+  
+  done <<<"${volumes_to_backup}"
+
+  # Clean ${error_msg}
+  error_msg="${error_msg//, /,}"
+
+  # Return
+  echo "${error_type};${error_msg}" && return ${exitstatus}
+
+}
+
+################################################################################
+# Restore Docker Volume
+#
+# Arguments:
+#   ${1} = ${volume}
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function restore_docker_volume() {
+  
+    local backup_to_restore="${1}"
+    local docker_volume="${2}"
+  
+    # Check if backup file was downloaded
+    if [[ -f "${BROLIT_TMP_DIR}/${backup_to_restore}" ]]; then
+
+      # Log
+      display --indent 6 --text "- Docker volume restore"
+      log_event "debug" "Command executed: docker run --rm -v ${docker_volume}:/volume -v ${BROLIT_TMP_DIR}:/backup alpine tar -xjf /backup/${backup_to_restore} -C /volume" "false"
+  
+      # Restore backup file
+      ## Runs a temporary Docker container that has access to the volume and the backup directory, and uses tar to create a backup file of the volume.
+      docker run --rm -v "${docker_volume}:/volume" -v "${BROLIT_TMP_DIR}:/backup" alpine tar -xjf "/backup/${backup_to_restore}" -C /volume
+  
+      # Log
+      clear_previous_lines "2"
+      display --indent 6 --text "- Docker volume restore" --result "DONE" --color GREEN
+      log_event "info" "Docker volume restore completed for ${docker_volume}" "false"
+      
+      # Send notification
+      send_notification "${SERVER_NAME} " "Docker volume restore completed for ${docker_volume}." "success"
+  
+      return 0
+      
+    else
+  
+      # Log
+      log_event "debug" "Command executed: docker run --rm -v ${docker_volume}:/volume -v ${BROLIT_TMP_DIR}:/backup alpine tar -xjf /backup/${backup_to_restore} -C /volume" "false"
+      log_event "error" "Docker volume restore failed for ${docker_volume}" "false"
+      display --indent 6 --text "- Docker volume restore" --result "FAILED" --color RED
+  
+      # Send notification
+      send_notification "${SERVER_NAME} " "Docker volume restore failed for ${docker_volume}." "alert"
+  
+      return 1
+
+    fi
 
 }
 
@@ -200,6 +386,7 @@ function restore_manager_menu() {
     "02)" "FROM PUBLIC LINK (BETA)"
     "03)" "FROM LOCAL FILE (BETA)"
     "04)" "FROM FTP (BETA)"
+    "05)" "FROM BORG (BETA)"
   )
 
   chosen_restore_options="$(whiptail --title "RESTORE BACKUP" --menu " " 20 78 10 "${restore_options[@]}" 3>&1 1>&2 2>&3)"
@@ -224,6 +411,9 @@ function restore_manager_menu() {
 
       restore_backup_from_ftp
 
+    fi
+    if [[ ${chosen_restore_options} == *"05"* ]]; then
+      restore_backup_with_borg 
     fi
 
   else

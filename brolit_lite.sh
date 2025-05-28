@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.2
+# Version: 3.3.10
 ################################################################################
 
 ################################################################################
@@ -1636,8 +1636,10 @@ function _brolit_shell_config() {
     netdata_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "PACKAGES.netdata[].status")"
     if [[ ${netdata_status} == "enabled" ]]; then
         netdata_subdomain="$(_json_read_field "${BROLIT_CONFIG_FILE}" "PACKAGES.netdata[].config[].subdomain")"
+        netdata_status="true"
     else
         netdata_subdomain="false"
+        netdata_status="false"
     fi
 
     ## Mail notification config
@@ -1645,25 +1647,68 @@ function _brolit_shell_config() {
     if [[ ${mail_notification_status} == "enabled" ]]; then
         mail_notification_config="$(_json_read_field "${BROLIT_CONFIG_FILE}" "NOTIFICATIONS.email[].config[].maila")"
         mail_notification_smtp="$(_json_read_field "${BROLIT_CONFIG_FILE}" "NOTIFICATIONS.email[].config[].smtp_server")"
+        mail_notification_status="true"
     else
         mail_notification_config="false"
         mail_notification_smtp="false"
+        mail_notification_status="false"
     fi
 
     ## Telegram notification config
     telegram_notification_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "NOTIFICATIONS.telegram[].status")"
+    if [[ ${telegram_notification_status} == "enabled" ]]; then
+        telegram_notification_status="true"
+    else
+        telegram_notification_status="false"
+    fi
+
+    ## Ntfy notification config
+    ntfy_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "NOTIFICATIONS.ntfy[].status")"
+    if [[ ${ntfy_status} == "enabled" ]]; then
+        ntfy_status="true"
+    else
+        ntfy_status="false"
+    fi
+
+    ## Discord notification config
+    discord_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "NOTIFICATIONS.discord[].status")"
+    if [[ ${discord_status} == "enabled" ]]; then
+        discord_webhook="$(_json_read_field "${BROLIT_CONFIG_FILE}" "NOTIFICATIONS.discord[].config[].webhook")"
+        discord_status="true"
+    else
+        discord_webhook="false"
+        discord_status="false"
+    fi
 
     ## Dropbox config
     backup_dropbox_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "BACKUPS.methods[].dropbox[].status")"
+    if [[ ${backup_dropbox_status} == "enabled" ]]; then
+        backup_dropbox_status="true"
+    else
+        backup_dropbox_status="false"
+    fi
+
+    ## Borg backup method
+    backup_borg_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "BACKUPS.methods[].borg[].status")"
+    if [[ ${backup_borg_status} == "enabled" ]]; then
+        backup_borg_status="true"
+    else
+        backup_borg_status="false"
+    fi
 
     ## Cloudflare config
     cloudflare_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "DNS.cloudflare[].status")"
+    if [[ ${cloudflare_status} == "enabled" ]]; then
+        cloudflare_status="true"
+    else
+        cloudflare_status="false"
+    fi
 
     ## SMTP Server config
     #smtp_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "BACKUPS.config[].methods[].smtp[].status")"
 
     # Return JSON part
-    echo "\"script_version\": \"${BROLIT_VERSION}\" , \"netdata_url\": \"${netdata_subdomain}\" , \"mail_notif\": \"${mail_notification_config}\" , \"telegram_notif\": \"${telegram_notification_status}\" , \"dropbox_enable\": \"${backup_dropbox_status}\" , \"cloudflare_enable\": \"${cloudflare_status}\" , \"smtp_server\": \"${mail_notification_smtp}\""
+    echo "\"script_version\": \"${BROLIT_VERSION}\" , \"netdata_url\": \"${netdata_subdomain}\" , \"mail_notif\": \"${mail_notification_config}\" , \"telegram_notif\": \"${telegram_notification_status}\" , \"ntfy_notif\": \"${ntfy_status}\" , \"discord_notif\": \"${discord_status}\" , \"dropbox_enable\": \"${backup_dropbox_status}\" , \"borg_enable\": \"${backup_borg_status}\" , \"cloudflare_enable\": \"${cloudflare_status}\" , \"smtp_server\": \"${mail_notification_smtp}\""
 
 }
 
@@ -1703,6 +1748,9 @@ function _serverinfo() {
     local public_ip
     local public_ipv6
     local local_ip
+    local firewall_status
+
+    firewall_status=$(firewall_show_status)
 
     local_ip="$(ip route get 1 | awk '{print $(NF-2);exit}')"
 
@@ -1727,12 +1775,12 @@ function _serverinfo() {
     if [[ -z ${public_ip} ]]; then
 
         # Return JSON part
-        echo "\"server_name\": \"${SERVER_NAME}\" , \"distro\": \"${distro}\" , \"cpu_cores\": \"${cpu_cores}\" , \"ram_avail\": \"${ram_amount}\" , ${disks_info}"
+        echo "\"server_name\": \"${SERVER_NAME}\" , \"distro\": \"${distro}\" , \"cpu_cores\": \"${cpu_cores}\" , \"ram_avail\": \"${ram_amount}\" , ${disks_info}" , \"firewall_status\": \"${firewall_status}\"
 
     else
 
         # Return JSON part
-        echo "\"server_name\": \"${SERVER_NAME}\" , \"floating_ip\": \"${local_ip}\" , \"distro\": \"${distro}\" , \"cpu_cores\": \"${cpu_cores}\" , \"ram_avail\": \"${ram_amount}\" , ${disks_info}"
+        echo "\"server_name\": \"${SERVER_NAME}\" , \"floating_ip\": \"${local_ip}\" , \"distro\": \"${distro}\" , \"cpu_cores\": \"${cpu_cores}\" , \"ram_avail\": \"${ram_amount}\" , ${disks_info}" , \"firewall_status\": \"${firewall_status}\"
 
     fi
 
@@ -1924,7 +1972,7 @@ function _sites_directories() {
     local site_size
 
     ## List only directories
-    all_directories="$(find "${PROJECTS_PATH}" -maxdepth 1 -mindepth 1 -type d -not -path '*/.*')"
+    all_directories="$(find -L "${PROJECTS_PATH}" -maxdepth 1 -mindepth 1 -type d -not -path '*/.*')"
 
     for site_path in ${all_directories}; do
 
@@ -2031,9 +2079,6 @@ function _dropbox_get_backup() {
 
     local project_domain="${1}"
 
-    # TODO: if standard is respected $project_domain = project directory name
-    # Should change $1 for project_dir and then do something like "get_domain_from_project_config"
-
     local project_name
     local project_db
     local dropbox_site_backup_path
@@ -2048,63 +2093,62 @@ function _dropbox_get_backup() {
 
     [[ -z ${project_domain} ]] && return 1
 
-    # First check if project is listed as ignored on brolit config
+    # Check if project is ignored
     if [[ $(_project_is_ignored "${project_domain}") == "true" ]]; then
-
-        backup_date="2022-11-14" #hardcoded date
+        backup_date="2022-11-14" # Hardcoded date for ignored projects
         backups_string="\"${backup_date}\":{\"files\":\"project-listed-as-ignored\",\"database\":\"project-listed-as-ignored\"}"
-
     else
+        # Extract project name (adjusted to get the second part of the domain)
+        project_name="$(echo "${project_domain}" | cut -d'.' -f2)"
 
-        project_type="$(_project_get_type "${PROJECTS_PATH}/${project_domain}")"
-        project_install_type="$(_project_get_install_type "${PROJECTS_PATH}/${project_domain}")"
-
-        project_db="$(_project_get_configured_database "${PROJECTS_PATH}/${project_domain}" "${project_type}" "${project_install_type}")"
-        exitstatus=$?
-        [[ ${exitstatus} -eq 1 ]] && project_db="error"
-
-        # Get dropbox backup list
+        # Get dropbox backup list for site
         dropbox_site_backup_path="${SERVER_NAME}/projects-online/site/${project_domain}"
         dropbox_site_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_site_backup_path}" | grep -Eo "${project_domain}_site-files_[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}.*")"
 
-        for backup_file in ${dropbox_site_backup_list}; do
+        # Array of project types
+        local project_types=("prod" "dev" "stage" "test" "beta" "demo")
 
+        for backup_file in ${dropbox_site_backup_list}; do
             backup_date="$(_backup_get_date "${backup_file}")"
 
-            if [[ ${project_db} != "error" && ${project_db} != "no-database" ]]; then
+            # Loop through possible project types to find the right database
+            for project_type in "${project_types[@]}"; do
 
-                # Database backup
+                project_db="${project_name}_${project_type}"  
                 backup_to_search="${project_db}_database_${backup_date}"
-                search_backup_db=$("${DROPBOX_UPLOADER}" -hq search "${backup_to_search}" | grep -E "${project_db}/${backup_to_search}" || ret="$?")
+
+                # Search for database backup
+                search_backup_db=$("${DROPBOX_UPLOADER}" -hq list "${SERVER_NAME}/projects-online/database/${project_db}/" | grep "${backup_to_search}" | awk '{print $NF}' || ret="$?")
                 backup_db="$(basename "${search_backup_db}")"
 
-                if [[ -n ${search_backup_db} ]]; then
-                    backups_string="${backups_string}\"${backup_date}\":{\"files\":\"${backup_file}\",\"database\":\"${backup_db}\"} , "
-                else
-                    backups_string="${backups_string}\"${backup_date}\":{\"files\":\"${backup_file}\",\"database\":\"not-found\"} , "
+                if [[ -z ${backup_db} ]]; then
+
+                    search_backup_db=$("${DROPBOX_UPLOADER}" -hq list "${SERVER_NAME}/projects-online/database/${project_name}_dev/" | grep "${backup_to_search}" | awk '{print $NF}' || ret="$?")
+                    backup_db="$(basename "${search_backup_db}")"
+
                 fi
 
-            else
-                # At this point ${project_db} == error or no-database
-                backups_string="${backups_string}\"${backup_date}\":{\"files\":\"${backup_file}\",\"database\":\"${project_db}\"} , "
+                # If we find a valid database backup, stop looking further
+                if [[ -n ${backup_db} ]]; then
+                    backups_string="${backups_string}\"${backup_date}\":{\"files\":\"${backup_file}\",\"database\":\"${backup_db}\"} , "
+                    break
+                fi
+            done
 
+            # If no valid database is found after checking all types, mark as not-found
+            if [[ -z ${backup_db} ]]; then
+                backups_string="${backups_string}\"${backup_date}\":{\"files\":\"${backup_file}\",\"database\":\"not-found\"} , "
             fi
-
         done
 
         if [[ -n ${backups_string} ]]; then
-            # Remove 3 last chars
+            # Remove the last 3 characters
             backups_string="${backups_string::-3}"
-
-        #else
-        #    backups_string="\"something-went-wrong\":\"dropbox-empty-response\""
         fi
-
     fi
 
     # Return JSON
     echo "${backups_string}"
-
 }
 
 ################################################################################
@@ -2162,7 +2206,8 @@ function dropbox_get_sites_backups() {
         fi
 
         # Write JSON file
-        echo "{ \"${timestamp}\" : { ${backup_projects} } }" >"${json_output_file}"
+        echo "{ \"check_date\": \"${timestamp}\", ${backup_projects} }" >"${json_output_file}"
+
 
     fi
 
@@ -2217,8 +2262,117 @@ declare -g PROJECTS_PATH
 PROJECTS_PATH="$(_json_read_field "${BROLIT_CONFIG_FILE}" "PROJECTS.path")"
 
 # Version
-BROLIT_VERSION="3.3.2"
-BROLIT_LITE_VERSION="3.3.2-132"
+BROLIT_VERSION="3.3.10"
+BROLIT_LITE_VERSION="3.3.10-132"
+
+################################################################################
+# Show backups information
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   json file with backup information
+################################################################################
+
+show_backup_information() {
+
+    local timestamp
+    local check_date
+    local backup_method
+    local projects_backup
+
+    local json_output_file
+    local json_config_file="/root/.brolit_conf.json"
+    local storage_box_directory="/mnt/storage-box"
+    local project_directory_path="/var/www"
+
+    source /root/brolit-shell/libs/borg_storage_controller.sh
+    source /root/brolit-shell/libs/local/log_and_display_helper.sh
+    source /root/brolit-shell/utils/brolit_configuration_manager.sh
+    source /root/brolit-shell/libs/local/json_helper.sh
+
+    _brolit_configuration_load_backup_borg "/root/.brolit_conf.json"
+
+    # Get number of Borg configurations
+    local borg_configs_count
+    borg_configs_count=$(jq '.BACKUPS.methods[].borg[].config | length' "${json_config_file}")
+
+    # Initialize JSON string
+    local json_string="{ \"check_date\": \"$(date -u +"%Y-%m-%dT%H:%M:%S")\", \"backup_method\": \"borg\", \"projects_backup\": { "
+
+    # Loop through each Borg configuration
+    for (( i=0; i<"${borg_configs_count}"; i++ )); do
+
+        # Get Borg configuration details
+        BACKUP_BORG_USER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[${i}].user")
+        BACKUP_BORG_SERVER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[${i}].server")
+        BACKUP_BORG_PORT=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[${i}].port")
+        BACKUP_BORG_GROUP=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].group")
+
+        # Mount storage box
+        mount_storage_box "${storage_box_directory}"
+
+        # Temporary file to store each parallel process output
+        temp_file=$(mktemp)
+
+        # Loop through project directories in the mounted storage box
+        for project_directory in $(ls --color=never "${storage_box_directory}/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/site"); do
+
+            (
+
+            if [[ -d "${project_directory_path}/${project_directory}" ]]; then
+                local project_json=""
+
+                last_backup_file=$(/root/.local/bin/borgmatic list --last 1 --format '{archive}{NL}' --match-archives "*" | grep "${project_directory}_site-files" | head -n 1 | sed -r "s/\x1B\[[0-9;]*[mG]//g")
+
+                if [[ -n "${last_backup_file}" ]]; then
+                    backup_date=$(echo "${last_backup_file}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')
+                    backup_files="\"${backup_date}\": { \"files\": \"${last_backup_file}\", \"database\": \"empty\" }"
+                else
+                    backup_files="\"empty\": { \"files\": \"empty\", \"database\": \"empty\" }"
+                fi
+
+                last_db_backup_file=$(ls -t "${storage_box_directory}/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/database/${project_directory}/"*.tar.bz2 | head -n 1)
+
+                if [[ -n "${last_db_backup_file}" ]]; then
+                    backup_db=$(basename "${last_db_backup_file}")
+                else
+                    backup_db="empty"
+                fi
+
+                backup_files="\"${backup_date}\": { \"files\": \"${last_backup_file}\", \"database\": \"${backup_db}\" }"
+
+                project_json="\"${project_directory}\": { ${backup_files} }"
+                echo "${project_json}" >> "${temp_file}"
+            fi
+            ) &
+        done
+
+
+        wait
+
+        while read -r line; do
+            json_string="${json_string}${line},"
+        done < "${temp_file}"
+
+        rm -f "${temp_file}"
+
+        # Unmount storage box
+        umount_storage_box "${storage_box_directory}"
+
+    done
+
+    # Finalize JSON string
+    json_string="${json_string::-1} } }"
+
+    # Save JSON output to file
+    json_output_file="${BROLIT_LITE_OUTPUT_DIR}/show_backups_information.json"
+    echo "${json_string}" > "${json_output_file}"
+
+    # Return JSON
+    cat "${json_output_file}"
+}
 
 ################################################################################
 # Show firewall status
@@ -2235,33 +2389,42 @@ function firewall_show_status() {
     local ufw_status=""
 
     # ufw app list, replace space with "-" and "/n" with space
-    ufw_status="$(ufw status | sed -n '1 p' | cut -d " " -f 2 | tr " " "-" | sed -z 's/\n/ /g' | sed -z 's/--//g')"
+    #ufw_status="$(ufw status | sed -n '1 p' | cut -d " " -f 2 | tr " " "-" | sed -z 's/\n/ /g' | sed -z 's/--//g')"
+    ufw_status=$(ufw status | sed 's/\x1b\[[0-9;]*m//g' | awk '/Status:/ {print $2}')
+
+    if [[ ${ufw_status} == "active" ]]; then
+        ufw_status="true"
+    else
+        ufw_status="false"
+    fi
+
+    echo "${ufw_status}"
 
     # Details begins at line 5
-    counter=5
-    ufw_status_line="$(ufw status | sed -n "${counter} p" | cut -d "-" -f 2 | tr " " ";" | sed -z 's/;;//g')"
-    while [ -n "${ufw_status_line}" ]; do
-        ufw_status_line="$(ufw status | sed -n "${counter} p" | cut -d "-" -f 2 | tr " " ";" | sed -z 's/;;//g')"
-        ufw_status_details="${ufw_status_details} ${ufw_status_line}"
-        counter=$(($counter + 1))
-    done
+    #counter=5
+    #ufw_status_line="$(ufw status | sed -n "${counter} p" | cut -d "-" -f 2 | tr " " ";" | sed -z 's/;;//g')"
+    #while [ -n "${ufw_status_line}" ]; do
+        #ufw_status_line="$(ufw status | sed -n "${counter} p" | cut -d "-" -f 2 | tr " " ";" | sed -z 's/;;//g')"
+        #ufw_status_details="${ufw_status_details} ${ufw_status_line}"
+        #counter=$(($counter + 1))
+    #done
 
     # String to JSON
-    json_string="$(_jsonify_output "key-value" "ufw-status" "${ufw_status}")"
+    #json_string="$(_jsonify_output "key-value" "ufw-status" "${ufw_status}")"
 
-    if [[ -n ${ufw_status_details} ]]; then
+    #if [[ -n ${ufw_status_details} ]]; then
 
-        json_string_d="$(_jsonify_output "value-list" "${ufw_status_details}")"
-
-        # Return JSON
-        echo "${json_string},{\"ufw-details\": ${json_string_d}}"
-
-    else
+        #json_string_d="$(_jsonify_output "value-list" "${ufw_status_details}")"
 
         # Return JSON
-        echo "${json_string},{\"ufw-details\": \"empty-response\"}"
+        #echo "${json_string},{\"ufw-details\": ${json_string_d}}"
 
-    fi
+    #else
+
+        # Return JSON
+        #echo "${json_string},{\"ufw-details\": \"empty-response\"}"
+
+    #fi
 
 }
 
@@ -2335,7 +2498,7 @@ function firewall_get_apps_details() {
     timestamp="$(_timestamp)"
 
     # Write JSON file
-    echo "{ \"${timestamp}\" :  ${json_string} }" >"${BROLIT_LITE_OUTPUT_DIR}/firewall_apps_details.json"
+    echo "{ \"check_date\": \"${timestamp}\", \"firewall_apps\": ${json_string} }" > "${BROLIT_LITE_OUTPUT_DIR}/firewall_apps_details.json"
 
     # Return JSON
     cat "${BROLIT_LITE_OUTPUT_DIR}/firewall_apps_details.json"
@@ -2352,13 +2515,13 @@ function firewall_get_apps_details() {
 #   json output with packages to upgrade
 ################################################################################
 
-function list_packages_to_upgrade() {
+function list_packages_ready_to_upgrade() {
 
     local force="${1}"
 
     local timestamp
 
-    local json_output_file="${BROLIT_LITE_OUTPUT_DIR}/list_packages_to_upgrade.json"
+    local json_output_file="${BROLIT_LITE_OUTPUT_DIR}/list_packages_ready_to_upgrade.json"
 
     if [[ ${force} == "true" || ! -f "${json_output_file}" ]]; then
 
@@ -2372,8 +2535,7 @@ function list_packages_to_upgrade() {
         timestamp="$(_timestamp)"
 
         # Write JSON file
-        echo "{ \"${timestamp}\" :  ${json_string} }" >"${json_output_file}"
-
+        echo "{ \"check_date\": \"${timestamp}\", \"packages_ready_to_upgrade\": ${json_string} }" > "${json_output_file}"
     fi
 
     # Return JSON
@@ -2498,8 +2660,7 @@ function show_server_data() {
         [[ -z ${server_databases} ]] && server_databases=""
 
         # Write JSON file
-        echo "{ \"${timestamp}\" : { \"server_info\": { ${server_info} }, \"server_pkgs\": { ${server_pkgs} }, \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] } }" >"${json_output_file}"
-
+        echo "{ \"check_date\": \"${timestamp}\", \"server_info\": { ${server_info} }, \"server_pkgs\": { ${server_pkgs} }, \"server_config\": { ${server_config} }, \"databases\": [ ${server_databases} ], \"sites\": [ ${server_sites} ] }" >"${json_output_file}"
         # Remove new lines
         echo "$(tr -d "\n\r" <"${json_output_file}")" >"${json_output_file}"
 
@@ -2508,4 +2669,58 @@ function show_server_data() {
     # Return JSON
     cat "${json_output_file}"
 
+}
+
+################################################################################
+# Retrieve cron jobs
+#
+# Argments:
+#   none
+#
+# Outputs:
+#   JSON array of cron jobs with schedule, command, and type (user or system)
+################################################################################
+function retrieve_cron_jobs() {
+
+    local cron_jobs
+    local user_cron
+    local system_cron
+
+    cron_jobs="["
+
+    user_cron=$(crontab -l 2>/dev/null | grep -v '^\s*#' | grep -v '^\s*$')
+
+    #system_cron=$(grep -v '^\s*#' /etc/crontab /etc/cron.d/* 2>/dev/null | grep -v '^\s*$')
+
+    if [[ ! -z "${user_cron}" ]]; then
+
+        while IFS= read -r cron_line; do
+        
+            cron_jobs+="{\"schedule\": \"$(echo "${cron_line}" | awk '{print $1,$2,$3,$4,$5}')\", \"command\": \"$(echo "${cron_line}" | cut -d ' ' -f6-)\", \"type\": \"user\"},"
+        
+        done <<< "$user_cron"
+    
+    fi
+
+
+    #if [[ ! -z "${system_cron}" ]]; then
+        
+        #while IFS= read -r cron_line; do
+
+            #clean_schedule=$(echo "${cron_line}" | sed -E 's/^\/etc\/[^:]*://')
+            
+            #if [[ $(echo "${clean_schedule}" | awk '{print NF}') -ge 6 ]]; then
+                
+                #cron_jobs+="{\"schedule\": \"$(echo "${clean_schedule}" | awk '{print $1,$2,$3,$4,$5}')\", \"command\": \"$(echo "${clean_schedule}" | awk '{for(i=6;i<=NF;i++) printf $i" "; print ""}')\", \"type\": \"system\"},"
+            
+            #fi
+        
+        #done <<< "$system_cron"
+    
+    #fi
+
+
+    cron_jobs="${cron_jobs%,}]"
+
+    echo "${cron_jobs}"
 }

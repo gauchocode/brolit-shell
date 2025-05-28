@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.2
+# Version: 3.3.10
 ################################################################################
 
 # Installers directory path
@@ -26,6 +26,7 @@ function installers_and_configurators() {
   installer_options=(
     "01)" "PHP-FPM"
     "02)" "NGINX"
+    "03)" "MONIT"
   )
 
   installer_type="$(whiptail --title "${installer_options_title}" --menu "\nPlease select the utility or programs you want to install or config: \n" 20 78 10 "${installer_options[@]}" 3>&1 1>&2 2>&3)"
@@ -38,6 +39,10 @@ function installers_and_configurators() {
     fi
     if [[ ${installer_type} == *"02"* ]]; then
       nginx_installer_menu
+
+    fi
+    if [[ ${installer_type} == *"03"* ]]; then
+      monit_installer_menu
 
     fi
 

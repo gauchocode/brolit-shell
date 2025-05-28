@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.2
+# Version: 3.3.10
 ################################################################################
 
 ################################################################################
@@ -38,6 +38,7 @@ function _source_all_scripts() {
   source "${BROLIT_MAIN_DIR}/libs/notification_controller.sh"
   source "${BROLIT_MAIN_DIR}/libs/database_controller.sh"
   source "${BROLIT_MAIN_DIR}/libs/storage_controller.sh"
+  source "${BROLIT_MAIN_DIR}/libs/borg_storage_controller.sh"
 
 }
 
@@ -55,7 +56,7 @@ function _setup_globals_and_options() {
 
   # Script
   declare -g SCRIPT_N="BROLIT SHELL"
-  declare -g SCRIPT_V="3.3.2"
+  declare -g SCRIPT_V="3.3.10"
 
   # Hostname
   declare -g SERVER_NAME="$HOSTNAME"
@@ -88,7 +89,7 @@ function _setup_globals_and_options() {
 
   TAR="$(command -v tar)"
   FIND="$(command -v find)"
-  CURL="curl --silent -L --fail --connect-timeout 3 --retry 0"  # CURL (better curl to download files and getting http return codes). Ref: https://everything.curl.dev/usingcurl/returns
+  CURL="curl --silent -L --fail --connect-timeout 3 --retry 0" # CURL (better curl to download files and getting http return codes). Ref: https://everything.curl.dev/usingcurl/returns
 
   export NOW NOWDISPLAY CURL TAR FIND MAIN_VOL
 
@@ -146,34 +147,34 @@ function _setup_colors_and_styles() {
   else
 
     # Text Styles
-    readonly NORMAL='' 
-    readonly BOLD='' 
-    readonly ITALIC='' 
-    readonly UNDERLINED='' 
+    readonly NORMAL=''
+    readonly BOLD=''
+    readonly ITALIC=''
+    readonly UNDERLINED=''
     readonly INVERTED=''
 
     # Foreground/Text Colours
-    readonly BLACK='' 
-    readonly RED='' 
-    readonly GREEN='' 
-    readonly YELLOW='' 
-    readonly ORANGE='' 
-    readonly MAGENTA='' 
-    readonly CYAN='' 
-    readonly WHITE='' 
-    readonly ENDCOLOR='' 
+    readonly BLACK=''
+    readonly RED=''
+    readonly GREEN=''
+    readonly YELLOW=''
+    readonly ORANGE=''
+    readonly MAGENTA=''
+    readonly CYAN=''
+    readonly WHITE=''
+    readonly ENDCOLOR=''
     readonly F_DEFAULT=''
 
     # Background Colours
-    readonly B_BLACK='' 
-    readonly B_RED='' 
-    readonly B_GREEN='' 
-    readonly B_YELLOW='' 
-    readonly B_ORANGE='' 
-    readonly B_MAGENTA='' 
-    readonly B_CYAN='' 
-    readonly B_WHITE='' 
-    readonly B_ENDCOLOR='' 
+    readonly B_BLACK=''
+    readonly B_RED=''
+    readonly B_GREEN=''
+    readonly B_YELLOW=''
+    readonly B_ORANGE=''
+    readonly B_MAGENTA=''
+    readonly B_CYAN=''
+    readonly B_WHITE=''
+    readonly B_ENDCOLOR=''
     readonly B_DEFAULT=''
 
   fi
@@ -318,32 +319,37 @@ function get_server_ips() {
 function _check_distro() {
 
   declare -g DISTRO
-  
+
   # Running Ubuntu?
   DISTRO="$(lsb_release -d | awk -F"\t" '{print $2}' | awk -F " " '{print $1}')"
 
   if [[ ${DISTRO} == "Ubuntu" ]]; then
 
-    MIN_V="$(echo "18.04" | awk -F "." '{print $1$2}')"
+    MIN_V="$(echo "20.04" | awk -F "." '{print $1$2}')"
     DISTRO_V="$(get_ubuntu_version)"
 
     log_event "info" "Actual linux distribution: ${DISTRO} ${DISTRO_V}" "false"
 
     if [[ ! ${DISTRO_V} -ge ${MIN_V} ]]; then
 
-      log_event "warning" "Ubuntu version must be 18.04 or 20.04! Use this script only for backup or restore purpose." "true"
+      log_event "warning" "Ubuntu version must be 20.04, 22.04 or 24.04! Use this script only for backup or restore purpose." "true"
 
       spinner_start "Script starts in 3 seconds ..."
       sleep 3
       spinner_stop $?
 
+    fi
+
+  else
+
+    if [[ ${DISTRO} == "Pop!_OS" || ${DISTRO} == "Debian" ]]; then
+
+      log_event "warning" "BROLIT Shell has partial support for Debian, some features may not work as expected!" "true"
+
     else
 
-      if [[ ${DISTRO} == "Pop!_OS" ]]; then
-
-        log_event "warning" "BROLIT Shell has partial support for Pop!_OS, some features may not work as expected!" "true"
-
-      fi
+      log_event "error" "Only Ubuntu 20.04, 22.04 or 24.04 are supported! Exiting ..." "true"
+      return 0
 
     fi
 
@@ -367,8 +373,8 @@ function script_init() {
   declare -g SKIPTESTS="${1}"
 
   # Define log name
-  declare -g LOG
-  declare -g EXEC_TYPE
+  declare -g BROLIT_LOG_FILE
+  declare -g BROLIT_EXEC_TYPE
 
   declare -g BROLIT_CONFIG_FILE=~/.brolit_conf.json
 
@@ -394,15 +400,15 @@ function script_init() {
     # And add second parameter to the log name
     #log_name="log_lemp_utils_${SLOG}.log"
     log_name="${SLOG}.json"
-    EXEC_TYPE="external"
+    BROLIT_EXEC_TYPE="external"
   else
     # Default log name
     log_name="brolit_shell_${timestamp}.log"
-    EXEC_TYPE="default"
+    BROLIT_EXEC_TYPE="default"
   fi
-  export EXEC_TYPE
+  export BROLIT_EXEC_TYPE
 
-  LOG="${path_log}/${log_name}"
+  BROLIT_LOG_FILE="${path_log}/${log_name}"
 
   # Source all scripts
   _source_all_scripts
@@ -470,7 +476,7 @@ function script_init() {
   # EXPORT VARS
   export SCRIPT_V SERVER_NAME BROLIT_CONFIG_PATH BROLIT_MAIN_DIR PACKAGES
   export DISK_U ONE_FILE_BK NOTIFICATION_EMAIL_SMTP_SERVER NOTIFICATION_EMAIL_SMTP_PORT NOTIFICATION_EMAIL_SMTP_TLS NOTIFICATION_EMAIL_SMTP_USER NOTIFICATION_EMAIL_SMTP_UPASS
-  export LOG DEBUG SKIPTESTS
+  export BROLIT_LOG_FILE DEBUG SKIPTESTS
   export BROLIT_CONFIG_FILE
 
 }
@@ -702,7 +708,7 @@ function array_to_checklist() {
 # File browser
 #
 # Arguments:
-#   $1= ${menutitle}
+#   ${1} = ${menutitle}
 #   ${2} = ${startdir}
 #
 # Outputs:
@@ -760,7 +766,7 @@ function file_browser() {
 # Directory browser
 #
 # Arguments:
-#   $1= ${menutitle}
+#   ${1} = ${menutitle}
 #   ${2} = ${startdir}
 #
 # Outputs:
@@ -820,7 +826,7 @@ function directory_browser() {
 # Get all directories from specific location
 #
 # Arguments:
-#   $1= ${main_dir}
+#   ${1} = ${main_dir}
 #
 # Outputs:
 #   String with directories
@@ -842,7 +848,7 @@ function get_all_directories() {
 # Sort backup files by date
 #
 # Arguments:
-#   $1= ${files}
+#   ${1} = ${files}
 #
 # Outputs:
 #   Array with sorted files
@@ -867,7 +873,7 @@ function sort_files_by_date {
 # Sort array alphabetically
 #
 # Arguments:
-#   $1= ${files}
+#   ${1} = ${files}
 #
 # Outputs:
 #   Array with sorted files
@@ -892,7 +898,7 @@ function sort_array_alphabetically {
 # Get size of an specific file
 #
 # Arguments:
-#   $1= ${file}
+#   ${1} = ${file}
 #
 # Outputs:
 #   String with directories
@@ -908,6 +914,7 @@ function get_file_size() {
   file_size_result=$?
   if [[ ${file_size_result} -eq 0 ]]; then
 
+    # Log
     log_event "info" "File size: ${backup_file_size}" "false"
 
     # Prepare string
@@ -918,6 +925,7 @@ function get_file_size() {
 
   else
 
+    # Log
     log_event "error" "Something went wrong trying to get file size of: ${file}" "false"
     log_event "debug" "Last command executed: du --apparent-size -s -k \"${file}\" | awk '{ print $1 }' | awk '{printf \"%.3f MiB %s\n\", $1/1024, $2}'" "false"
     log_event "debug" "Output: ${file_size_result}" "false"
@@ -932,9 +940,9 @@ function get_file_size() {
 # Copy files (with rsync)
 #
 # Arguments:
-#   $1= ${source_path}
+#   ${1} = ${source_path}
 #   ${2} = ${destination_path}
-#   $3= ${excluded_path} - Optional: Need to be a relative path
+#   ${3} = ${excluded_path} - Optional: Need to be a relative path
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -1292,7 +1300,7 @@ function change_ownership() {
     log_event "debug" "Command executed: chown -R ${user}:${group} ${path}" "false"
 
     clear_previous_lines "1"
-    display --indent 6 --text "- Changing directory ownership" --result FAIL --color RED
+    display --indent 6 --text "- Changing directory ownership" --result FAIL --color YELLOW
 
     return 1
 
@@ -1377,7 +1385,7 @@ function extract_filename_from_path() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-# TODO: pv only if EXEC_TYPE == default
+# TODO: pv only if BROLIT_EXEC_TYPE == default
 
 function decompress() {
 
@@ -1391,6 +1399,7 @@ function decompress() {
 
   # Log
   log_event "info" "Extracting compressed file: ${file_path}" "false"
+  log_event "debug" "Compress type: ${compress_type}" "false"
   display --indent 6 --text "- Extracting compressed file"
 
   if [[ -f "${file_path}" ]]; then
@@ -1410,52 +1419,42 @@ function decompress() {
       ;;
 
     *.bz2)
-      #bunzip2 "${file_path}" "${directory_to_extract}"
       pv --width 70 "${file_path}" | bunzip2 >"${directory_to_extract}/${filename}"
       ;;
 
     *.rar)
-      #unrar x "${file_path}" "${directory_to_extract}"
       unrar x "${file_path}" "${directory_to_extract}" | pv -l >/dev/null
       ;;
 
     *.gz)
-      #gunzip "${file_path}" -C "${directory_to_extract}"
       pv --width 70 "${file_path}" | gunzip -C "${directory_to_extract}"
       ;;
 
     *.tar)
-      #tar xf "${file_path}" -C "${directory_to_extract}"
       pv --width 70 "${file_path}" | tar xf -C "${directory_to_extract}"
       ;;
 
     *.tbz2)
-      #tar xjf "${file_path}" -C "${directory_to_extract}"
       pv --width 70 "${file_path}" | tar xjf -C "${directory_to_extract}"
       ;;
 
     *.tgz)
-      #tar xzf "${file_path}" -C "${directory_to_extract}"
       pv --width 70 "${file_path}" | tar xzf -C "${directory_to_extract}"
       ;;
 
     *.xz)
-      #tar xvf "${file_path}" -C "${directory}"
       pv --width 70 "${file_path}" | tar xvf -C "${directory_to_extract}"
       ;;
 
     *.zip)
-      #unzip "${file_path}" "${directory}"
       unzip -o "${file_path}" -d "${directory_to_extract}" | pv -l >/dev/null
       ;;
 
     *.zst)
-      #tar --use-compress-program zstd -cf "${file_path}" "${directory_to_extract}"
       pv --width 70 "${file_path}" | tar xp -C "${directory_to_extract}" --use-compress-program="${compress_type}"
       ;;
 
     *.Z)
-      #uncompress "${file_path}" "${directory}"
       pv --width 70 "${file_path}" | uncompress "${directory_to_extract}"
       ;;
 
@@ -1506,9 +1505,10 @@ function decompress() {
 # Compress files or directories
 #
 # Arguments:
-#   ${1} = ${file_path} - File to uncompress or extract
-#   ${2} = ${directory_to_extract} - Dir to uncompress file
-#   ${3} = ${compress_type} - Optional: compress-program (ex: lbzip2)
+#   ${1} = ${file_path}
+#   ${2} = ${to_backup} - Could be a file or a directory.
+#   ${3} = ${file_output}
+#   ${4} = ${exclude_parameters}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -1517,68 +1517,143 @@ function decompress() {
 function compress() {
 
   local backup_base_dir="${1}"
-  local to_backup="${2}" # could be a file or a directory. Ex: database.sql or foldername
+  local to_backup="${2}"
   local file_output="${3}"
   local exclude_parameters="${4}"
 
   local backup_file_size
+  local compress_parameter
+  local decompress_parameter
 
   # Only for better displaying
-  if [[ ${to_backup} == "." ]]; then
-    to_backup_string="$(basename "${backup_base_dir}")"
-  else
-    to_backup_string="${to_backup}"
-  fi
+  [[ ${to_backup} == "." ]] && to_backup_string="$(basename "${backup_base_dir}")" || to_backup_string="${to_backup}"
 
   # Log
   display --indent 6 --text "- Compressing ${to_backup_string}"
   log_event "info" "Compressing ${to_backup_string} ..." "false"
 
-  # Compress
-  if [[ ${BACKUP_CONFIG_FOLLOW_SYMLINKS} == "true" ]]; then
-    ## -h will follow symlinks
-    ### IMPORTANT: not add "" on ${exclude_parameters}
-    ${TAR} -cf - --directory="${backup_base_dir}" ${exclude_parameters} -h "${to_backup}" | pv --width 70 -s "$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')" | ${BACKUP_CONFIG_COMPRESSION_TYPE} >"${file_output}"
-    log_event "debug" "Running: ${TAR} -cf - --directory=\"${backup_base_dir}\" ${exclude_parameters} -h \"${to_backup}\" | pv --width 70 -s \"$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')\" | ${BACKUP_CONFIG_COMPRESSION_TYPE} >\"${file_output}\"" "false"
-
-  else
-    ${TAR} -cf - --directory="${backup_base_dir}" ${exclude_parameters} "${to_backup}" | pv --width 70 -s "$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')" | ${BACKUP_CONFIG_COMPRESSION_TYPE} >"${file_output}"
-    log_event "debug" "Running: ${TAR} -cf - --directory=\"${backup_base_dir}\" ${exclude_parameters} \"${to_backup}\" | pv --width 70 -s \"$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')\" | ${BACKUP_CONFIG_COMPRESSION_TYPE} >\"${file_output}\"" "false"
+  # Prepare compress command
+  if [[ -n ${BACKUP_CONFIG_COMPRESSION_CORES} && ${BACKUP_CONFIG_COMPRESSION_TYPE} == "lbzip2" ]]; then
+    compress_parameter="-n ${BACKUP_CONFIG_COMPRESSION_CORES}"
+    decompress_parameter="-n ${BACKUP_CONFIG_COMPRESSION_CORES}"
+  fi
+  ## Set the compression block size during compression
+  ## Example: $ lbzip2 -1 filename
+  if [[ -n ${BACKUP_CONFIG_COMPRESSION_LEVEL} ]]; then
+    compress_parameter="${compress_parameter} -${BACKUP_CONFIG_COMPRESSION_LEVEL}"
   fi
 
-  # Log
-  clear_previous_lines "2"
-  log_event "info" "Testing backup file: ${file_output}" "false"
-  display --indent 6 --text "- Testing backup file"
+  if [[ ${BACKUP_CONFIG_FOLLOW_SYMLINKS} == "true" ]]; then
+    ## -h will follow symlinks
+    ### IMPORTANT: not add "" on ${exclude_parameters} or ${compress_parameter}
+    ${TAR} -cf - --directory="${backup_base_dir}" ${exclude_parameters} -h "${to_backup}" | pv --width 70 -s "$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')" | ${BACKUP_CONFIG_COMPRESSION_TYPE} ${compress_parameter} >"${file_output}"
+    log_event "debug" "Running: ${TAR} -cf - --directory=\"${backup_base_dir}\" ${exclude_parameters} -h \"${to_backup}\" | pv --width 70 -s \"$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')\" | ${BACKUP_CONFIG_COMPRESSION_TYPE} ${compress_parameter}>\"${file_output}\"" "false"
 
-  # Test backup with pv output
-  pv --width 70 "${file_output}" | ${BACKUP_CONFIG_COMPRESSION_TYPE} --test
+  else
+    ${TAR} -cf - --directory="${backup_base_dir}" ${exclude_parameters} "${to_backup}" | pv --width 70 -s "$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')" | ${BACKUP_CONFIG_COMPRESSION_TYPE} ${compress_parameter} >"${file_output}"
+    log_event "debug" "Running: ${TAR} -cf - --directory=\"${backup_base_dir}\" ${exclude_parameters} \"${to_backup}\" | pv --width 70 -s \"$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')\" | ${BACKUP_CONFIG_COMPRESSION_TYPE} ${compress_parameter}>\"${file_output}\"" "false"
+  fi
 
-  compress_result=$?
+  # Compress result
+  if [[ ${BACKUP_CONFIG_COMPRESSION_TEST} == "true" ]]; then
 
-  # Clear output
-  clear_previous_lines "2"
+    # Log
+    clear_previous_lines "2"
+    log_event "info" "Testing backup file: ${file_output}" "false"
+    display --indent 6 --text "- Testing backup file"
 
-  if [[ ${compress_result} -eq 0 ]]; then
+    # Test backup with pv output
+    pv --width 70 "${file_output}" | ${BACKUP_CONFIG_COMPRESSION_TYPE} "${decompress_parameter}" --test
+
+    compress_result=$?
+
+    # Clear output
+    clear_previous_lines "2"
+
+    if [[ ${compress_result} -eq 0 ]]; then
+
+      # Get file size
+      backup_file_size="$(get_file_size "${file_output}")"
+
+      # Log
+      log_event "info" "Backup file test finished ok." "false"
+
+      # Return
+      echo "${backup_file_size}" && return 0
+
+    else
+
+      # Log
+      clear_previous_lines "2"
+
+      display --indent 6 --text "- Compressing ${to_backup_string}" --result "FAIL" --color RED
+      display --indent 8 --text "Something went wrong making backup file: ${file_output}" --tcolor RED
+
+      log_event "error" "Something went wrong making backup file: ${file_output}" "false"
+      log_event "debug" "Output: ${compress_result}" "false"
+
+      return 1
+
+    fi
+
+  else
 
     # Get file size
     backup_file_size="$(get_file_size "${file_output}")"
 
-    log_event "info" "Backup file test finished ok." "false"
+    # Log
+    clear_previous_lines "2"
+
+    display --indent 6 --text "- Compressing ${to_backup_string}" --result "DONE" --color GREEN
+    display --indent 6 --text "- Testing backup file" --result "SKIPPED" --color YELLOW
+
+    log_event "info" "Backup file test skipped." "false"
 
     # Return
     echo "${backup_file_size}" && return 0
 
+  fi
+
+}
+
+################################################################################
+# Install borgmatic cronjob
+#
+# Arguments:
+#   ${1} = ${scheduled_time}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function brolit_borgmatic_cronjob_install() {
+
+  local script="${1}"
+  local scheduled_time="${2}"
+
+  log_section "Borgmatic Tasks"
+
+  borgmatic_cron_file="/etc/cron.d/borgmatic"
+
+  if [[ ! -f ${borgmatic_cron_file} ]]; then
+
+    log_event "info" "Cron file for root does not exist, creating ..." "false"
+
+    touch $borgmatic_cron_file
+    echo "50 00 * * * root PATH=$PATH:/usr/bin:/usr/local/bin /root/.local/bin/borgmatic --verbosity -1 --syslog-verbosity 1" >>$borgmatic_cron_file
+
+    chmod +x $borgmatic_cron_file
+
+    log_event "info" "Cron file created"
+    display --indent 2 --text "- Creating log file" --result DONE --color GREEN
+
+    log_event "info" "Updating cron job for script: ${script}" "false"
+    service cron reload
+    display --indent 2 --text "- Updating cron job" --result DONE --color GREEN
+
   else
-
-    display --indent 6 --text "- Compressing ${to_backup_string}" --result "FAIL" --color RED
-    display --indent 8 --text "Something went wrong making backup file: ${file_output}" --tcolor RED
-
-    log_event "error" "Something went wrong making backup file: ${file_output}" "false"
-    log_event "debug" "Output: ${compress_result}" "false"
-
-    return 1
-
+    log_event "info" "Script file already exists"
+    display --indent 2 --text "- Script already exists, not updated" --result SKIPPED --color YELLOW
   fi
 
 }
@@ -1707,14 +1782,14 @@ function menu_main_options() {
   local runner_options   # whiptail array options
   local chosen_type      # whiptail var
 
-  whip_title="BROLIT SHELL MENU"
+  whip_title="BROLIT-SHELL MAIN MENU"
   whip_description=" "
 
   runner_options=(
     "01)" "BACKUP OPTIONS"
     "02)" "RESTORE OPTIONS"
     "03)" "PROJECT CREATION"
-    "04)" "OTHERS PROJECT UTILS"
+    "04)" "MORE PROJECT UTILS"
     "05)" "DATABASE MANAGER"
     "06)" "WP-CLI MANAGER"
     "07)" "CERTBOT MANAGER"
@@ -1740,6 +1815,7 @@ function menu_main_options() {
     # OTHERS PROJECT UTILS
     [[ ${chosen_type} == *"04"* ]] && project_manager_menu_new_project_type_utils
 
+    # DATABASE MANAGER
     if [[ ${chosen_type} == *"05"* ]]; then
       # shellcheck source=${BROLIT_MAIN_DIR}/utils/database_manager.sh
       source "${BROLIT_MAIN_DIR}/utils/database_manager.sh"
@@ -1747,6 +1823,8 @@ function menu_main_options() {
       database_manager_menu
 
     fi
+
+    # WP-CLI MANAGER
     if [[ ${chosen_type} == *"06"* ]]; then
       # shellcheck source=${BROLIT_MAIN_DIR}/utils/wpcli_manager.sh
       source "${BROLIT_MAIN_DIR}/utils/wpcli_manager.sh"
@@ -1755,12 +1833,28 @@ function menu_main_options() {
       wpcli_manager
 
     fi
-    if [[ ${chosen_type} == *"07"* ]]; then
-      # shellcheck source=${BROLIT_MAIN_DIR}/utils/certbot_manager.sh
-      source "${BROLIT_MAIN_DIR}/utils/certbot_manager.sh"
 
-      log_section "Certbot Manager"
-      certbot_manager_menu
+    # CERTBOT MANAGER
+    if [[ ${chosen_type} == *"07"* ]]; then
+
+      if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
+
+        # shellcheck source=${BROLIT_MAIN_DIR}/utils/certbot_manager.sh
+        source "${BROLIT_MAIN_DIR}/utils/certbot_manager.sh"
+
+        log_section "Certbot Manager"
+        certbot_manager_menu
+
+      else
+
+        # Log
+        display --indent 6 --text "- Certbot support is disabled. Enable it on brolit_conf.json" --tcolor YELLOW
+        # Press any key to return to main menu
+        read -n 1 -s -r -p "Press any key to continue"
+        # Return to main menu
+        menu_main_options
+
+      fi
 
     fi
 
@@ -1777,7 +1871,12 @@ function menu_main_options() {
 
       else
 
-        die "Cloudflare support is disabled. Configure the api key on brolit_conf.json"
+        # Log
+        display --indent 6 --text "Cloudflare support is disabled. Configure the api key on brolit_conf.json" --tcolor YELLOW
+        # Press any key to return to main menu
+        read -n 1 -s -r -p "Press any key to continue"
+        # Return to main menu
+        menu_main_options
 
       fi
 
@@ -1904,11 +2003,12 @@ function menu_cron_script_tasks() {
 
   runner_options=(
     "01)" "BACKUPS TASKS"
-    "02)" "OPTIMIZER TASKS"
-    "03)" "WORDPRESS TASKS"
-    "04)" "SECURITY TASKS"
-    "05)" "UPTIME TASKS"
-    "06)" "BROLIT UI HELPER"
+    "02)" "BORGMATIC TASKS"
+    "03)" "OPTIMIZER TASKS"
+    "04)" "WORDPRESS TASKS"
+    "05)" "SECURITY TASKS"
+    "06)" "UPTIME TASKS"
+    "07)" "BROLIT UI HELPER"
   )
   chosen_type="$(whiptail --title "CRONEABLE TASKS" --menu "\n" 20 78 10 "${runner_options[@]}" 3>&1 1>&2 2>&3)"
 
@@ -1930,6 +2030,19 @@ function menu_cron_script_tasks() {
     fi
     if [[ ${chosen_type} == *"02"* ]]; then
 
+      # BORGMATIC-TASKS
+      suggested_cron="0 * * * *" # Every hour
+      scheduled_time="$(whiptail_input "CRON BORGMATIC-TASKS" "Insert a cron expression for selected task:" "${suggested_cron}")"
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+        # Borgmatic jobs
+        brolit_cronjob_install "${BROLIT_MAIN_DIR}/cron/borgmatic_tasks.sh" "0 * * * *"
+        brolit_borgmatic_cronjob_install
+      fi
+
+    fi
+    if [[ ${chosen_type} == *"03"* ]]; then
+
       # OPTIMIZER-TASKS
       suggested_cron="45 04 * * *" # Every day at 04:45 AM
       scheduled_time="$(whiptail_input "CRON OPTIMIZER-TASKS" "Insert a cron expression for selected task:" "${suggested_cron}")"
@@ -1941,7 +2054,7 @@ function menu_cron_script_tasks() {
       fi
 
     fi
-    if [[ ${chosen_type} == *"03"* ]]; then
+    if [[ ${chosen_type} == *"04"* ]]; then
 
       # WORDPRESS-TASKS
       suggested_cron="45 23 * * *" # Every day at 23:45 AM
@@ -1954,7 +2067,7 @@ function menu_cron_script_tasks() {
       fi
 
     fi
-    if [[ ${chosen_type} == *"04"* ]]; then
+    if [[ ${chosen_type} == *"05"* ]]; then
 
       # UPTIME-TASKS
       suggested_cron="55 03 * * *" # Every day at 22:45 AM
@@ -1967,7 +2080,7 @@ function menu_cron_script_tasks() {
       fi
 
     fi
-    if [[ ${chosen_type} == *"05"* ]]; then
+    if [[ ${chosen_type} == *"06"* ]]; then
 
       # UPTIME-TASKS
       suggested_cron="45 22 * * *" # Every day at 22:45 AM
@@ -1980,7 +2093,7 @@ function menu_cron_script_tasks() {
       fi
 
     fi
-    if [[ ${chosen_type} == *"06"* ]]; then
+    if [[ ${chosen_type} == *"07"* ]]; then
 
       # BROLIT HELPER
       suggested_cron="*/30 * * * *" # Every 30 minutes

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.2
+# Version: 3.3.10
 ################################################################################
 
 function it_utils_menu() {
@@ -185,9 +185,10 @@ function menu_security_utils() {
   local security_options chosen_security_options
 
   security_options=(
-    "01)" "CLAMAV MALWARE SCAN"
-    "02)" "CUSTOM MALWARE SCAN"
-    "03)" "LYNIS SYSTEM AUDIT"
+    "01)" "WORFENCE-CLI MALWARE SCAN"
+    "02)" "CLAMAV MALWARE SCAN"
+    "03)" "CUSTOM MALWARE SCAN"
+    "04)" "LYNIS SYSTEM AUDIT"
   )
   chosen_security_options=$(whiptail --title "SECURITY TOOLS" --menu "Choose an option to run" 20 78 10 "${security_options[@]}" 3>&1 1>&2 2>&3)
 
@@ -196,14 +197,17 @@ function menu_security_utils() {
 
     package_install_security_utils
 
+    # WORFENCE-CLI MALWARE SCAN
+    [[ ${chosen_security_options} == *"01"* ]] && menu_security_wordfencecli_scan
+
     # CLAMAV MALWARE SCAN
-    [[ ${chosen_security_options} == *"01"* ]] && menu_security_clamav_scan
+    [[ ${chosen_security_options} == *"02"* ]] && menu_security_clamav_scan
 
     # CUSTOM MALWARE SCAN
-    [[ ${chosen_security_options} == *"02"* ]] && menu_security_custom_scan
+    [[ ${chosen_security_options} == *"03"* ]] && menu_security_custom_scan
 
     # LYNIS SYSTEM AUDIT
-    [[ ${chosen_security_options} == *"03"* ]] && menu_security_system_audit
+    [[ ${chosen_security_options} == *"04"* ]] && menu_security_system_audit
 
     prompt_return_or_finish
     menu_security_utils
@@ -211,6 +215,39 @@ function menu_security_utils() {
   fi
 
   menu_main_options
+
+}
+
+function menu_security_wordfencecli_scan() {
+
+  local to_scan
+  local include_all_files
+
+  wordfencecli_installer
+
+  startdir="${PROJECTS_PATH}"
+  directory_browser "${menutitle}" "${startdir}"
+
+  # If directory browser was cancelled
+  if [[ -z ${filename} ]]; then
+
+    # Return
+    menu_security_utils
+
+  else
+
+    to_scan=$filepath"/"$filename
+
+    include_all_files=$(whiptail --title "WORFENCE-CLI MALWARE SCAN" --yesno "Do you want to include all files?" 10 60 3>&1 1>&2 2>&3)
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+      wordfencecli_malware_scan "${to_scan}" "${include_all_files}"
+
+    fi
+
+  fi
 
 }
 

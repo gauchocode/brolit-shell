@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.2
+# Version: 3.3.10
 ################################################################################
 #
 # Project Manager: Perform project actions.
@@ -127,10 +127,9 @@ function project_manager_menu_new_project_type_utils() {
     "02)" "RE-GENERATE NGINX SERVER"
     "03)" "DELETE PROJECT"
     "04)" "CREATE PROJECT DB  & USER"
-    "05)" "RENAME DATABASE"
-    "06)" "PUT PROJECT ONLINE"
-    "07)" "PUT PROJECT OFFLINE"
-    "08)" "BENCH PROJECT GTMETRIX"
+    "05)" "PUT PROJECT ONLINE"
+    "06)" "PUT PROJECT OFFLINE"
+    "07)" "DELETE PROJECT DOCKER"
   )
 
   chosen_project_utils_options="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_utils_options[@]}" 3>&1 1>&2 2>&3)"
@@ -138,11 +137,10 @@ function project_manager_menu_new_project_type_utils() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    log_section "Project Utils"
-
     # RE-GENERATE PROJECT CONFIG
     if [[ ${chosen_project_utils_options} == *"01"* ]]; then
 
+      log_section "Project Utils"
       log_subsection "Project config"
 
       # Folder where sites are hosted: $PROJECTS_PATH
@@ -171,6 +169,7 @@ function project_manager_menu_new_project_type_utils() {
     # CREATE PROJECT DB  & USER
     if [[ ${chosen_project_utils_options} == *"04"* ]]; then
 
+      log_section "Project Utils"
       log_subsection "Create Project DB & User"
 
       # Folder where sites are hosted: $PROJECTS_PATH
@@ -230,66 +229,38 @@ function project_manager_menu_new_project_type_utils() {
 
     fi
 
-    # RENAME DATABASE
-    if [[ ${chosen_project_utils_options} == *"05"* ]]; then
-
-      local chosen_db
-      local new_database_name
-
-      chosen_db="$(mysql_ask_database_selection)"
-
-      new_database_name="$(whiptail_input "Database Name" "Insert a new database name (only separator allow is '_'). Old name was: ${chosen_db}" "")"
-
-      exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
-
-        log_event "debug" "Setting new_database_name: ${new_database_name}" "false"
-
-        # Return
-        #echo "${new_database_name}"
-        mysql_database_rename "${chosen_db}" "${new_database_name}"
-
-      else
-
-        return 1
-
-      fi
-
-    fi
-
     # PUT PROJECT ONLINE
-    [[ ${chosen_project_utils_options} == *"06"* ]] && project_change_status "online"
+    [[ ${chosen_project_utils_options} == *"05"* ]] && project_change_status "online"
 
     # PUT PROJECT OFFLINE
-    [[ ${chosen_project_utils_options} == *"07"* ]] && project_change_status "offline"
+    [[ ${chosen_project_utils_options} == *"06"* ]] && project_change_status "offline"
 
-    # BENCH PROJECT GTMETRIX
-    if [[ ${chosen_project_utils_options} == *"08"* ]]; then
-
-      URL_TO_TEST=$(whiptail --title "GTMETRIX TEST" --inputbox "Insert test URL including http:// or https://" 10 60 3>&1 1>&2 2>&3)
-
-      exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
-
-        log_section "GTMETRIX"
-
-        display --indent 2 --text "- Testing project ${URL_TO_TEST}"
-
-        # shellcheck source=${BROLIT_MAIN_DIR}/tools/third-party/google-insights-api-tools/gitools_v5.sh
-        gtmetrix_result="$("${BROLIT_MAIN_DIR}/tools/third-party/google-insights-api-tools/gitools_v5.sh" gtmetrix "${URL_TO_TEST}")"
-
-        gtmetrix_results_url="$(echo "${gtmetrix_result}" | grep -Po '(?<=Report:)[^"]*' | head -1 | cut -d " " -f 2)"
-
-        clear_previous_lines "1"
-        display --indent 2 --text "- Testing project ${URL_TO_TEST}" --result DONE --color GREEN
-        display --indent 4 --text "Please check results on:"
-        display --indent 4 --text "${gtmetrix_results_url}" --tcolor MAGENTA
-        log_event "info" "gtmetrix_result: ${gtmetrix_result}" "false"
-
+    # DELETE PROJECT DOCKER
+    if [[ ${chosen_project_utils_options} == *"07"* ]]; then
+      log_section "Project Delete"
+      log_subsection "Selecting Project to Delete"
+      
+      # List available projects
+      menu_title="PROJECT TO DELETE"
+      directory_browser "${menu_title}" "${PROJECTS_PATH}"
+      if [[ -z "${filepath}" || -z "${filename}" ]]; then
+        log_event "info" "Operation cancelled!" "false"
+        display --indent 6 --text "- Selecting project to delete" --result "SKIPPED" --color YELLOW
+        return 1
       fi
-
+      
+      project_domain="${filename%/}"
+      log_event "info" "Selected project: ${project_domain}" "false"
+      
+      # Check if project is Docker
+      if [[ -d "${PROJECTS_PATH}/${project_domain}" && -f "${PROJECTS_PATH}/${project_domain}/docker-compose.yml" ]]; then
+        delete_docker_project "${project_domain}"
+      else
+        log_event "error" "The selected project is not a Docker project." "true"
+        display --indent 6 --text "- Project is not Docker" --result "FAIL" --color RED
+      fi
     fi
-
+    
     prompt_return_or_finish
     project_manager_menu_new_project_type_utils
 

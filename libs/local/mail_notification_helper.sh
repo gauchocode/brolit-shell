@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.2
+# Version: 3.3.10
 ################################################################################
 
 # sendmail --help
@@ -144,14 +144,8 @@ function mail_subject_status() {
 
 function _remove_mail_notifications_files() {
 
+    # Remove tmp files
     rm --force "${BROLIT_TMP_DIR}/*.mail"
-
-    # Remove one per line only for better readibility
-    #rm --force "${BROLIT_TMP_DIR}/cert-${NOW}.mail"
-    #rm --force "${BROLIT_TMP_DIR}/pkg-${NOW}.mail"
-    #rm --force "${BROLIT_TMP_DIR}/files-bk-${NOW}.mail"
-    #rm --force "${BROLIT_TMP_DIR}/configuration-bk-${NOW}.mail"
-    #rm --force "${BROLIT_TMP_DIR}/databases-bk-${NOW}.mail"
 
     log_event "debug" "Email temporary files removed!" "false"
 
@@ -173,7 +167,6 @@ function mail_server_status_section() {
 
     local disk_u
     local disk_u_ns
-    local content
     local body
 
     local email_template="default"
@@ -425,6 +418,7 @@ function mail_backup_section() {
     local error_type="${2}"
     local backup_type="${3}"
 
+    # Move args to array
     shift 3
     local backuped_list="$@"
 
@@ -433,7 +427,6 @@ function mail_backup_section() {
     local backup_status
     local backup_status_icon
     local section_content
-
     local files_inc
     local files_inc_buff
     local files_inc_line_p1
