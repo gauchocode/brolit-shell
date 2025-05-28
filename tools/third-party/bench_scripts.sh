@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Author: BROOBE - A Software Development Agency - https://example.com
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
 # Version: 3.2-alpha16
 ################################################################################
 #

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.2
+# Version: 3.3.10
 ################################################################################
 #
 # Backup/Restore Helper: Backup and restore funtions.
@@ -585,14 +585,14 @@ function restore_backup_from_public_url() {
   rm --force --recursive "${BROLIT_TMP_DIR}/${project_domain:?}"
 
   # Send notifications
-  send_notification "✅ ${SERVER_NAME}" "Project ${project_name} restored!" ""
+  send_notification "${SERVER_NAME}" "Project ${project_name} restored!" ""
 
   HTMLOPEN='<html><body>'
   BODY_SRV_MIG='Project restore ended '${ELAPSED_TIME}'<br/>'
   BODY_DB='Database: '${project_name}'_'${project_stage}'<br/>Database User: '${project_name}'_user <br/>Database User Pass: '${database_user_passw}'<br/>'
   HTMLCLOSE='</body></html>'
 
-  mail_send_notification "✅ ${SERVER_NAME} - Project ${project_name} restored!" "${HTMLOPEN} ${BODY_SRV_MIG} ${BODY_DB} ${BODY_CLF} ${HTMLCLOSE}"
+  mail_send_notification "${SERVER_NAME} - Project ${project_name} restored!" "${HTMLOPEN} ${BODY_SRV_MIG} ${BODY_DB} ${BODY_CLF} ${HTMLCLOSE}" "success"
 
 }
 
@@ -673,7 +673,7 @@ function restore_backup_from_storage() {
       [[ $? -eq 1 ]] && display --indent 6 --text "- Project Restore" --result "SKIPPED" --color YELLOW && return 1
 
       # Send notification
-      send_notification "✅ ${SERVER_NAME}" "Project ${chosen_project} restored!" "0"
+      send_notification "${SERVER_NAME}" "Project ${chosen_project} restored!" "success"
 
       ;;
 
@@ -739,6 +739,30 @@ function restore_backup_from_storage() {
       restore_backup_project_database "${chosen_project}" "${backup_to_restore}"
 
       ;;
+
+    docker-volume)
+      
+        # Select project backup
+        backup_to_dowload="$(storage_backup_selection "${remote_list}" "docker-volume")"
+        [[ $? -eq 1 ]] && return 1
+  
+        # Download backup
+        storage_download_backup "${backup_to_dowload}" "${BROLIT_TMP_DIR}"
+  
+        [[ $? -eq 1 ]] && display --indent 6 --text "- Downloading Volume Backup" --result "ERROR" --color RED && return 1
+  
+        # Detail of backup_to_dowload:
+        #   "${chosen_server}/projects-${chosen_status}/${chosen_restore_type}/${project_name}/${backup_file}"
+        # For convention at this point ${chosen_project} == ${project_name}
+        backup_to_restore="$(basename "${backup_to_dowload}")"
+        # Get project_name
+        chosen_project="$(dirname "${backup_to_dowload}")"
+        volume="$(basename "${chosen_project}")"
+
+        # Restore
+        restore_docker_volume "${backup_to_restore}" "${volume}"
+  
+        ;;
 
     esac
 
@@ -1021,18 +1045,15 @@ function restore_backup_files() {
 
         # Stop containers
         docker_compose_stop "${destination_dir}/docker-compose.yml"
-        #clear_previous_lines "4"
 
         # Remove containers
-        docker_compose_delete "${destination_dir}/docker-compose.yml"
-        #clear_previous_lines "5"
+        docker_compose_rm "${destination_dir}/docker-compose.yml"
 
       fi
 
       # Backup old project
       _create_tmp_copy "${destination_dir}" "move"
-      got_error=$?
-      [[ ${got_error} -eq 1 ]] && return 1
+      [[ $? -eq 1 ]] && return 1
 
     else
 
@@ -1325,6 +1346,63 @@ function restore_backup_project_database() {
 
 }
 
+function docker_setup_configuration() {
+
+  local project_name="${1}"
+  local project_install_path="${2}"
+  local project_domain_new="${3}"
+
+
+  # Check if docker and docker-compose are installed
+  package_is_installed "docker-ce"
+  [[ $? -eq 1 ]] && return 1
+
+  # TODO: Update .env values (PORTS, COMPOSE_PROJECT_NAME, PROJECT_NAME, PROJECT_DOMAIN, SHH_MASTER_USER, SSH_MASTER_PASS)
+
+  # Update COMPOSE_PROJECT_NAME
+  sed -ie "s|^COMPOSE_PROJECT_NAME=.*$|COMPOSE_PROJECT_NAME=${project_stage}_${project_name}_stack|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
+
+  # Update PROJECT_NAME
+  sed -ie "s|^PROJECT_NAME=.*$|PROJECT_NAME=${project_name}_${project_stage}|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
+
+  # Update PROJECT_DOMAIN
+  sed -ie "s|^PROJECT_DOMAIN=.*$|PROJECT_DOMAIN=${project_domain_new}|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
+
+  # Update SSH_MASTER_USER
+  sed -ie "s|^SSH_MASTER_USER=.*$|SSH_MASTER_USER=${project_name}_sftp_user|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
+
+  # Update SSH_MASTER_PASS
+  ## Generate random password
+  project_passw="$(openssl rand -hex 12)"
+  sed -ie "s|^SSH_MASTER_PASS=.*$|SSH_MASTER_PASS=${project_passw}|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
+
+  ## Update MYSQL DATABASE
+  sed -i -e "s|^MYSQL_DATABASE=.*$|MYSQL_DATABASE=${project_name}_${project_stage}|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
+
+  ## Update MYSQL DATABASE
+  sed -ie "s|^MYSQL_USER=.*$|MYSQL_USER=${project_name}_user|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
+  
+  ## Will find the next port available from 81 to 350
+  project_port="$(network_next_available_port "81" "350")"
+
+  # TODO: Check project type (WP, Laravel, etc)
+
+  ## Update WP_PORT or WEBSERVER_PORT, then remove tmp file generated by sed
+  sed -ie "s|^WP_PORT=.*$|WP_PORT=${project_port}|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
+  sed -ie "s|^WEBSERVER_PORT=.*$|WEBSERVER_PORT=${project_port}|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
+
+  # Rebuild docker image
+  docker_compose_build "${project_install_path}/docker-compose.yml"
+  if [[ $? -ne 0 ]]; then
+    log_event "error" "Docker rebuild failed." "true"
+    return 1
+  fi
+
+  log_event "info" "Docker setup configuration completed successfully." "true"
+
+}
+
+
 # TODO: needs refactor
 ## 1- Maybe project_domain is not needed
 ## 2- Should use restore_backup_project_files and restore_backup_project_database
@@ -1369,56 +1447,181 @@ function restore_project_backup() {
 
   fi
 
-  # NEW NEW NEW NEW NEW
+  # Restore project files
   values=($(restore_backup_project_files "${project_backup_file}" "${project_domain}" "${project_domain_new}"))
-  #[[ $? -eq 1 ]] && return 1
+  ## Extract values
   project_type=${values[0]}
   project_install_type=${values[1]}
   project_port=${values[2]}
+
+  project_install_path="${PROJECTS_PATH}/${project_domain_new}"
 
   # Log
   log_event "debug" "project_type=${project_type}" "false"
   log_event "debug" "project_install_type=${project_install_type}" "false"
 
-  project_install_path="${PROJECTS_PATH}/${project_domain_new}"
-
   if [[ ${project_install_type} == "docker"* ]]; then
 
-    # Check if docker and docker-compose are installed
-    package_is_installed "docker.io"
-    [[ $? -eq 1 ]] && return 1
+    ## Get database information
+    db_name="$(project_get_configured_database "${project_install_path}" "${project_type}" "${project_install_type}")"
 
-    # TODO: Update .env values (PORTS, COMPOSE_PROJECT_NAME, PROJECT_NAME, PROJECT_DOMAIN, SHH_MASTER_USER, SSH_MASTER_PASS)
+    # Database backup full remote path
+    db_to_download="${project_backup_server}/projects-${project_backup_status}/database/${db_name}/${db_to_restore}"
 
-    # Update COMPOSE_PROJECT_NAME
-    sed -ie "s|^COMPOSE_PROJECT_NAME=.*$|COMPOSE_PROJECT_NAME=${project_name}_stack|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
+    if [[ -n ${db_name} && ${db_name} != "no-database" ]]; then
 
-    # Update PROJECT_NAME
-    sed -ie "s|^PROJECT_NAME=.*$|PROJECT_NAME=${project_name}|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
+      # Get backup rotation type (daily, weekly, monthly)
+      backup_rotation_type="$(backup_get_rotation_type "${project_backup_file}")"
 
-    # Update PROJECT_DOMAIN
-    sed -ie "s|^PROJECT_DOMAIN=.*$|PROJECT_DOMAIN=${project_domain_new}|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
+      # Get backup date
+      project_backup_date="$(backup_get_date "${project_backup_file}")"
 
-    # Update SSH_MASTER_USER
-    sed -ie "s|^SSH_MASTER_USER=.*$|SSH_MASTER_USER=${project_name}_sftp_user|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
+      ## Check ${backup_rotation_type}
+      if [[ ${backup_rotation_type} == "daily" ]]; then
+        db_to_restore="${db_name}_database_${project_backup_date}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+      else
+        db_to_restore="${db_name}_database_${project_backup_date}-${backup_rotation_type}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+      fi
 
-    # Update SSH_MASTER_PASS
-    ## Generate random password
-    project_passw="$(openssl rand -hex 12)"
-    sed -ie "s|^SSH_MASTER_PASS=.*$|SSH_MASTER_PASS=${project_passw}|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
+      # Database backup full remote path
+      db_to_download="${project_backup_server}/projects-${project_backup_status}/database/${db_name}/${db_to_restore}"
 
-    ## Will find the next port available from 81 to 350
-    project_port="$(network_next_available_port "81" "350")"
+      # Downloading Database Backup
+      storage_download_backup "${db_to_download}" "${BROLIT_TMP_DIR}"
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 1 ]]; then
 
-    # TODO: Check project type (WP, Laravel, etc)
+        # TODO: ask to download manually calling restore_database_backup or skip database restore part
+        whiptail_message_with_skip_option "RESTORE BACKUP" "Database backup not found. Do you want to select manually the database backup to restore?"
 
-    ## Update WP_PORT or WEBSERVER_PORT, then remove tmp file generated by sed
-    sed -ie "s|^WP_PORT=.*$|WP_PORT=${project_port}|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
-    sed -ie "s|^WEBSERVER_PORT=.*$|WEBSERVER_PORT=${project_port}|g" "${project_install_path}/.env" && rm "${project_install_path}/.enve"
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
 
-    # Rebuild docker image
-    docker_compose_build "${project_install_path}/docker-compose.yml"
-    exitstatus=$?
+          # Get dropbox backup list
+          remote_backup_path="${project_backup_server}/projects-${project_backup_status}/database/${db_name}"
+          remote_backup_list="$(storage_list_dir "${remote_backup_path}")"
+
+          # Select Backup File
+          chosen_backup_to_restore="$(whiptail --title "RESTORE BACKUP" --menu "Choose Backup to Download" 20 78 10 $(for x in ${remote_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)"
+          exitstatus=$?
+          if [[ ${exitstatus} -eq 1 ]]; then
+          
+            database_restore_skipped="true"
+
+            display --indent 6 --text "- Restore project backup" --result "SKIPPED" --color YELLOW
+
+          fi
+
+        else
+
+          database_restore_skipped="true"
+
+          display --indent 6 --text "- Restore project backup" --result "SKIPPED" --color YELLOW
+
+        fi
+
+      fi
+
+      if [[ ${database_restore_skipped} == "true" ]]; then
+
+          log_event "info" "Database restore skipped. Exiting restoration process." "false"
+
+          return 0
+
+      fi
+
+      if [[ ! -f "${BROLIT_TMP_DIR}/${db_to_restore}" ]]; then
+
+          log_event "error" "Backup file ${db_to_restore} not found in ${BROLIT_TMP_DIR}." "true"
+
+          database_restore_skipped="true"
+
+          return 1
+
+      fi
+
+      log_event "info" "Decompressing ${db_to_restore} to ${BROLIT_TMP_DIR}." "false"
+
+      decompress "${BROLIT_TMP_DIR}/${db_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
+    
+          if [[ $? -ne 0 ]]; then
+
+              log_event "error" "Failed to decompress ${db_to_restore}." "true"
+
+              database_restore_skipped="true"
+
+              return 1
+          fi
+
+      base_name="${db_to_restore%.tar.bz2}"
+
+      dump_file="${BROLIT_TMP_DIR}/${base_name}.sql"
+
+      if [[ ! -f "${dump_file}" ]]; then
+
+          log_event "error" "SQL dump file not found after decompression: ${dump_file}." "true"
+
+          return 1
+      fi
+
+      mv "${dump_file}" "${PROJECTS_PATH}/${project_domain_new}/"
+
+      if [[ $? -ne 0 ]]; then
+
+          log_event "error" "Failed to move SQL dump to project directory." "true"
+
+          return 1
+
+      fi
+
+    else
+
+        return 1
+
+    fi
+
+    MYSQL_DIR="${project_install_path}/mysql_data"
+    
+      if [[ -d ${MYSQL_DIR} ]]; then
+          echo "Delete ${MYSQL_DIR}"
+          rm -rf "${MYSQL_DIR}"
+      fi
+
+    docker_setup_configuration "${project_name}" "${project_install_path}" "${project_domain_new}"
+
+    # Read the .env file
+      if [[ -f "${PROJECTS_PATH}/${project_domain_new}/.env" ]]; then
+
+        export $(grep -v '^#' "${PROJECTS_PATH}/${project_domain_new}/.env" | xargs)
+
+        db_name="${MYSQL_DATABASE}"
+
+        container_name="${PROJECT_NAME}_mysql"
+        
+        mysql_user="${MYSQL_USER}"
+
+        mysql_user_passw="${MYSQL_PASSWORD}"
+
+      else
+
+        echo "Error: .env file not found in ${PROJECTS_PATH}/${project_domain_new}/."
+
+        return 1
+
+      fi
+
+    # Log before importing database
+    log_event "info" "Attempting to import database. Checking if Docker container ${container_name} is running." "false"
+
+    docker ps | grep "${container_name}"
+
+    if [[ $? -ne 0 ]]; then
+
+      log_event "error" "Docker container ${container_name} is not running." "true"
+
+      return 1
+
+    fi
 
   else
 
@@ -1528,5 +1731,13 @@ function restore_project_backup() {
 
   # Create/update brolit_project_conf.json file with project info
   project_update_brolit_config "${project_install_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db_status}" "${db_engine}" "${project_name}_${project_stage}" "localhost" "${db_user}" "${db_pass}" "${project_domain_new}" "" "" "" ""
+
+  dump_file="${PROJECTS_PATH}/${project_domain_new}/${base_name}.sql"
+
+  echo "Importing database..."
+
+  cat "${dump_file}" | docker exec -i "${container_name}" mysql -u "${mysql_user}" -p"${mysql_user_passw}" "${db_name}"
+  
+  echo "Import completed."
 
 }

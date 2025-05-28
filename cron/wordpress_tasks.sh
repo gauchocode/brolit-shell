@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.2
+# Version: 3.3.10
 ################################################################################
 
 _wordpress_cronned_tasks() {
@@ -11,9 +11,7 @@ _wordpress_cronned_tasks() {
   local all_sites
   local count_all_sites
   local notification_text
-  local wpcli_core_verify_result
   local exitstatus
-  local verify_status
 
   log_section "Verifying WordPress Checksums"
 
@@ -54,35 +52,34 @@ _wordpress_cronned_tasks() {
         log_subsection "Site: ${site}"
 
         # Verify WordPress Checksums
-        wpcli_core_verify_output="$(wpcli_core_verify "${site}" "${wp_install_type}")"
-        verify_status=$?
-        if [ ${verify_status} -eq 1 ]; then
+        wpcli_core_verify_results="$(wpcli_core_verify "${site}" "${wp_install_type}")"
 
-          mapfile -t wpcli_core_verify_results <<< "${wpcli_core_verify_output}"
+        # Check if there are suspicious files
+        if [[ -n ${wpcli_core_verify_results} ]]; then
 
-          for wpcli_core_verify_result in "${wpcli_core_verify_results[@]}"; do
+          while IFS=, read -ra path_array; do
 
-            # Will ommit empty elements created by spaces on mapfile
-            if [[ -n "${wpcli_core_verify_result}" ]]; then
+            for wpcli_core_verify_result_file in "${path_array[@]}"; do
+
+              # Increment counter
+              count=$((count + 1))
+
+              # Notification text
+              notification_text+="<br/><em>${site}/${wpcli_core_verify_result_file//$'\r'/}</em>"
 
               # Log
-              log_event "info" "${wpcli_core_verify_result}" "false"
+              log_event "info" "Not core file detected: ${site}/${wpcli_core_verify_result_file}" "false"
 
-              # Telegram text
-              notification_text+="<br/><em>${wpcli_core_verify_result}</em>"
+            done
 
-            fi
-
-          done
-
-          log_event "error" "WordPress Checksum failed!" "false"
-          
-          # TODO:
-          # 1- If text is XX long should divide it in more messages.
-          # 2- Should replace <br/> with "%0A" for Telegram and "\n" for Discord
+          done <"${wpcli_core_verify_results}"
 
           # Send notification
-          send_notification "⛔ ${SERVER_NAME}" "WordPress checksum failed for site ${project_name}:\n\n${notification_text}" ""
+          send_notification "${SERVER_NAME}" "WordPress checksum failed for site ${project_name}:\n\n${notification_text}" ""
+
+          # Log
+          log_event "error" "WordPress Checksum failed!" "false"
+          log_event "info" "${count} unknown files detected!" "false"
 
         else
 

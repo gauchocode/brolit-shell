@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.2
+# Version: 3.3.10
 ################################################################################
 #
 # Discord Notification Helper: Perform Discord actions.
@@ -25,7 +25,25 @@ function discord_send_notification() {
 
     local notification_title="${1}"
     local notification_content="${2}"
-    #local notification_type="${3}"
+    local notification_type="${3}"
+
+    # Format title based on notification type
+    case "${notification_type}" in
+
+        "alert")
+            notification_title=":warning: ${notification_title}"
+            ;;
+        "info")
+            notification_title=":information_source: ${notification_title}"
+            ;;
+        "success")
+            notification_title=":white_check_mark: ${notification_title}"
+            ;;
+        *)
+            # Default format
+            ;;
+
+    esac
 
     # Replace all <br/> occurrences with "\n"
     notification_content="${notification_content//<br\/>/\\n}"
@@ -50,7 +68,7 @@ function discord_send_notification() {
     log_event "debug" "Running: ${CURL} -H \"Content-Type: application/json\" -X POST -d '{\"content\":\"'\"${notification_title} : ${notification_content}\"'\"}' \"${NOTIFICATION_DISCORD_WEBHOOK}\"" "false"
 
     # Discord command
-    ${CURL} -H "Content-Type: application/json" -X POST -d '{"content":"'"**${notification_title}**:${notification_content}"'"}' "${NOTIFICATION_DISCORD_WEBHOOK}"
+    ${CURL} -H "Content-Type: application/json" -X POST -d '{"content":"'"**${notification_title}**: ${notification_content}"'"}' "${NOTIFICATION_DISCORD_WEBHOOK}"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then

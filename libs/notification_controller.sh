@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.2
+# Version: 3.3.10
 ################################################################################
 #
 # Notification Controller: Send notification to configured apps.
@@ -14,7 +14,7 @@
 # Arguments:
 #   ${1} = {notification_title}
 #   ${2} = {notification_content}
-#   ${3} = {notification_type}
+#   ${3} = {notification_type} - Options: "alert", "info", "success"
 #
 # Outputs:
 #   0 if it utils were installed, 1 on error.
@@ -36,6 +36,12 @@ function send_notification() {
     
         discord_send_notification "${notification_title}" "${notification_content}" "${notification_type}"
     
+    fi
+
+    if [[ ${NOTIFICATION_NTFY_STATUS} == "enabled" ]]; then
+
+        ntfy_send_notification "${notification_title}" "${notification_content}" "${notification_type}"
+
     fi
 
 }

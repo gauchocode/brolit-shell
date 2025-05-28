@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.2
+# Version: 3.3.10
 ################################################################################
 #
 # Portainer Installer
@@ -26,8 +26,12 @@ function portainer_installer() {
 
     package_update
 
-    package_install_if_not "docker.io"
-    package_install_if_not "docker-compose"
+    # Check if docker package are installed
+    docker="$(package_is_installed "docker-ce")"
+    docker_installed="$?"
+    if [[ ${docker_installed} -eq 1 ]]; then
+        docker_installer
+    fi
 
     # Force update brolit_conf.json
     PACKAGES_DOCKER_STATUS="enabled"
@@ -52,13 +56,9 @@ function portainer_installer() {
         project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "VIRTUAL_HOST" "${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}" "none"
         project_set_config_var "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/.env" "PORTAINER_PORT" "${PACKAGES_PORTAINER_CONFIG_PORT}" "none"
 
-        # Run docker-compose pull on specific directory
-        docker-compose -f "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/docker-compose.yml" pull
-
-        # Run docker-compose up -d on specific directory
-        docker-compose -f "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/docker-compose.yml" up -d
-
-        clear_previous_lines "3"
+        # Run docker-compose
+        docker_compose_pull "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/docker-compose.yml"
+        docker_compose_up "${PROJECTS_PATH}/${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}/docker-compose.yml"
 
         return 0
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.2
+# Version: 3.3.10
 ################################################################################
 #
 # WordPress Installer: WordPress installer functions.
@@ -348,7 +348,7 @@ function wordpress_project_copy() {
   display --indent 8 --text "for domain ${project_domain}"
 
   # Send notification
-  send_notification "✅ ${SERVER_NAME}" "WordPress installation for domain ${project_domain} finished" ""
+  send_notification "${SERVER_NAME}" "WordPress installation for domain ${project_domain} finished" "success"
 
   return 0
 

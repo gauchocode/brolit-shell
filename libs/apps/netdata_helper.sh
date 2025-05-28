@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.2
+# Version: 3.3.10
 ################################################################################
 #
 # Netdata Helper
@@ -26,7 +26,7 @@ function netdata_alerts_disable() {
     #curl "http://NODE:19999/api/v1/manage/health?cmd=DISABLE ALL" -H "X-Auth-Token: Mytoken"
 
     ## If you want the health checks to be running but to not receive any notifications during your maintenance period, you can instead use this:
-    curl "http://localhost:19999/api/v1/manage/health?cmd=SILENCE ALL" -H "X-Auth-Token: ${netdata_api_key}"
+    curl "http://localhost:19999/api/v1/manage/health?cmd=SILENCE%20ALL" -H "X-Auth-Token: ${netdata_api_key}"
 
     # Log
     log_event "info" "Disabling netdata alarms ..." "false"

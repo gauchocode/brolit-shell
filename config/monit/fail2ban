@@ -1,5 +1,5 @@
 # Fail2ban
 check process fail2ban with pidfile /var/run/fail2ban/fail2ban.pid
-   start program = "/etc/init.d/fail2ban start"
-   stop program = "/etc/init.d/fail2ban stop"
+   start program = "/usr/bin/systemctl start fail2ban"
+   stop program = "/usr/bin/systemctl stop fail2ban"
    if failed unixsocket /var/run/fail2ban/fail2ban.sock protocol fail2ban then alert

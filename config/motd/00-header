@@ -1,8 +1,7 @@
 #!/bin/sh
 
 # Foreground Colours
-#RED='31'
-#CYAN='36'
+cyan='36'
 
 [ -r /etc/lsb-release ] && . /etc/lsb-release
 
@@ -11,26 +10,20 @@ if [ -z "${DISTRIB_DESCRIPTION}" ] && [ -x /usr/bin/lsb_release ]; then
 	DISTRIB_DESCRIPTION="$(lsb_release -s -d)"
 fi
 
-printf "Welcome to %s (%s %s %s)\n" "${DISTRIB_DESCRIPTION}" "$(uname -o)" "$(uname -r)" "$(uname -m)"
+# If exists, clear MOTD
+[ -f /etc/motd ] && echo "" > /etc/motd
 
+# Print message
+## Ref: http://patorjk.com/software/taag/
 printf '\n%s' ""
-
-printf "%40s\n" "██████╗ ██████╗  ██████╗  ██████╗ ██████╗ ███████"
-printf "%40s\n" "██╔══██╗██╔══██╗██╔═══██╗██╔═══██╗██╔══██╗██╔══  "
-printf "%40s\n" "██████╔╝██████╔╝██║   ██║██║   ██║██████╔╝█████  "
-printf "%40s\n" "██╔══██╗██╔══██╗██║   ██║██║   ██║██╔══██╗██╔    "
-printf "%40s\n" "██████╔╝██║  ██║╚██████╔╝╚██████╔╝██████╔╝███████"
-printf "%40s\n" "╚═════╝ ╚═╝  ╚═╝ ╚═════╝  ╚═════╝ ╚═════╝ ╚══════"
-
+printf "\033[0;%sm%40s\033[0m\n" "${cyan}" "   .aMMMMP .aMMMb  dMP dMP .aMMMb  dMP dMP .aMMMb  .aMMMb  .aMMMb  dMMMMb  dMMMMMP "
+printf "\033[0;%sm%40s\033[0m\n" "${cyan}" "  dMP'    dMP'dMP dMP dMP dMP'VMP dMP dMP dMP'dMP dMP'VMP dMP'dMP dMP VMP dMP      "
+printf "\033[0;%sm%40s\033[0m\n" "${cyan}" " dMP MMP'dMMMMMP dMP dMP dMP     dMMMMMP dMP dMP dMP     dMP dMP dMP dMP dMMMP     "
+printf "\033[0;%sm%40s\033[0m\n" "${cyan}" "dMP.dMP dMP dMP dMP.aMP dMP.aMP dMP dMP dMP.aMP dMP.aMP dMP.aMP dMP.aMP dMP        "
+printf "\033[0;%sm%40s\033[0m\n" "${cyan}" "VMMMP' dMP dMP  VMMMP'  VMMMP' dMP dMP  VMMMP'  VMMMP'  VMMMP' dMMMMP' dMMMMMP     "
 printf '\n%s' ""
-
-#printf '\n%s\n' "$(echo ${HOSTNAME})"
-
-#printf "%40s\n" "You can generate this tags here: http://patorjk.com/software/taag/"
 
 # if it is non-root user, skip
-if [ "$(id -u)" -ne 0 ]; then
-    exit 0
-fi
+[ "$(id -u)" -ne 0 ] && exit 0
 
 printf "%40s\n" "You are loggedin as root, please don't do anything stupid..."
