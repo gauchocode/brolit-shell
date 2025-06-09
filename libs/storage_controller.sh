@@ -71,6 +71,7 @@ function storage_list_dir() {
 function storage_create_dir() {
 
     local remote_directory="${1}"
+    local number_of_servers=$(jq ".BACKUPS.methods[].borg[].config | length" /root/.brolit_conf.json)
 
     local storage_result
 
@@ -86,7 +87,7 @@ function storage_create_dir() {
     fi
     if [[ ${BACKUP_BORG_STATUS} == "enabled" ]]; then
 
-        ssh -p "${BACKUP_BORG_PORT}" "${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}" "mkdir -p /home/applications/${BACKUP_BORG_GROUP}/${remote_directory}"
+        ssh -p ${BACKUP_BORG_PORTS[i]} ${BACKUP_BORG_USERS[i]}@${BACKUP_BORG_SERVERS[i]} "mkdir -p /home/applications/${BACKUP_BORG_GROUP}/${remote_directory}"
 
     fi
 
