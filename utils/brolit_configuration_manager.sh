@@ -173,35 +173,40 @@ function _brolit_configuration_load_backup_dropbox() {
 #   nothing
 ################################################################################
 
+BACKUP_BORG_USERS=()
+BACKUP_BORG_SERVERS=()
+BACKUP_BORG_PORTS=()
+
 function _brolit_configuration_load_backup_borg() {
     local server_config_file="${1}"
+    local number_of_servers=$(jq ".BACKUPS.methods[].borg[].config | length" /root/.brolit_conf.json)
 
     #Globals
-    declare -g BACKUP_BORG_STATUS
-    declare -g BACKUP_BORG_USER
-    declare -g BACKUP_BORG_SERVER
-    declare -g BACKUP_BORG_PORT
     declare -g BACKUP_BORG_GROUP
 
-    BACKUP_BORG_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].status")"
+    BACKUP_BORG_STATUS="$(_json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].status")"
 
     if [[ ${BACKUP_BORG_STATUS} == "enabled" ]]; then
 
-        BACKUP_BORG_USER="$(json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].config[].user")"
-        [[ -z "${BACKUP_BORG_USER}" ]] && die "Error reading BACKUP_BORG_USER from server config file."
+        for i in $(eval echo {1..$number_of_servers})
+        do
+            BACKUP_BORG_USERS[$i]="$(_json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].config[$(($i-1))].user")"
+            [[ -z "${BACKUP_BORG_USERS[i]}" ]] && die "Error reading BACKUP_BORG_USER from server config file."
 
-        BACKUP_BORG_SERVER="$(json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].config[].server")"
-        [[ -z "${BACKUP_BORG_SERVER}" ]] && die "Error reading BACKUP_BORG_SERVER from server config file."
+            BACKUP_BORG_SERVERS[$i]="$(_json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].config[$(($i-1))].server")"
+            [[ -z "${BACKUP_BORG_SERVERS[i]}" ]] && die "Error reading BACKUP_BORG_SERVER from server config file."
 
-        BACKUP_BORG_PORT="$(json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].config[].port")"
-        [[ -z "${BACKUP_BORG_PORT}" ]] && die "Error reading BACKUP_BORG_PORT from server config file."
+            BACKUP_BORG_PORTS[$i]="$(_json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].config[$(($i-1))].port")"
+            [[ -z "${BACKUP_BORG_PORTS[i]}" ]] && die "Error reading BACKUP_BORG_PORT from server config file."
 
-        BACKUP_BORG_GROUP="$(json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].config[].group")"
+        done
+
+        BACKUP_BORG_GROUP="$(_json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].group")"
         [[ -z "${BACKUP_BORG_GROUP}" ]] && die "Error reading BACKUP_BORG_GROUP from server config file."
 
     fi 
 
-    export BACKUP_BORG_STATUS BACKUP_BORG_USER BACKUP_BORG_SERVER BACKUP_BORG_PORT BACKUP_BORG_GROUP
+    export BACKUP_BORG_STATUS BACKUP_BORG_GROUP BACKUP_BORG_USERS BACKUP_BORG_SERVERS BACKUP_BORG_PORTS
 }
 
 
