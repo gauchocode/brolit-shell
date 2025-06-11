@@ -78,6 +78,12 @@ function mount_storage_box() {
                        --radiolist "$whip_description" 20 78 10 \
                        "${runner_options[@]}" \
                        3>&1 1>&2 2>&3)
+  exitstatus=$?
+  if [ $exitstatus = 0 ]; then
+      echo "Elegiste: $chosen_type"
+  else
+      echo "Cancelaste la selección."
+  fi
 
   local directory="${1}"
 
