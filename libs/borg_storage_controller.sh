@@ -53,6 +53,32 @@ function umount_storage_box() {
 
 function mount_storage_box() {
 
+  local number_of_servers=$(jq ".BACKUPS.methods[].borg[].config | length" /root/.brolit_conf.json)
+
+  local whip_title       # whiptail var
+  local whip_description # whiptail var
+  local runner_options   # whiptail array options
+  local chosen_type      # whiptail var
+
+  ## Select storage box to work with
+
+  whip_title="SELECT STORAGE-BOX TO WORK WITH"
+  whip_description=" "
+  local runner_options=()
+
+  # Construir dinámicamente las opciones del array runner_options
+  for ((i=1; i<=number_of_servers; i++)); do
+    index=$(printf "%02d)" "$i")        # Formato "01)", "02)", ...
+    label="STORAGE-BOX $i"                   # Texto asociado
+    runner_options+=("$index" "$label") # Agregar al array
+  done
+
+  # Mostrar el array con whiptail (por ejemplo, usando radiolist)
+  chosen_type=$(whiptail --title "$whip_title" \
+                       --radiolist "$whip_description" 20 78 10 \
+                       "${runner_options[@]}" \
+                       3>&1 1>&2 2>&3)
+
   local directory="${1}"
 
   is_mounted=$(mount -v | grep "storage-box" > /dev/null; echo "$?")
