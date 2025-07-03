@@ -1708,7 +1708,7 @@ function _brolit_shell_config() {
     #smtp_status="$(_json_read_field "${BROLIT_CONFIG_FILE}" "BACKUPS.config[].methods[].smtp[].status")"
 
     # Return JSON part
-    echo "\"script_version\": \"${BROLIT_VERSION}\" , \"netdata_url\": \"${netdata_subdomain}\" , \"mail_notif\": \"${mail_notification_config}\" , \"telegram_notif\": \"${telegram_notification_status}\" , \"ntfy_notif\": \"${ntfy_status}\" , \"discord_notif\": \"${discord_status}\" , \"dropbox_enable\": \"${backup_dropbox_status}\" , \"borg_enable\": \"${backup_borg_status}\" , \"cloudflare_enable\": \"${cloudflare_status}\" , \"smtp_server\": \"${mail_notification_smtp}\""
+    echo "\"script_version\": \"${BROLIT_VERSION}\" , \"netdata_url\": \"${netdata_subdomain}\" , \"netdata_status\": \"${netdata_status}\" , \"mail_notif\": \"${mail_notification_config}\" , \"telegram_notif\": \"${telegram_notification_status}\" , \"ntfy_notif\": \"${ntfy_status}\" , \"discord_notif\": \"${discord_status}\" , \"dropbox_enable\": \"${backup_dropbox_status}\" , \"borg_enable\": \"${backup_borg_status}\" , \"cloudflare_enable\": \"${cloudflare_status}\" , \"smtp_server\": \"${mail_notification_smtp}\""
 
 }
 
