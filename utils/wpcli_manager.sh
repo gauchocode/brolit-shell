@@ -150,6 +150,9 @@ function wpcli_main_menu() {
     "17)" "SHUFFLE SALTS"
     "18)" "DELETE SPAM COMMENTS"
     "19)" "SET MAINTENANCE MODE"
+    "20)" "CREATE APP-PASS"
+    "21)" "LIST APP-PASS"
+    "22)" "DELETE APP-PASS"
   )
 
   chosen_wpcli_options="$(whiptail --title "WP-CLI HELPER" --menu "Choose an option to run" 20 78 10 "${wpcli_options[@]}" 3>&1 1>&2 2>&3)"
@@ -309,6 +312,60 @@ function wpcli_main_menu() {
       choosen_mode="$(whiptail --title "WORDPRESS MAINTENANCE MODE" --inputbox "Set new maintenance mode (‘activate’, ‘deactivate’)" 10 60 "" 3>&1 1>&2 2>&3)"
       exitstatus=$?
       [[ ${exitstatus} -eq 0 ]] && wpcli_maintenance_mode_set "${wp_site}" "${project_install_type}" "${choosen_mode}"
+
+    fi
+
+    # CREATE APP-PASS
+    if [[ ${chosen_wpcli_options} == *"20"* ]]; then
+
+      log_subsection "WP Create Application Password"
+
+      choosen_user="$(whiptail_input "WORDPRESS USERNAME" "Insert a username:" "")"
+      if [[ -n ${choosen_user} ]]; then
+
+        choosen_app_name="$(whiptail_input "APPLICATION NAME" "Insert an application name:" "")"
+        if [[ -n ${choosen_app_name} ]]; then
+
+          app_pass="$(wpcli_user_create_application_password "${wp_site}" "${project_install_type}" "${choosen_user}" "${choosen_app_name}")"
+          
+          whiptail_message "APPLICATION PASSWORD" "The application password is: ${app_pass}"
+
+        fi
+
+      fi
+
+    fi
+
+    # LIST APP-PASS
+    if [[ ${chosen_wpcli_options} == *"21"* ]]; then
+
+      log_subsection "WP List Application Passwords"
+
+      choosen_user="$(whiptail_input "WORDPRESS USERNAME" "Insert a username:" "")"
+      if [[ -n ${choosen_user} ]]; then
+
+        wpcli_user_list_application_passwords "${wp_site}" "${project_install_type}" "${choosen_user}"
+
+      fi
+
+    fi
+
+    # DELETE APP-PASS
+    if [[ ${chosen_wpcli_options} == *"22"* ]]; then
+
+      log_subsection "WP Delete Application Password"
+
+      choosen_user="$(whiptail_input "WORDPRESS USERNAME" "Insert a username:" "")"
+      if [[ -n ${choosen_user} ]]; then
+
+        choosen_uuid="$(whiptail_input "APPLICATION UUID" "Insert the application UUID to delete:" "")"
+        if [[ -n ${choosen_uuid} ]]; then
+
+          wpcli_user_delete_application_password "${wp_site}" "${project_install_type}" "${choosen_user}" "${choosen_uuid}"
+
+        fi
+
+      fi
 
     fi
 

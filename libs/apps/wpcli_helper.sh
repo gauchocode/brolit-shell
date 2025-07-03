@@ -139,6 +139,167 @@ function wpcli_install() {
 }
 
 ################################################################################
+# Create WordPress user application password
+#
+# Arguments:
+#   ${1} = ${wp_site}
+#   ${2} = ${install_type}
+#   ${3} = ${user}
+#   ${4} = ${app_name}
+#
+# Outputs:
+#   password on success, 1 on error
+################################################################################
+
+function wpcli_user_create_application_password() {
+
+    local wp_site="${1}"
+    local install_type="${2}"
+    local user="${3}"
+    local app_name="${4}"
+
+    local app_pass
+
+    # Check project_install_type
+    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
+    ## -u 33 -e HOME=/tmp to avoid permission denied error: https://github.com/docker-library/wordpress/issues/417
+    ## --no-color added to avoid unwanted wp-cli output
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker --log-level=error compose -f ${wp_site}/../docker-compose.yml run -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
+
+    log_event "debug" "Running: ${wpcli_cmd} user application-password create ${user} ${app_name} --porcelain" "false"
+
+    # Command
+    app_pass="$(${wpcli_cmd} user application-password create "${user}" "${app_name}" --porcelain)"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Log
+        display --indent 6 --text "- Creating WP user application password: ${user}" --result "DONE" --color GREEN
+        log_event "info" "Creating WordPress user application password for ${user} on site ${wp_site}" "false"
+
+        # Return
+        echo "${app_pass}" && return 0
+
+    else
+
+        # Log
+        display --indent 6 --text "- Creating WP user application password: ${user}" --result "FAIL" --color RED
+        log_event "error" "Creating WordPress user application password for ${user} on site ${wp_site}" "false"
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
+# List WordPress user application passwords
+#
+# Arguments:
+#   ${1} = ${wp_site}
+#   ${2} = ${install_type}
+#   ${3} = ${user}
+#   ${4} = ${format}
+#
+# Outputs:
+#   list on success, 1 on error
+################################################################################
+
+function wpcli_user_list_application_passwords() {
+
+    local wp_site="${1}"
+    local install_type="${2}"
+    local user="${3}"
+    local format="${4}"
+
+    # Check project_install_type
+    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
+    ## -u 33 -e HOME=/tmp to avoid permission denied error: https://github.com/docker-library/wordpress/issues/417
+    ## --no-color added to avoid unwanted wp-cli output
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker --log-level=error compose -f ${wp_site}/../docker-compose.yml run -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
+
+    [[ -z ${format} ]] && format="table"
+
+    log_event "debug" "Running: ${wpcli_cmd} user application-password list ${user} --format=${format}" "false"
+
+    # Command
+    ${wpcli_cmd} user application-password list "${user}" --format="${format}"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Log
+        display --indent 6 --text "- Listing WP user application passwords: ${user}" --result "DONE" --color GREEN
+        log_event "info" "Listing WordPress user application passwords for ${user} on site ${wp_site}" "false"
+
+        return 0
+
+    else
+
+        # Log
+        display --indent 6 --text "- Listing WP user application passwords: ${user}" --result "FAIL" --color RED
+        log_event "error" "Listing WordPress user application passwords for ${user} on site ${wp_site}" "false"
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
+# Delete WordPress user application password
+#
+# Arguments:
+#   ${1} = ${wp_site}
+#   ${2} = ${install_type}
+#   ${3} = ${user}
+#   ${4} = ${uuid}
+#
+# Outputs:
+#   0 on success, 1 on error
+################################################################################
+
+function wpcli_user_delete_application_password() {
+
+    local wp_site="${1}"
+    local install_type="${2}"
+    local user="${3}"
+    local uuid="${4}"
+
+    # Check project_install_type
+    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
+    ## -u 33 -e HOME=/tmp to avoid permission denied error: https://github.com/docker-library/wordpress/issues/417
+    ## --no-color added to avoid unwanted wp-cli output
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker --log-level=error compose -f ${wp_site}/../docker-compose.yml run -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
+
+    log_event "debug" "Running: ${wpcli_cmd} user application-password delete ${user} ${uuid}" "false"
+
+    # Command
+    ${wpcli_cmd} user application-password delete "${user}" "${uuid}"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Log
+        display --indent 6 --text "- Deleting WP user application password: ${uuid}" --result "DONE" --color GREEN
+        log_event "info" "Deleting WordPress user application password ${uuid} for ${user} on site ${wp_site}" "false"
+
+        return 0
+
+    else
+
+        # Log
+        display --indent 6 --text "- Deleting WP user application password: ${uuid}" --result "FAIL" --color RED
+        log_event "error" "Deleting WordPress user application password ${uuid} for ${user} on site ${wp_site}" "false"
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
 # Update wpcli (default installation)
 #
 # Arguments:
