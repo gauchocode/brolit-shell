@@ -71,6 +71,27 @@ services:
             timeout: 10s
             retries: 3
 
+    watchtower:
+        image: containrrr/watchtower
+        container_name: ${PROJECT_NAME}_watchtower
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
+        environment:
+            WATCHTOWER_CLEANUP: ${WATCHTOWER_CLEANUP}
+            WATCHTOWER_SCHEDULE: ${WATCHTOWER_SCHEDULE}
+            WATCHTOWER_LOG_LEVEL: ${WATCHTOWER_LOG_LEVEL}
+            WATCHTOWER_NOTIFICATIONS: ${WATCHTOWER_NOTIFICATIONS}
+            WATCHTOWER_NOTIFICATION_EMAIL_FROM: ${WATCHTOWER_NOTIFICATION_EMAIL_FROM}
+            WATCHTOWER_NOTIFICATION_EMAIL_TO: ${WATCHTOWER_NOTIFICATION_EMAIL_TO}
+            WATCHTOWER_NOTIFICATION_EMAIL_SERVER: ${WATCHTOWER_NOTIFICATION_EMAIL_SERVER}
+            WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PORT: ${WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PORT}
+            WATCHTOWER_NOTIFICATION_EMAIL_SERVER_USER: ${WATCHTOWER_NOTIFICATION_EMAIL_SERVER_USER}
+            WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PASSWORD: ${WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PASSWORD}
+            WATCHTOWER_NOTIFICATION_EMAIL_DELAY: ${WATCHTOWER_NOTIFICATION_EMAIL_DELAY}
+        restart: unless-stopped
+        networks:
+            - internal
+
 #    phpmyadmin:
 #        image: phpmyadmin/phpmyadmin
 #        container_name: ${PROJECT_NAME}_phpmyadmin
