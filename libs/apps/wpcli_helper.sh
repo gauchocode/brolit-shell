@@ -81,7 +81,7 @@ function wpcli_check_version() {
 
     # Check project_install_type
     [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
-    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose -f ${wp_site}/../docker-compose.yml run -T --rm wordpress-cli wp"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker --log-level=error compose -f ${wp_site}/../docker-compose.yml run -T --rm wordpress-cli wp"
 
     wpcli_v="$(${wpcli_cmd} --info | grep "WP-CLI version:" | cut -d ':' -f2)"
 
@@ -417,7 +417,7 @@ function wpcli_install_needed_extensions() {
 
     # Check project_install_type
     [[ ${install_type} == "default" ]] && wpcli_cmd="wp --allow-root"
-    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose -f ${wp_site}/../docker-compose.yml run -T --rm wordpress-cli wp --allow-root"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker --log-level=error compose -f ${wp_site}/../docker-compose.yml run -T --rm wordpress-cli wp --allow-root"
 
     # Rename DB Prefix
     ${wpcli_cmd} package install "iandunn/wp-cli-rename-db-prefix > /dev/null 2>&1"
@@ -1556,7 +1556,7 @@ function wpcli_shuffle_salts() {
 
     # Check project_install_type
     [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
-    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose -f ${wp_site}/../docker-compose.yml run -T --rm wordpress-cli wp"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker --log-level=error compose -f ${wp_site}/../docker-compose.yml run -T --rm wordpress-cli wp"
 
     log_event "debug" "Running: ${wpcli_cmd} config shuffle-salts" "false"
 
@@ -2468,7 +2468,7 @@ function wpcli_change_wp_seo_visibility() {
 
     # Check project_install_type
     [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
-    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose -f ${wp_site}/../docker-compose.yml run -T --rm wordpress-cli wp"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker --log-level=error compose -f ${wp_site}/../docker-compose.yml run -T --rm wordpress-cli wp"
 
     log_event "debug" "Running: ${wpcli_cmd} option set blog_public ${visibility}" "false"
 
