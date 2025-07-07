@@ -140,7 +140,8 @@
                         "smtp_port": "",
                         "smtp_tls": "",
                         "smtp_user": "",
-                        "smtp_user_pass": ""
+                        "smtp_user_pass": "",
+                        "from_email": ""
                     }
                 ]
             }
