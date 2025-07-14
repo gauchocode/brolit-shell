@@ -38,6 +38,9 @@ function _netdata_alerts_configuration() {
   # PHP-FPM
   cp "${BROLIT_MAIN_DIR}/config/netdata/health.d/php-fpm.conf" "${netdata_config_dir}/php-fpm.conf"
 
+  # RAM
+  cp "${BROLIT_MAIN_DIR}/config/netdata/health.d/ram-usage.conf" "${netdata_config_dir}/ram-usage.conf"
+
 }
 
 ################################################################################
@@ -348,7 +351,7 @@ function netdata_installer() {
 
   # Copy health configuration files
   {
-    for health_conf in cpu web_log mysql php-fpm; do
+    for health_conf in cpu web_log mysql php-fpm ram-usage; do
       if [[ -f "${BROLIT_MAIN_DIR}/config/netdata/health.d/${health_conf}.conf" ]]; then
         cp "${BROLIT_MAIN_DIR}/config/netdata/health.d/${health_conf}.conf" "${NETDATA_INSTALL_DIR}/health.d/${health_conf}.conf"
       fi
