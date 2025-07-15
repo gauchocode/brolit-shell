@@ -29,6 +29,7 @@ function backup_manager_menu() {
     "03)" "BACKUP FILES"
     "04)" "BACKUP PROJECT"
     "05)" "BACKUP DOCKER VOLUMES (BETA)"
+    "06)" "BACKUP ROOT PROJECTS"
   )
 
   chosen_backup_type="$(whiptail --title "SELECT BACKUP TYPE" --menu " " 20 78 10 "${backup_options[@]}" 3>&1 1>&2 2>&3)"
@@ -220,6 +221,11 @@ function backup_manager_menu() {
 
     fi
 
+    # BACKUP ROOT PROJECTS
+    if [[ ${chosen_backup_type} == *"06"* ]]; then
+      backup_root_projects
+    fi
+
   fi
 
   menu_main_options
@@ -321,6 +327,52 @@ function backup_all_docker_volumes() {
 # Outputs:
 #   nothing
 ################################################################################
+
+function backup_root_projects() {
+  log_section "Root Projects Backup"
+
+  # Get list of directories in /root
+  local root_dirs=($(find /root -maxdepth 1 -type d -not -name ".*" -printf "%f\n"))
+
+  if [ ${#root_dirs[@]} -eq 0 ]; then
+    display --indent 6 --text "- No projects found in /root" --result "SKIPPED" --color YELLOW
+    return
+  fi
+
+  # Create options for whiptail
+  local options=()
+  for dir in "${root_dirs[@]}"; do
+    options+=("$dir" "" OFF)
+  done
+
+  # Let user select projects to backup
+  local selected_projects
+  selected_projects=$(whiptail --title "Select Root Projects to Backup" --checklist \
+    "Choose projects to backup" 20 78 15 \
+    "${options[@]}" 3>&1 1>&2 2>&3)
+
+  if [[ $? -ne 0 ]]; then
+    display --indent 6 --text "- Root projects backup" --result "CANCELLED" --color YELLOW
+    return
+  fi
+
+  # Convert selected_projects string to array
+  IFS=' ' read -r -a selected_array <<< "$selected_projects"
+
+  # Backup selected projects
+  for project in "${selected_array[@]}"; do
+    project=$(echo "$project" | tr -d '"') # Remove quotes
+    display --indent 6 --text "- Backing up root project: $project"
+    
+    # Use existing backup functions
+    backup_project "/root/$project" "all"
+    backup_project_with_borg "/root/$project"
+    
+    display --indent 6 --text "- Backing up root project: $project" --result "DONE" --color GREEN
+  done
+
+  #send_notification "${SERVER_NAME}" "Task: 'Root Projects Backup' completed." "success"
+}
 
 function restore_docker_volume() {
   
