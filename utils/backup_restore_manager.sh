@@ -227,8 +227,8 @@ function backup_manager_menu() {
       # ROOT_PROJECT_BACKUP
       log_section "Root Project Backup"
 
-      # List directories in /root
-      root_dirs=$(find /root -maxdepth 1 -type d -not -name ".*" -printf "%f\n" | sort)
+      # List directories in /root, including hidden ones
+      root_dirs=$(find /root -maxdepth 1 -type d -printf "%f\n" | sort)
 
       if [[ -z "$root_dirs" ]]; then
         display --indent 6 --text "- No directories found in /root" --result "SKIPPED" --color YELLOW
