@@ -332,7 +332,7 @@ function backup_root_projects() {
   log_section "Root Projects Backup"
 
   # Get list of directories in /root
-  local root_dirs=($(find /root -maxdepth 1 -type d -not -name '.' -not -name '..' -printf "%f\n"))
+  local root_dirs=($(find /root -maxdepth 1 -type d -not -name ".*" -printf "%f\n"))
 
   if [ ${#root_dirs[@]} -eq 0 ]; then
     display --indent 6 --text "- No projects found in /root" --result "SKIPPED" --color YELLOW
