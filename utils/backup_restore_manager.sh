@@ -29,6 +29,7 @@ function backup_manager_menu() {
     "03)" "BACKUP FILES"
     "04)" "BACKUP PROJECT"
     "05)" "BACKUP DOCKER VOLUMES (BETA)"
+    "06)" "BACKUP ROOT PROJECT"
   )
 
   chosen_backup_type="$(whiptail --title "SELECT BACKUP TYPE" --menu " " 20 78 10 "${backup_options[@]}" 3>&1 1>&2 2>&3)"
@@ -217,6 +218,40 @@ function backup_manager_menu() {
 
       # Send notification
       send_notification "${SERVER_NAME} " "Task: 'Docker Volumes Backup' completed." "success"
+
+    fi
+
+    # BACKUP ROOT PROJECT
+    if [[ ${chosen_backup_type} == *"06"* ]]; then
+
+      # ROOT_PROJECT_BACKUP
+      log_section "Root Project Backup"
+
+      # List directories in /root
+      root_dirs=$(find /root -maxdepth 1 -type d -not -name ".*" -printf "%f\n" | sort)
+
+      if [[ -z "$root_dirs" ]]; then
+        display --indent 6 --text "- No directories found in /root" --result "SKIPPED" --color YELLOW
+        return 0
+      fi
+
+      # Create an array for whiptail
+      root_dir_options=()
+      for dir in $root_dirs; do
+        root_dir_options+=("$dir" "")
+      done
+
+      # Let user select a directory
+      selected_dir=$(whiptail --title "Select Root Project" --menu "Choose a directory to backup:" 20 78 10 "${root_dir_options[@]}" 3>&1 1>&2 2>&3)
+
+      if [[ -n "$selected_dir" ]]; then
+        backup_root_project "$selected_dir" "all"
+
+        # Sending notifications
+        send_notification "${SERVER_NAME}" "Task: 'Root Project Backup' for ${selected_dir} completed." "success"
+      else
+        display --indent 6 --text "- Root project backup" --result "SKIPPED" --color YELLOW
+      fi
 
     fi
 
