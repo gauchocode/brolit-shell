@@ -1277,6 +1277,12 @@ function backup_root_project() {
 
   # Backup files
   log_subsection "Backup Root Project Files"
+  
+  # Check if the project is a hidden directory
+  if [[ "${project_name}" == .* ]]; then
+    log_event "info" "Backing up hidden directory: ${project_name}" "false"
+  fi
+
   backup_file_size="$(backup_project_files "root" "/root" "${project_name}")"
 
   exitstatus=$?
