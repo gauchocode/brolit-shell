@@ -279,6 +279,31 @@ function optimize_pdfs() {
 }
 
 ################################################################################
+# Truncate large Docker container logs
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function truncate_large_docker_logs() {
+  # Log
+  log_event "info" "Truncating large Docker container logs ..." "false"
+
+  # Find and truncate Docker container logs larger than 1GB
+  ${FIND} /var/lib/docker/containers/ -name "*-json.log" -exec du -sh {} + | awk '$1 ~ /^[0-9.]+G/ {print $2}' | while read -r log; do
+    log_event "info" "Truncating large log: $log" "false"
+    truncate -s 0 "$log"
+    display --indent 8 --text "- Truncated $log" --result "DONE" --color GREEN
+  done
+
+  # Log
+  display --indent 6 --text "- Truncating large Docker container logs" --result "DONE" --color GREEN
+}
+
+################################################################################
 # Delete old logs
 #
 # Arguments:
@@ -299,6 +324,8 @@ function delete_old_logs() {
   # Log
   display --indent 6 --text "- Deleting old system logs" --result "DONE" --color GREEN
 
+  # Truncate large Docker container logs
+  truncate_large_docker_logs
 }
 
 ################################################################################
