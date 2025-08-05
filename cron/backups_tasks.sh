@@ -58,6 +58,15 @@ done
 # Files Backup
 files_backup_result="$(backup_all_files)"
 
+# Root Project Backup (.airbyte)
+log_event "info" "Starting backup of .airbyte directory" "false"
+airbyte_backup_result="$(backup_root_project ".airbyte" "all")"
+if [[ $? -eq 0 ]]; then
+    log_event "info" "Backup of .airbyte directory completed successfully." "false"
+else
+    log_event "error" "Backup of .airbyte directory failed." "false"
+fi
+
 # Footer
 mail_footer "${SCRIPT_V}"
 
