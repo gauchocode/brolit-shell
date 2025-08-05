@@ -385,16 +385,23 @@ function wpcli_uninstall() {
 
 function wpcli_check_if_package_is_installed() {
 
-    local wpcli_package="${1}"
+    local wp_site="${1}"
+    local install_type="${2}"
+    local wpcli_package="${3}"
 
-    local is_installed
-    local wpcli_packages_installed
+    local is_installed="false"
+    local wpcli_cmd
+    local package_list
 
-    is_installed="false"
+    # Check project_install_type
+    [[ ${install_type} == "default" ]] && wpcli_cmd="wp --allow-root"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose --progress=quiet -f ${wp_site}/../docker-compose.yml run -T --rm wordpress-cli wp --allow-root"
 
-    wpcli_packages_installed="$(wp package list --allow-root | grep 'wp-cli' | cut -d '/' -f2)"
+    package_list="$(${wpcli_cmd} package list --format=json)"
 
-    [[ ${wpcli_package} == *"${wpcli_packages_installed}"* ]] && is_installed="true"
+    if echo "${package_list}" | grep -q "\"name\":\"${wpcli_package}\""; then
+        is_installed="true"
+    fi
 
     # Return
     echo "${is_installed}"
