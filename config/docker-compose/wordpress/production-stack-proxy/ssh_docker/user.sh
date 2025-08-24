@@ -15,5 +15,7 @@ echo "${SSH_MASTER_USER} ALL=NOPASSWD:/usr/sbin/deluser" >> /etc/sudoers
 echo "${SSH_MASTER_USER} ALL=NOPASSWD:/usr/sbin/chpasswd" >> /etc/sudoers
  
 addgroup sftp
+
+usermod -aG www-data ${SSH_MASTER_PASS}
  
 exec "$@"
