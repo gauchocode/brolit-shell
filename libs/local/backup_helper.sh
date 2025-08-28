@@ -1014,14 +1014,14 @@ if [[ -f "${PROJECTS_PATH}/${project_domain}/.env" ]]; then
       
       if [ $? -eq 0 ]; then
 
-          num_borg_configs=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config | length")
+          num_borg_configs=$(json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config | length")
 
           for ((i=0; i<num_borg_configs; i++)); do
 
-            BACKUP_BORG_USER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[$i].user")
-            BACKUP_BORG_SERVER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[$i].server")
-            BACKUP_BORG_PORT=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[$i].port")
-            BACKUP_BORG_GROUP=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].group")
+            BACKUP_BORG_USER=$(json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[$i].user")
+            BACKUP_BORG_SERVER=$(json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[$i].server")
+            BACKUP_BORG_PORT=$(json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[$i].port")
+            BACKUP_BORG_GROUP=$(json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].group")
 
             echo "Performing backup on ${BACKUP_BORG_SERVER} with user ${BACKUP_BORG_USER} on port ${BACKUP_BORG_PORT}"
           
