@@ -1,0 +1,477 @@
+{
+    "BROLIT_SETUP": {
+        "config": [
+            {
+                "version": "3.10.6",
+                "debug": "true",
+                "skip_test": "true",
+                "tmp_dir": "tmp",
+                "check_packages": "true"
+            }
+        ]
+    },
+    "SERVER_CONFIG": {
+        "type": "production",
+        "timezone": "America/Argentina/Buenos_Aires",
+        "unattended_upgrades": "disabled",
+        "additional_ips": [
+            "",
+            ""
+        ],
+        "config": [
+            {
+                "webserver": "disabled",
+                "database": "disabled"
+            }
+        ]
+    },
+    "PROJECTS": {
+        "path": "/var/www",
+        "config_path": "/etc/brolit"
+    },
+    "BACKUPS": {
+        "config": [
+            {
+                "projects": [
+                    {
+                        "status": "enabled",
+                        "follow_symlinks": "true",
+                        "ignored": [
+                            "html"
+                        ],
+                        "excluded_on_tar": [
+                            "*.log",
+                            "*.tmp",
+                            "*.cache",
+                            "*.git"
+                        ]
+                    }
+                ],
+                "server_cfg": "enabled",
+                "additional_dirs": [
+                    "",
+                    ""
+                ],
+                "databases": [
+                    {
+                        "status": "enabled",
+                        "exclude": [
+                            "information_schema,performance_schema,mysql,sys,phpmyadmin,postgres"
+                        ]
+                    }
+                ],
+                "compression": [
+                    {
+                        "type": "lbzip2",
+                        "level": "5",
+                        "cores": "",
+                        "test": "true"
+                    }
+                ],
+                "retention": [
+                    {
+                        "keep_daily": "3",
+                        "keep_weekly": "0",
+                        "keep_monthly": "0"
+                    }
+                ]
+            }
+        ],
+        "methods": [
+            {
+                "borg": [
+                    {
+                        "status": "disabled",
+                        "config": [
+                            {
+                                "user": "",
+                                "server": "",
+                                "port": ""
+                            }
+                        ],
+                        "group": ""
+                    }
+                ],
+                "dropbox": [
+                    {
+                        "status": "disabled",
+                        "config": [
+                            {
+                                "file": "/root/.dropbox_uploader"
+                            }
+                        ]
+                    }
+                ],
+                "sftp": [
+                    {
+                        "status": "disabled",
+                        "config": [
+                            {
+                                "server_ip": "",
+                                "server_port": "",
+                                "server_user": "",
+                                "server_user_password": "",
+                                "server_remote_path": ""
+                            }
+                        ]
+                    }
+                ],
+                "local": [
+                    {
+                        "status": "disabled",
+                        "config": [
+                            {
+                                "backup_path": ""
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    "NOTIFICATIONS": {
+        "email": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "maila": "",
+                        "smtp_server": "",
+                        "smtp_port": "",
+                        "smtp_tls": "",
+                        "smtp_user": "",
+                        "smtp_user_pass": "",
+                        "from_email": ""
+                    }
+                ]
+            }
+        ],
+        "ntfy": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "username": "",
+                        "password": "",
+                        "server": "",
+                        "topic": ""
+                    }
+                ]
+            } 
+        ],
+        "discord": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "webhook": ""
+                    }
+                ]
+            }
+        ],
+        "telegram": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "bot_token": "",
+                        "chat_id": ""
+                    }
+                ]
+            }
+        ]
+    },
+    "SECURITY": {
+        "status": "disabled",
+        "config": [
+            {
+                "file": "/root/.brolit_firewall_conf.json"
+            }
+        ]
+    },
+    "DNS": {
+        "cloudflare": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "email": "",
+                        "api_key": ""
+                    }
+                ]
+            }
+        ]
+    },
+    "PACKAGES": {
+        "nginx": [
+            {
+                "status": "disabled"
+            }
+        ],
+        "mysql": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "port": "default"
+                    }
+                ]
+            }
+        ],
+        "mariadb": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "port": "default"
+                    }
+                ]
+            }
+        ],
+        "postgres": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "port": "default"
+                    }
+                ]
+            }
+        ],
+        "redis": [
+            {
+                "status": "disabled"
+            }
+        ],
+        "php": [
+            {
+                "status": "disabled",
+                "version": "default",
+                "config": [
+                    {
+                        "opcode": "disabled"
+                    }
+                ],
+                "extensions": [
+                    {
+                        "wpcli": "disabled",
+                        "composer": "disabled",
+                        "redis": "disabled",
+                        "memcached": "disabled"
+                    }
+                ]
+            }
+        ],
+        "python": [
+            {
+                "status": "disabled",
+                "version": "default",
+                "config": [
+                    {
+                        "pip": "enabled"
+                    }
+                ]
+            }
+        ],
+        "nodejs": [
+            {
+                "status": "disabled",
+                "version": "default",
+                "config": [
+                    {
+                        "npm": "enabled"
+                    }
+                ]
+            }
+        ],
+        "certbot": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "email": ""
+                    }
+                ]
+            }
+        ],
+        "monit": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "monit_maila": "",
+                        "monit_httpd": [
+                            {
+                                "status": "disabled",
+                                "user": "admin",
+                                "pass": "monit_pass"
+                            }
+                        ],
+                        "monit_services": [
+                            {
+                                "system": "enabled",
+                                "nginx": "enabled",
+                                "phpfpm": "enabled",
+                                "mysql": "enabled",
+                                "postgres": "disabled",
+                                "redis": "disabled"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ],
+        "docker": [
+            {
+                "status": "disabled"
+            }
+        ],
+        "borg": [
+            {
+                "status": "disabled"
+            }
+        ],
+        "portainer": [
+            {
+                "status": "disabled",
+                "version": "latest",
+                "config": [
+                    {
+                        "port": "9000",
+                        "nginx_proxy": "enabled",
+                        "subdomain": ""
+                    }
+                ]
+            }
+        ],
+        "portainer_agent": [
+            {
+                "status": "disabled",
+                "version": "latest",
+                "config": [
+                    {
+                        "port": "9001"
+                    }
+                ]
+            }
+        ],
+        "netdata": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "web_admin": "disabled",
+                        "subdomain": "",
+                        "user": "",
+                        "user_pass": "",
+                        "claim_token": "",
+                        "claim_room": ""
+                    }
+                ],
+                "notifications": [
+                    {
+                        "alarm_level": "CRITICAL",
+                        "maila": "",
+                        "telegram": [
+                            {
+                                "status": "disabled",
+                                "config": [
+                                    {
+                                        "bot_token": "",
+                                        "chat_id": ""
+                                    }
+                                ]
+                            }
+                        ],
+                        "discord": [
+                            {
+                                "status": "disabled",
+                                "config": [
+                                    {
+                                        "webhook_url": ""
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ],
+        "grafana": [
+            {
+                "status": "disabled",
+                "version": "latest",
+                "config": [
+                    {
+                        "port": "9090",
+                        "nginx_proxy": "disabled",
+                        "subdomain": ""
+                    }
+                ]
+            }
+        ],
+        "loki": [
+            {
+                "status": "disabled",
+                "version": "latest",
+                "config": [
+                    {
+                        "port": "3100",
+                        "nginx_proxy": "disabled",
+                        "subdomain": ""
+                    }
+                ]
+            }
+        ],
+        "promtail": [
+            {
+                "status": "disabled",
+                "version": "2.8.3",
+                "config": [
+                    {
+                        "port": "9080",
+                        "hostname": "default",
+                        "loki_url": "",
+                        "loki_port": "3100"
+                    }
+                ]
+            }
+        ],
+        "cockpit": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "port": "9090",
+                        "nginx_proxy": "disabled",
+                        "subdomain": ""
+                    }
+                ]
+            }
+        ],
+        "zabbix": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "subdomain": ""
+                    }
+                ]
+            }
+        ],
+        "custom": [
+            {
+                "status": "disabled",
+                "config": [
+                    {
+                        "vim": "true",
+                        "lynis": "true",
+                        "clamav": "true",
+                        "bat": "true",
+                        "htop": "true"
+                    }
+                ]
+            }
+        ]
+    }
+}
