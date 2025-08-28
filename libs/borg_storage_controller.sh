@@ -593,11 +593,6 @@ function borg_update_templates() {
             if ! diff -q "${template}" "${config_file}" >/dev/null 2>&1; then
                 log_event "info" "Differences found between ${template_name} and ${config_name}" "false"
                 
-                # Show differences
-                display --indent 6 --text "- Differences in ${config_name}"
-                diff --color=always -u "${template}" "${config_file}" | head -20
-                echo "... (showing first 20 lines of differences)"
-                
                 # Ask user if they want to update
                 if whiptail --title "UPDATE BORGMATIC CONFIG" --yesno "Do you want to update ${config_name} with changes from ${template_name}?" 10 60; then
                     
@@ -633,6 +628,11 @@ function borg_update_templates() {
                     [[ -n "${ntfy_password}" && "${ntfy_password}" != "null" ]] && yq -i ".constants.ntfy_password = \"${ntfy_password}\"" "${temp_file}"
                     [[ -n "${loki_url}" && "${loki_url}" != "null" ]] && yq -i ".constants.loki_url = \"${loki_url}\"" "${temp_file}"
                     
+                    # Remove loki section if loki_url is not set
+                    if [[ -z "${loki_url}" || "${loki_url}" == "null" ]]; then
+                        yq -i 'del(.loki)' "${temp_file}"
+                    fi
+                    
                     # Restore server-specific constants
                     for i in $(seq 1 "${number_of_servers}"); do
                         [[ -n "${server_user[${i}]}" && "${server_user[${i}]}" != "null" ]] && yq -i ".constants.user_${i} = \"${server_user[${i}]}\"" "${temp_file}"
@@ -648,7 +648,6 @@ function borg_update_templates() {
                             # Add new repository entry as a proper map
                             yq -i ".repositories += [{\"path\": \"ssh://${server_user[${i}]}@${server_server[${i}]}:${server_port[${i}]}/./applications/${group}/${hostname}/projects-online/site/${project}\", \"label\": \"storage-${server_user[${i}]}\"}]" "${temp_file}"
                         fi
-
                     done
                     
                     # Move updated file to final location
