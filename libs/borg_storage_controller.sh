@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.5
+# Version: 3.3.12
 ################################################################################
 #
 # Storage Controller: Controller to upload and download backups.
@@ -645,15 +645,27 @@ function borg_update_templates() {
                 declare -A server_server
                 declare -A server_port
                 
+                # Get number of servers from .brolit_conf.json
+                local number_of_servers=$(yq -r '.BACKUPS.methods[].borg[].config | length' /root/.brolit_conf.json)
+                
                 # Validate number_of_servers is a positive integer
                 if ! [[ "${number_of_servers}" =~ ^[0-9]+$ ]] || [ "${number_of_servers}" -lt 1 ]; then
                     number_of_servers=0
                 fi
                 
+                # Read server configuration from .brolit_conf.json
                 for i in $(seq 1 "${number_of_servers}"); do
-                    server_user[${i}]=$(yq -r ".constants.user_${i} // \"\"" "${config_file}")
-                    server_server[${i}]=$(yq -r ".constants.server_${i} // \"\"" "${config_file}")
-                    server_port[${i}]=$(yq -r ".constants.port_${i} // \"\"" "${config_file}")
+                    server_user[${i}]=$(yq -r ".BACKUPS.methods[].borg[].config[${i}-1].user // \"\"" /root/.brolit_conf.json)
+                    server_server[${i}]=$(yq -r ".BACKUPS.methods[].borg[].config[${i}-1].server // \"\"" /root/.brolit_conf.json)
+                    server_port[${i}]=$(yq -r ".BACKUPS.methods[].borg[].config[${i}-1].port // \"\"" /root/.brolit_conf.json)
+                    
+                    # Log the yq commands being executed
+                    log_event "debug" "Reading server ${i} user: yq -r '.BACKUPS.methods[].borg[].config[${i}-1].user // \"\"' /root/.brolit_conf.json" "false"
+                    log_event "debug" "Reading server ${i} server: yq -r '.BACKUPS.methods[].borg[].config[${i}-1].server // \"\"' /root/.brolit_conf.json" "false"
+                    log_event "debug" "Reading server ${i} port: yq -r '.BACKUPS.methods[].borg[].config[${i}-1].port // \"\"' /root/.brolit_conf.json" "false"
+                    
+                    # Log the values read
+                    log_event "debug" "Server ${i} values: user='${server_user[${i}]}' server='${server_server[${i}]}' port='${server_port[${i}]}'" "false"
                     
                     # Skip if any required server parameter is empty
                     if [[ -z "${server_user[${i}]}" || -z "${server_server[${i}]}" || -z "${server_port[${i}]}" ]]; then
