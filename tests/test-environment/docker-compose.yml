@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  brolit-test:
+    build: .
+    container_name: brolit-test-env
+    privileged: true
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - apparmor:unconfined
+    tmpfs:
+      - /tmp
+      - /run
+      - /run/lock
+    volumes:
+      - ./config:/brolit-shell/config
+      - ./data:/data
+    ports:
+      - "2222:22"
