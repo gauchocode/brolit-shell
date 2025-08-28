@@ -178,6 +178,7 @@ BACKUP_BORG_SERVERS=()
 BACKUP_BORG_PORTS=()
 
 function _brolit_configuration_load_backup_borg() {
+
     local server_config_file="${1}"
     
     # Declarar variables globales
@@ -196,11 +197,16 @@ function _brolit_configuration_load_backup_borg() {
     BACKUP_BORG_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].status")"
     
     if [[ ${BACKUP_BORG_STATUS} == "enabled" ]]; then
+
         local number_of_servers
+        
         number_of_servers=$(jq ".BACKUPS.methods[].borg[].config | length" /root/.brolit_conf.json)
         
         for i in $(seq 1 "$number_of_servers"); do
-            local user server port
+
+            local user
+            local server
+            local port
             
             user="$(json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].config[$((i-1))].user")"
             [[ -z "${user}" ]] && die "Error reading BACKUP_BORG_USER from server config file."
@@ -213,10 +219,12 @@ function _brolit_configuration_load_backup_borg() {
             port="$(json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].config[$((i-1))].port")"
             [[ -z "${port}" ]] && die "Error reading BACKUP_BORG_PORT from server config file."
             BACKUP_BORG_PORTS+=("${port}")
+
         done
         
         BACKUP_BORG_GROUP="$(json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].group")"
         [[ -z "${BACKUP_BORG_GROUP}" ]] && die "Error reading BACKUP_BORG_GROUP from server config file."
+
     fi 
     
     export BACKUP_BORG_STATUS BACKUP_BORG_GROUP BACKUP_BORG_USERS BACKUP_BORG_SERVERS BACKUP_BORG_PORTS

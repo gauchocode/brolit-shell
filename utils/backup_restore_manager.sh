@@ -30,6 +30,7 @@ function backup_manager_menu() {
     "04)" "BACKUP PROJECT"
     "05)" "BACKUP DOCKER VOLUMES (BETA)"
     "06)" "BACKUP ROOT PROJECT"
+    "07)" "UPDATE BORGMATIC TEMPLATES"
   )
 
   chosen_backup_type="$(whiptail --title "SELECT BACKUP TYPE" --menu " " 20 78 10 "${backup_options[@]}" 3>&1 1>&2 2>&3)"
@@ -252,6 +253,19 @@ function backup_manager_menu() {
       else
         display --indent 6 --text "- Root project backup" --result "SKIPPED" --color YELLOW
       fi
+
+    fi
+
+    # UPDATE BORGMATIC TEMPLATES
+    if [[ ${chosen_backup_type} == *"07"* ]]; then
+
+      # UPDATE_BORGMATIC_TEMPLATES
+      log_section "Update Borgmatic Templates"
+
+      borg_update_templates
+
+      # Sending notifications
+      send_notification "${SERVER_NAME}" "Task: 'Update Borgmatic Templates' completed." "success"
 
     fi
 
