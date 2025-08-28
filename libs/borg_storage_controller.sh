@@ -673,11 +673,10 @@ function borg_update_templates() {
         else
             log_event "info" "No differences found between ${template_name} and ${config_name}" "false"
         fi
-        done
         
         [[ "${updated}" == "false" ]] && ((skipped_count++))
         
-    done < <(find "${borg_config_dir}" -name "*.yml" -print0)
+    done
     
     # Show summary
     display --indent 6 --text "- Update summary"
