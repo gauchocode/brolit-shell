@@ -210,12 +210,16 @@ function generate_tar_and_decompress() {
     exitstatus=$?
 
     if [[ exitstatus -eq 0 ]]; then
+
         display --indent 6 --text "- Exporting compressed file from storage box" --result "DONE" --color GREEN
         log_event "info" "${project_backup_file} downloaded" "false"
+
     else
+
         display --indent 6 --text "- Exporting compressed file from storage box" --result "FAIL" --color RED
         log_event "error" "Error trying to export ${project_backup_file}!" "false"
         exit 1
+
     fi
 
     #log_event "info" "Extracting compressed file: ${project_backup_file}" "false"
@@ -636,10 +640,15 @@ function borg_update_templates() {
                         [[ -n "${server_port[${i}]}" && "${server_port[${i}]}" != "null" ]] && yq -i ".constants.port_${i} = \"${server_port[${i}]}\"" "${temp_file}"
                         
                         # Update repositories section
-                        if [[ -n "${user}" && -n "${server}" && -n "${port}" ]]; then
-                            yq -i "del(.repositories[] | select(.label == \"storage-${user}\"))" "${temp_file}"
-                            yq -i ".repositories += [\"path: ssh://{user_${i}}@{server_${i}}:{port_${i}}/.//applications/{group}/{hostname}/projects-online/site/{project}\", \"label: \\\"storage-{user_${i}}\\\"\"]" "${temp_file}"
+                        if [[ -n "${server_user[${i}]}" && -n "${server_server[${i}]}" && -n "${server_port[${i}]}" ]]; then
+                            
+                            # Delete existing repository with this label
+                            yq -i "del(.repositories[] | select(.label == \"storage-${server_user[${i}]}\"))" "${temp_file}"
+                            
+                            # Add new repository entry as a proper map
+                            yq -i ".repositories += [{\"path\": \"ssh://${server_user[${i}]}@${server_server[${i}]}:${server_port[${i}]}/./applications/${group}/${hostname}/projects-online/site/${project}\", \"label\": \"storage-${server_user[${i}]}\"}]" "${temp_file}"
                         fi
+
                     done
                     
                     # Move updated file to final location
