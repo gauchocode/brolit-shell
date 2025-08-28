@@ -646,7 +646,7 @@ function borg_update_templates() {
                 declare -A server_port
                 
                 # Get number of servers from .brolit_conf.json
-                local number_of_servers=$(yq -r '.BACKUPS.methods[].borg[].config | length' /root/.brolit_conf.json)
+                local number_of_servers=$(jq -r '.BACKUPS.methods[].borg[].config | length' /root/.brolit_conf.json)
                 
                 # Validate number_of_servers is a positive integer
                 if ! [[ "${number_of_servers}" =~ ^[0-9]+$ ]] || [ "${number_of_servers}" -lt 1 ]; then
@@ -655,14 +655,14 @@ function borg_update_templates() {
                 
                 # Read server configuration from .brolit_conf.json
                 for i in $(seq 1 "${number_of_servers}"); do
-                    server_user[${i}]=$(yq -r ".BACKUPS.methods[].borg[].config[${i}-1].user // \"\"" /root/.brolit_conf.json)
-                    server_server[${i}]=$(yq -r ".BACKUPS.methods[].borg[].config[${i}-1].server // \"\"" /root/.brolit_conf.json)
-                    server_port[${i}]=$(yq -r ".BACKUPS.methods[].borg[].config[${i}-1].port // \"\"" /root/.brolit_conf.json)
+                    server_user[${i}]=$(jq -r ".BACKUPS.methods[].borg[].config[${i}-1].user // \"\"" /root/.brolit_conf.json)
+                    server_server[${i}]=$(jq -r ".BACKUPS.methods[].borg[].config[${i}-1].server // \"\"" /root/.brolit_conf.json)
+                    server_port[${i}]=$(jq -r ".BACKUPS.methods[].borg[].config[${i}-1].port // \"\"" /root/.brolit_conf.json)
                     
-                    # Log the yq commands being executed
-                    log_event "debug" "Reading server ${i} user: yq -r '.BACKUPS.methods[].borg[].config[${i}-1].user // \"\"' /root/.brolit_conf.json" "false"
-                    log_event "debug" "Reading server ${i} server: yq -r '.BACKUPS.methods[].borg[].config[${i}-1].server // \"\"' /root/.brolit_conf.json" "false"
-                    log_event "debug" "Reading server ${i} port: yq -r '.BACKUPS.methods[].borg[].config[${i}-1].port // \"\"' /root/.brolit_conf.json" "false"
+                    # Log the jq commands being executed
+                    log_event "debug" "Reading server ${i} user: jq -r '.BACKUPS.methods[].borg[].config[${i}-1].user // \"\"' /root/.brolit_conf.json" "false"
+                    log_event "debug" "Reading server ${i} server: jq -r '.BACKUPS.methods[].borg[].config[${i}-1].server // \"\"' /root/.brolit_conf.json" "false"
+                    log_event "debug" "Reading server ${i} port: jq -r '.BACKUPS.methods[].borg[].config[${i}-1].port // \"\"' /root/.brolit_conf.json" "false"
                     
                     # Log the values read
                     log_event "debug" "Server ${i} values: user='${server_user[${i}]}' server='${server_server[${i}]}' port='${server_port[${i}]}'" "false"
