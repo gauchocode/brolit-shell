@@ -214,7 +214,7 @@ function check_remote_disk_space() {
     
     # Obtener espacio libre en disco remoto
     local free_space_kb
-    free_space_kb=$(ssh -p "${port}" "${user}@${server}" "df -k '${mount_point}' | awk 'NR>1 && !/Filesystem/ {print \$4}'")
+    free_space_kb=$(ssh -p "${port}" "${user}@${server}" "df -k '${mount_point}'" | awk 'NR==2 {print $4}')
     
     # Convertir KB a MB
     local free_space_mb=$((free_space_kb / 1024))
