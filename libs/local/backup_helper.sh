@@ -974,8 +974,6 @@ function borg_backup_database() {
 
   local json_config_file="/root/.brolit_conf.json"
 
-  source /root/brolit-shell/brolit_lite.sh
-
 if [[ -f "${PROJECTS_PATH}/${project_domain}/.env" ]]; then
 
       # Detect if project is WordPress or Laravel, or skip database backup for other types
