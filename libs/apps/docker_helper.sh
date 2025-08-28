@@ -256,7 +256,7 @@ function docker_compose_rm() {
     ##    -f, --force   Don't ask to confirm removal
     ##    -s, --stop    Stop the containers, if required, before removing
     ##    -v            Remove any anonymous volumes attached to containers
-    docker compose -f "${compose_file}" rm --force --volumes >/dev/null 2>&1
+    docker compose -f "${compose_file}" rm --stop --force --volumes >/dev/null 2>&1
     exitstatus=$?
 
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -709,12 +709,7 @@ function docker_restore_project() {
         # Set restored $table_prefix on wp-config.php file
         sed -i "s/\$table_prefix = 'wp_'/\$table_prefix = '${database_prefix_to_restore}'/g" "${PROJECTS_PATH}/${project_domain}/wordpress/wp-config.php"
        
-        # Execute docker compose command
-        ## Options:
-        ##    -f, --force   Don't ask to confirm removal
-        ##    -s, --stop    Stop the containers, if required, before removing
-        ##    -v            Remove any anonymous volumes attached to containers
-        #docker compose -f "${PROJECTS_PATH}/${project_domain}/docker-compose.yml" rm --force -v --stop
+        # Stop & Remove Containers
         docker_compose_stop "${PROJECTS_PATH}/${project_domain}/docker-compose.yml"
         docker_compose_rm "${PROJECTS_PATH}/${project_domain}/docker-compose.yml"
 

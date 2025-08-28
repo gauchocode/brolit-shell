@@ -1,7 +1,7 @@
 constants:
     project: domain-example.com             # e.g: gauchocode.com  
-    group: group_server                     # e.g: broobe-hosts
-    hostname: hostname_server               # e.g: broobe-docker-host03-cmuse    
+    group: group_server                     # e.g: gaucho-hosts
+    hostname: hostname_server               # e.g: gaucho-docker-host03
     ntfy_server: ntfy_server
     ntfy_username: ntfy_username
     ntfy_password: ntfy_password
@@ -27,7 +27,7 @@ exclude_patterns:
 
 archive_name_format: '{project}_site-files-{now:%Y-%m-%dT%H:%M:%S}'
 # Keep all archives within this time interval.
-keep_within: 1m #Equivale a 2 meses
+keep_within: 1m # 1m keep 1 month
 
 # Number of secondly archives to keep.
 # keep_secondly: 60
@@ -63,7 +63,7 @@ check_last: 3
 # List of one or more shell commands or scripts to execute before
 # creating a backup, run once per repository.
 before_backup:
-    - echo "Arrancando backup" 
+    - echo "Backup Init" 
 
 # List of one or more shell commands or scripts to execute before
 # pruning, run once per repository.
@@ -109,10 +109,10 @@ ntfy:
 
     start:
         # The title of the message.
-        title: Arrancando backup!
+        title: Backup Init
 
         # The message body to publish.
-        message: Proyecto {project} - Server {hostname}
+        message: Project {project} - Server {hostname}
 
         # The priority to set.
         priority: default
@@ -122,10 +122,10 @@ ntfy:
 
     finish:
         # The title of the message.
-        title: Backup terminado!
+        title: Backup finished!
 
         # The message body to publish.
-        message: Backup de {project} terminado! 
+        message: Backup of {project} finished! 
 
         # The priority to set.
         priority: default
@@ -138,7 +138,7 @@ ntfy:
         title: Backup error!
 
         # The message body to publish.
-        message: Los backups de {project} han fallado. Ver logs
+        message: Backups of {project} has failed.
 
         # The priority to set.
         priority: high

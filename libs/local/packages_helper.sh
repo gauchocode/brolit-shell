@@ -418,6 +418,16 @@ function package_upgrade_all() {
 #   none
 ################################################################################
 
+function package_check_command() {
+    local cmd=$1
+    local package=$2
+    if ! command -v "${cmd}" &> /dev/null; then
+        echo "Error: ${cmd} is not available. Please install ${package} package."
+        return 1
+    fi
+    return 0
+}
+
 function package_purge() {
 
   local package="${1}"
