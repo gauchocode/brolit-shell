@@ -94,22 +94,34 @@ function _brolit_configuration_load_ntfy() {
 # Backup validation and helper functions
 function validate_ssh_connection() {
     local user=$1 server=$2 port=$3
+    log_event "debug" "Validating SSH connection: user='${user}', server='${server}', port='${port}'" "false"
     if ! ssh -o ConnectTimeout=10 -o BatchMode=yes -p "$port" "$user@$server" "exit"; then
-        echo "Error: Cannot connect to $server:$port"
+        log_event "error" "Cannot connect to ${server}:${port}" "false"
         return 1
     fi
+    log_event "info" "Successfully connected to ${server}:${port}" "false"
     return 0
 }
 
 function create_remote_directories() {
-    local user=$1 server=$2 port=$3 group=$4 hostname=$5 project=$6
+
+    local user=$1 
+    local server=$2 
+    local port=$3 
+    local group=$4 
+    local hostname=$5 
+    local project=$6
+
     ssh -p "$port" "$user@$server" "mkdir -p /home/applications/'$group'/'$hostname'/projects-online/site/'$project'" || return 1
     ssh -p "$port" "$user@$server" "mkdir -p /home/applications/'$group'/'$hostname'/projects-online/database/'$project'" || return 1
+
     return 0
 }
 
 function initialize_repository() {
+
     local config_file=$1
+
     if borgmatic --config "$config_file" info &>/dev/null; then
         echo "Repository already exists, skipping initialization"
         return 0
@@ -120,7 +132,9 @@ function initialize_repository() {
         echo "Error: Repository initialization failed"
         return 1
     fi
+
     return 0
+
 }
 
 # Load configurations from central sources
@@ -131,6 +145,7 @@ function load_configurations() {
 
 # Generate Borg configuration file for a project
 function generate_borg_config() {
+
     local project_name="${1}"
     local yml_file="${BORG_DIR}/${project_name}.yml"
     local project_install_type
@@ -175,14 +190,18 @@ function generate_borg_config() {
         log_event "info" "Config file ${yml_file} generated." "false"
         echo "Please wait 3 seconds..."
         sleep 3
+
     else
         log_event "info" "Config file ${yml_file} already exists." "false"
         sleep 1
+
     fi
+
 }
 
 # Estimate backup size
 function estimate_backup_size() {
+
     local project_path="${1}"
     local size_kb
     local size_mb
@@ -201,6 +220,7 @@ function estimate_backup_size() {
 
 # Check remote disk space based on backup size estimation
 function check_remote_disk_space() {
+
     local user="${1}"
     local server="${2}"
     local port="${3}"
@@ -231,7 +251,9 @@ function check_remote_disk_space() {
 }
 
 function setup_project_directories() {
+
     local project_name="${1}"
+
     local project_path="${WWW_DIR}/${project_name}"
     local successful_servers=0
     local total_servers=0
@@ -273,9 +295,12 @@ function setup_project_directories() {
     
     # Si no todos los servidores fueron exitosos, es un error crítico
     if [[ ${successful_servers} -lt ${total_servers} ]]; then
+
         log_event "error" "Not all backup servers were successfully configured for ${project_name}. Success: ${successful_servers}/${total_servers}" "true"
         send_notification "${SERVER_NAME}" "Critical: Incomplete backup server configuration for ${project_name}. Success: ${successful_servers}/${total_servers}" "alert"
+
         return 1
+
     fi
     
     log_event "info" "All backup servers successfully configured for ${project_name}" "false"
@@ -284,14 +309,18 @@ function setup_project_directories() {
 
 # Initialize repository if needed
 function initialize_repository_if_needed() {
+
     local config_file="${1}"
     local project_name="${2}"
     
     log_event "info" "Initializing repository for ${project_name}" "false"
+
     if ! initialize_repository "${config_file}"; then
+
         log_event "error" "Failed to initialize repository for ${project_name}" "true"
         send_notification "${SERVER_NAME}" "Critical: Failed to initialize repository for ${project_name}" "alert"
         return 1
+
     fi
     
     return 0
@@ -299,19 +328,24 @@ function initialize_repository_if_needed() {
 
 # Process each folder in the WWW directory
 function generate_config() {
+
     # Load configuration
     load_configurations
 
     # Check if Borg backup is enabled
     if [ "${BACKUP_BORG_STATUS}" == "enabled" ]; then
+
         local number_of_servers
         number_of_servers=$(jq ".BACKUPS.methods[].borg[].config | length" /root/.brolit_conf.json)
         
         # Process each directory in WWW_DIR
         for folder in "${WWW_DIR}"/*; do
             if [ -d "${folder}" ]; then
+
                 local folder_name
+                
                 folder_name=$(basename "${folder}")
+
                 local yml_file="${folder_name}.yml"
 
                 # Skip HTML directory
@@ -330,10 +364,14 @@ function generate_config() {
                     initialize_repository_if_needed "${BORG_DIR}/${yml_file}" "${folder_name}"
                 fi
             fi
+
     	done
+
     else
     	log_event "info" "Borg backup is not enabled" "false"
+
     fi
+
 }
 
 generate_config
