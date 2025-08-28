@@ -539,15 +539,12 @@ function borg_update_templates() {
         return 1
     fi
     
-    # Find all template files
-    local templates=()
-    while IFS= read -r -d '' file; do
-        templates+=("${file}")
-    done < <(find "${template_dir}" -name "borgmatic.template*.yml" -print0)
+    # Use only borgmatic.template-default.yml
+    local template="${template_dir}/borgmatic.template-default.yml"
     
-    if [[ ${#templates[@]} -eq 0 ]]; then
-        log_event "error" "No borgmatic template files found in ${template_dir}" "false"
-        display --indent 6 --text "- No template files found" --result "FAIL" --color RED
+    if [[ ! -f "${template}" ]]; then
+        log_event "error" "Template file not found: ${template}" "false"
+        display --indent 6 --text "- Template file not found" --result "FAIL" --color RED
         return 1
     fi
     
@@ -580,108 +577,102 @@ function borg_update_templates() {
             continue
         fi
         
-        # Check each template
-        for template in "${templates[@]}"; do
-
-            local template_name=""
-            template_name=$(basename "${template}")
+        # Use only borgmatic.template-default.yml
+        local template_name="borgmatic.template-default.yml"
+        
+        # Compare template with config
+        if ! diff -q "${template}" "${config_file}" >/dev/null 2>&1; then
+            log_event "info" "Differences found between ${template_name} and ${config_name}" "false"
             
-            # Skip if template is the same as config (for new installations)
-            [[ "${template_name}" == "${config_name}" ]] && continue
-            
-            # Compare template with config
-            if ! diff -q "${template}" "${config_file}" >/dev/null 2>&1; then
-                log_event "info" "Differences found between ${template_name} and ${config_name}" "false"
+            # Ask user if they want to update
+            if whiptail --title "UPDATE BORGMATIC CONFIG" --yesno "Do you want to update ${config_name} with changes from ${template_name}?" 10 60; then
+                    
+                # Create temporary file with updated content
+                local temp_file=$(mktemp)
                 
-                # Ask user if they want to update
-                if whiptail --title "UPDATE BORGMATIC CONFIG" --yesno "Do you want to update ${config_name} with changes from ${template_name}?" 10 60; then
-                    
-                    # Create temporary file with updated content
-                    local temp_file=$(mktemp)
-                    
-                    # Copy template content
-                    cp "${template}" "${temp_file}"
-                    
-                    # Preserve project-specific constants from current config
-                    local project=$(yq -r '.constants.project // ""' "${config_file}")
-                    local group=$(yq -r '.constants.group // ""' "${config_file}")
-                    local hostname=$(yq -r '.constants.hostname // ""' "${config_file}")
-                    local ntfy_server=$(yq -r '.constants.ntfy_server // ""' "${config_file}")
-                    local ntfy_username=$(yq -r '.constants.ntfy_username // ""' "${config_file}")
-                    local ntfy_password=$(yq -r '.constants.ntfy_password // ""' "${config_file}")
-                    local loki_url=$(yq -r '.constants.loki_url // ""' "${config_file}")
-                    
-                    # Variables específicas de servidor para cada servidor
-                    declare -A server_user server_server server_port
-                    for i in $(seq 1 "${number_of_servers}"); do
-                        server_user[${i}]=$(yq -r ".constants.user_${i} // \"\"" "${config_file}")
-                        server_server[${i}]=$(yq -r ".constants.server_${i} // \"\"" "${config_file}")
-                        server_port[${i}]=$(yq -r ".constants.port_${i} // \"\"" "${config_file}")
-                    done
-                    
-                    # Restore project-specific constants
-                    [[ -n "${project}" && "${project}" != "null" ]] && yq -i ".constants.project = \"${project}\"" "${temp_file}"
-                    [[ -n "${group}" && "${group}" != "null" ]] && yq -i ".constants.group = \"${group}\"" "${temp_file}"
-                    [[ -n "${hostname}" && "${hostname}" != "null" ]] && yq -i ".constants.hostname = \"${hostname}\"" "${temp_file}"
-                    [[ -n "${ntfy_server}" && "${ntfy_server}" != "null" ]] && yq -i ".constants.ntfy_server = \"${ntfy_server}\"" "${temp_file}"
-                    [[ -n "${ntfy_username}" && "${ntfy_username}" != "null" ]] && yq -i ".constants.ntfy_username = \"${ntfy_username}\"" "${temp_file}"
-                    [[ -n "${ntfy_password}" && "${ntfy_password}" != "null" ]] && yq -i ".constants.ntfy_password = \"${ntfy_password}\"" "${temp_file}"
-                    [[ -n "${loki_url}" && "${loki_url}" != "null" ]] && yq -i ".constants.loki_url = \"${loki_url}\"" "${temp_file}"
-                    
-                    # Remove loki section if loki_url is not set
-                    if [[ -z "${loki_url}" || "${loki_url}" == "null" ]]; then
-                        yq -i 'del(.loki)' "${temp_file}"
-                    fi
-                    
-                    # Restore server-specific constants
-                    for i in $(seq 1 "${number_of_servers}"); do
-                        [[ -n "${server_user[${i}]}" && "${server_user[${i}]}" != "null" ]] && yq -i ".constants.user_${i} = \"${server_user[${i}]}\"" "${temp_file}"
-                        [[ -n "${server_server[${i}]}" && "${server_server[${i}]}" != "null" ]] && yq -i ".constants.server_${i} = \"${server_server[${i}]}\"" "${temp_file}"
-                        [[ -n "${server_port[${i}]}" && "${server_port[${i}]}" != "null" ]] && yq -i ".constants.port_${i} = \"${server_port[${i}]}\"" "${temp_file}"
-                        
-                        # Update repositories section
-                        if [[ -n "${server_user[${i}]}" && -n "${server_server[${i}]}" && -n "${server_port[${i}]}" ]]; then
-                            
-                            # Delete existing repository with this label
-                            yq -i "del(.repositories[] | select(.label == \"storage-${server_user[${i}]}\"))" "${temp_file}"
-                            
-                            # Add new repository entry as a proper map
-                            yq -i ".repositories += [{\"path\": \"ssh://${server_user[${i}]}@${server_server[${i}]}:${server_port[${i}]}/./applications/${group}/${hostname}/projects-online/site/${project}\", \"label\": \"storage-${server_user[${i}]}\"}]" "${temp_file}"
-                        fi
-                    done
-                    
-                    # Move updated file to final location
-                    mv "${temp_file}" "${config_file}"
-                    
-                    log_event "info" "Updated ${config_name} with changes from ${template_name}" "false"
-                    display --indent 6 --text "- Update ${config_name}" --result "DONE" --color GREEN
-                    
-                    # Test the updated configuration
-                    display --indent 6 --text "- Testing updated configuration"
-                    
-                    if borgmatic --config "${config_file}" --list --dry-run > /dev/null 2>&1; then
-                        
-                        display --indent 6 --text "- Configuration test" --result "OK" --color GREEN
-                        log_event "info" "Configuration test passed for ${config_name}" "false"
-                    
-                    else
-
-                        display --indent 6 --text "- Configuration test" --result "FAIL" --color RED
-                        log_event "error" "Configuration test failed for ${config_name}" "false"
-                        send_notification "${SERVER_NAME}" "Configuration test failed for ${config_name}" "alert"
-                    
-                    fi
-                    
-                    updated="true"
-                    ((updated_count++))
-                else
-                    log_event "info" "Skipped update for ${config_name}" "false"
-                    display --indent 6 --text "- Update ${config_name}" --result "SKIPPED" --color YELLOW
-                    ((skipped_count++))
+                # Copy template content
+                cp "${template}" "${temp_file}"
+                
+                # Preserve project-specific constants from current config
+                local project=$(yq -r '.constants.project // ""' "${config_file}")
+                local group=$(yq -r '.constants.group // ""' "${config_file}")
+                local hostname=$(yq -r '.constants.hostname // ""' "${config_file}")
+                local ntfy_server=$(yq -r '.constants.ntfy_server // ""' "${config_file}")
+                local ntfy_username=$(yq -r '.constants.ntfy_username // ""' "${config_file}")
+                local ntfy_password=$(yq -r '.constants.ntfy_password // ""' "${config_file}")
+                local loki_url=$(yq -r '.constants.loki_url // ""' "${config_file}")
+                
+                # Variables específicas de servidor para cada servidor
+                declare -A server_user server_server server_port
+                for i in $(seq 1 "${number_of_servers}"); do
+                    server_user[${i}]=$(yq -r ".constants.user_${i} // \"\"" "${config_file}")
+                    server_server[${i}]=$(yq -r ".constants.server_${i} // \"\"" "${config_file}")
+                    server_port[${i}]=$(yq -r ".constants.port_${i} // \"\"" "${config_file}")
+                done
+                
+                # Restore project-specific constants
+                [[ -n "${project}" && "${project}" != "null" ]] && yq -i ".constants.project = \"${project}\"" "${temp_file}"
+                [[ -n "${group}" && "${group}" != "null" ]] && yq -i ".constants.group = \"${group}\"" "${temp_file}"
+                [[ -n "${hostname}" && "${hostname}" != "null" ]] && yq -i ".constants.hostname = \"${hostname}\"" "${temp_file}"
+                [[ -n "${ntfy_server}" && "${ntfy_server}" != "null" ]] && yq -i ".constants.ntfy_server = \"${ntfy_server}\"" "${temp_file}"
+                [[ -n "${ntfy_username}" && "${ntfy_username}" != "null" ]] && yq -i ".constants.ntfy_username = \"${ntfy_username}\"" "${temp_file}"
+                [[ -n "${ntfy_password}" && "${ntfy_password}" != "null" ]] && yq -i ".constants.ntfy_password = \"${ntfy_password}\"" "${temp_file}"
+                [[ -n "${loki_url}" && "${loki_url}" != "null" ]] && yq -i ".constants.loki_url = \"${loki_url}\"" "${temp_file}"
+                
+                # Remove loki section if loki_url is not set
+                if [[ -z "${loki_url}" || "${loki_url}" == "null" ]]; then
+                    yq -i 'del(.loki)' "${temp_file}"
                 fi
+                
+                # Restore server-specific constants
+                for i in $(seq 1 "${number_of_servers}"); do
+                    [[ -n "${server_user[${i}]}" && "${server_user[${i}]}" != "null" ]] && yq -i ".constants.user_${i} = \"${server_user[${i}]}\"" "${temp_file}"
+                    [[ -n "${server_server[${i}]}" && "${server_server[${i}]}" != "null" ]] && yq -i ".constants.server_${i} = \"${server_server[${i}]}\"" "${temp_file}"
+                    [[ -n "${server_port[${i}]}" && "${server_port[${i}]}" != "null" ]] && yq -i ".constants.port_${i} = \"${server_port[${i}]}\"" "${temp_file}"
+                    
+                    # Update repositories section
+                    if [[ -n "${server_user[${i}]}" && -n "${server_server[${i}]}" && -n "${server_port[${i}]}" ]]; then
+                        
+                        # Delete existing repository with this label
+                        yq -i "del(.repositories[] | select(.label == \"storage-${server_user[${i}]}\"))" "${temp_file}"
+                        
+                        # Add new repository entry as a proper map
+                        yq -i ".repositories += [{\"path\": \"ssh://${server_user[${i}]}@${server_server[${i}]}:${server_port[${i}]}/./applications/${group}/${hostname}/projects-online/site/${project}\", \"label\": \"storage-${server_user[${i}]}\"}]" "${temp_file}"
+                    fi
+                done
+                
+                # Move updated file to final location
+                mv "${temp_file}" "${config_file}"
+                
+                log_event "info" "Updated ${config_name} with changes from ${template_name}" "false"
+                display --indent 6 --text "- Update ${config_name}" --result "DONE" --color GREEN
+                
+                # Test the updated configuration
+                display --indent 6 --text "- Testing updated configuration"
+                
+                if borgmatic --config "${config_file}" --list --dry-run > /dev/null 2>&1; then
+                    
+                    display --indent 6 --text "- Configuration test" --result "OK" --color GREEN
+                    log_event "info" "Configuration test passed for ${config_name}" "false"
+                
+                else
+
+                    display --indent 6 --text "- Configuration test" --result "FAIL" --color RED
+                    log_event "error" "Configuration test failed for ${config_name}" "false"
+                    send_notification "${SERVER_NAME}" "Configuration test failed for ${config_name}" "alert"
+                
+                fi
+                
+                updated="true"
+                ((updated_count++))
             else
-                log_event "info" "No differences found between ${template_name} and ${config_name}" "false"
+                log_event "info" "Skipped update for ${config_name}" "false"
+                display --indent 6 --text "- Update ${config_name}" --result "SKIPPED" --color YELLOW
+                ((skipped_count++))
             fi
+        else
+            log_event "info" "No differences found between ${template_name} and ${config_name}" "false"
+        fi
         done
         
         [[ "${updated}" == "false" ]] && ((skipped_count++))
