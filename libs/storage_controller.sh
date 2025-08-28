@@ -71,9 +71,13 @@ function storage_list_dir() {
 function storage_create_dir() {
 
     local remote_directory="${1}"
-    local number_of_servers=$(jq ".BACKUPS.methods[].borg[].config | length" /root/.brolit_conf.json)
-
+    
     local storage_result
+    local number_of_servers
+    
+    number_of_servers=$(jq ".BACKUPS.methods[].borg[].config | length" /root/.brolit_conf.json)
+
+    log_event "debug" "Number of configured Borg servers: ${number_of_servers}" "false"
 
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
@@ -87,9 +91,23 @@ function storage_create_dir() {
     fi
     if [[ ${BACKUP_BORG_STATUS} == "enabled" ]]; then
 
+        log_event "debug" "Creating remote directories for ${remote_directory}" "false"
+
         for i in $(eval echo {1..$number_of_servers})
         do
-            ssh -p ${BACKUP_BORG_PORTS[i]} ${BACKUP_BORG_USERS[i]}@${BACKUP_BORG_SERVERS[i]} "mkdir -p /home/applications/${BACKUP_BORG_GROUP}/${remote_directory}"
+
+            log_event "debug" "Connecting to Borg server ${i}: ${BACKUP_BORG_SERVERS[i]}" "false"
+
+            if [[ -n "${BACKUP_BORG_PORTS[i]}" ]]; then
+                ssh_cmd="ssh -p ${BACKUP_BORG_PORTS[i]}"
+            else
+                ssh_cmd="ssh"
+            fi
+
+            $ssh_cmd "${BACKUP_BORG_USERS[i]}"@"${BACKUP_BORG_SERVERS[i]}" "mkdir -p /home/applications/${BACKUP_BORG_GROUP}/${remote_directory}"
+            
+            log_event "debug" "Command executed: ${ssh_cmd} ${BACKUP_BORG_USERS[i]}@${BACKUP_BORG_SERVERS[i]} mkdir -p /home/applications/${BACKUP_BORG_GROUP}/${remote_directory}" "false"
+        
         done
     fi
 
