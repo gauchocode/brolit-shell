@@ -69,7 +69,7 @@ check_last: 3
 # List of one or more shell commands or scripts to execute before
 # creating a backup, run once per repository.
 before_backup:
-    - echo "Arrancando backup" 
+    - echo "Starting backup" 
 
 # List of one or more shell commands or scripts to execute before
 # pruning, run once per repository.
@@ -94,7 +94,7 @@ before_backup:
 # List of one or more shell commands or scripts to execute after
 # creating a backup, run once per repository.
 after_backup:
-    - echo "Backup terminado!"
+    - echo "Backup completed!"
 
 mysql_databases:
     # Database name (required if using this hook). Or "all" to
@@ -173,10 +173,10 @@ ntfy:
 
     start:
         # The title of the message.
-        title: Arrancando backup!
+        title: Starting backup!
 
         # The message body to publish.
-        message: Proyecto {project} - Server {hostname}
+        message: Project {project} - Server {hostname}
 
         # The priority to set.
         priority: default
@@ -186,10 +186,10 @@ ntfy:
 
     finish:
         # The title of the message.
-        title: Backup terminado!
+        title: Backup completed!
 
         # The message body to publish.
-        message: Backup de {project} terminado! 
+        message: Backup of {project} completed! 
 
         # The priority to set.
         priority: default
@@ -202,7 +202,7 @@ ntfy:
         title: Backup error!
 
         # The message body to publish.
-        message: Los backups de {project} han fallado. Ver logs
+        message: Backups for {project} have failed. Check logs
 
         # The priority to set.
         priority: high
