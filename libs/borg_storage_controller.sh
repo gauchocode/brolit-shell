@@ -191,7 +191,7 @@ function generate_tar_and_decompress() {
         whiptail_message "VERIFICATION FAILED" "${error_msg}\n\nDo you want to try another backup?"
         
         # Ofrecer opciones al usuario
-        if whiptail --title "OPCIONES" --yesno "¿Desea intentar con otro backup?" 10 60; then
+        if whiptail --title "OPTIONS" --yesno "¿Desea intentar con otro backup?" 10 60; then
             return 1  # Permitir al usuario seleccionar otro backup
         else
             return 1
@@ -612,6 +612,14 @@ function borg_update_templates() {
                     local ntfy_password=$(yq -r '.constants.ntfy_password // ""' "${config_file}")
                     local loki_url=$(yq -r '.constants.loki_url // ""' "${config_file}")
                     
+                    # Variables específicas de servidor para cada servidor
+                    declare -A server_user server_server server_port
+                    for i in $(seq 1 "${number_of_servers}"); do
+                        server_user[${i}]=$(yq -r ".constants.user_${i} // \"\"" "${config_file}")
+                        server_server[${i}]=$(yq -r ".constants.server_${i} // \"\"" "${config_file}")
+                        server_port[${i}]=$(yq -r ".constants.port_${i} // \"\"" "${config_file}")
+                    done
+                    
                     # Restore project-specific constants
                     [[ -n "${project}" && "${project}" != "null" ]] && yq -i ".constants.project = \"${project}\"" "${temp_file}"
                     [[ -n "${group}" && "${group}" != "null" ]] && yq -i ".constants.group = \"${group}\"" "${temp_file}"
@@ -621,15 +629,11 @@ function borg_update_templates() {
                     [[ -n "${ntfy_password}" && "${ntfy_password}" != "null" ]] && yq -i ".constants.ntfy_password = \"${ntfy_password}\"" "${temp_file}"
                     [[ -n "${loki_url}" && "${loki_url}" != "null" ]] && yq -i ".constants.loki_url = \"${loki_url}\"" "${temp_file}"
                     
-                    # Copy server configuration from current config
+                    # Restore server-specific constants
                     for i in $(seq 1 "${number_of_servers}"); do
-                        local user=$(yq -r ".constants.user_${i} // \"\"" "${config_file}")
-                        local server=$(yq -r ".constants.server_${i} // \"\"" "${config_file}")
-                        local port=$(yq -r ".constants.port_${i} // \"\"" "${config_file}")
-                        
-                        [[ -n "${user}" && "${user}" != "null" ]] && yq -i ".constants.user_${i} = \"${user}\"" "${temp_file}"
-                        [[ -n "${server}" && "${server}" != "null" ]] && yq -i ".constants.server_${i} = \"${server}\"" "${temp_file}"
-                        [[ -n "${port}" && "${port}" != "null" ]] && yq -i ".constants.port_${i} = \"${port}\"" "${temp_file}"
+                        [[ -n "${server_user[${i}]}" && "${server_user[${i}]}" != "null" ]] && yq -i ".constants.user_${i} = \"${server_user[${i}]}\"" "${temp_file}"
+                        [[ -n "${server_server[${i}]}" && "${server_server[${i}]}" != "null" ]] && yq -i ".constants.server_${i} = \"${server_server[${i}]}\"" "${temp_file}"
+                        [[ -n "${server_port[${i}]}" && "${server_port[${i}]}" != "null" ]] && yq -i ".constants.port_${i} = \"${server_port[${i}]}\"" "${temp_file}"
                         
                         # Update repositories section
                         if [[ -n "${user}" && -n "${server}" && -n "${port}" ]]; then
@@ -643,6 +647,22 @@ function borg_update_templates() {
                     
                     log_event "info" "Updated ${config_name} with changes from ${template_name}" "false"
                     display --indent 6 --text "- Update ${config_name}" --result "DONE" --color GREEN
+                    
+                    # Test the updated configuration
+                    display --indent 6 --text "- Testing updated configuration"
+                    
+                    if borgmatic --config "${config_file}" --list --dry-run > /dev/null 2>&1; then
+                        
+                        display --indent 6 --text "- Configuration test" --result "OK" --color GREEN
+                        log_event "info" "Configuration test passed for ${config_name}" "false"
+                    
+                    else
+
+                        display --indent 6 --text "- Configuration test" --result "FAIL" --color RED
+                        log_event "error" "Configuration test failed for ${config_name}" "false"
+                        send_notification "${SERVER_NAME}" "Configuration test failed for ${config_name}" "alert"
+                    
+                    fi
                     
                     updated="true"
                     ((updated_count++))
