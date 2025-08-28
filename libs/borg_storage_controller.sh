@@ -756,17 +756,19 @@ function borg_update_templates() {
                     [[ -n "${server_user[${i}]}" && "${server_user[${i}]}" != "null" ]] && yq -i ".constants.user_${i} = \"${server_user[${i}]}\"" "${temp_file}"
                     [[ -n "${server_server[${i}]}" && "${server_server[${i}]}" != "null" ]] && yq -i ".constants.server_${i} = \"${server_server[${i}]}\"" "${temp_file}"
                     [[ -n "${server_port[${i}]}" && "${server_port[${i}]}" != "null" ]] && yq -i ".constants.port_${i} = \"${server_port[${i}]}\"" "${temp_file}"
-                    
-                    # Update repositories section
+                done
+                
+                # Remove all existing repositories
+                yq -i 'del(.repositories)' "${temp_file}"
+                
+                # Initialize repositories as empty array
+                yq -i '.repositories = []' "${temp_file}"
+                
+                # Add new repository entries with real values
+                for i in $(seq 1 "${number_of_servers}"); do
                     if [[ -n "${server_user[${i}]}" && -n "${server_server[${i}]}" && -n "${server_port[${i}]}" ]]; then
-                        
-                        # Delete existing repository with this label
-                        yq -i "del(.repositories[] | select(.label == \"storage-${server_user[${i}]}\"))" "${temp_file}"
-                        
-                        # Add new repository entry as a proper map
                         yq -i ".repositories += [{\"path\": \"ssh://${server_user[${i}]}@${server_server[${i}]}:${server_port[${i}]}/./applications/${group}/${hostname}/projects-online/site/${project}\", \"label\": \"storage-${server_user[${i}]}\"}]" "${temp_file}"
                     fi
-
                 done
                 
                 # Move updated file to final location
@@ -780,52 +782,72 @@ function borg_update_templates() {
 
                 # 1. Validate YAML syntax
                 if yq eval '.' "${config_file}" > /dev/null 2>&1; then
-                    display --indent 8 --text "YAML syntax test: OK" --tcolor GREEN
+
+                    # Log
+                    display --indent 8 --text "YAML syntax test: OK" --tcolor WHITE
                     log_event "info" "YAML syntax test passed for ${config_name}" "false"
                     
                     # 2. Test SSH connectivity to each server
                     local ssh_test_passed=true
                     for i in $(seq 1 "${number_of_servers}"); do
+
                         display --indent 8 --text "Testing SSH connection to ${server_server[${i}]} (port ${server_port[${i}]})"
                         
                         if ssh -o ConnectTimeout=10 -o BatchMode=yes -p "${server_port[${i}]}" "${server_user[${i}]}@${server_server[${i}]}" "exit"; then
-                            display --indent 10 --text "Connection to ${server_server[${i}]} OK" --tcolor GREEN
+                            display --indent 8 --text "Connection to ${server_server[${i}]} OK" --tcolor GREEN
                             log_event "info" "Successfully connected to ${server_server[${i}]}:${server_port[${i}]}" "false"
                         else
-                            display --indent 10 --text "Connection to ${server_server[${i}]} FAILED" --tcolor RED
+                            display --indent 8 --text "Connection to ${server_server[${i}]} FAILED" --tcolor RED
                             log_event "error" "Cannot connect to ${server_server[${i}]}:${server_port[${i}]}" "false"
                             ssh_test_passed=false
                         fi
+                        
                     done
                     
                     # 3. Only if SSH tests pass, try borgmatic test (as warning if it fails)
                     if [[ "${ssh_test_passed}" == "true" ]]; then
+
                         if borgmatic --config "${config_file}" --list --dry-run > /dev/null 2>&1; then
+
                             display --indent 8 --text "Borgmatic test: OK" --tcolor GREEN
                             log_event "info" "Borgmatic test passed for ${config_name}" "false"
+
                         else
+
                             display --indent 8 --text "Borgmatic test: WARNING (expected if repository doesn't exist)" --tcolor YELLOW
                             log_event "warning" "Borgmatic test failed for ${config_name}, but this is expected if repository doesn't exist yet" "false"
+                        
                         fi
+
                     else
+
                         display --indent 8 --text "Skipping borgmatic test due to SSH connection failures" --tcolor YELLOW
+
                     fi
                     
                 else
+                    # Log
                     display --indent 8 --text "YAML syntax test: FAIL" --tcolor RED
                     log_event "error" "YAML syntax test failed for ${config_name}" "false"
                     send_notification "${SERVER_NAME}" "YAML syntax test failed for ${config_name}" "alert"
+
                 fi
                 
                 updated="true"
                 ((updated_count++))
+
             else
+
                 log_event "info" "Skipped update for ${config_name}" "false"
                 display --indent 6 --text "- Update ${config_name}" --result "SKIPPED" --color YELLOW
                 ((skipped_count++))
+
             fi
+
         else
+
             log_event "info" "No differences found between ${template_name} and ${config_name}" "false"
+            
         fi
         
         [[ "${updated}" == "false" ]] && ((skipped_count++))
