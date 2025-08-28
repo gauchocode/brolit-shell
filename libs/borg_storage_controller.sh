@@ -35,8 +35,10 @@ function umount_storage_box() {
   is_mounted=$(mount -v | grep "storage-box" > /dev/null; echo "$?")
 
   if [[ ${is_mounted} -eq 0 ]]; then
-        log_subsection "Desmontando storage-box"
-        umount ${directory}
+
+        log_subsection "Umounting storage-box"
+        umount "${directory}"
+
   fi
 
 }
@@ -90,8 +92,10 @@ function mount_storage_box() {
   is_mounted=$(mount -v | grep "storage-box" > /dev/null; echo "$?")
 
   if [[ ${is_mounted} -eq 1 ]]; then
-      log_subsection "Montando storage-box"
-      sshfs -o default_permissions -p ${BACKUP_BORG_PORT} ${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:/home/applications ${directory}
+
+      log_subsection "Mounting storage-box"
+      sshfs -o default_permissions -p "${BACKUP_BORG_PORT}" "${BACKUP_BORG_USER}"@"${BACKUP_BORG_SERVER}":/home/applications "${directory}"
+
   fi
 
 }
@@ -129,11 +133,15 @@ function restore_backup_with_borg() {
     local chosen_server=$(whiptail --title "BACKUP SELECTION" --menu "Choose a server to work with" 20 78 10 $(for x in ${remote_server_list}; do echo "${x} [D]"; done) --default-item "${SERVER_NAME}" 3>&1 1>&2 2>&3)
 
     if [[ ${chosen_server} != ""  ]]; then
-        log_subsection "Restore Project Backup"
+
+        log_subsection "Restore Project Backup (Borg)"
         restore_project_with_borg "${chosen_server}"
+
     else
+
         display --indent 6 --text "- Selecting Project Backup" --result "SKIPPED" --color YELLOW
         return 1
+
     fi
 
     umount_storage_box ${storage_box_directory}
@@ -145,6 +153,7 @@ function generate_tar_and_decompress() {
     local chosen_archive="${1}"
     local project_domain="${2}"
     local project_install_type="${3}"
+
     local project_backup_file=${chosen_archive}.tar.bz2
     local destination_dir="${PROJECTS_PATH}/${project_domain}"
     local repo_path="ssh://${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}/./applications/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/site/${chosen_domain}"
@@ -154,6 +163,7 @@ function generate_tar_and_decompress() {
     spinner_start "Verifying backup"
     
     if ! borg check --info "${repo_path}::{chosen_archive}"; then
+
         spinner_stop 1
         log_event "error" "Corrupted backup: ${chosen_archive}" "true"
         display --indent 6 --text "- Backup verification" --result "FAIL" --color RED
@@ -195,7 +205,7 @@ function generate_tar_and_decompress() {
     
     # Exportar el backup verificado
     # borg export-tar --tar-filter='auto' --progress ssh://${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}/./applications/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/site/${chosen_domain}::${chosen_archive} ${BROLIT_MAIN_DIR}/tmp/${project_backup_file}
-    borg export-tar --tar-filter='auto' --progress "${repo_path}::{chosen_archive}" ${BROLIT_MAIN_DIR}/tmp/${project_backup_file}
+    borg export-tar --tar-filter='auto' --progress "${repo_path}::{chosen_archive}" "${BROLIT_MAIN_DIR}/tmp/${project_backup_file}"
 
     exitstatus=$?
 
@@ -274,11 +284,12 @@ function generate_tar_and_decompress() {
 
         sleep 1
 
-        rm -rf ${BROLIT_MAIN_DIR}/tmp/${project_backup_file}
-        [[ $? -eq 0 ]] && echo "Eliminando archivos temporales"
+        rm -rf "${BROLIT_MAIN_DIR}/tmp/${project_backup_file}"
+        [[ $? -eq 0 ]] && echo "Removing tmp files"
+        
     else
 
-        echo "Error al exportar el archivo ${project_backup_file}"
+        echo "Error exporting file: ${project_backup_file}"
         exit 1
 
     fi
@@ -380,21 +391,26 @@ function restore_project_with_borg() {
     local project_name="$(project_get_name_from_domain "${chosen_domain}")"
 
     if [[ ${restore_type} == "project" ]]; then
+
         local destination_dir="${PROJECTS_PATH}/${chosen_domain}/"
+
     elif [[ ${restore_type} == "database" ]]; then
+
         local destination_dir="${PROJECTS_PATH}/${chosen_domain}/"
         mkdir -p "${destination_dir}"
+
     fi
 
     if [[ ${chosen_domain} != "" ]]; then
 
         if [[ ${restore_type} == "project" ]]; then
 
-            arhives="$(borg list --format '{archive}{NL}' ssh://${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}/./applications/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/site/${chosen_domain} | sort -r)"
+            archives="$(borg list --format '{archive}{NL}' ssh://${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}/./applications/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/site/${chosen_domain} | sort -r)"
 
-            chosen_archive="$(whiptail --title "BACKUP SELECTION" --menu "Choose an archive to work with" 20 78 10 $(for x in ${arhives}; do echo "${x} [D]"; done) --default-item "${SERVER_NAME}" 3>&1 1>&2 2>&3)"
+            chosen_archive="$(whiptail --title "BACKUP SELECTION" --menu "Choose an archive to work with" 20 78 10 $(for x in ${archives}; do echo "${x} [D]"; done) --default-item "${SERVER_NAME}" 3>&1 1>&2 2>&3)"
 
             if [[ ${chosen_archive} != "" ]]; then
+
                 display --indent 6 --text "- Selecting Project Backup" --result "DONE" --color GREEN
                 display --indent 8 --text "${chosen_archive}.tar.bz2" --tcolor YELLOW
                 generate_tar_and_decompress "${chosen_archive}" "${chosen_domain}" "${project_install_type}"
@@ -402,9 +418,11 @@ function restore_project_with_borg() {
                 local sql_file=$(find "${storage_box_directory}/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/database/${chosen_domain}" -maxdepth 1 -type f -name '*.sql' -print -quit)
 
                 if [[ -z ${sql_file} ]]; then
+
                     log_event "error" "SQL file not found at remote path: ${storage_box_directory}/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/database/${chosen_domain}" "false"
                     display --indent 6 --text "- SQL file not found at remote path" --result "FAIL" --color RED
                     exit 1
+
                 else
 
                     echo "SQL file path: ${sql_file}"
@@ -412,18 +430,24 @@ function restore_project_with_borg() {
                     cp "${sql_file}" "${destination_dir}/$(basename ${sql_file})"
 
                     if [[ $? -eq 0 ]]; then
+
                         log_event "info" "SQL file restored successfully to ${local_project_path}" "false"
                         display --indent 6 --text "- SQL file restored" --result "DONE" --color GREEN
+
                     else
+
                         log_event "error" "Error restoring SQL file from remote server" "false"
                         display --indent 6 --text "- SQL file restore" --result "FAIL" --color RED
+
                     fi
 
                 fi
 
             else
+
                 display --indent 6 --text "- Selecting Project Backup" --result "SKIPPED" --color YELLOW
                 return 1
+
             fi
 
         elif [[ ${restore_type} == "database" ]]; then
@@ -431,10 +455,13 @@ function restore_project_with_borg() {
             local sql_file=$(find "${storage_box_directory}/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/database/${chosen_domain}" -maxdepth 1 -type f -name '*.sql' -print -quit)
 
             if [[ -z ${sql_file} ]]; then
+
                 log_event "error" "SQL file not found at remote path: ${storage_box_directory}/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/database/${chosen_domain}" "false"
                 display --indent 6 --text "- SQL file not found at remote path" --result "FAIL" --color RED
                 exit 1
+
             else
+
                 echo "SQL file path: ${sql_file}"
                 mkdir -p "${destination_dir}"
                 cp "${sql_file}" "${destination_dir}/$(basename ${sql_file})"
@@ -448,14 +475,15 @@ function restore_project_with_borg() {
                 fi
 
             fi
+
         fi
 
         # If project_install_type == docker, build containers
         if [[ ${project_install_type} == "docker"* ]]; then
+
             log_subsection "Restore Files Backup"
             docker_setup_configuration "${project_name}" "${destination_dir}" "${chosen_domain}"
             docker_compose_build "${destination_dir}/docker-compose.yml"
-
 
             # Project domain configuration (webserver+certbot+DNS)
             https_enable="$(project_update_domain_config "${project_domain_new}" "${project_type}" "${project_install_type}" "${project_port}")"
@@ -475,4 +503,173 @@ function restore_project_with_borg() {
 
     fi 
 
+}
+
+################################################################################
+# Update borgmatic templates
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   Return 0 if ok, 1 on error.
+################################################################################
+
+function borg_update_templates() {
+    
+    local borg_config_dir="/etc/borgmatic.d"
+    local template_dir="${BROLIT_MAIN_DIR}/config/borg"
+    local backup_dir="${borg_config_dir}/backup-$(date +%Y%m%d-%H%M%S)"
+    
+    # Check if borg is enabled
+    if [[ ${BACKUP_BORG_STATUS} != "enabled" ]]; then
+        log_event "info" "Borg backup is not enabled" "false"
+        display --indent 6 --text "- Borg backup not enabled" --result "SKIPPED" --color YELLOW
+        return 0
+    fi
+    
+    # Check if config directory exists
+    if [[ ! -d "${borg_config_dir}" ]]; then
+        log_event "error" "Borg config directory not found: ${borg_config_dir}" "false"
+        display --indent 6 --text "- Borg config directory not found" --result "FAIL" --color RED
+        return 1
+    fi
+    
+    # Find all template files
+    local templates=()
+    while IFS= read -r -d '' file; do
+        templates+=("${file}")
+    done < <(find "${template_dir}" -name "borgmatic.template*.yml" -print0)
+    
+    if [[ ${#templates[@]} -eq 0 ]]; then
+        log_event "error" "No borgmatic template files found in ${template_dir}" "false"
+        display --indent 6 --text "- No template files found" --result "FAIL" --color RED
+        return 1
+    fi
+    
+    # Create backup directory
+    mkdir -p "${backup_dir}"
+    if [[ $? -ne 0 ]]; then
+        log_event "error" "Failed to create backup directory: ${backup_dir}" "false"
+        display --indent 6 --text "- Create backup directory" --result "FAIL" --color RED
+        return 1
+    fi
+    
+    log_event "info" "Backup directory created: ${backup_dir}" "false"
+    display --indent 6 --text "- Create backup directory" --result "DONE" --color GREEN
+    
+    local updated_count=0
+    local skipped_count=0
+    
+    # Process each config file
+    while IFS= read -r -d '' config_file; do
+    
+        local config_name=$(basename "${config_file}")
+        local config_backup="${backup_dir}/${config_name}"
+        local updated="false"
+        
+        # Backup current config
+        cp "${config_file}" "${config_backup}"
+        if [[ $? -ne 0 ]]; then
+            log_event "error" "Failed to backup config: ${config_file}" "false"
+            display --indent 6 --text "- Backup ${config_name}" --result "FAIL" --color RED
+            continue
+        fi
+        
+        # Check each template
+        for template in "${templates[@]}"; do
+
+            local template_name=""
+            template_name=$(basename "${template}")
+            
+            # Skip if template is the same as config (for new installations)
+            [[ "${template_name}" == "${config_name}" ]] && continue
+            
+            # Compare template with config
+            if ! diff -q "${template}" "${config_file}" >/dev/null 2>&1; then
+                log_event "info" "Differences found between ${template_name} and ${config_name}" "false"
+                
+                # Show differences
+                display --indent 6 --text "- Differences in ${config_name}"
+                diff --color=always -u "${template}" "${config_file}" | head -20
+                echo "... (showing first 20 lines of differences)"
+                
+                # Ask user if they want to update
+                if whiptail --title "UPDATE BORGMATIC CONFIG" --yesno "Do you want to update ${config_name} with changes from ${template_name}?" 10 60; then
+                    
+                    # Create temporary file with updated content
+                    local temp_file=$(mktemp)
+                    
+                    # Copy template content
+                    cp "${template}" "${temp_file}"
+                    
+                    # Preserve project-specific constants from current config
+                    local project=$(yq -r '.constants.project // ""' "${config_file}")
+                    local group=$(yq -r '.constants.group // ""' "${config_file}")
+                    local hostname=$(yq -r '.constants.hostname // ""' "${config_file}")
+                    local ntfy_server=$(yq -r '.constants.ntfy_server // ""' "${config_file}")
+                    local ntfy_username=$(yq -r '.constants.ntfy_username // ""' "${config_file}")
+                    local ntfy_password=$(yq -r '.constants.ntfy_password // ""' "${config_file}")
+                    local loki_url=$(yq -r '.constants.loki_url // ""' "${config_file}")
+                    
+                    # Restore project-specific constants
+                    [[ -n "${project}" && "${project}" != "null" ]] && yq -i ".constants.project = \"${project}\"" "${temp_file}"
+                    [[ -n "${group}" && "${group}" != "null" ]] && yq -i ".constants.group = \"${group}\"" "${temp_file}"
+                    [[ -n "${hostname}" && "${hostname}" != "null" ]] && yq -i ".constants.hostname = \"${hostname}\"" "${temp_file}"
+                    [[ -n "${ntfy_server}" && "${ntfy_server}" != "null" ]] && yq -i ".constants.ntfy_server = \"${ntfy_server}\"" "${temp_file}"
+                    [[ -n "${ntfy_username}" && "${ntfy_username}" != "null" ]] && yq -i ".constants.ntfy_username = \"${ntfy_username}\"" "${temp_file}"
+                    [[ -n "${ntfy_password}" && "${ntfy_password}" != "null" ]] && yq -i ".constants.ntfy_password = \"${ntfy_password}\"" "${temp_file}"
+                    [[ -n "${loki_url}" && "${loki_url}" != "null" ]] && yq -i ".constants.loki_url = \"${loki_url}\"" "${temp_file}"
+                    
+                    # Copy server configuration from current config
+                    for i in $(seq 1 "${number_of_servers}"); do
+                        local user=$(yq -r ".constants.user_${i} // \"\"" "${config_file}")
+                        local server=$(yq -r ".constants.server_${i} // \"\"" "${config_file}")
+                        local port=$(yq -r ".constants.port_${i} // \"\"" "${config_file}")
+                        
+                        [[ -n "${user}" && "${user}" != "null" ]] && yq -i ".constants.user_${i} = \"${user}\"" "${temp_file}"
+                        [[ -n "${server}" && "${server}" != "null" ]] && yq -i ".constants.server_${i} = \"${server}\"" "${temp_file}"
+                        [[ -n "${port}" && "${port}" != "null" ]] && yq -i ".constants.port_${i} = \"${port}\"" "${temp_file}"
+                        
+                        # Update repositories section
+                        if [[ -n "${user}" && -n "${server}" && -n "${port}" ]]; then
+                            yq -i "del(.repositories[] | select(.label == \"storage-${user}\"))" "${temp_file}"
+                            yq -i ".repositories += [\"path: ssh://{user_${i}}@{server_${i}}:{port_${i}}/.//applications/{group}/{hostname}/projects-online/site/{project}\", \"label: \\\"storage-{user_${i}}\\\"\"]" "${temp_file}"
+                        fi
+                    done
+                    
+                    # Move updated file to final location
+                    mv "${temp_file}" "${config_file}"
+                    
+                    log_event "info" "Updated ${config_name} with changes from ${template_name}" "false"
+                    display --indent 6 --text "- Update ${config_name}" --result "DONE" --color GREEN
+                    
+                    updated="true"
+                    ((updated_count++))
+                else
+                    log_event "info" "Skipped update for ${config_name}" "false"
+                    display --indent 6 --text "- Update ${config_name}" --result "SKIPPED" --color YELLOW
+                    ((skipped_count++))
+                fi
+            else
+                log_event "info" "No differences found between ${template_name} and ${config_name}" "false"
+            fi
+        done
+        
+        [[ "${updated}" == "false" ]] && ((skipped_count++))
+        
+    done < <(find "${borg_config_dir}" -name "*.yml" -print0)
+    
+    # Show summary
+    display --indent 6 --text "- Update summary"
+    display --indent 8 --text "Updated: ${updated_count}" --tcolor GREEN
+    display --indent 8 --text "Skipped: ${skipped_count}" --tcolor YELLOW
+    
+    if [[ ${updated_count} -gt 0 ]]; then
+        log_event "info" "Successfully updated ${updated_count} borgmatic config files" "false"
+        return 0
+    else
+        log_event "info" "No borgmatic config files were updated" "false"
+        return 0
+    fi
 }

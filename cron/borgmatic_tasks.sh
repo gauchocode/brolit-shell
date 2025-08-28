@@ -15,8 +15,6 @@ BROLIT_MAIN_DIR=$(cd "$(dirname "${BROLIT_MAIN_DIR}")" && pwd)
 
 # Source required libraries
 source "${BROLIT_MAIN_DIR}/libs/commons.sh"
-#source "${BROLIT_MAIN_DIR}/libs/notification_controller.sh"
-#source "${BROLIT_MAIN_DIR}/libs/local/log_and_display_helper.sh"
 
 # Script initialization
 script_init "true"
@@ -28,18 +26,25 @@ readonly HTML_EXCLUDE="html"
 
 # Check required commands are available
 for cmd in borgmatic borg jq yq ssh; do
+
     if ! command -v "$cmd" &> /dev/null; then
+
         log_event "critical" "Required command '$cmd' not found" "true"
         send_notification "${SERVER_NAME}" "Required command '$cmd' not found in borgmatic_tasks.sh" "alert"
         exit 1
+        
     fi
+
 done
 
 # Validate WWW directory exists
 if [ ! -d "${WWW_DIR}" ]; then
+
     log_event "critical" "Directory '${WWW_DIR}' does not exist" "true"
     send_notification "${SERVER_NAME}" "Directory '${WWW_DIR}' does not exist in borgmatic_tasks.sh" "alert"
+
     exit 1
+
 fi
 
 # The sources are already included above
@@ -48,8 +53,6 @@ fi
 BACKUP_BORG_USERS=()
 BACKUP_BORG_SERVERS=()
 BACKUP_BORG_PORTS=()
-
-
 
 function _brolit_configuration_load_ntfy() {
     local server_config_file="${1}"
@@ -72,6 +75,7 @@ function _brolit_configuration_load_ntfy() {
     NOTIFICATION_NTFY_STATUS="$(json_read_field "${server_config_file}" "NOTIFICATIONS.ntfy[].status")"
     
     if [[ ${NOTIFICATION_NTFY_STATUS} == "enabled" ]]; then
+
         # Required fields
         NOTIFICATION_NTFY_USERNAME="$(json_read_field "${server_config_file}" "NOTIFICATIONS.ntfy[].config[].username")"
         [[ -z ${NOTIFICATION_NTFY_USERNAME} ]] && die "Error reading NOTIFICATION_NTFY_USERNAME from server config file."
@@ -84,23 +88,30 @@ function _brolit_configuration_load_ntfy() {
         
         NOTIFICATION_NTFY_TOPIC="$(json_read_field "${server_config_file}" "NOTIFICATIONS.ntfy[].config[].topic")"
         [[ -z ${NOTIFICATION_NTFY_TOPIC} ]] && die "Error reading NOTIFICATION_NTFY_TOPIC from server config file."
+
     fi
     
     export NOTIFICATION_NTFY_STATUS NOTIFICATION_NTFY_USERNAME NOTIFICATION_NTFY_PASSWORD NOTIFICATION_NTFY_SERVER NOTIFICATION_NTFY_TOPIC
 }
 
-# shellcheck source=${BROLIT_MAIN_DIR}/libs/commons.sh
-
 # Backup validation and helper functions
 function validate_ssh_connection() {
-    local user=$1 server=$2 port=$3
+
+    local user=$1 
+    local server=$2 
+    local port=$3
+
     log_event "debug" "Validating SSH connection: user='${user}', server='${server}', port='${port}'" "false"
+
     if ! ssh -o ConnectTimeout=10 -o BatchMode=yes -p "$port" "$user@$server" "exit"; then
         log_event "error" "Cannot connect to ${server}:${port}" "false"
         return 1
     fi
+
     log_event "info" "Successfully connected to ${server}:${port}" "false"
+
     return 0
+
 }
 
 function create_remote_directories() {
@@ -112,8 +123,8 @@ function create_remote_directories() {
     local hostname=$5 
     local project=$6
 
-    ssh -p "$port" "$user@$server" "mkdir -p /home/applications/'$group'/'$hostname'/projects-online/site/'$project'" || return 1
-    ssh -p "$port" "$user@$server" "mkdir -p /home/applications/'$group'/'$hostname'/projects-online/database/'$project'" || return 1
+    ssh -p "${port}" "${user}@${server}" "mkdir -p /home/applications/'${group}'/'${hostname}'/projects-online/site/'${project}'" || return 1
+    ssh -p "${port}" "${user}@${server}" "mkdir -p /home/applications/'${group}'/'${hostname}'/projects-online/database/'${project}'" || return 1
 
     return 0
 }
@@ -128,9 +139,12 @@ function initialize_repository() {
     fi
     
     echo "Initializing new repository"
+
     if ! borgmatic init --encryption=none --config "$config_file"; then
+
         echo "Error: Repository initialization failed"
         return 1
+
     fi
 
     return 0
@@ -139,8 +153,10 @@ function initialize_repository() {
 
 # Load configurations from central sources
 function load_configurations() {
+
     _brolit_configuration_load_backup_borg "/root/.brolit_conf.json"
     _brolit_configuration_load_ntfy "/root/.brolit_conf.json"
+
 }
 
 # Generate Borg configuration file for a project
@@ -154,6 +170,7 @@ function generate_borg_config() {
     
     # Check if config file already exists
     if [ ! -f "${yml_file}" ]; then
+    
         log_event "info" "Config file ${yml_file} does not exist" "false"
         log_event "info" "Generating configuration file..." "false"
         sleep 2
@@ -172,6 +189,7 @@ function generate_borg_config() {
 
         # Add server configuration for each backup server
         for i in $(seq 1 "$number_of_servers"); do
+
             # Add server configuration to constants
             sed -i "/^constants:/a\  port_${i}: ${BACKUP_BORG_PORTS[i-1]}" "${yml_file}"
             sed -i "/^constants:/a\  server_${i}: ${BACKUP_BORG_SERVERS[i-1]}" "${yml_file}"
@@ -179,6 +197,7 @@ function generate_borg_config() {
             
             # Add repository configuration
             sed -i "/^repositories:/a\  - path: ssh://{user_${i}}@{server_${i}}:{port_${i}}/.//applications/{group}/{hostname}/projects-online/site/{project}\n    label: \"storage-{user_${i}}\"" "${yml_file}"
+        
         done
 
         # Add notification configuration
@@ -192,6 +211,7 @@ function generate_borg_config() {
         sleep 3
 
     else
+
         log_event "info" "Config file ${yml_file} already exists." "false"
         sleep 1
 
@@ -216,6 +236,7 @@ function estimate_backup_size() {
     log_event "info" "Estimated backup size for $(basename "${project_path}"): ${size_mb}MB" "false"
     
     echo "${size_mb}"
+
 }
 
 # Check remote disk space based on backup size estimation
@@ -243,8 +264,11 @@ function check_remote_disk_space() {
     
     # Verificar si hay suficiente espacio
     if [[ ${free_space_mb} -lt ${required_space_with_margin} ]]; then
+
         log_event "error" "Espacio insuficiente en ${server}:${mount_point}. Requiere ${required_space_with_margin}MB, disponible ${free_space_mb}MB" "true"
+
         return 1
+
     fi
     
     return 0
@@ -263,6 +287,7 @@ function setup_project_directories() {
     estimated_size=$(estimate_backup_size "${project_path}")
     
     for i in $(seq 1 "$number_of_servers"); do
+
         local user="${BACKUP_BORG_USERS[i-1]}"
         local server="${BACKUP_BORG_SERVERS[i-1]}"
         local port="${BACKUP_BORG_PORTS[i-1]}"
@@ -304,6 +329,7 @@ function setup_project_directories() {
     fi
     
     log_event "info" "All backup servers successfully configured for ${project_name}" "false"
+
     return 0
 }
 
@@ -336,14 +362,16 @@ function generate_config() {
     if [ "${BACKUP_BORG_STATUS}" == "enabled" ]; then
 
         local number_of_servers
+
         number_of_servers=$(jq ".BACKUPS.methods[].borg[].config | length" /root/.brolit_conf.json)
         
         # Process each directory in WWW_DIR
         for folder in "${WWW_DIR}"/*; do
+
             if [ -d "${folder}" ]; then
 
                 local folder_name
-                
+
                 folder_name=$(basename "${folder}")
 
                 local yml_file="${folder_name}.yml"
@@ -363,6 +391,7 @@ function generate_config() {
                     # Initialize repository if needed
                     initialize_repository_if_needed "${BORG_DIR}/${yml_file}" "${folder_name}"
                 fi
+
             fi
 
     	done
