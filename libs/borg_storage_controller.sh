@@ -66,23 +66,23 @@ function mount_storage_box() {
   whip_description=" "
   local runner_options=()
 
-  # Construir dinámicamente las opciones del array runner_options
+  # Dynamically build the runner_options array options
   for ((i=1; i<=number_of_servers; i++)); do
-    index=$(printf "%02d)" "$i")        # Formato "01)", "02)", ...
-    label="STORAGE-BOX $i"                   # Texto asociado
-    runner_options+=("$index" "$label") # Agregar al array
+    index=$(printf "%02d)" "$i")        # Format "01)", "02)", ...
+    label="STORAGE-BOX $i"                   # Associated text
+    runner_options+=("$index" "$label") # Add to array
   done
 
-  # Mostrar el array con whiptail (por ejemplo, usando radiolist)
+  # Display the array with whiptail (e.g., using radiolist)
   chosen_type=$(whiptail --title "$whip_title" \
                        --radiolist "$whip_description" 20 78 10 \
                        "${runner_options[@]}" \
                        3>&1 1>&2 2>&3)
   exitstatus=$?
   if [ $exitstatus = 0 ]; then
-      echo "Elegiste: $chosen_type"
+      echo "You chose: $chosen_type"
   else
-      echo "Cancelaste la selección."
+      echo "You canceled the selection."
   fi
 
   local directory="${1}"
@@ -147,8 +147,55 @@ function generate_tar_and_decompress() {
     local project_install_type="${3}"
     local project_backup_file=${chosen_archive}.tar.bz2
     local destination_dir="${PROJECTS_PATH}/${project_domain}"
+    local repo_path="ssh://${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}/./applications/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/site/${chosen_domain}"
     
-    borg export-tar --tar-filter='auto' --progress ssh://${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}/./applications/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/site/${chosen_domain}::${chosen_archive} ${BROLIT_MAIN_DIR}/tmp/${project_backup_file}
+    # Backup integrity verification
+    display --indent 6 --text "- Verifying backup integrity: ${chosen_archive}"
+    spinner_start "Verifying backup"
+    
+    if ! borg check --info "${repo_path}::{chosen_archive}"; then
+        spinner_stop 1
+        log_event "error" "Corrupted backup: ${chosen_archive}" "true"
+        display --indent 6 --text "- Backup verification" --result "FAIL" --color RED
+        
+        # Detailed error handling with existing notifications
+        case $? in
+            1)
+                error_msg="Warning: The backup has minor issues but might be restorable."
+                send_notification "${SERVER_NAME}" "Warning in backup ${chosen_archive}: minor issues detected" "warning"
+                ;;
+            2)
+                error_msg="Critical error: The backup is corrupted and cannot be restored."
+                send_notification "${SERVER_NAME}" "CRITICAL ERROR: Backup ${chosen_archive} corrupted during restoration" "alert"
+                ;;
+            3)
+                error_msg="Connection error: Could not access the remote repository."
+                send_notification "${SERVER_NAME}" "Connection error to repository for backup ${chosen_archive}" "alert"
+                ;;
+            *)
+                error_msg="Unknown error during backup verification."
+                send_notification "${SERVER_NAME}" "Unknown error in backup verification ${chosen_archive}" "alert"
+                ;;
+        esac
+        
+        whiptail_message "VERIFICATION FAILED" "${error_msg}\n\nDo you want to try another backup?"
+        
+        # Ofrecer opciones al usuario
+        if whiptail --title "OPCIONES" --yesno "¿Desea intentar con otro backup?" 10 60; then
+            return 1  # Permitir al usuario seleccionar otro backup
+        else
+            return 1
+        fi
+    else
+        spinner_stop 0
+        display --indent 6 --text "- Verificación del backup" --result "OK" --color GREEN
+        # Notificación de éxito
+        send_notification "${SERVER_NAME}" "Backup ${chosen_archive} verificado correctamente" "info"
+    fi
+    
+    # Exportar el backup verificado
+    # borg export-tar --tar-filter='auto' --progress ssh://${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}/./applications/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/site/${chosen_domain}::${chosen_archive} ${BROLIT_MAIN_DIR}/tmp/${project_backup_file}
+    borg export-tar --tar-filter='auto' --progress "${repo_path}::{chosen_archive}" ${BROLIT_MAIN_DIR}/tmp/${project_backup_file}
 
     exitstatus=$?
 
@@ -156,7 +203,8 @@ function generate_tar_and_decompress() {
         display --indent 6 --text "- Exporting compressed file from storage box" --result "DONE" --color GREEN
         log_event "info" "${project_backup_file} downloaded" "false"
     else
-        echo "Error al exportar el archivo ${project_backup_file}"
+        display --indent 6 --text "- Exporting compressed file from storage box" --result "FAIL" --color RED
+        log_event "error" "Error trying to export ${project_backup_file}!" "false"
         exit 1
     fi
 
@@ -252,11 +300,64 @@ function restore_project_with_borg() {
 
     local server_hostname="${1}"
     local storage_box_directory="/mnt/storage-box"
+    local repo_path="ssh://${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}/./applications/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/site"
 
     # Create storage-box directory if not exists
     remote_domain_list=$(find "${storage_box_directory}/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/site" -maxdepth 1 -mindepth 1 -type d -exec basename {} \; | sort | uniq)
 
     project_status=$(storage_remote_status_list)
+
+    if [[ $? -ne 0 ]]; then
+        log_event "error" "Failed to choose project status" "false"
+        exit 1
+    fi
+
+    log_event "info" "Selected project status: ${project_status}" "false"
+
+    restore_type=$(storage_remote_type_list)
+
+    if [[ $? -ne 0 ]]; then
+        log_event "error" "Failed to choose restore type" "false"
+        exit 1
+    fi
+
+    log_event "info" "Selected restore type: ${restore_type}" "false"
+
+    chosen_domain="$(whiptail --title "BACKUP SELECTION" --menu "Choose a domain to work with" 20 78 10 $(for x in ${remote_domain_list}; do echo "${x} [D]"; done) --default-item "${SERVER_NAME}" 3>&1 1>&2 2>&3)"
+
+    # Repository integrity verification
+    display --indent 6 --text "- Verifying repository integrity"
+    spinner_start "Verifying repository"
+    
+    if ! borg check --info "${repo_path}/${chosen_domain}"; then
+        spinner_stop 1
+        log_event "error" "Corrupted repository for ${chosen_domain}" "true"
+        display --indent 6 --text "- Repository verification" --result "FAIL" --color RED
+        
+        # Specific Borg error handling with existing notifications
+        case $? in
+            1)
+                error_msg="Warning: The repository has minor issues but might be restorable."
+                send_notification "${SERVER_NAME}" "Warning in repository ${chosen_domain}: minor issues detected" "warning"
+                ;;
+            2)
+                error_msg="Critical error: The repository is corrupted and cannot be restored."
+                send_notification "${SERVER_NAME}" "CRITICAL ERROR: Repository ${chosen_domain} corrupted during restoration" "alert"
+                ;;
+            *)
+                error_msg="Unknown error during repository verification."
+                send_notification "${SERVER_NAME}" "Unknown error in repository verification ${chosen_domain}" "alert"
+                ;;
+        esac
+        
+        whiptail_message "VERIFICATION FAILED" "${error_msg}\n\nDo you want to try another backup or server?"
+        return 1
+    else
+        spinner_stop 0
+        display --indent 6 --text "- Verificación del repositorio" --result "OK" --color GREEN
+        # Notificación de éxito opcional
+        send_notification "${SERVER_NAME}" "Repositorio ${chosen_domain} verificado correctamente" "info"
+    fi
 
     if [[ $? -ne 0 ]]; then
         log_event "error" "Failed to choose project status" "false"
