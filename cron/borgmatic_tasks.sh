@@ -129,28 +129,6 @@ function create_remote_directories() {
     return 0
 }
 
-function initialize_repository() {
-
-    local config_file=$1
-
-    if borgmatic --config "$config_file" info &>/dev/null; then
-        echo "Repository already exists, skipping initialization"
-        return 0
-    fi
-    
-    echo "Initializing new repository"
-
-    if ! borgmatic init --encryption=none --config "$config_file"; then
-
-        echo "Error: Repository initialization failed"
-        return 1
-
-    fi
-
-    return 0
-
-}
-
 # Load configurations from central sources
 function load_configurations() {
 
@@ -350,6 +328,7 @@ function initialize_repository_if_needed() {
     fi
     
     return 0
+    
 }
 
 # Process each folder in the WWW directory
