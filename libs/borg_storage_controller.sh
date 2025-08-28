@@ -562,8 +562,18 @@ function borg_update_templates() {
     local updated_count=0
     local skipped_count=0
     
+    # Find all config files
+    local config_files=()
+    while IFS= read -r -d '' file; do
+        config_files+=("${file}")
+    done < <(find "${borg_config_dir}" -name "*.yml" -print0)
+    
+    # Debug: Show how many files were found
+    display --indent 6 --text "- Found $((${#config_files[@]})) config files in ${borg_config_dir}" --tcolor YELLOW
+    log_event "info" "Found $((${#config_files[@]})) config files in ${borg_config_dir}" "false"
+    
     # Process each config file
-    while IFS= read -r -d '' config_file; do
+    for config_file in "${config_files[@]}"; do
     
         local config_name=$(basename "${config_file}")
         local config_backup="${backup_dir}/${config_name}"
@@ -579,7 +589,7 @@ function borg_update_templates() {
         
         # Use only borgmatic.template-default.yml
         local template_name="borgmatic.template-default.yml"
-
+        
         display --indent 6 --text "- Processing ${config_name}"
         
         # Compare template with config
