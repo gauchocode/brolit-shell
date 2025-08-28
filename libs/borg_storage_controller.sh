@@ -598,7 +598,7 @@ function borg_update_templates() {
         # Compare template with config
         if ! diff -q "${template}" "${config_file}" >/dev/null 2>&1; then
 
-            display --indent 8 --text "- Differences found in ${config_name}" --tcolor YELLOW
+            display --indent 8 --text "Differences found in ${config_name}" --tcolor YELLOW
             log_event "info" "Differences found between ${template_name} and ${config_name}" "false"
             
             # Ask user if they want to update
@@ -640,13 +640,75 @@ function borg_update_templates() {
                 done
                 
                 # Restore project-specific constants
-                [[ -n "${project}" && "${project}" != "null" ]] && yq -i ".constants.project = \"${project}\"" "${temp_file}"
-                [[ -n "${group}" && "${group}" != "null" ]] && yq -i ".constants.group = \"${group}\"" "${temp_file}"
-                [[ -n "${hostname}" && "${hostname}" != "null" ]] && yq -i ".constants.hostname = \"${hostname}\"" "${temp_file}"
-                [[ -n "${ntfy_server}" && "${ntfy_server}" != "null" ]] && yq -i ".constants.ntfy_server = \"${ntfy_server}\"" "${temp_file}"
-                [[ -n "${ntfy_username}" && "${ntfy_username}" != "null" ]] && yq -i ".constants.ntfy_username = \"${ntfy_username}\"" "${temp_file}"
-                [[ -n "${ntfy_password}" && "${ntfy_password}" != "null" ]] && yq -i ".constants.ntfy_password = \"${ntfy_password}\"" "${temp_file}"
-                [[ -n "${loki_url}" && "${loki_url}" != "null" ]] && yq -i ".constants.loki_url = \"${loki_url}\"" "${temp_file}"
+                if [[ -n "${project}" && "${project}" != "null" ]]; then
+                    if yq -i ".constants.project = \"${project}\"" "${temp_file}"; then
+                        display --indent 10 --text "project: ${project}" --tcolor GREEN
+                        log_event "info" "Successfully updated project constant" "false"
+                    else
+                        display --indent 10 --text "project: ${project} [FAIL]" --tcolor RED
+                        log_event "error" "Failed to update project constant" "false"
+                    fi
+                fi
+                
+                if [[ -n "${group}" && "${group}" != "null" ]]; then
+                    if yq -i ".constants.group = \"${group}\"" "${temp_file}"; then
+                        display --indent 10 --text "group: ${group}" --tcolor GREEN
+                        log_event "info" "Successfully updated group constant" "false"
+                    else
+                        display --indent 10 --text "group: ${group} [FAIL]" --tcolor RED
+                        log_event "error" "Failed to update group constant" "false"
+                    fi
+                fi
+                
+                if [[ -n "${hostname}" && "${hostname}" != "null" ]]; then
+                    if yq -i ".constants.hostname = \"${hostname}\"" "${temp_file}"; then
+                        display --indent 10 --text "hostname: ${hostname}" --tcolor GREEN
+                        log_event "info" "Successfully updated hostname constant" "false"
+                    else
+                        display --indent 10 --text "hostname: ${hostname} [FAIL]" --tcolor RED
+                        log_event "error" "Failed to update hostname constant" "false"
+                    fi
+                fi
+                
+                if [[ -n "${ntfy_server}" && "${ntfy_server}" != "null" ]]; then
+                    if yq -i ".constants.ntfy_server = \"${ntfy_server}\"" "${temp_file}"; then
+                        display --indent 10 --text "ntfy_server: ${ntfy_server}" --tcolor GREEN
+                        log_event "info" "Successfully updated ntfy_server constant" "false"
+                    else
+                        display --indent 10 --text "ntfy_server: ${ntfy_server} [FAIL]" --tcolor RED
+                        log_event "error" "Failed to update ntfy_server constant" "false"
+                    fi
+                fi
+                
+                if [[ -n "${ntfy_username}" && "${ntfy_username}" != "null" ]]; then
+                    if yq -i ".constants.ntfy_username = \"${ntfy_username}\"" "${temp_file}"; then
+                        display --indent 10 --text "ntfy_username: ${ntfy_username}" --tcolor GREEN
+                        log_event "info" "Successfully updated ntfy_username constant" "false"
+                    else
+                        display --indent 10 --text "ntfy_username: ${ntfy_username} [FAIL]" --tcolor RED
+                        log_event "error" "Failed to update ntfy_username constant" "false"
+                    fi
+                fi
+                
+                if [[ -n "${ntfy_password}" && "${ntfy_password}" != "null" ]]; then
+                    if yq -i ".constants.ntfy_password = \"${ntfy_password}\"" "${temp_file}"; then
+                        display --indent 10 --text "ntfy_password: [HIDDEN]" --tcolor GREEN
+                        log_event "info" "Successfully updated ntfy_password constant" "false"
+                    else
+                        display --indent 10 --text "ntfy_password: [HIDDEN] [FAIL]" --tcolor RED
+                        log_event "error" "Failed to update ntfy_password constant" "false"
+                    fi
+                fi
+                
+                if [[ -n "${loki_url}" && "${loki_url}" != "null" ]]; then
+                    if yq -i ".constants.loki_url = \"${loki_url}\"" "${temp_file}"; then
+                        display --indent 10 --text "loki_url: ${loki_url}" --tcolor GREEN
+                        log_event "info" "Successfully updated loki_url constant" "false"
+                    else
+                        display --indent 10 --text "loki_url: ${loki_url} [FAIL]" --tcolor RED
+                        log_event "error" "Failed to update loki_url constant" "false"
+                    fi
+                fi
                 
                 # Remove loki section if loki_url is not set
                 if [[ -z "${loki_url}" || "${loki_url}" == "null" ]]; then
@@ -655,7 +717,7 @@ function borg_update_templates() {
                 
                 # Restore server-specific constants
                 for i in $(seq 1 "${number_of_servers}"); do
-                
+
                     [[ -n "${server_user[${i}]}" && "${server_user[${i}]}" != "null" ]] && yq -i ".constants.user_${i} = \"${server_user[${i}]}\"" "${temp_file}"
                     [[ -n "${server_server[${i}]}" && "${server_server[${i}]}" != "null" ]] && yq -i ".constants.server_${i} = \"${server_server[${i}]}\"" "${temp_file}"
                     [[ -n "${server_port[${i}]}" && "${server_port[${i}]}" != "null" ]] && yq -i ".constants.port_${i} = \"${server_port[${i}]}\"" "${temp_file}"
