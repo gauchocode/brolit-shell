@@ -1,7 +1,7 @@
 # BROLIT-SHELL
 
 ## :star2: About the project
-BROLIT-SHELL is a server management tool built on **BASH**, designed to expediently set up a LEMP Stack on Ubuntu servers (versions 20.04, and 22.04). It streamlines the process of automating and restoring backups, deploying PHP projects, and executing various essential IT tasks efficiently.
+BROLIT-SHELL is a server management tool built on **BASH**, designed to expediently set up a LEMP Stack on Ubuntu servers (versions 22.04 and 24.04). It streamlines the process of automating and restoring backups, deploying PHP projects, and executing various essential IT tasks efficiently.
 
 ![ScreenShot](./screenshot.png)
 
@@ -39,7 +39,7 @@ BROLIT-SHELL is a server management tool built on **BASH**, designed to expedien
 
 ### :warning: Supports
 
-**Ubuntu LTS** 20.04 or 22.04
+**Ubuntu LTS** 22.04 or 24.04
 
 | Packages | Versions | BROLIT config |
 | :------------- | :----------: | :----------: |

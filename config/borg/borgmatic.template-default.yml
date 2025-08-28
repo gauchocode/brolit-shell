@@ -1,7 +1,7 @@
 constants:
 
     # Project & Hostname
-    project: domain-example.com             # e.g: gauchocode.com  
+    project: project_domain                 # e.g: gauchocode.com  
     group: group_server                     # e.g: gauchocode-hosts
     hostname: hostname_server               # e.g: gauchocode-docker-host03    
 

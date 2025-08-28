@@ -1,6 +1,6 @@
 # Brolit Shell Test Environment
 
-This Docker environment is designed to test the borgmatic template update functionality in isolation.
+This Docker environment is designed to test the borgmatic template update functionality in isolation. It creates a clean Ubuntu environment with all dependencies installed and mounts the current brolit-shell codebase for testing.
 
 ## Prerequisites
 
@@ -11,10 +11,10 @@ This Docker environment is designed to test the borgmatic template update functi
 
 1. Create the necessary directories:
 ```bash
-mkdir -p tests/test-environment/{config,data}
+mkdir -p tests/test-environment/config
 ```
 
-2. Create a sample brolit configuration:
+2. Create a sample brolit configuration file:
 ```bash
 cat > tests/test-environment/config/brolit_conf.json << 'EOL'
 {
@@ -28,20 +28,32 @@ cat > tests/test-environment/config/brolit_conf.json << 'EOL'
 EOL
 ```
 
-3. Start the environment:
+## Building and Starting the Environment
+
+1. Navigate to the test environment directory:
 ```bash
 cd tests/test-environment
-docker-compose up -d
 ```
+
+2. Build and start the container:
+```bash
+docker-compose up -d --build
+```
+
+This will:
+- Build the Docker image using the Dockerfile
+- Install all required dependencies (borgbackup, borgmatic, yq, jq, etc.)
+- Copy the current brolit-shell codebase into the container
+- Start the container in detached mode
 
 ## Usage
 
-Access the container:
+1. Access the container:
 ```bash
 docker exec -it brolit-test-env bash
 ```
 
-Test the borgmatic template update:
+2. Once inside the container, you can test the borgmatic template update:
 ```bash
 # Navigate to brolit-shell directory
 cd /brolit-shell
@@ -50,8 +62,25 @@ cd /brolit-shell
 bash libs/borg_storage_controller.sh borg_update_templates
 ```
 
+3. You can also test other brolit-shell functionality as needed.
+
 ## Stopping the Environment
 
+1. Stop and remove the container:
 ```bash
 cd tests/test-environment
 docker-compose down
+```
+
+2. To completely remove the container and image:
+```bash
+cd tests/test-environment
+docker-compose down --rmi all
+```
+
+## Notes
+
+- The environment always uses the current local version of brolit-shell
+- Configuration files are mounted from the host, so changes to config/brolit_conf.json will be reflected in the container
+- The container runs as root with password 'root'
+- SSH is available on port 2222 (mapped to localhost:2222)
