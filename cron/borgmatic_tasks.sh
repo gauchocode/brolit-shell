@@ -123,11 +123,184 @@ function initialize_repository() {
     return 0
 }
 
+# Load configurations from central sources
+function load_configurations() {
+    _brolit_configuration_load_backup_borg "/root/.brolit_conf.json"
+    _brolit_configuration_load_ntfy "/root/.brolit_conf.json"
+}
+
+# Generate Borg configuration file for a project
+function generate_borg_config() {
+    local project_name="${1}"
+    local yml_file="${BORG_DIR}/${project_name}.yml"
+    local project_install_type
+    
+    project_install_type="$(project_get_install_type "/var/www/${project_name}")"
+    
+    # Check if config file already exists
+    if [ ! -f "${yml_file}" ]; then
+        log_event "info" "Config file ${yml_file} does not exist" "false"
+        log_event "info" "Generating configuration file..." "false"
+        sleep 2
+
+        if [ "${project_install_type}" == "default" ]; then
+            echo "---- Project it's not dockerized, write the database name manually!! ----"
+            cp "${BROLIT_MAIN_DIR}/config/borg/borgmatic.template-default.yml" "${yml_file}"
+        else
+            cp "${BROLIT_MAIN_DIR}/config/borg/borgmatic.template.yml" "${yml_file}"
+        fi
+
+        # Update configuration file with project-specific values
+        PROJECT="${project_name}" yq -i '.constants.project = strenv(PROJECT)' "${yml_file}"
+        GROUP="${BACKUP_BORG_GROUP}" yq -i '.constants.group = strenv(GROUP)' "${yml_file}"
+        HOST="${HOSTNAME}" yq -i '.constants.hostname = strenv(HOST)' "${yml_file}"
+
+        # Add server configuration for each backup server
+        for i in $(seq 1 "$number_of_servers"); do
+            # Add server configuration to constants
+            sed -i "/^constants:/a\  port_${i}: ${BACKUP_BORG_PORTS[i-1]}" "${yml_file}"
+            sed -i "/^constants:/a\  server_${i}: ${BACKUP_BORG_SERVERS[i-1]}" "${yml_file}"
+            sed -i "/^constants:/a\  user_${i}: ${BACKUP_BORG_USERS[i-1]}" "${yml_file}"
+            
+            # Add repository configuration
+            sed -i "/^repositories:/a\  - path: ssh://{user_${i}}@{server_${i}}:{port_${i}}/.//applications/{group}/{hostname}/projects-online/site/{project}\n    label: \"storage-{user_${i}}\"" "${yml_file}"
+        done
+
+        # Add notification configuration
+        NTFY_USER="${NOTIFICATION_NTFY_USERNAME}" yq -i '.constants.ntfy_username = strenv(NTFY_USER)' "${yml_file}"
+        NTFY_PASS="${NOTIFICATION_NTFY_PASSWORD}" yq -i '.constants.ntfy_password = strenv(NTFY_PASS)' "${yml_file}"
+        NTFY_SERVER="${NOTIFICATION_NTFY_SERVER}" yq -i '.constants.ntfy_server = strenv(NTFY_SERVER)' "${yml_file}"
+        NTFY_TOPIC="${NOTIFICATION_NTFY_TOPIC}" yq -i '.constants.ntfy_topic = strenv(NTFY_TOPIC)' "${yml_file}"
+
+        log_event "info" "Config file ${yml_file} generated." "false"
+        echo "Please wait 3 seconds..."
+        sleep 3
+    else
+        log_event "info" "Config file ${yml_file} already exists." "false"
+        sleep 1
+    fi
+}
+
+# Estimate backup size
+function estimate_backup_size() {
+    local project_path="${1}"
+    local size_kb
+    local size_mb
+    
+    # Estimar tamaño del proyecto
+    size_kb=$(du -sk "${project_path}" | awk '{print $1}')
+    size_mb=$((size_kb / 1024))
+    
+    # Añadir margen del 20% para compresión y metadatos
+    size_mb=$(((size_mb * 120) / 100))
+    
+    log_event "info" "Estimated backup size for $(basename "${project_path}"): ${size_mb}MB" "false"
+    
+    echo "${size_mb}"
+}
+
+# Check remote disk space based on backup size estimation
+function check_remote_disk_space() {
+    local user="${1}"
+    local server="${2}"
+    local port="${3}"
+    local required_space_mb="${4}"  # tamaño estimado del backup
+    local safety_margin="${5:-20}"  # margen de seguridad en porcentaje
+    local mount_point="${6:-/}"
+    
+    # Calcular espacio requerido con margen
+    local required_space_with_margin
+    required_space_with_margin=$(((required_space_mb * (100 + safety_margin)) / 100))
+    
+    # Obtener espacio libre en disco remoto
+    local free_space_kb
+    free_space_kb=$(ssh -p "${port}" "${user}@${server}" "df -k '${mount_point}' | tail -1 | awk '{print \$4}'")
+    
+    # Convertir KB a MB
+    local free_space_mb=$((free_space_kb / 1024))
+    
+    log_event "info" "Espacio libre en ${server}:${mount_point}: ${free_space_mb}MB, Requerido con margen: ${required_space_with_margin}MB" "false"
+    
+    # Verificar si hay suficiente espacio
+    if [[ ${free_space_mb} -lt ${required_space_with_margin} ]]; then
+        log_event "error" "Espacio insuficiente en ${server}:${mount_point}. Requiere ${required_space_with_margin}MB, disponible ${free_space_mb}MB" "true"
+        return 1
+    fi
+    
+    return 0
+}
+
+function setup_project_directories() {
+    local project_name="${1}"
+    local project_path="${WWW_DIR}/${project_name}"
+    local successful_servers=0
+    local total_servers=0
+    
+    # Estimar tamaño del backup
+    local estimated_size
+    estimated_size=$(estimate_backup_size "${project_path}")
+    
+    for i in $(seq 1 "$number_of_servers"); do
+        local user="${BACKUP_BORG_USERS[i-1]}"
+        local server="${BACKUP_BORG_SERVERS[i-1]}"
+        local port="${BACKUP_BORG_PORTS[i-1]}"
+        
+        ((total_servers++))
+        
+        log_event "info" "Validating connection to ${server}:p${port}" "false"
+        if ! validate_ssh_connection "${user}" "${server}" "${port}"; then
+            log_event "error" "Failed to connect to backup server ${server}" "true"
+            send_notification "${SERVER_NAME}" "Critical: Failed to connect to backup server ${server} for ${project_name}" "alert"
+            continue
+        fi
+        
+        log_event "info" "Checking disk space on ${server}" "false"
+        if ! check_remote_disk_space "${user}" "${server}" "${port}" "${estimated_size}" "20"; then
+            log_event "error" "Insufficient disk space on backup server ${server}" "true"
+            send_notification "${SERVER_NAME}" "Critical: Insufficient disk space on backup server ${server} for ${project_name}" "alert"
+            continue
+        fi
+        
+        log_event "info" "Creating remote directories on ${server}" "false"
+        if ! create_remote_directories "${user}" "${server}" "${port}" "${BACKUP_BORG_GROUP}" "${HOSTNAME}" "${project_name}"; then
+            log_event "error" "Failed to create directories on backup server ${server}" "true"
+            send_notification "${SERVER_NAME}" "Critical: Failed to create directories on backup server ${server} for ${project_name}" "alert"
+            continue
+        fi
+        
+        ((successful_servers++))
+    done
+    
+    # Si no todos los servidores fueron exitosos, es un error crítico
+    if [[ ${successful_servers} -lt ${total_servers} ]]; then
+        log_event "error" "Not all backup servers were successfully configured for ${project_name}. Success: ${successful_servers}/${total_servers}" "true"
+        send_notification "${SERVER_NAME}" "Critical: Incomplete backup server configuration for ${project_name}. Success: ${successful_servers}/${total_servers}" "alert"
+        return 1
+    fi
+    
+    log_event "info" "All backup servers successfully configured for ${project_name}" "false"
+    return 0
+}
+
+# Initialize repository if needed
+function initialize_repository_if_needed() {
+    local config_file="${1}"
+    local project_name="${2}"
+    
+    log_event "info" "Initializing repository for ${project_name}" "false"
+    if ! initialize_repository "${config_file}"; then
+        log_event "error" "Failed to initialize repository for ${project_name}" "true"
+        send_notification "${SERVER_NAME}" "Critical: Failed to initialize repository for ${project_name}" "alert"
+        return 1
+    fi
+    
+    return 0
+}
+
 # Process each folder in the WWW directory
 function generate_config() {
     # Load configuration
-    _brolit_configuration_load_backup_borg "/root/.brolit_conf.json"
-    _brolit_configuration_load_ntfy "/root/.brolit_conf.json"
+    load_configurations
 
     # Check if Borg backup is enabled
     if [ "${BACKUP_BORG_STATUS}" == "enabled" ]; then
@@ -140,8 +313,6 @@ function generate_config() {
                 local folder_name
                 folder_name=$(basename "${folder}")
                 local yml_file="${folder_name}.yml"
-                local project_install_type
-                project_install_type="$(project_get_install_type "/var/www/${folder_name}")"
 
                 # Skip HTML directory
                 if [ "${folder_name}" == "${HTML_EXCLUDE}" ]; then
@@ -150,136 +321,14 @@ function generate_config() {
 
                 log_event "info" "Processing project: ${folder_name}" "false"
 
-                # Check if config file already exists
-                if [ ! -f "${BORG_DIR}/${yml_file}" ]; then
-                    log_event "info" "Config file ${yml_file} does not exist" "false"
-                    log_event "info" "Generating configuration file..." "false"
-                    sleep 2
-
-                    if [ "${project_install_type}" == "default" ]; then
-                        echo "---- Project it's not dockerized, write the database name manually!! ----"
-                        cp "${BROLIT_MAIN_DIR}/config/borg/borgmatic.template-default.yml" "${BORG_DIR}/${yml_file}"
-                    else
-                        cp "${BROLIT_MAIN_DIR}/config/borg/borgmatic.template.yml" "${BORG_DIR}/${yml_file}"
-                    fi
-
-                    # Update configuration file with project-specific values
-                    PROJECT="${folder_name}" yq -i '.constants.project = strenv(PROJECT)' "${BORG_DIR}/${yml_file}"
-                    GROUP="${BACKUP_BORG_GROUP}" yq -i '.constants.group = strenv(GROUP)' "${BORG_DIR}/${yml_file}"
-                    HOST="${HOSTNAME}" yq -i '.constants.hostname = strenv(HOST)' "${BORG_DIR}/${yml_file}"
-
-                    # Add server configuration for each backup server
-                    for i in $(seq 1 "$number_of_servers"); do
-                        # Add server configuration to constants
-                        sed -i "/^constants:/a\  port_${i}: ${BACKUP_BORG_PORTS[i-1]}" "${BORG_DIR}/${yml_file}"
-                        sed -i "/^constants:/a\  server_${i}: ${BACKUP_BORG_SERVERS[i-1]}" "${BORG_DIR}/${yml_file}"
-                        sed -i "/^constants:/a\  user_${i}: ${BACKUP_BORG_USERS[i-1]}" "${BORG_DIR}/${yml_file}"
-                        
-                        # Add repository configuration
-                        sed -i "/^repositories:/a\  - path: ssh://{user_${i}}@{server_${i}}:{port_${i}}/.//applications/{group}/{hostname}/projects-online/site/{project}\n    label: \"storage-{user_${i}}\"" "${BORG_DIR}/${yml_file}"
-                    done
-
-                    # Add notification configuration
-                    NTFY_USER="${NOTIFICATION_NTFY_USERNAME}" yq -i '.constants.ntfy_username = strenv(NTFY_USER)' "${BORG_DIR}/${yml_file}"
-                    NTFY_PASS="${NOTIFICATION_NTFY_PASSWORD}" yq -i '.constants.ntfy_password = strenv(NTFY_PASS)' "${BORG_DIR}/${yml_file}"
-                    NTFY_SERVER="${NOTIFICATION_NTFY_SERVER}" yq -i '.constants.ntfy_server = strenv(NTFY_SERVER)' "${BORG_DIR}/${yml_file}"
-                    NTFY_TOPIC="${NOTIFICATION_NTFY_TOPIC}" yq -i '.constants.ntfy_topic = strenv(NTFY_TOPIC)' "${BORG_DIR}/${yml_file}"
-
-                    log_event "info" "Config file ${yml_file} generated." "false"
-                    echo "Please wait 3 seconds..."
-                    sleep 3
-                else
-                    log_event "info" "Config file ${yml_file} already exists." "false"
-                    sleep 1
-                fi	
-                    
-                echo "Validating and preparing backup servers"
-                local server_reachable=0
-                for i in $(seq 1 "$number_of_servers"); do
-                    log_event "info" "Validating connection to ${BACKUP_BORG_SERVERS[i-1]}:p${BACKUP_BORG_PORTS[i-1]}" "false"
-                    if ! validate_ssh_connection "${BACKUP_BORG_USERS[i-1]}" "${BACKUP_BORG_SERVERS[i-1]}" "${BACKUP_BORG_PORTS[i-1]}"; then
-                        log_event "warning" "Skipping server ${BACKUP_BORG_SERVERS[i-1]} due to connection issues" "false"
-                        continue
-                    fi
-                    
-                    log_event "info" "Creating remote directories on ${BACKUP_BORG_SERVERS[i-1]}" "false"
-                    if ! create_remote_directories "${BACKUP_BORG_USERS[i-1]}" "${BACKUP_BORG_SERVERS[i-1]}" "${BACKUP_BORG_PORTS[i-1]}" "${BACKUP_BORG_GROUP}" "${HOSTNAME}" "${folder_name}"; then
-                        log_event "warning" "Failed to create directories on ${BACKUP_BORG_SERVERS[i-1]}" "false"
-                        continue
-                    fi
-                    ((server_reachable++))
-                done
-
-                if [ "$server_reachable" -eq 0 ]; then
-                    log_event "error" "No reachable backup servers for ${folder_name}" "true"
-                    send_notification "${SERVER_NAME}" "No reachable backup servers for ${folder_name}" "alert"
-                    continue
+                # Generate Borg configuration
+                generate_borg_config "${folder_name}"
+                
+                # Setup project directories
+                if setup_project_directories "${folder_name}"; then
+                    # Initialize repository if needed
+                    initialize_repository_if_needed "${BORG_DIR}/${yml_file}" "${folder_name}"
                 fi
-
-                log_event "info" "Initializing repository for ${folder_name}" "false"
-                if ! initialize_repository "${BORG_DIR}/${yml_file}"; then
-                    log_event "error" "Failed to initialize repository for ${folder_name}" "true"
-                    send_notification "${SERVER_NAME}" "Failed to initialize repository for ${folder_name}" "alert"
-                    continue
-                fi
-                #if [[ -f "${directorio}/${nombre_carpeta}/.env" ]]; then
-
-                #    export $(grep -v '^#' "${directorio}/${nombre_carpeta}/.env" | xargs)
-
-                #    mysql_database="${MYSQL_DATABASE}"
-                #    container_name="${PROJECT_NAME}_mysql"
-                #    mysql_user="${MYSQL_USER}"
-                #    mysql_password="${MYSQL_PASSWORD}"
-
-                #else
-                #    echo "Error: .env file not found in ${directorio}/${nombre_carpeta}/."
-                #    return 1
-
-                #fi
-
-                ## Generate timestamp for the SQL dump file
-                #now=$(date +"%Y-%m-%d")
-                #    
-                ## dump
-                #dump_file="/var/www/${nombre_carpeta}/${mysql_database}_database_${now}.sql"
-                #echo "Generating database $dump_file..."
-                #docker exec "$container_name" sh -c "mysqldump -u$mysql_user -p$mysql_password $mysql_database > /tmp/database_dump.sql"
-                #docker cp "$container_name:/tmp/database_dump.sql" "$dump_file"
-
-                #if [ -f "$dump_file" ]; then
-                #     echo "Importing database from $dump_file..."
-                #    docker exec -i "$container_name" mysql -u"$mysql_user" -p"$mysql_password" "$mysql_database" < "$dump_file"
-                #    if [ $? -eq 0 ]; then
-                #        echo "Database import completed successfully."
-                #    else
-                #        echo "Error during database import."
-                #    fi
-                #fi
-
-                #for i in $(eval echo {1..$number_of_servers})
-                #do
-                #    scp -P ${BACKUP_BORG_PORTS[i]} "$dump_file" ${BACKUP_BORG_USERS[i]}@${BACKUP_BORG_SERVERS[i]}:/home/applications/"$BACKUP_BORG_GROUP"/"$HOSTNAME"/projects-online/database/"$nombre_carpeta"
-                #done 
-
-
-                #if [ $? -eq 0 ]; then
-                #    echo "Dump uploaded successfully."
-                #    if [ -f "$dump_file" ]; then
-                #        echo "Deleting dump file: $dump_file"
-                #        rm "$dump_file"
-                #        if [ $? -eq 0 ]; then
-                #            echo "Dump file deleted successfully."
-                #        else
-                #            echo "Error deleting dump file."
-                #        fi
-                #    else
-                #        echo "Error: Dump file does not exist."
-                #    fi
-                #else
-                #    echo "Error uploading dump to remote server."
-                #fi
-            else
-                echo "Error: Dump file not generated."
             fi
     	done
     else
