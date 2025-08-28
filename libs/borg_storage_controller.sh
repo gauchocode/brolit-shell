@@ -510,6 +510,39 @@ function restore_project_with_borg() {
 }
 
 ################################################################################
+# Initialize Borg repository if needed
+#
+# Arguments:
+#   ${1} = ${config_file} - Path to borgmatic config file
+#
+# Outputs:
+#   Return 0 if ok, 1 on error.
+################################################################################
+
+function initialize_repository() {
+
+    local config_file=$1
+
+    if borgmatic --config "$config_file" info &>/dev/null; then
+        log_event "info" "Repository already exists, skipping initialization" "false"
+        return 0
+    fi
+    
+    log_event "info" "Initializing new repository" "false"
+    display --indent 6 --text "- Initializing Borg repository" --result "RUNNING" --color YELLOW
+
+    if ! borgmatic init --encryption=none --config "$config_file"; then
+        log_event "error" "Repository initialization failed" "true"
+        display --indent 6 --text "- Repository initialization" --result "FAIL" --color RED
+        return 1
+    fi
+
+    display --indent 6 --text "- Repository initialization" --result "DONE" --color GREEN
+    return 0
+    
+}
+
+################################################################################
 # Update borgmatic templates
 #
 # Arguments:
@@ -626,6 +659,7 @@ function borg_update_templates() {
                 local ntfy_username=$(yq -r '.NOTIFICATIONS.ntfy[].config[].username // ""' /root/.brolit_conf.json)
                 local ntfy_password=$(yq -r '.NOTIFICATIONS.ntfy[].config[].password // ""' /root/.brolit_conf.json)
                 local ntfy_server=$(yq -r '.NOTIFICATIONS.ntfy[].config[].server // ""' /root/.brolit_conf.json)
+                local ntfy_topic=$(yq -r '.NOTIFICATIONS.ntfy[].config[].topic // ""' /root/.brolit_conf.json)
                 local loki_url=$(yq -r '.constants.loki_url // ""' "${config_file}")
                 
                 # Usar hostname del sistema
@@ -732,6 +766,16 @@ function borg_update_templates() {
                     else
                         display --indent 10 --text "ntfy_password: [HIDDEN] [FAIL]" --tcolor RED
                         log_event "error" "Failed to update ntfy_password constant" "false"
+                    fi
+                fi
+                
+                if [[ -n "${ntfy_topic}" && "${ntfy_topic}" != "null" ]]; then
+                    if yq -i ".constants.ntfy_topic = \"${ntfy_topic}\"" "${temp_file}"; then
+                        display --indent 10 --text "ntfy_topic: ${ntfy_topic}" --tcolor GREEN
+                        log_event "info" "Successfully updated ntfy_topic constant" "false"
+                    else
+                        display --indent 10 --text "ntfy_topic: ${ntfy_topic} [FAIL]" --tcolor RED
+                        log_event "error" "Failed to update ntfy_topic constant" "false"
                     fi
                 fi
                 

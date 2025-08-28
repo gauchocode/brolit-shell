@@ -1,9 +1,9 @@
 constants:
 
     # Project & Hostname
-    project: domain-example.com             # e.g: gauchocode.com  
+    project: project_domain                 # e.g: gauchocode.com  
     group: group_server                     # e.g: gauchocode-hosts
-    hostname: hostname_server               # e.g: gauchocode-docker-host03    
+    hostname: hostname_server               # e.g: gauchocode-docker-host03     
 
     # Servers
     user_1: user_1
@@ -18,7 +18,7 @@ constants:
     ntfy_server: ntfy_server
     ntfy_username: ntfy_username
     ntfy_password: ntfy_password
-    ntfy_topic: gauchocode_notifications
+    ntfy_topic: ntfy_topic
 
     # Loki
     loki_url: loki_url
@@ -174,7 +174,7 @@ on_error:
 ntfy:
     # The topic to publish to. See https://ntfy.sh/docs/publish/
     # for details.
-    topic: backups_gauchocode
+    topic: "{ntfy_topic}"
 
     # The address of your self-hosted ntfy.sh instance.
     server:  "{ntfy_server}"

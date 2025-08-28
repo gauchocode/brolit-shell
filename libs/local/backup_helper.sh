@@ -955,15 +955,10 @@ function backup_project_with_borg() {
 
   local project_domain="${1}"
   #local backup_type="${2}"
+
   local config_directory="/etc/borgmatic.d/${project_domain}.yml"
 
   local got_error=0
-
-  #local db_stage
-  #local db_name
-  #local db_engine
-  #local backup_file
-  #local project_type
 
   display --indent 6 --text "- Project backup with Borg" --result "RUNNING" --color YELLOW
 
@@ -976,19 +971,32 @@ function backup_project_with_borg() {
   if [[ ${project_install_type} == "docker"* && ${project_type} != "html" ]]; then
 
     borg_backup_database "${project_domain}"
+    
+    # Initialize repository if needed
+    if ! initialize_repository "${config_directory}"; then
+        log_event "error" "Failed to initialize repository for ${project_domain}" "true"
+        display --indent 6 --text "- Repository initialization" --result "FAIL" --color RED
+        return 1
+    fi
+    
     # Esto ya hace backup de todo.
     borgmatic --verbosity 1 --config "${config_directory}"
-    if [ $? -eq 0 ]; then
+    if [[ $? -eq 0 ]]; then
+    
       display --indent 6 --text "- Project backup with Borg" --result "DONE" --color GREEN
+
     else
+
       display --indent 6 --text "- Project backup with Borg" --result "FAIL" --color RED
       return 1
+
     fi
 
   else
     display --indent 6 --text "- Project backup with Borg" --result "DONE" --color GREEN
   fi
-  ## Faltaria para los projectos no dockerizados o sea "default"
+
+  ## TODO: non-docker projects backup with borg!
 
 }
 
