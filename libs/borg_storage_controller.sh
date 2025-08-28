@@ -562,10 +562,13 @@ function borg_update_templates() {
     local updated_count=0
     local skipped_count=0
     
-    # Find all config files
+    # Find all config files, excluding backup directories
     local config_files=()
     while IFS= read -r -d '' file; do
-        config_files+=("${file}")
+        # Skip files in backup directories (directories starting with "backup-")
+        if [[ ! "${file}" =~ /backup- ]]; then
+            config_files+=("${file}")
+        fi
     done < <(find "${borg_config_dir}" -name "*.yml" -print0)
     
     # Debug: Show how many files were found
@@ -618,10 +621,22 @@ function borg_update_templates() {
                 
                 # Variables específicas de servidor para cada servidor
                 declare -A server_user server_server server_port
+                
+                # Validate number_of_servers is a positive integer
+                if ! [[ "${number_of_servers}" =~ ^[0-9]+$ ]] || [ "${number_of_servers}" -lt 1 ]; then
+                    number_of_servers=0
+                fi
+                
                 for i in $(seq 1 "${number_of_servers}"); do
                     server_user[${i}]=$(yq -r ".constants.user_${i} // \"\"" "${config_file}")
                     server_server[${i}]=$(yq -r ".constants.server_${i} // \"\"" "${config_file}")
                     server_port[${i}]=$(yq -r ".constants.port_${i} // \"\"" "${config_file}")
+                    
+                    # Skip if any required server parameter is empty
+                    if [[ -z "${server_user[${i}]}" || -z "${server_server[${i}]}" || -z "${server_port[${i}]}" ]]; then
+                        log_event "warning" "Skipping incomplete server configuration for server ${i}" "false"
+                        continue
+                    fi
                 done
                 
                 # Restore project-specific constants
@@ -640,6 +655,7 @@ function borg_update_templates() {
                 
                 # Restore server-specific constants
                 for i in $(seq 1 "${number_of_servers}"); do
+                
                     [[ -n "${server_user[${i}]}" && "${server_user[${i}]}" != "null" ]] && yq -i ".constants.user_${i} = \"${server_user[${i}]}\"" "${temp_file}"
                     [[ -n "${server_server[${i}]}" && "${server_server[${i}]}" != "null" ]] && yq -i ".constants.server_${i} = \"${server_server[${i}]}\"" "${temp_file}"
                     [[ -n "${server_port[${i}]}" && "${server_port[${i}]}" != "null" ]] && yq -i ".constants.port_${i} = \"${server_port[${i}]}\"" "${temp_file}"
@@ -653,6 +669,7 @@ function borg_update_templates() {
                         # Add new repository entry as a proper map
                         yq -i ".repositories += [{\"path\": \"ssh://${server_user[${i}]}@${server_server[${i}]}:${server_port[${i}]}/./applications/${group}/${hostname}/projects-online/site/${project}\", \"label\": \"storage-${server_user[${i}]}\"}]" "${temp_file}"
                     fi
+
                 done
                 
                 # Move updated file to final location
