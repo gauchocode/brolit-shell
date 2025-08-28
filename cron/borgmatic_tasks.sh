@@ -15,8 +15,8 @@ BROLIT_MAIN_DIR=$(cd "$(dirname "${BROLIT_MAIN_DIR}")" && pwd)
 
 # Source required libraries
 source "${BROLIT_MAIN_DIR}/libs/commons.sh"
-source "${BROLIT_MAIN_DIR}/libs/notification_controller.sh"
-source "${BROLIT_MAIN_DIR}/libs/local/log_and_display_helper.sh"
+#source "${BROLIT_MAIN_DIR}/libs/notification_controller.sh"
+#source "${BROLIT_MAIN_DIR}/libs/local/log_and_display_helper.sh"
 
 # Script initialization
 script_init "true"
@@ -214,7 +214,7 @@ function check_remote_disk_space() {
     
     # Obtener espacio libre en disco remoto
     local free_space_kb
-    free_space_kb=$(ssh -p "${port}" "${user}@${server}" "df -k '${mount_point}' | tail -1 | awk '{print \$4}'")
+    free_space_kb=$(ssh -p "${port}" "${user}@${server}" "df -k '${mount_point}' | awk 'NR>1 {print \$4}'")
     
     # Convertir KB a MB
     local free_space_mb=$((free_space_kb / 1024))
