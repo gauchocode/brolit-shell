@@ -32,7 +32,7 @@ exclude_patterns:
 
 archive_name_format: '{project}_site-files-{now:%Y-%m-%dT%H:%M:%S}'
 # Keep all archives within this time interval.
-keep_within: 1m #Equivale a 2 meses
+keep_within: 1m # Equivalent to 2 months
 
 # Number of secondly archives to keep.
 # keep_secondly: 60
@@ -63,10 +63,10 @@ checks:
 check_last: 3
 
 before_backup:
-    - echo "Arrancando backup" 
+    - echo "Starting backup" 
 
 after_backup:
-    - echo "Backup terminado!"
+    - echo "Backup completed!"
 
 on_error:
     - echo Error during create/prune/compact/check.
@@ -87,10 +87,10 @@ ntfy:
 
     start:
         # The title of the message.
-        title: Arrancando backup!
+        title: Starting backup!
 
         # The message body to publish.
-        message: Proyecto {project} - Server {hostname}
+        message: Project {project} - Server {hostname}
 
         # The priority to set.
         priority: default
@@ -100,10 +100,10 @@ ntfy:
 
     finish:
         # The title of the message.
-        title: Backup terminado!
+        title: Backup completed!
 
         # The message body to publish.
-        message: Backup de {project} terminado! 
+        message: Backup of {project} completed! 
 
         # The priority to set.
         priority: default
@@ -116,7 +116,7 @@ ntfy:
         title: Backup error!
 
         # The message body to publish.
-        message: Los backups de {project} han fallado. Ver logs
+        message: Backups for {project} have failed. Check logs
 
         # The priority to set.
         priority: high

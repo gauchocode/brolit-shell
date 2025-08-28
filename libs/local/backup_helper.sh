@@ -461,11 +461,27 @@ function backup_all_files() {
 function backup_all_files_with_borg() {
 
   if [[ ${BACKUP_BORG_STATUS} == "enabled" ]]; then
-    # BACKUP ALL PROJECTS WITH BORG
+
+    display --indent 6 --text "- Backup with Borg" --result "RUNNING" --color YELLOW
     borgmatic --verbosity 1 --list --stats
+    
+    if [[ $? -eq 0 ]]; then
+
+      display --indent 6 --text "- Backup with Borg" --result "DONE" --color GREEN
+      return 0
+
+    else
+
+      display --indent 6 --text "- Backup with Borg" --result "FAIL" --color RED
+      return 1
+    
+    fi
+
   else
-    log_event "error" "borg backup support is not enabled" "false"
-    display --indent 6 --text "- backup with borg" --result "FAIL" --color RED
+
+    # Log
+    log_event "error" "Borg backup support is not enabled." "false"
+  
   fi
 
 }
@@ -707,18 +723,21 @@ function backup_all_databases_docker() {
 
             project_name=$(basename "${project_domain}")
 
-            echo "Backing up project: ${project_name}"
+            display --indent 6 --text "- Backing up project: ${project_name}" --result "RUNNING" --color YELLOW
+    log_event "info" "Backing up project: ${project_name}" "false"
 
             backup_docker_project "${project_name}" "docker_backup"
  
             exitstatus=$?
             if [[ ${exitstatus} -eq 0 ]]; then
 
-                echo "Backup for ${project_name} completed successfully."
+                display --indent 6 --text "- Backup for ${project_name}" --result "DONE" --color GREEN
+                log_event "success" "Backup for ${project_name} completed successfully." "false"
 
             else
 
-                echo "Backup for ${project_name} failed."
+                display --indent 6 --text "- Backup for ${project_name}" --result "FAIL" --color RED
+                log_event "error" "Backup for ${project_name} failed." "false"
 
             fi
         fi
@@ -943,6 +962,8 @@ function backup_project_with_borg() {
   #local backup_file
   #local project_type
 
+  display --indent 6 --text "- Project backup with Borg" --result "RUNNING" --color YELLOW
+
   # Backup files
   log_subsection "Backup Project Files"
   #backup_file_size="$(backup_project_files "site" "${PROJECTS_PATH}" "${project_domain}")"
@@ -953,8 +974,16 @@ function backup_project_with_borg() {
 
     borg_backup_database "${project_domain}"
     # Esto ya hace backup de todo.
-    borgmatic --verbosity 1 --config ${config_directory}
+    borgmatic --verbosity 1 --config "${config_directory}"
+    if [ $? -eq 0 ]; then
+      display --indent 6 --text "- Project backup with Borg" --result "DONE" --color GREEN
+    else
+      display --indent 6 --text "- Project backup with Borg" --result "FAIL" --color RED
+      return 1
+    fi
 
+  else
+    display --indent 6 --text "- Project backup with Borg" --result "DONE" --color GREEN
   fi
   ## Faltaria para los projectos no dockerizados o sea "default"
 
@@ -974,7 +1003,9 @@ function borg_backup_database() {
 
   local json_config_file="/root/.brolit_conf.json"
 
-if [[ -f "${PROJECTS_PATH}/${project_domain}/.env" ]]; then
+  display --indent 6 --text "- Database backup with Borg" --result "RUNNING" --color YELLOW
+
+  if [[ -f "${PROJECTS_PATH}/${project_domain}/.env" ]]; then
 
       # Detect if project is WordPress or Laravel, or skip database backup for other types
       if [[ -d "${PROJECTS_PATH}/${project_domain}/wordpress" || -f "${PROJECTS_PATH}/${project_domain}/application" ]]; then
@@ -986,13 +1017,15 @@ if [[ -f "${PROJECTS_PATH}/${project_domain}/.env" ]]; then
           mysql_password="${MYSQL_PASSWORD}"
 
       else
-          echo "Skipping database backup: project ${project_domain} does not require a database backup."
+          log_event "info" "Skipping database backup: project ${project_domain} does not require a database backup." "true"
+          display --indent 6 --text "- Database backup with Borg" --result "DONE" --color GREEN
           return 0
       fi
 
   else
 
-      echo "Error: .env file not found in ${PROJECTS_PATH}/${project_domain}."
+      log_event "error" "Error: .env file not found in ${PROJECTS_PATH}/${project_domain}." "true"
+      display --indent 6 --text "- Database backup with Borg" --result "FAIL" --color RED
       return 1
 
   fi
@@ -1000,17 +1033,17 @@ if [[ -f "${PROJECTS_PATH}/${project_domain}/.env" ]]; then
 
   dump_file="${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.sql"
 
-  docker exec "$container_name" sh -c "mysqldump -u$mysql_user -p$mysql_password $mysql_database > /tmp/database_dump.sql"
+  docker exec "$container_name" sh -c "mysqldump -u${mysql_user} -p${mysql_password} ${mysql_database} > /tmp/database_dump.sql"
 
-  docker cp "$container_name:/tmp/database_dump.sql" "$dump_file"
+  docker cp "$container_name:/tmp/database_dump.sql" "${dump_file}"
 
-  if [ -f "$dump_file" ]; then
+  if [[ -f "${dump_file}" ]]; then
 
       compressed_dump_file="${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.tar.bz2"
 
       compress "${BROLIT_TMP_DIR}/${NOW}/" "${mysql_database}_database_${NOW}.sql" "${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.tar.bz2"
       
-      if [ $? -eq 0 ]; then
+      if [[ $? -eq 0 ]]; then
 
           num_borg_configs=$(json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config | length")
 
@@ -1021,17 +1054,17 @@ if [[ -f "${PROJECTS_PATH}/${project_domain}/.env" ]]; then
             BACKUP_BORG_PORT=$(json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[$i].port")
             BACKUP_BORG_GROUP=$(json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].group")
 
-            echo "Performing backup on ${BACKUP_BORG_SERVER} with user ${BACKUP_BORG_USER} on port ${BACKUP_BORG_PORT}"
+            log_event "info" "Performing backup on ${BACKUP_BORG_SERVER} with user ${BACKUP_BORG_USER} on port ${BACKUP_BORG_PORT}" "true"
           
             scp -P "${BACKUP_BORG_PORT}" "$compressed_dump_file" "${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:/home/applications/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/database/${project_domain}"
 
-            if [ $? -eq 0 ]; then
+            if [[ $? -eq 0 ]]; then
 
-              echo "Backup successful on ${BACKUP_BORG_SERVER}"
+              log_event "success" "Backup successful on ${BACKUP_BORG_SERVER}" "true"
 
             else
 
-              echo "Backup failed for ${BACKUP_BORG_SERVER}"
+              log_event "error" "Backup failed for ${BACKUP_BORG_SERVER}" "true"
               return 1
 
             fi
@@ -1042,13 +1075,14 @@ if [[ -f "${PROJECTS_PATH}/${project_domain}/.env" ]]; then
           rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.sql"
 
       else
-          echo "Error compressing the database dump."
+          log_event "error" "Error compressing the database dump." "true"
           return 1
 
       fi
 
   else
 
+      log_event "error" "Database dump file not found: ${dump_file}" "true"
       return 1
 
   fi
@@ -1202,7 +1236,9 @@ function backup_docker_project() {
 
   else
 
-    echo "Error: .env file not found in ${PROJECTS_PATH}/${project_domain}/."
+    display --indent 6 --text "- Backup for ${project_domain}" --result "FAIL" --color RED
+    display --indent 8 --text "Error: .env file not found" --tcolor RED
+    log_event "error" "Error: .env file not found in ${PROJECTS_PATH}/${project_domain}/." "false"
 
     return 1
 
