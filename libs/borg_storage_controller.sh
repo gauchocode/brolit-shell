@@ -548,7 +548,15 @@ function borg_update_templates() {
         return 1
     fi
     
-    # Create backup directory
+    # Ask for confirmation
+    if ! whiptail --title "UPDATE BORGMATIC TEMPLATES" --yesno "This operation will update all borgmatic configuration files and may affect backup creation. A backup will be created in ${BROLIT_TMP_DIR}. Do you want to continue?" 10 80; then
+        log_event "info" "User canceled borgmatic template update" "false"
+        display --indent 6 --text "- Update canceled by user" --result "SKIPPED" --color YELLOW
+        return 1
+    fi
+    
+    # Create backup directory in Brolit tmp directory
+    local backup_dir="${BROLIT_TMP_DIR}/borgmatic-backup-$(date +%Y%m%d-%H%M%S)"
     mkdir -p "${backup_dir}"
     if [[ $? -ne 0 ]]; then
         log_event "error" "Failed to create backup directory: ${backup_dir}" "false"
@@ -610,26 +618,28 @@ function borg_update_templates() {
                 # Copy template content
                 cp "${template}" "${temp_file}"
                 
-                # Preserve project-specific constants from current config
-                local project
-                local group
-                local hostname
-                local ntfy_server
-                local ntfy_username
-                local ntfy_password
-                local loki_url
+                # Obtener project del nombre del archivo
+                local project=$(basename "${config_file}" .yml)
                 
-                project=$(yq -r '.constants.project // ""' "${config_file}")
-                group=$(yq -r '.constants.group // ""' "${config_file}")
-                hostname=$(yq -r '.constants.hostname // ""' "${config_file}")
-                ntfy_server=$(yq -r '.constants.ntfy_server // ""' "${config_file}")
-                ntfy_username=$(yq -r '.constants.ntfy_username // ""' "${config_file}")
-                ntfy_password=$(yq -r '.constants.ntfy_password // ""' "${config_file}")
-                loki_url=$(yq -r '.constants.loki_url // ""' "${config_file}")
+                # Leer valores reales desde .brolit_conf.json
+                local group=$(yq -r '.BACKUPS.methods[].borg[].group // ""' /root/.brolit_conf.json)
+                local ntfy_username=$(yq -r '.NOTIFICATIONS.ntfy[].config[].username // ""' /root/.brolit_conf.json)
+                local ntfy_password=$(yq -r '.NOTIFICATIONS.ntfy[].config[].password // ""' /root/.brolit_conf.json)
+                local ntfy_server=$(yq -r '.NOTIFICATIONS.ntfy[].config[].server // ""' /root/.brolit_conf.json)
+                local loki_url=$(yq -r '.constants.loki_url // ""' "${config_file}")
                 
-                # Logs
-                log_event "debug" "Executing yq command: yq -r '.constants.project // \"\"' '${config_file}'" "false"
-                log_event "debug" "Reading constants from ${config_file}: project='${project}', group='${group}', hostname='${hostname}', ntfy_server='${ntfy_server}', ntfy_username='${ntfy_username}', loki_url='${loki_url}'" "false"
+                # Usar hostname del sistema
+                local hostname=$(hostname)
+                
+                # Registrar el comando yq real que se está ejecutando
+                log_event "debug" "Reading group from brolit_conf.json: yq -r '.BACKUPS.methods[].borg[].group // \"\"' /root/.brolit_conf.json" "false"
+                log_event "debug" "Reading ntfy_username from brolit_conf.json: yq -r '.NOTIFICATIONS.ntfy[].config[].username // \"\"' /root/.brolit_conf.json" "false"
+                log_event "debug" "Reading ntfy_password from brolit_conf.json: yq -r '.NOTIFICATIONS.ntfy[].config[].password // \"\"' /root/.brolit_conf.json" "false"
+                log_event "debug" "Reading ntfy_server from brolit_conf.json: yq -r '.NOTIFICATIONS.ntfy[].config[].server // \"\"' /root/.brolit_conf.json" "false"
+                log_event "debug" "Using system hostname: $(hostname)" "false"
+                
+                # Mostrar valores leídos
+                log_event "debug" "Final values: project='${project}', group='${group}', hostname='${hostname}', ntfy_server='${ntfy_server}', ntfy_username='${ntfy_username}', loki_url='${loki_url}'" "false"
                 
                 declare -A server_user
                 declare -A server_server
