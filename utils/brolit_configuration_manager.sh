@@ -184,24 +184,24 @@ function _brolit_configuration_load_backup_borg() {
     #Globals
     declare -g BACKUP_BORG_GROUP
 
-    BACKUP_BORG_STATUS="$(_json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].status")"
+    BACKUP_BORG_STATUS="$(json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].status")"
 
     if [[ ${BACKUP_BORG_STATUS} == "enabled" ]]; then
 
         for i in $(eval echo {1..$number_of_servers})
         do
-            BACKUP_BORG_USERS[$i]="$(_json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].config[$(($i-1))].user")"
+            BACKUP_BORG_USERS[$i]="$(json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].config[$(($i-1))].user")"
             [[ -z "${BACKUP_BORG_USERS[i]}" ]] && die "Error reading BACKUP_BORG_USER from server config file."
 
-            BACKUP_BORG_SERVERS[$i]="$(_json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].config[$(($i-1))].server")"
+            BACKUP_BORG_SERVERS[$i]="$(json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].config[$(($i-1))].server")"
             [[ -z "${BACKUP_BORG_SERVERS[i]}" ]] && die "Error reading BACKUP_BORG_SERVER from server config file."
 
-            BACKUP_BORG_PORTS[$i]="$(_json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].config[$(($i-1))].port")"
+            BACKUP_BORG_PORTS[$i]="$(json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].config[$(($i-1))].port")"
             [[ -z "${BACKUP_BORG_PORTS[i]}" ]] && die "Error reading BACKUP_BORG_PORT from server config file."
 
         done
 
-        BACKUP_BORG_GROUP="$(_json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].group")"
+        BACKUP_BORG_GROUP="$(json_read_field "${server_config_file}" "BACKUPS.methods[].borg[].group")"
         [[ -z "${BACKUP_BORG_GROUP}" ]] && die "Error reading BACKUP_BORG_GROUP from server config file."
 
     fi 
