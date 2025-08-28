@@ -318,7 +318,7 @@ function borg_installer_menu() {
 #   0 if borg was installed, 1 on error.
 ##############################################################################
 
-function borg_backup_database() {
+function test_borg_backup_database() {
 
   local directorio="/var/www/"
   local nombre_carpeta="gauchocode.com"

@@ -41,7 +41,7 @@ function tests_suite_menu() {
       test_borg_helper_funtions
     fi
     if [[ ${chosen_tests_options} == *"01"* ]]; then
-      borg_backup_database
+      test_borg_backup_database
 
     fi
     if [[ ${chosen_tests_options} == *"02"* ]]; then
