@@ -611,16 +611,29 @@ function borg_update_templates() {
                 cp "${template}" "${temp_file}"
                 
                 # Preserve project-specific constants from current config
-                local project=$(yq -r '.constants.project // ""' "${config_file}")
-                local group=$(yq -r '.constants.group // ""' "${config_file}")
-                local hostname=$(yq -r '.constants.hostname // ""' "${config_file}")
-                local ntfy_server=$(yq -r '.constants.ntfy_server // ""' "${config_file}")
-                local ntfy_username=$(yq -r '.constants.ntfy_username // ""' "${config_file}")
-                local ntfy_password=$(yq -r '.constants.ntfy_password // ""' "${config_file}")
-                local loki_url=$(yq -r '.constants.loki_url // ""' "${config_file}")
+                local project
+                local group
+                local hostname
+                local ntfy_server
+                local ntfy_username
+                local ntfy_password
+                local loki_url
                 
-                # Variables específicas de servidor para cada servidor
-                declare -A server_user server_server server_port
+                project=$(yq -r '.constants.project // ""' "${config_file}")
+                group=$(yq -r '.constants.group // ""' "${config_file}")
+                hostname=$(yq -r '.constants.hostname // ""' "${config_file}")
+                ntfy_server=$(yq -r '.constants.ntfy_server // ""' "${config_file}")
+                ntfy_username=$(yq -r '.constants.ntfy_username // ""' "${config_file}")
+                ntfy_password=$(yq -r '.constants.ntfy_password // ""' "${config_file}")
+                loki_url=$(yq -r '.constants.loki_url // ""' "${config_file}")
+                
+                # Logs
+                log_event "debug" "Executing yq command: yq -r '.constants.project // \"\"' '${config_file}'" "false"
+                log_event "debug" "Reading constants from ${config_file}: project='${project}', group='${group}', hostname='${hostname}', ntfy_server='${ntfy_server}', ntfy_username='${ntfy_username}', loki_url='${loki_url}'" "false"
+                
+                declare -A server_user
+                declare -A server_server
+                declare -A server_port
                 
                 # Validate number_of_servers is a positive integer
                 if ! [[ "${number_of_servers}" =~ ^[0-9]+$ ]] || [ "${number_of_servers}" -lt 1 ]; then
