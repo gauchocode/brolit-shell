@@ -1009,6 +1009,7 @@ function borg_backup_database() {
 
       # Detect if project is WordPress or Laravel, or skip database backup for other types
       if [[ -d "${PROJECTS_PATH}/${project_domain}/wordpress" || -f "${PROJECTS_PATH}/${project_domain}/application" ]]; then
+
           export $(grep -v '^#' "${PROJECTS_PATH}/${project_domain}/.env" | xargs)
 
           mysql_database="${MYSQL_DATABASE}"
@@ -1016,16 +1017,24 @@ function borg_backup_database() {
           mysql_user="${MYSQL_USER}"
           mysql_password="${MYSQL_PASSWORD}"
 
-      else
-          log_event "info" "Skipping database backup: project ${project_domain} does not require a database backup." "true"
+          clear_previous_lines "1"
           display --indent 6 --text "- Database backup with Borg" --result "DONE" --color GREEN
+
+      else
+
+          # Log
+          log_event "info" "Skipping database backup: project ${project_domain} does not require a database backup." "true"
+          display --indent 6 --text "- Database backup with Borg" --result "SKIPPED" --color WHITE
+
           return 0
       fi
 
   else
 
+      # Log
       log_event "error" "Error: .env file not found in ${PROJECTS_PATH}/${project_domain}." "true"
       display --indent 6 --text "- Database backup with Borg" --result "FAIL" --color RED
+
       return 1
 
   fi
