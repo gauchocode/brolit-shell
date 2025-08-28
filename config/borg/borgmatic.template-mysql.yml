@@ -229,9 +229,10 @@ ntfy:
     # only.
     states:
         - fail
-loki:
-    url: {loki_url}:3100/loki/api/v1/push
-    labels:
-        app: borgmatic
-        project: __config
-        hostname: __hostname
+
+#loki:
+#    url: {loki_url}:3100/loki/api/v1/push
+#    labels:
+#        app: borgmatic
+#        project: __config
+#        hostname: __hostname
