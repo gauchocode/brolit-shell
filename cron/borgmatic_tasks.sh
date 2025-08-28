@@ -1,4 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
+#
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.3.12
+################################################################################
 
 # Generates a yml file for every directory in /var/www
 
