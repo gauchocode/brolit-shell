@@ -463,10 +463,13 @@ function backup_all_files_with_borg() {
   if [[ ${BACKUP_BORG_STATUS} == "enabled" ]]; then
 
     display --indent 6 --text "- Backup with Borg" --result "RUNNING" --color YELLOW
-    borgmatic --verbosity 1 --list --stats
+
+    #borgmatic --verbosity 1 --list --stats
+    borgmatic --list --stats
     
     if [[ $? -eq 0 ]]; then
 
+      clear_previous_lines "1"
       display --indent 6 --text "- Backup with Borg" --result "DONE" --color GREEN
       return 0
 
@@ -965,7 +968,7 @@ function backup_project_with_borg() {
   display --indent 6 --text "- Project backup with Borg" --result "RUNNING" --color YELLOW
 
   # Backup files
-  log_subsection "Backup Project Files"
+  log_subsection "Backup Project Files (Borg)"
   #backup_file_size="$(backup_project_files "site" "${PROJECTS_PATH}" "${project_domain}")"
 
   project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${project_domain}")"
@@ -1017,13 +1020,17 @@ function borg_backup_database() {
           mysql_user="${MYSQL_USER}"
           mysql_password="${MYSQL_PASSWORD}"
 
-          clear_previous_lines "1"
-          display --indent 6 --text "- Database backup with Borg" --result "DONE" --color GREEN
+          # Verify if container exists before proceeding
+          if ! docker ps -q -f name="${container_name}" > /dev/null; then
+              log_event "warning" "Container ${container_name} not found. Skipping database backup for ${project_domain}." "true"
+              display --indent 6 --text "- Database backup with Borg" --result "SKIPPED" --color YELLOW
+              return 0
+          fi
 
       else
 
           # Log
-          log_event "info" "Skipping database backup: project ${project_domain} does not require a database backup." "true"
+          log_event "info" "Skipping database backup: project ${project_domain} does not require a database backup." "false"
           display --indent 6 --text "- Database backup with Borg" --result "SKIPPED" --color WHITE
 
           return 0
@@ -1039,22 +1046,36 @@ function borg_backup_database() {
 
   fi
 
+  # Create dump directory if it doesn't exist
+  mkdir -p "${BROLIT_TMP_DIR}/${NOW}"
 
   dump_file="${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.sql"
 
-  docker exec "$container_name" sh -c "mysqldump -u${mysql_user} -p${mysql_password} ${mysql_database} > /tmp/database_dump.sql"
+  # Export database with error checking
+  if ! docker exec "$container_name" sh -c "mysqldump -u${mysql_user} -p${mysql_password} ${mysql_database} > /tmp/database_dump.sql" 2>/dev/null; then
+      log_event "error" "Failed to export database ${mysql_database} from container ${container_name}" "true"
+      display --indent 6 --text "- Database backup with Borg" --result "FAIL" --color RED
+      return 1
+  fi
 
-  docker cp "$container_name:/tmp/database_dump.sql" "${dump_file}"
+  # Copy dump file with error checking
+  if ! docker cp "$container_name:/tmp/database_dump.sql" "${dump_file}" 2>/dev/null; then
+      log_event "error" "Failed to copy database dump from container ${container_name}" "true"
+      display --indent 6 --text "- Database backup with Borg" --result "FAIL" --color RED
+      return 1
+  fi
 
   if [[ -f "${dump_file}" ]]; then
 
       compressed_dump_file="${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.tar.bz2"
 
-      compress "${BROLIT_TMP_DIR}/${NOW}/" "${mysql_database}_database_${NOW}.sql" "${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.tar.bz2"
+      compress "${BROLIT_TMP_DIR}/${NOW}/" "${mysql_database}_database_${NOW}.sql" "${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.tar.bz2}"
       
       if [[ $? -eq 0 ]]; then
 
           num_borg_configs=$(json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config | length")
+
+          local backup_successful=false
 
           for ((i=0; i<num_borg_configs; i++)); do
 
@@ -1065,35 +1086,53 @@ function borg_backup_database() {
 
             log_event "info" "Performing backup on ${BACKUP_BORG_SERVER} with user ${BACKUP_BORG_USER} on port ${BACKUP_BORG_PORT}" "true"
           
-            scp -P "${BACKUP_BORG_PORT}" "$compressed_dump_file" "${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:/home/applications/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/database/${project_domain}"
-
-            if [[ $? -eq 0 ]]; then
-
+            if scp -P "${BACKUP_BORG_PORT}" "$compressed_dump_file" "${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:/home/applications/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/database/${project_domain}"; then
+              
               log_event "success" "Backup successful on ${BACKUP_BORG_SERVER}" "true"
+              backup_successful=true
 
             else
-
               log_event "error" "Backup failed for ${BACKUP_BORG_SERVER}" "true"
-              return 1
 
             fi
 
           done
-              
-          rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.tar.bz2"
-          rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.sql"
+
+          # Only clean up if at least one backup was successful
+          if [[ "$backup_successful" == "true" ]]; then
+
+              # Remove local temp files
+              rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.tar.bz2"
+              rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.sql"
+
+              # Log
+              clear_previous_lines "1"
+              display --indent 6 --text "- Database backup with Borg" --result "DONE" --color GREEN
+
+              return 0
+
+          else
+              # Log
+              log_event "error" "All backup destinations failed" "true"
+              display --indent 6 --text "- Database backup with Borg" --result "FAIL" --color RED
+
+              return 1
+          fi
 
       else
+          # Log
           log_event "error" "Error compressing the database dump." "true"
-          return 1
+          display --indent 6 --text "- Database backup with Borg" --result "FAIL" --color RED
 
+          return 1
       fi
 
   else
-
+      # Log
       log_event "error" "Database dump file not found: ${dump_file}" "true"
-      return 1
+      display --indent 6 --text "- Database backup with Borg" --result "FAIL" --color RED
 
+      return 1
   fi
 }
 
@@ -1120,9 +1159,10 @@ function backup_project() {
   local db_engine
   local backup_file
   local project_type
+  
+  log_subsection "Backup Project Files"
 
   # Backup files
-  log_subsection "Backup Project Files"
   backup_file_size="$(backup_project_files "site" "${PROJECTS_PATH}" "${project_domain}")"
 
   exitstatus=$?
@@ -1134,8 +1174,7 @@ function backup_project() {
     # Project install type
     project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${project_domain}")"
 
-    # If ${project_install_type} == docker -> docker_mysql_database_backup ?
-    # Should consider the case where a project is dockerized but uses an external database?
+    # TODO: Should consider the case where a project is dockerized but uses an external database?
     if [[ ${project_install_type} == "default" && ${project_type} != "html" ]]; then
 
       log_event "info" "Trying to get database name from project config file..." "false"
@@ -1145,7 +1184,7 @@ function backup_project() {
 
       if [[ -z "${db_name}" ]]; then
 
-        log_event "warning" "Trying to get database name from convention name..." "false"
+        log_event "info" "Trying to get database name from convention name..." "false"
 
         db_stage="$(project_get_stage_from_domain "${project_domain}")"
         db_name="$(project_get_name_from_domain "${project_domain}")"
@@ -1164,8 +1203,9 @@ function backup_project() {
 
       if [[ "${db_engine}" == "mysql" ]]; then
 
+        log_subsection "Backup Project Database (MySQL)"
+
         # Backup database
-        log_subsection "Backup Project Database"
         backup_file="$(backup_project_database "${db_name}" "mysql")"
         got_error=$?
 
@@ -1173,8 +1213,9 @@ function backup_project() {
 
         if [[ "${db_engine}" == "postgres" ]]; then
 
+          log_subsection "Backup Project Database (PostgreSQL)"
+
           # Backup database
-          log_subsection "Backup Project Database"
           backup_file="$(backup_project_database "${db_name}" "postgres")"
           got_error=$?
 
