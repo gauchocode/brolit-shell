@@ -579,9 +579,13 @@ function borg_update_templates() {
         
         # Use only borgmatic.template-default.yml
         local template_name="borgmatic.template-default.yml"
+
+        display --indent 6 --text "- Processing ${config_name}"
         
         # Compare template with config
         if ! diff -q "${template}" "${config_file}" >/dev/null 2>&1; then
+
+            display --indent 8 --text "- Differences found in ${config_name}" --tcolor YELLOW
             log_event "info" "Differences found between ${template_name} and ${config_name}" "false"
             
             # Ask user if they want to update
@@ -684,10 +688,15 @@ function borg_update_templates() {
     display --indent 8 --text "Skipped: ${skipped_count}" --tcolor YELLOW
     
     if [[ ${updated_count} -gt 0 ]]; then
+    
         log_event "info" "Successfully updated ${updated_count} borgmatic config files" "false"
         return 0
+
     else
+
         log_event "info" "No borgmatic config files were updated" "false"
         return 0
+
     fi
+
 }
