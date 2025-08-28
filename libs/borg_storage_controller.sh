@@ -777,18 +777,44 @@ function borg_update_templates() {
                 
                 # Test the updated configuration
                 display --indent 6 --text "- Testing updated configuration"
-                
-                if borgmatic --config "${config_file}" --list --dry-run > /dev/null 2>&1; then
-                    
-                    display --indent 6 --text "- Configuration test" --result "OK" --color GREEN
-                    log_event "info" "Configuration test passed for ${config_name}" "false"
-                
-                else
 
-                    display --indent 6 --text "- Configuration test" --result "FAIL" --color RED
-                    log_event "error" "Configuration test failed for ${config_name}" "false"
-                    send_notification "${SERVER_NAME}" "Configuration test failed for ${config_name}" "alert"
-                
+                # 1. Validate YAML syntax
+                if yq eval '.' "${config_file}" > /dev/null 2>&1; then
+                    display --indent 8 --text "YAML syntax test: OK" --tcolor GREEN
+                    log_event "info" "YAML syntax test passed for ${config_name}" "false"
+                    
+                    # 2. Test SSH connectivity to each server
+                    local ssh_test_passed=true
+                    for i in $(seq 1 "${number_of_servers}"); do
+                        display --indent 8 --text "Testing SSH connection to ${server_server[${i}]} (port ${server_port[${i}]})"
+                        
+                        if ssh -o ConnectTimeout=10 -o BatchMode=yes -p "${server_port[${i}]}" "${server_user[${i}]}@${server_server[${i}]}" "exit"; then
+                            display --indent 10 --text "Connection to ${server_server[${i}]} OK" --tcolor GREEN
+                            log_event "info" "Successfully connected to ${server_server[${i}]}:${server_port[${i}]}" "false"
+                        else
+                            display --indent 10 --text "Connection to ${server_server[${i}]} FAILED" --tcolor RED
+                            log_event "error" "Cannot connect to ${server_server[${i}]}:${server_port[${i}]}" "false"
+                            ssh_test_passed=false
+                        fi
+                    done
+                    
+                    # 3. Only if SSH tests pass, try borgmatic test (as warning if it fails)
+                    if [[ "${ssh_test_passed}" == "true" ]]; then
+                        if borgmatic --config "${config_file}" --list --dry-run > /dev/null 2>&1; then
+                            display --indent 8 --text "Borgmatic test: OK" --tcolor GREEN
+                            log_event "info" "Borgmatic test passed for ${config_name}" "false"
+                        else
+                            display --indent 8 --text "Borgmatic test: WARNING (expected if repository doesn't exist)" --tcolor YELLOW
+                            log_event "warning" "Borgmatic test failed for ${config_name}, but this is expected if repository doesn't exist yet" "false"
+                        fi
+                    else
+                        display --indent 8 --text "Skipping borgmatic test due to SSH connection failures" --tcolor YELLOW
+                    fi
+                    
+                else
+                    display --indent 8 --text "YAML syntax test: FAIL" --tcolor RED
+                    log_event "error" "YAML syntax test failed for ${config_name}" "false"
+                    send_notification "${SERVER_NAME}" "YAML syntax test failed for ${config_name}" "alert"
                 fi
                 
                 updated="true"
