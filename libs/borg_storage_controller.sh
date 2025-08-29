@@ -539,7 +539,7 @@ function initialize_repository() {
 
     display --indent 6 --text "- Repository initialization" --result "DONE" --color GREEN
     return 0
-    
+
 }
 
 ################################################################################
@@ -689,6 +689,7 @@ function borg_update_templates() {
                 
                 # Read server configuration from .brolit_conf.json
                 for i in $(seq 1 "${number_of_servers}"); do
+
                     server_user[${i}]=$(jq -r ".BACKUPS.methods[].borg[].config[${i}-1].user // \"\"" /root/.brolit_conf.json)
                     server_server[${i}]=$(jq -r ".BACKUPS.methods[].borg[].config[${i}-1].server // \"\"" /root/.brolit_conf.json)
                     server_port[${i}]=$(jq -r ".BACKUPS.methods[].borg[].config[${i}-1].port // \"\"" /root/.brolit_conf.json)
@@ -706,12 +707,12 @@ function borg_update_templates() {
                         log_event "warning" "Skipping incomplete server configuration for server ${i}" "false"
                         continue
                     fi
+
                 done
                 
                 # Restore project-specific constants
                 if [[ -n "${project}" && "${project}" != "null" ]]; then
                     if yq -i ".constants.project = \"${project}\"" "${temp_file}"; then
-                        display --indent 10 --text "project: ${project}" --tcolor GREEN
                         log_event "info" "Successfully updated project constant" "false"
                     else
                         display --indent 10 --text "project: ${project} [FAIL]" --tcolor RED
@@ -721,7 +722,6 @@ function borg_update_templates() {
                 
                 if [[ -n "${group}" && "${group}" != "null" ]]; then
                     if yq -i ".constants.group = \"${group}\"" "${temp_file}"; then
-                        display --indent 10 --text "group: ${group}" --tcolor GREEN
                         log_event "info" "Successfully updated group constant" "false"
                     else
                         display --indent 10 --text "group: ${group} [FAIL]" --tcolor RED
@@ -731,7 +731,6 @@ function borg_update_templates() {
                 
                 if [[ -n "${hostname}" && "${hostname}" != "null" ]]; then
                     if yq -i ".constants.hostname = \"${hostname}\"" "${temp_file}"; then
-                        display --indent 10 --text "hostname: ${hostname}" --tcolor GREEN
                         log_event "info" "Successfully updated hostname constant" "false"
                     else
                         display --indent 10 --text "hostname: ${hostname} [FAIL]" --tcolor RED
@@ -741,7 +740,6 @@ function borg_update_templates() {
                 
                 if [[ -n "${ntfy_server}" && "${ntfy_server}" != "null" ]]; then
                     if yq -i ".constants.ntfy_server = \"${ntfy_server}\"" "${temp_file}"; then
-                        display --indent 10 --text "ntfy_server: ${ntfy_server}" --tcolor GREEN
                         log_event "info" "Successfully updated ntfy_server constant" "false"
                     else
                         display --indent 10 --text "ntfy_server: ${ntfy_server} [FAIL]" --tcolor RED
@@ -751,7 +749,6 @@ function borg_update_templates() {
                 
                 if [[ -n "${ntfy_username}" && "${ntfy_username}" != "null" ]]; then
                     if yq -i ".constants.ntfy_username = \"${ntfy_username}\"" "${temp_file}"; then
-                        display --indent 10 --text "ntfy_username: ${ntfy_username}" --tcolor GREEN
                         log_event "info" "Successfully updated ntfy_username constant" "false"
                     else
                         display --indent 10 --text "ntfy_username: ${ntfy_username} [FAIL]" --tcolor RED
@@ -761,7 +758,6 @@ function borg_update_templates() {
                 
                 if [[ -n "${ntfy_password}" && "${ntfy_password}" != "null" ]]; then
                     if yq -i ".constants.ntfy_password = \"${ntfy_password}\"" "${temp_file}"; then
-                        display --indent 10 --text "ntfy_password: [HIDDEN]" --tcolor GREEN
                         log_event "info" "Successfully updated ntfy_password constant" "false"
                     else
                         display --indent 10 --text "ntfy_password: [HIDDEN] [FAIL]" --tcolor RED
@@ -771,7 +767,6 @@ function borg_update_templates() {
                 
                 if [[ -n "${ntfy_topic}" && "${ntfy_topic}" != "null" ]]; then
                     if yq -i ".constants.ntfy_topic = \"${ntfy_topic}\"" "${temp_file}"; then
-                        display --indent 10 --text "ntfy_topic: ${ntfy_topic}" --tcolor GREEN
                         log_event "info" "Successfully updated ntfy_topic constant" "false"
                     else
                         display --indent 10 --text "ntfy_topic: ${ntfy_topic} [FAIL]" --tcolor RED
@@ -781,7 +776,6 @@ function borg_update_templates() {
                 
                 if [[ -n "${loki_url}" && "${loki_url}" != "null" ]]; then
                     if yq -i ".constants.loki_url = \"${loki_url}\"" "${temp_file}"; then
-                        display --indent 10 --text "loki_url: ${loki_url}" --tcolor GREEN
                         log_event "info" "Successfully updated loki_url constant" "false"
                     else
                         display --indent 10 --text "loki_url: ${loki_url} [FAIL]" --tcolor RED
