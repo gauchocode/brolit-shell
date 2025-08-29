@@ -974,26 +974,37 @@ function backup_project_with_borg() {
     
     # Initialize repository if needed
     if ! initialize_repository "${config_directory}"; then
-        log_event "error" "Failed to initialize repository for ${project_domain}" "true"
+        
         display --indent 6 --text "- Repository initialization" --result "FAIL" --color RED
+        log_event "error" "Failed to initialize repository for ${project_domain}" "true"
+
         return 1
     fi
     
-    # Esto ya hace backup de todo.
-    borgmatic --verbosity 1 --config "${config_directory}"
+    # Run borgmatic backup
+    #borgmatic --verbosity 1 --config "${config_directory}"
+    borgmatic --config "${config_directory}"
     if [[ $? -eq 0 ]]; then
     
       display --indent 6 --text "- Project backup with Borg" --result "DONE" --color GREEN
+      log_event "success" "Borg backup completed for ${project_domain}" "true"
 
     else
 
       display --indent 6 --text "- Project backup with Borg" --result "FAIL" --color RED
+      log_event "error" "Borg backup failed for ${project_domain}" "true"
+
       return 1
 
     fi
 
   else
-    display --indent 6 --text "- Project backup with Borg" --result "DONE" --color GREEN
+
+    display --indent 6 --text "- Project backup with Borg" --result "SKIPPED" --color WHITE
+    log_event "info" "Skipping Borg backup: project ${project_domain} is not a Docker-based project." "false"
+
+    return 0
+
   fi
 
   ## TODO: non-docker projects backup with borg!
@@ -1030,16 +1041,22 @@ function borg_backup_database() {
 
           # Verify if container exists before proceeding
           if ! docker ps -q -f name="${container_name}" > /dev/null; then
+
+              # Log
+              clear_previous_lines "1"
+              display --indent 6 --text "- Database backup with Borg" --result "SKIPPED" --color WHITE
               log_event "warning" "Container ${container_name} not found. Skipping database backup for ${project_domain}." "true"
-              display --indent 6 --text "- Database backup with Borg" --result "SKIPPED" --color YELLOW
+
               return 0
+
           fi
 
       else
 
           # Log
-          log_event "info" "Skipping database backup: project ${project_domain} does not require a database backup." "false"
+          clear_previous_lines "1"
           display --indent 6 --text "- Database backup with Borg" --result "SKIPPED" --color WHITE
+          log_event "info" "Skipping database backup: project ${project_domain} does not require a database backup." "false"
 
           return 0
       fi
@@ -1047,8 +1064,9 @@ function borg_backup_database() {
   else
 
       # Log
-      log_event "error" "Error: .env file not found in ${PROJECTS_PATH}/${project_domain}." "true"
+      clear_previous_lines "1"
       display --indent 6 --text "- Database backup with Borg" --result "FAIL" --color RED
+      log_event "error" "Error: .env file not found in ${PROJECTS_PATH}/${project_domain}." "true"
 
       return 1
 
@@ -1416,7 +1434,7 @@ function backup_docker_project() {
 
     # Only backup database if we have a database service and it's not an HTML project
     if [[ ${has_database_service} == "true" && ${project_type} != "html" ]]; then
-    
+
       log_subsection "Backup Project Database (${db_engine^})"
       backup_project_database "${db_name}" "${db_engine}" "${container_name}"
       got_error=$?
