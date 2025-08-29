@@ -727,7 +727,7 @@ function backup_all_databases_docker() {
             project_name=$(basename "${project_domain}")
 
             display --indent 6 --text "- Backing up project: ${project_name}" --result "RUNNING" --color YELLOW
-    log_event "info" "Backing up project: ${project_name}" "false"
+            log_event "info" "Backing up project: ${project_name}" "false"
 
             backup_docker_project "${project_name}" "docker_backup"
  
@@ -1283,22 +1283,124 @@ function backup_docker_project() {
   local backup_file
   local project_type
   local container_name
+  local docker_compose_file
+  local has_database_service
+  local mysql_database_var
+  local postgres_database_var
 
-  # Read the .env file
+  # Get project install type
+  project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${project_domain}")"
+  if [[ ${project_install_type} != "docker"* ]]; then
+    log_event "error" "Project ${project_domain} is not a Docker project" "false"
+    display --indent 6 --text "- Backup for ${project_domain}" --result "FAIL" --color RED
+    return 1
+  fi
+
+  # Check if docker-compose.yml exists
+  docker_compose_file="${PROJECTS_PATH}/${project_domain}/docker-compose.yml"
+  if [[ ! -f "${docker_compose_file}" ]]; then
+
+    docker_compose_file="${PROJECTS_PATH}/${project_domain}/docker-compose.yaml"
+    if [[ ! -f "${docker_compose_file}" ]]; then
+      log_event "error" "docker-compose file not found for project ${project_domain}" "false"
+      display --indent 6 --text "- Backup for ${project_domain}" --result "FAIL" --color RED
+      return 1
+    fi
+
+  fi
+
+  # Check for database services in docker-compose.yml
+  has_database_service="false"
+  if grep -q "mysql\|mariadb" "${docker_compose_file}"; then
+    has_database_service="true"
+    db_engine="mysql"
+  elif grep -q "postgres\|postgresql" "${docker_compose_file}"; then
+    has_database_service="true"
+    db_engine="postgres"
+  fi
+
+  # Read the .env file if it exists
   if [[ -f "${PROJECTS_PATH}/${project_domain}/.env" ]]; then
 
     export $(grep -v '^#' "${PROJECTS_PATH}/${project_domain}/.env" | xargs)
-    db_name="${MYSQL_DATABASE}"
-    container_name="${PROJECT_NAME}_mysql"
-    db_engine="mysql"
+    
+    # Check for database variables in .env
+    mysql_database_var="${MYSQL_DATABASE}"
+    postgres_database_var="${POSTGRES_DB}"
+    
+    # If no database service in docker-compose but variables in .env, check if it's an external database
+    if [[ ${has_database_service} == "false" ]]; then
+
+      if [[ -n "${mysql_database_var}" ]]; then
+
+        db_engine="mysql"
+        db_name="${mysql_database_var}"
+        
+        # Check if the database is hosted locally or externally
+        if [[ "${MYSQL_HOST}" == "localhost" || "${MYSQL_HOST}" == "127.0.0.1" || "${MYSQL_HOST}" == "" ]]; then
+        
+          log_event "warning" "MySQL database ${db_name} is configured in .env but no mysql service in docker-compose.yml" "true"
+          has_database_service="true"
+       
+        else
+        
+          log_event "info" "MySQL database ${db_name} is hosted externally at ${MYSQL_HOST}, skipping database backup" "false"
+          has_database_service="false"
+        
+        fi
+      
+      elif [[ -n "${postgres_database_var}" ]]; then
+
+        db_engine="postgres"
+        db_name="${postgres_database_var}"
+        
+        # Check if the database is hosted locally or externally
+        if [[ "${POSTGRES_HOST}" == "localhost" || "${POSTGRES_HOST}" == "127.0.0.1" || "${POSTGRES_HOST}" == "" ]]; then
+          
+          log_event "warning" "PostgreSQL database ${db_name} is configured in .env but no postgres service in docker-compose.yml" "true"
+          has_database_service="true"
+        
+        else
+
+          log_event "info" "PostgreSQL database ${db_name} is hosted externally at ${POSTGRES_HOST}, skipping database backup" "false"
+          has_database_service="false"
+        
+        fi
+
+      fi
+
+    fi
 
   else
 
-    display --indent 6 --text "- Backup for ${project_domain}" --result "FAIL" --color RED
-    display --indent 8 --text "Error: .env file not found" --tcolor RED
-    log_event "error" "Error: .env file not found in ${PROJECTS_PATH}/${project_domain}/." "false"
+    log_event "info" ".env file not found for project ${project_domain}" "false"
 
-    return 1
+  fi
+
+  # Set container name if we have a database service
+  if [[ ${has_database_service} == "true" ]]; then
+
+    if [[ ${db_engine} == "mysql" ]]; then
+
+      container_name="${PROJECT_NAME}_mysql"
+      db_name="${MYSQL_DATABASE}"
+
+      # Fallback to PROJECT_NAME if MYSQL_DATABASE is not set
+      if [[ -z "${db_name}" ]]; then
+        db_name="${PROJECT_NAME}"
+      fi
+
+    elif [[ ${db_engine} == "postgres" ]]; then
+
+      container_name="${PROJECT_NAME}_postgres"
+      db_name="${POSTGRES_DB}"
+
+      # Fallback to PROJECT_NAME if POSTGRES_DB is not set
+      if [[ -z "${db_name}" ]]; then
+        db_name="${PROJECT_NAME}"
+      fi
+
+    fi
 
   fi
 
@@ -1312,14 +1414,26 @@ function backup_docker_project() {
     # Project Type
     project_type="$(project_get_type "${PROJECTS_PATH}/${project_domain}")"
 
-    # Project install type
-    project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${project_domain}")"
+    # Only backup database if we have a database service and it's not an HTML project
+    if [[ ${has_database_service} == "true" && ${project_type} != "html" ]]; then
+    
+      log_subsection "Backup Project Database (${db_engine^})"
+      backup_project_database "${db_name}" "${db_engine}" "${container_name}"
+      got_error=$?
 
+    else
+      if [[ ${project_type} == "html" ]]; then
 
-    if [[ ${project_install_type} == "docker"* && ${project_type} != "html" ]]; then
+        log_event "info" "Skipping database backup for HTML project ${project_domain}" "false"
 
-        backup_project_database "${db_name}" "${db_engine}" "${container_name}"
+      elif [[ ${has_database_service} == "false" ]]; then
 
+        log_event "info" "No database service found for project ${project_domain}, skipping database backup" "false"
+
+      fi
+
+      display --indent 6 --text "- Database backup" --result "SKIPPED" --color YELLOW
+    
     fi
 
     log_break "false"
