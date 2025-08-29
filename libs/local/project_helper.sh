@@ -2592,7 +2592,6 @@ function project_get_install_type() {
 
       # Log
       log_event "debug" "Project install type: ${project_install_type}" "false"
-      display --indent 8 --text "Project install type: ${project_install_type}" --tcolor MAGENTA
 
       # Return
       echo "${project_install_type}" && return 0
