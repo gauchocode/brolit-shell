@@ -93,22 +93,30 @@ function storage_create_dir() {
 
         log_event "debug" "Creating remote directories for ${remote_directory}" "false"
 
-        for i in $(eval echo {1..$number_of_servers})
+        for i in $(seq 1 ${number_of_servers})
         do
+            if [[ -n "${BACKUP_BORG_SERVERS[i]}" && -n "${BACKUP_BORG_USERS[i]}" ]]; then
+            
+                log_event "debug" "Connecting to Borg server ${i}: ${BACKUP_BORG_SERVERS[i]}" "false"
 
-            log_event "debug" "Connecting to Borg server ${i}: ${BACKUP_BORG_SERVERS[i]}" "false"
+                if [[ -n "${BACKUP_BORG_PORTS[i]}" ]]; then
+                    ssh_cmd="ssh -p ${BACKUP_BORG_PORTS[i]}"
+                else
+                    ssh_cmd="ssh"
+                fi
 
-            if [[ -n "${BACKUP_BORG_PORTS[i]}" ]]; then
-                ssh_cmd="ssh -p ${BACKUP_BORG_PORTS[i]}"
+                $ssh_cmd "${BACKUP_BORG_USERS[i]}"@"${BACKUP_BORG_SERVERS[i]}" "mkdir -p /home/applications/${BACKUP_BORG_GROUP}/${remote_directory}"
+                
+                log_event "debug" "Command executed: ${ssh_cmd} ${BACKUP_BORG_USERS[i]}@${BACKUP_BORG_SERVERS[i]} mkdir -p /home/applications/${BACKUP_BORG_GROUP}/${remote_directory}" "false"
+            
             else
-                ssh_cmd="ssh"
+
+                log_event "warning" "Incomplete Borg server ${i} configuration, skipping" "false"
+
             fi
 
-            $ssh_cmd "${BACKUP_BORG_USERS[i]}"@"${BACKUP_BORG_SERVERS[i]}" "mkdir -p /home/applications/${BACKUP_BORG_GROUP}/${remote_directory}"
-            
-            log_event "debug" "Command executed: ${ssh_cmd} ${BACKUP_BORG_USERS[i]}@${BACKUP_BORG_SERVERS[i]} mkdir -p /home/applications/${BACKUP_BORG_GROUP}/${remote_directory}" "false"
-        
         done
+
     fi
 
     storage_result=$?
