@@ -26,6 +26,8 @@ function send_notification() {
     local notification_content="${2}"
     local notification_type="${3}"
 
+    log_subsection "Notifications"
+
     if [[ ${NOTIFICATION_TELEGRAM_STATUS} == "enabled" ]]; then
 
         telegram_send_notification "${notification_title}" "${notification_content}" "${notification_type}"
