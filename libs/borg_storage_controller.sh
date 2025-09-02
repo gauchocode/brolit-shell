@@ -528,16 +528,25 @@ function initialize_repository() {
         return 0
     fi
     
-    log_event "info" "Initializing new repository" "false"
     display --indent 6 --text "- Initializing Borg repository" --result "RUNNING" --color YELLOW
+    log_event "info" "Initializing new repository" "false"
 
     if ! borgmatic init --encryption=none --config "$config_file"; then
-        log_event "error" "Repository initialization failed" "true"
+
+        # Log
+        clear_previous_lines "1"
         display --indent 6 --text "- Repository initialization" --result "FAIL" --color RED
+        log_event "error" "Repository initialization failed" "false"
+
         return 1
+
     fi
 
+    # Log
+    lear_previous_lines "1"
     display --indent 6 --text "- Repository initialization" --result "DONE" --color GREEN
+    log_event "info" "Repository initialized successfully" "false"
+
     return 0
 
 }

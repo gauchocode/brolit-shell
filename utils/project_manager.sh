@@ -426,7 +426,7 @@ function project_manager_menu_new_project_type_new_project() {
         chosen_project="$(dirname "${backup_to_dowload}")"
         project_domain="$(basename "${chosen_project}")"
 
-        # NEW NEW NEW NEW
+        # Docker restore project
         docker_restore_project "${backup_to_restore}" "${chosen_remote_status}" "${chosen_server}" "${project_domain}" ""
 
         prompt_return_or_finish
