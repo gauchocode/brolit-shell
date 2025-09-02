@@ -564,7 +564,7 @@ function project_dockerize_from_backup() {
     display --indent 6 --text "- Selecting backup server" --result "SKIPPED" --color YELLOW
     return 1
   fi
-  display --indent 6 --text "Selected server: ${chosen_server}" --result "OK" --color GREEN
+  display --indent 6 --text "- Selected server: ${chosen_server}" --result "OK" --color GREEN
 
   # List status options
   chosen_remote_status="$(storage_remote_status_list)"
@@ -573,7 +573,7 @@ function project_dockerize_from_backup() {
     display --indent 6 --text "- Selecting status" --result "SKIPPED" --color YELLOW
     return 1
   fi
-  display --indent 6 --text "Selected status: ${chosen_remote_status}" --result "OK" --color GREEN
+  display --indent 6 --text "- Selected status: ${chosen_remote_status}" --result "OK" --color GREEN
 
   # List type options
   chosen_remote_type="$(storage_remote_type_list)"
@@ -582,7 +582,7 @@ function project_dockerize_from_backup() {
     display --indent 6 --text "- Selecting type" --result "SKIPPED" --color YELLOW
     return 1
   fi
-  display --indent 6 --text "Selected type: ${chosen_remote_type}" --result "OK" --color GREEN
+  display --indent 6 --text "- Selected type: ${chosen_remote_type}" --result "OK" --color GREEN
 
   chosen_remote_type_path="${chosen_server}/projects-${chosen_remote_status}/${chosen_remote_type}"
   remote_list="$(dirname "${chosen_remote_type_path}")"
