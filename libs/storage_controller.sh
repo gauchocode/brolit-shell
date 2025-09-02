@@ -621,6 +621,13 @@ function storage_backup_selection() {
     # Get dropbox folders list
     storage_project_list="$(storage_list_dir "${remote_backup_path}/${remote_backup_type}")"
 
+    # Check if there are projects available
+    if [[ -z "${storage_project_list}" ]]; then
+        log_event "error" "No projects found in ${remote_backup_path}/${remote_backup_type}" "false"
+        display --indent 6 --text "No projects found for this backup type" --result "ERROR" --color RED
+        return 1
+    fi
+
     # Re-order Backup Directories
     storage_project_list="$(sort_array_alphabetically "${storage_project_list}")"
 
@@ -636,6 +643,13 @@ function storage_backup_selection() {
         # Get backup list
         remote_backup_path="${remote_backup_path}/${remote_backup_type}/${chosen_project}"
         remote_backup_list="$(storage_list_dir "${remote_backup_path}")"
+
+        # Check if there are backups available for the selected project
+        if [[ -z "${remote_backup_list}" ]]; then
+            log_event "error" "No backups found for project ${chosen_project} in ${remote_backup_path}" "false"
+            display --indent 6 --text "No backups found for this project" --result "ERROR" --color RED
+            return 1
+        fi
 
     else
 
