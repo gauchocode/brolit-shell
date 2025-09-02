@@ -616,7 +616,7 @@ function project_dockerize_from_backup() {
     display --indent 6 --text "Invalid domain extracted: ${project_domain}" --result "ERROR" --color RED
     return 1
   fi
-  display --indent 8 --text "Project domain: ${project_domain}" -tcolor GREEN
+  display --indent 8 --text "Project domain: ${project_domain}" --tcolor GREEN
 
   # Check if project already exists
   if [[ -d "${PROJECTS_PATH}/${project_domain}" ]]; then
