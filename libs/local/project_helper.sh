@@ -3006,19 +3006,14 @@ function project_update_domain_config() {
 
   project_root_domain="$(domain_get_root "${project_domain}")"
 
-  # TODO: if ${project_domain} == ${chosen_domain}, maybe ask if want to restore nginx and let's encrypt config files
-  # restore_letsencrypt_site_files "${chosen_domain}" "${project_backup_date}"
-  # restore_nginx_site_files "${chosen_domain}" "${project_backup_date}"
+  # Validate port if provided
+  if [[ -n "${project_port}" && ! "${project_port}" =~ ^[0-9]+$ ]]; then
+    log_event "error" "Invalid port number: ${project_port}" "false"
+    display --indent 6 --text "- Port validation" --result "FAIL" --color RED
+    return 1
+  fi
 
-  # TODO: Refactor this
-  #if [[ ${project_install_type} == "proxy" || ${project_install_type} == "docker"* ]]; then
-  #  # Nginx config
-  #  nginx_server_create "${project_domain}" "proxy" "single" "" "${project_port}"
-  #else
-  #  # Nginx config
-  #  nginx_server_create "${project_domain}" "${project_type}" "single" "" ""
-  #fi
-
+  # Set project type for proxy/docker installations
   [[ ${project_install_type} == "proxy" || ${project_install_type} == "docker"* ]] && project_type="proxy"
 
   # Working with root domain or www?
@@ -3031,21 +3026,38 @@ function project_update_domain_config() {
     if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
       ## Set records
       cloudflare_set_record "${project_root_domain}" "${project_root_domain}" "A" "false" "${SERVER_IP}"
+      exitstatus=$?
+      [[ ${exitstatus} -ne 0 ]] && cloudflare_exitstatus=${exitstatus}
+      
       cloudflare_set_record "${project_root_domain}" "www.${project_root_domain}" "CNAME" "false" "${project_root_domain}"
-      cloudflare_exitstatus=$?
+      exitstatus=$?
+      [[ ${exitstatus} -ne 0 ]] && cloudflare_exitstatus=${exitstatus}
     fi
 
     if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
-      if [[ ${cloudflare_exitstatus} -ne 1 ]]; then # If ${cloudflare_exitstatus} is empty, will pass too
-        # Wait 2 seconds for DNS update
-        sleep 2
-        # Let's Encrypt
-        certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_root_domain},www.${project_root_domain}"
-        exitstatus=$?
-        if [[ ${exitstatus} -eq 0 ]]; then
+      # Wait for DNS propagation (independent of Cloudflare status)
+      display --indent 6 --text "- Waiting for DNS propagation"
+      log_event "info" "Waiting for DNS propagation..." "false"
+      
+      if ! dig +short "${project_domain}" @1.1.1.1 | grep -q "${SERVER_IP}"; then
+        # Simple verification without full function
+        sleep 5
+      fi
+      
+      clear_previous_lines "1"
+      display --indent 6 --text "- Waiting for DNS propagation" --result "DONE" --color GREEN
+
+      # Install certificate (attempt regardless of Cloudflare status)
+      if certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_root_domain},www.${project_root_domain}"; then
+        # Enable HTTP/2 only if not already enabled
+        if ! grep -q "listen.*http2" "/etc/nginx/sites-available/${project_domain}"; then
           nginx_server_add_http2_support "${project_domain}"
-          project_https_enable="true"
         fi
+        project_https_enable="true"
+      else
+        log_event "warning" "Certbot failed, proceeding with HTTP configuration" "false"
+        display --indent 6 --text "- SSL Certificate" --result "WARNING" --color YELLOW
+        project_https_enable="false"
       fi
     fi
 
@@ -3062,30 +3074,30 @@ function project_update_domain_config() {
     fi
 
     if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
-
-      if [[ ${cloudflare_exitstatus} -ne 1 ]]; then # If ${cloudflare_exitstatus} is empty, will pass too
-
-        # Wait 5 seconds for DNS update
-        ## Log
-        display --indent 6 --text "- Waiting 7 seconds for DNS update .."
-        log_event "info" "Waiting 7 seconds for DNS update ..." "false"
-        ## Sleep
-        sleep 7
-        ## Log
-        clear_previous_lines "1"
-        display --indent 6 --text "- Waiting 7 seconds for DNS update .." --result "DONE" --color GREEN
-
-        # Generate certificate with Let's Encrypt
-        certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_domain}"
-        exitstatus=$?
-        if [[ ${exitstatus} -eq 0 ]]; then
-          # Enable HTTP2
-          nginx_server_add_http2_support "${project_domain}"
-          project_https_enable="true"
-        fi
-
+      # Wait for DNS propagation (independent of Cloudflare status)
+      display --indent 6 --text "- Waiting for DNS propagation"
+      log_event "info" "Waiting for DNS propagation..." "false"
+      
+      if ! dig +short "${project_domain}" @1.1.1.1 | grep -q "${SERVER_IP}"; then
+        # Simple verification without full function
+        sleep 5
       fi
+      
+      clear_previous_lines "1"
+      display --indent 6 --text "- Waiting for DNS propagation" --result "DONE" --color GREEN
 
+      # Install certificate (attempt regardless of Cloudflare status)
+      if certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_domain}"; then
+        # Enable HTTP/2 only if not already enabled
+        if ! grep -q "listen.*http2" "/etc/nginx/sites-available/${project_domain}"; then
+          nginx_server_add_http2_support "${project_domain}"
+        fi
+        project_https_enable="true"
+      else
+        log_event "warning" "Certbot failed, proceeding with HTTP configuration" "false"
+        display --indent 6 --text "- SSL Certificate" --result "WARNING" --color YELLOW
+        project_https_enable="false"
+      fi
     fi
 
   fi
