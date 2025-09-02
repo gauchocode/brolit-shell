@@ -386,53 +386,7 @@ function project_manager_menu_new_project_type_new_project() {
 
     # DOCKERIZE EXISTING PROJECT
     if [[ ${chosen_project_creation_type_option} == *"03"* ]]; then
-
-      # TODO: move to another function
-
-      log_subsection "Dockerize Project Backup"
-
-      # Backup Server selection
-      chosen_server="$(storage_remote_server_list)"
-
-      exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
-
-        # List status options
-        chosen_remote_status="$(storage_remote_status_list)"
-        [[ -z ${chosen_remote_status} ]] && return 1
-
-        # List type options
-        chosen_remote_type="$(storage_remote_type_list)"
-        [[ -z ${chosen_remote_type} ]] && return 1
-
-        chosen_remote_type_path="${chosen_server}/projects-${chosen_remote_status}/${chosen_remote_type}"
-
-        # Details of chosen_remote_type_path:
-        #   "${chosen_server}/projects-${chosen_status}/${chosen_restore_type}"
-        #chosen_restore_type="$(basename "${chosen_remote_type_path}")" # project, site or database
-        remote_list="$(dirname "${chosen_remote_type_path}")"
-
-        # Select project backup
-        backup_to_dowload="$(storage_backup_selection "${remote_list}" "site")"
-
-        # Download backup
-        storage_download_backup "${backup_to_dowload}" "${BROLIT_TMP_DIR}"
-        [[ $? -eq 1 ]] && display --indent 6 --text "- Downloading Project Backup" --result "ERROR" --color RED && return 1
-
-        # Get backup file name
-        backup_to_restore="$(basename "${backup_to_dowload}")"
-
-        # Get project_domain
-        chosen_project="$(dirname "${backup_to_dowload}")"
-        project_domain="$(basename "${chosen_project}")"
-
-        # Docker restore project
-        docker_restore_project "${backup_to_restore}" "${chosen_remote_status}" "${chosen_server}" "${project_domain}" ""
-
-        prompt_return_or_finish
-
-      fi
-
+      project_dockerize_from_backup
     fi
 
   fi
@@ -576,4 +530,113 @@ function project_install_tasks_handler() {
 
   esac
 
+}
+
+################################################################################
+# Dockerize Project from Backup
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function project_dockerize_from_backup() {
+
+  local chosen_server
+  local chosen_remote_status
+  local chosen_remote_type
+  local chosen_remote_type_path
+  local remote_list
+  local backup_to_download
+  local backup_to_restore
+  local chosen_project
+  local project_domain
+
+  log_subsection "Dockerizing Project from Backup"
+
+  # Backup Server selection
+  chosen_server="$(storage_remote_server_list)"
+  exitstatus=$?
+  if [[ ${exitstatus} -ne 0 || -z "${chosen_server}" ]]; then
+    log_event "error" "No server selected or operation cancelled" "false"
+    display --indent 6 --text "- Selecting backup server" --result "SKIPPED" --color YELLOW
+    return 1
+  fi
+  display --indent 6 --text "Selected server: ${chosen_server}" --result "OK" --color GREEN
+
+  # List status options
+  chosen_remote_status="$(storage_remote_status_list)"
+  if [[ -z "${chosen_remote_status}" ]]; then
+    log_event "error" "No status selected or operation cancelled" "false"
+    display --indent 6 --text "- Selecting status" --result "SKIPPED" --color YELLOW
+    return 1
+  fi
+  display --indent 6 --text "Selected status: ${chosen_remote_status}" --result "OK" --color GREEN
+
+  # List type options
+  chosen_remote_type="$(storage_remote_type_list)"
+  if [[ -z "${chosen_remote_type}" ]]; then
+    log_event "error" "No type selected or operation cancelled" "false"
+    display --indent 6 --text "- Selecting type" --result "SKIPPED" --color YELLOW
+    return 1
+  fi
+  display --indent 6 --text "Selected type: ${chosen_remote_type}" --result "OK" --color GREEN
+
+  chosen_remote_type_path="${chosen_server}/projects-${chosen_remote_status}/${chosen_remote_type}"
+  remote_list="$(dirname "${chosen_remote_type_path}")"
+
+  # Select project backup
+  backup_to_download="$(storage_backup_selection "${remote_list}" "site")"
+  if [[ -z "${backup_to_download}" ]]; then
+    log_event "error" "No backup selected or operation cancelled" "false"
+    display --indent 6 --text "- Selecting backup" --result "SKIPPED" --color YELLOW
+    return 1
+  fi
+  display --indent 6 --text "Selected backup: ${backup_to_download}" --result "OK" --color GREEN
+
+  # Download backup
+  storage_download_backup "${backup_to_download}" "${BROLIT_TMP_DIR}"
+  if [[ $? -eq 1 ]]; then
+    log_event "error" "Failed to download backup: ${backup_to_download}" "true"
+    display --indent 6 --text "- Downloading Project Backup" --result "ERROR" --color RED
+    return 1
+  fi
+  display --indent 6 --text "- Downloading Project Backup" --result "DONE" --color GREEN
+
+  # Get backup file name
+  backup_to_restore="$(basename "${backup_to_download}")"
+
+  # Get project_domain
+  chosen_project="$(dirname "${backup_to_download}")"
+  project_domain="$(basename "${chosen_project}")"
+
+  # Validate domain
+  if [[ ! "${project_domain}" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$ ]]; then
+    log_event "error" "Invalid domain extracted: ${project_domain}" "true"
+    display --indent 6 --text "Invalid domain extracted: ${project_domain}" --result "ERROR" --color RED
+    return 1
+  fi
+  display --indent 6 --text "Project domain: ${project_domain}" --result "OK" --color GREEN
+
+  # Check if project already exists
+  if [[ -d "${PROJECTS_PATH}/${project_domain}" ]]; then
+    log_event "error" "Project directory already exists: ${PROJECTS_PATH}/${project_domain}" "true"
+    display --indent 6 --text "Project directory already exists" --result "ERROR" --color RED
+    return 1
+  fi
+
+  # Docker restore project
+  docker_restore_project "${backup_to_restore}" "${chosen_remote_status}" "${chosen_server}" "${project_domain}" ""
+  if [[ $? -eq 0 ]]; then
+    display --indent 6 --text "- Dockerizing project" --result "DONE" --color GREEN
+    log_event "info" "Successfully dockerized project from backup: ${project_domain}" "false"
+  else
+    log_event "error" "Failed to dockerize project from backup: ${project_domain}" "true"
+    display --indent 6 --text "- Dockerizing project" --result "ERROR" --color RED
+    return 1
+  fi
+
+  prompt_return_or_finish
 }
