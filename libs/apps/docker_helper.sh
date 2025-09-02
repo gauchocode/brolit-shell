@@ -685,21 +685,22 @@ function docker_restore_project() {
     project_backup="${db_to_restore%%.*}.sql"
 
     # Downloading Database Backup
-    storage_download_backup "${db_to_download}" "${BROLIT_TMP_DIR}"
+    if ! storage_download_backup "${db_to_download}" "${BROLIT_TMP_DIR}"; then
+      log_event "error" "Failed to download database backup from ${db_to_download}" "true"
+      return 1
+    fi
 
     # Decompress
-    decompress "${BROLIT_TMP_DIR}/${db_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
+    if ! decompress "${BROLIT_TMP_DIR}/${db_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"; then
+      log_event "error" "Failed to decompress database backup" "true"
+      return 1
+    fi
 
     # Change permissions
     wp_change_permissions "${PROJECTS_PATH}/${project_domain}/wordpress"
 
     # Read .env to get mysql pass
     db_user_pass="$(project_get_config_var "${PROJECTS_PATH}/${project_domain}/.env" "MYSQL_PASSWORD")"
-
-    # Docker MySQL database import
-    docker_mysql_database_import "${project_name}_mysql" "${project_name}_user" "${db_user_pass}" "${project_name}_prod" "${BROLIT_TMP_DIR}/${project_backup}"
-
-    display --indent 6 --text "- Import database into docker volume" --result "DONE" --color GREEN
 
     # Read wp-config to get WP DATABASE PREFIX and replace on docker .env file
     #database_prefix_to_restore="$(wp_config_get_option "${BROLIT_TMP_DIR}/${chosen_project}" "table_prefix")"
@@ -721,17 +722,15 @@ function docker_restore_project() {
 
     fi
 
+    # Docker MySQL database import
+    docker_mysql_database_import "${project_name}_mysql" "${project_name}_user" "${db_user_pass}" "${project_name}_${project_stage}" "${BROLIT_TMP_DIR}/${project_backup}"
+
+    display --indent 6 --text "- Import database into docker volume" --result "DONE" --color GREEN
+
     # Show final console message
     display --indent 6 --text "- Restore and dockerize project" --result "DONE" --color GREEN
-
-    # Message
-    echo "    *****************************************************************"
-    echo "    *                                                               *"
-    echo "    *  Project ${project_domain} was restored successfully!           "
-    echo "    *                                                               *"
-    echo "    *  Now you can delete the project from the old server.            "
-    echo "    *                                                               *"
-    echo "    *****************************************************************"
+    display --indent 8 --text "Project: ${project_domain}"
+    #display --indent 8 --text "Now you can delete the project from the old server."
 
 }
 
