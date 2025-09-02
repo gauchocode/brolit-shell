@@ -451,7 +451,7 @@ function _brolit_configuration_load_email() {
     else
 
         display --indent 6 --text "- Checking email notifications config" --result "WARNING" --color YELLOW
-        display --indent 8 --text "Email notifications are disabled"
+        display --indent 8 --text "Email notifications are disabled" --tcolor YELLOW
 
     fi
 

@@ -1196,22 +1196,40 @@ function restore_backup_project_files() {
   # Restore site files
   restore_backup_files "${project_domain_new}" "${project_install_type}"
   exitstatus=$?
+  if [[ ${exitstatus} -ne 0 ]]; then
+    log_event "error" "Failed to restore backup files for ${project_domain_new}" "false"
+    return 1
+  fi
 
-  # Needs refactor
+  # Determine app directory based on project type
   if [[ ${project_install_type} == "docker"* || ${project_install_type} == "proxy" ]]; then
-    [[ ${project_type} != "wordpress" ]] && app_dir="${project_install_path}/application"
-    [[ ${project_type} == "wordpress" ]] && app_dir="${project_install_path}/wordpress"
-    change_ownership "www-data" "www-data" "${app_dir}"
+
+    if [[ ${project_type} == "wordpress" ]]; then
+      app_dir="${project_install_path}/wordpress"
+    else
+      app_dir="${project_install_path}/application"
+    fi
+
+    # Verificar si el directorio existe antes de cambiar permisos
+    if [[ -d "${app_dir}" ]]; then
+      change_ownership "${WSERVER_USER}" "${WSERVER_GROUP}" "${app_dir}"
+    else
+      display --indent 6 --text "- Directory ${app_dir} not found" --result "WARNING" --color YELLOW
+      log_event "warning" "Directory ${app_dir} does not exist. Skipping ownership change." "false"
+    fi
+
   else
-    # Change ownership
-    change_ownership "www-data" "www-data" "${project_install_path}"
+
+    # Change ownership for standard installations
+    change_ownership "${WSERVER_USER}" "${WSERVER_GROUP}" "${project_install_path}"
+
   fi
 
   # Return vars
   to_return=("${project_type}" "${project_install_type}" "${project_port}")
   echo "${to_return[@]}"
 
-  return ${exitstatus}
+  return 0
 
 }
 
@@ -1594,12 +1612,9 @@ function restore_project_backup() {
 
         export $(grep -v '^#' "${PROJECTS_PATH}/${project_domain_new}/.env" | xargs)
 
-        db_name="${MYSQL_DATABASE}"
-
         container_name="${PROJECT_NAME}_mysql"
-        
+        db_name="${MYSQL_DATABASE}"
         mysql_user="${MYSQL_USER}"
-
         mysql_user_passw="${MYSQL_PASSWORD}"
 
       else

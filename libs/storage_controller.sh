@@ -277,6 +277,9 @@ function storage_download_backup() {
     local backup_date
     #local local_space_free
 
+    # TODO: add option to skip download if local file already exists?
+    # TODO: add option to select download method (Borg, Dropbox, Local, etc)?
+
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
         # Check if local storage has enough space

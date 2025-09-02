@@ -321,14 +321,17 @@ function initialize_repository_if_needed() {
 
     if ! initialize_repository "${config_file}"; then
 
-        log_event "error" "Failed to initialize repository for ${project_name}" "true"
+        #display --indent 6 --text "- Repository initialization" --result "FAIL" --color RED
+        log_event "error" "Failed to initialize repository for ${project_name}" "false"
+
         send_notification "${SERVER_NAME}" "Critical: Failed to initialize repository for ${project_name}" "alert"
+
         return 1
 
     fi
     
     return 0
-    
+
 }
 
 # Process each folder in the WWW directory
