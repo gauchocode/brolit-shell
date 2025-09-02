@@ -296,6 +296,9 @@ function storage_download_backup() {
         dropbox_download "${file_to_download}" "${local_directory}"
         [[ $? -eq 1 ]] && error_type="dropbox_download" && got_error=1
 
+        # Quick fix, for extra line
+        clear_previous_lines "1"
+
     fi
 
     [[ ${error_type} != "none" ]] && echo "${error_type}"
