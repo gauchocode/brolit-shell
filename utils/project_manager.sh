@@ -564,7 +564,7 @@ function project_dockerize_from_backup() {
     display --indent 6 --text "- Selecting backup server" --result "SKIPPED" --color YELLOW
     return 1
   fi
-  display --indent 6 --text "- Selected server: ${chosen_server}" --result "OK" --color GREEN
+  display --indent 6 --text "- Selected server: ${chosen_server}" --result "DONE" --color GREEN
 
   # List status options
   chosen_remote_status="$(storage_remote_status_list)"
@@ -573,7 +573,7 @@ function project_dockerize_from_backup() {
     display --indent 6 --text "- Selecting status" --result "SKIPPED" --color YELLOW
     return 1
   fi
-  display --indent 6 --text "- Selected status: ${chosen_remote_status}" --result "OK" --color GREEN
+  display --indent 6 --text "- Selected status: ${chosen_remote_status}" --result "DONE" --color GREEN
 
   # List type options
   chosen_remote_type="$(storage_remote_type_list)"
@@ -582,7 +582,7 @@ function project_dockerize_from_backup() {
     display --indent 6 --text "- Selecting type" --result "SKIPPED" --color YELLOW
     return 1
   fi
-  display --indent 6 --text "- Selected type: ${chosen_remote_type}" --result "OK" --color GREEN
+  display --indent 6 --text "- Selected type: ${chosen_remote_type}" --result "DONE" --color GREEN
 
   chosen_remote_type_path="${chosen_server}/projects-${chosen_remote_status}/${chosen_remote_type}"
   remote_list="$(dirname "${chosen_remote_type_path}")"
@@ -594,7 +594,6 @@ function project_dockerize_from_backup() {
     display --indent 6 --text "- Selecting backup" --result "SKIPPED" --color YELLOW
     return 1
   fi
-  display --indent 6 --text "Selected backup: ${backup_to_download}" --result "OK" --color GREEN
 
   # Download backup
   storage_download_backup "${backup_to_download}" "${BROLIT_TMP_DIR}"
@@ -603,7 +602,6 @@ function project_dockerize_from_backup() {
     display --indent 6 --text "- Downloading Project Backup" --result "ERROR" --color RED
     return 1
   fi
-  display --indent 6 --text "- Downloading Project Backup" --result "DONE" --color GREEN
 
   # Get backup file name
   backup_to_restore="$(basename "${backup_to_download}")"
@@ -618,12 +616,12 @@ function project_dockerize_from_backup() {
     display --indent 6 --text "Invalid domain extracted: ${project_domain}" --result "ERROR" --color RED
     return 1
   fi
-  display --indent 6 --text "Project domain: ${project_domain}" --result "OK" --color GREEN
+  display --indent 8 --text "Project domain: ${project_domain}" -tcolor GREEN
 
   # Check if project already exists
   if [[ -d "${PROJECTS_PATH}/${project_domain}" ]]; then
     log_event "error" "Project directory already exists: ${PROJECTS_PATH}/${project_domain}" "true"
-    display --indent 6 --text "Project directory already exists" --result "ERROR" --color RED
+    display --indent 6 --text "- Project directory already exists" --result "ERROR" --color RED
     return 1
   fi
 
