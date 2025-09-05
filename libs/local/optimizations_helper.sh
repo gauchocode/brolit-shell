@@ -69,22 +69,28 @@ function optimize_images_complete() {
   
   # Process only WordPress projects
   for project_path in "${PROJECTS_PATH}"/*/; do
+  
     if [[ -f "${project_path}wp-config.php" ]]; then
+    
+      log_event "info" "Found WordPress project at ${project_path}" "false"
+
       local uploads_path="${project_path}wp-content/uploads"
       
       # Verify uploads directory exists
       if [[ -d "${uploads_path}" ]]; then
-        log_event "info" "Optimizing images in ${uploads_path}" "false"
+        log_event "info" "Processing uploads directory: ${uploads_path}" "false"
         # Optimize images only in uploads directory
         optimize_image_size "${uploads_path}" "jpg" "1920" "1080"
         optimize_images "${uploads_path}" "jpg" "80"
         optimize_images "${uploads_path}" "png" ""
       fi
+
     fi
+
   done
   
   log_event "info" "Image optimization process completed" "false"
-  
+
 }
 
 ################################################################################
