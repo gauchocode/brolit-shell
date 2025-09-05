@@ -64,28 +64,27 @@ function _update_last_optimization_date() {
 
 function optimize_images_complete() {
 
-  # Check package required
-  package_install_optimization_utils
-
-  # TODO: extract this to an option
-  img_compress='80'
-  img_max_width='1920'
-  img_max_height='1080'
-
-  # Ref: https://github.com/centminmod/optimise-images
-  # Ref: https://stackoverflow.com/questions/6384729/only-shrink-larger-images-using-imagemagick-to-a-ratio
-
-  # TODO: First need to run without the parameter -mtime -7
-
-  optimize_image_size "${PROJECTS_PATH}" "jpg" "${img_max_width}" "${img_max_height}"
-
-  optimize_images "${PROJECTS_PATH}" "jpg" "${img_compress}"
-
-  optimize_images "${PROJECTS_PATH}" "png" ""
-
-  # Change ownership
-  change_ownership "www-data" "www-data" "${PROJECTS_PATH}"
-
+  log_subsection "Image Optimization"
+  log_event "info" "Starting image optimization process for WordPress projects" "false"
+  
+  # Process only WordPress projects
+  for project_path in "${PROJECTS_PATH}"/*/; do
+    if [[ -f "${project_path}wp-config.php" ]]; then
+      local uploads_path="${project_path}wp-content/uploads"
+      
+      # Verify uploads directory exists
+      if [[ -d "${uploads_path}" ]]; then
+        log_event "info" "Optimizing images in ${uploads_path}" "false"
+        # Optimize images only in uploads directory
+        optimize_image_size "${uploads_path}" "jpg" "1920" "1080"
+        optimize_images "${uploads_path}" "jpg" "80"
+        optimize_images "${uploads_path}" "png" ""
+      fi
+    fi
+  done
+  
+  log_event "info" "Image optimization process completed" "false"
+  
 }
 
 ################################################################################
@@ -104,8 +103,6 @@ function optimize_ram_usage() {
   log_event "info" "Restarting php-fpm service" "false"
 
   service php"${PHP_V}"-fpm restart
-
-  display --indent 6 --text "- Restarting php-fpm service" --result "DONE" --color GREEN
 
   # Cleanning Swap
   clean_swap
@@ -146,21 +143,13 @@ function optimize_image_size() {
 
   if [[ "${last_run}" == "never" ]]; then
 
-    display --indent 6 --text "- Optimizing images sizes for first time"
-
-    log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${MOGRIFY} -resize ${img_max_width}x${img_max_height}\> {} \;" "false"
-    ${FIND} "${path}" -type f -name "*.${file_extension}" -exec "${MOGRIFY}" -resize "${img_max_width}"x"${img_max_height}"\> {} \;
-
-    display --indent 6 --text "- Optimizing images sizes for first time" --result "DONE" --color GREEN
+  log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${MOGRIFY} -resize ${img_max_width}x${img_max_height}\> {} \;" "false"
+  ${FIND} "${path}" -type f -name "*.${file_extension}" -exec "${MOGRIFY}" -resize "${img_max_width}"x"${img_max_height}"\> {} \;
 
   else
 
-    display --indent 6 --text "- Optimizing images of last 7 days"
-
-    log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${MOGRIFY} -resize ${img_max_width}x${img_max_height}\> {} \;" "false"
-    ${FIND} "${path}" -mtime -7 -type f -name "*.${file_extension}" -exec "${MOGRIFY}" -resize "${img_max_width}"x"${img_max_height}"\> {} \;
-
-    display --indent 6 --text "- Optimizing images of last 7 days" --result "DONE" --color GREEN
+  log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${MOGRIFY} -resize ${img_max_width}x${img_max_height}\> {} \;" "false"
+  ${FIND} "${path}" -mtime -7 -type f -name "*.${file_extension}" -exec "${MOGRIFY}" -resize "${img_max_width}"x"${img_max_height}"\> {} \;
 
   fi
 
@@ -197,47 +186,37 @@ function optimize_images() {
 
     # Run jpegoptim
     log_event "info" "Running jpegoptim to optimize images"
-    display --indent 6 --text "- Optimizing jpg images"
+  if [[ "${last_run}" == "never" ]]; then
 
-    if [[ "${last_run}" == "never" ]]; then
+    log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -regex .*\.\(jpg\|jpeg\) -exec ${JPEGOPTIM} --max=${img_compress} --strip-all --all-progressive {} \;" "false"
+    ${FIND} "${path}" -type f -regex ".*\.\(jpg\|jpeg\)" -exec "${JPEGOPTIM}" --max="${img_compress}" --strip-all --all-progressive {} \;
 
-      log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -regex .*\.\(jpg\|jpeg\) -exec ${JPEGOPTIM} --max=${img_compress} --strip-all --all-progressive {} \;" "false"
-      ${FIND} "${path}" -type f -regex ".*\.\(jpg\|jpeg\)" -exec "${JPEGOPTIM}" --max="${img_compress}" --strip-all --all-progressive {} \;
+  else
 
-    else
+    log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -regex .*\.\(jpg\|jpeg\) -exec ${JPEGOPTIM} --max=${img_compress} --strip-all --all-progressive {} \;" "false"
+    ${FIND} "${path}" -mtime -7 -type f -regex ".*\.\(jpg\|jpeg\)" -exec "${JPEGOPTIM}" --max="${img_compress}" --strip-all --all-progressive {} \;
 
-      log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -regex .*\.\(jpg\|jpeg\) -exec ${JPEGOPTIM} --max=${img_compress} --strip-all --all-progressive {} \;" "false"
-      ${FIND} "${path}" -mtime -7 -type f -regex ".*\.\(jpg\|jpeg\)" -exec "${JPEGOPTIM}" --max="${img_compress}" --strip-all --all-progressive {} \;
-
-    fi
-
-    display --indent 6 --text "- Optimizing jpg images" --result "DONE" --color GREEN
+  fi
 
   elif [[ ${file_extension} == "png" ]]; then
 
     # Run optipng
     log_event "info" "Running optipng to optimize images ..."
-    display --indent 6 --text "- Optimizing png images"
+  if [[ "${last_run}" == "never" ]]; then
 
-    if [[ "${last_run}" == "never" ]]; then
-
-      log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${OPTIPNG} -strip-all {} \;" "false"
-      ${FIND} "${path}" -type f -name "*.${file_extension}" -exec "${OPTIPNG}" -o7 -strip all {} \;
-
-    else
-
-      log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${OPTIPNG} -strip-all {} \;" "false"
-      ${FIND} "${path}" -mtime -7 -type f -name "*.${file_extension}" -exec "${OPTIPNG}" -o7 -strip all {} \;
-
-    fi
-
-    display --indent 6 --text "- Optimizing png images" --result "DONE" --color GREEN
+    log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${OPTIPNG} -strip-all {} \;" "false"
+    ${FIND} "${path}" -type f -name "*.${file_extension}" -exec "${OPTIPNG}" -o7 -strip all {} \;
 
   else
 
-    log_event "warning" "Unsopported file extension ${file_extension}" "false"
-    display --indent 6 --text "- Optimizing images" --result "FAIL" --color RED
-    display --indent 8 --text "Unsopported file extension: ${file_extension}"
+    log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${OPTIPNG} -strip-all {} \;" "false"
+    ${FIND} "${path}" -mtime -7 -type f -name "*.${file_extension}" -exec "${OPTIPNG}" -o7 -strip all {} \;
+
+  fi
+
+  else
+
+    log_event "warning" "Unsupported file extension ${file_extension}" "false"
 
   fi
 
@@ -257,25 +236,49 @@ function optimize_images() {
 ################################################################################
 
 function optimize_pdfs() {
-
   local last_run
+  local pdf_files=()
 
   last_run=$(_check_last_optimization_date)
+  log_subsection "PDF Optimizer"
 
-  # Run pdf optimizer
-  log_event "error" "TODO: Running pdfwrite ..." "false"
+  # Find PDF files in WordPress uploads directories
+  while IFS= read -r -d $'\0' project_path; do
+    if [[ -f "${project_path}wp-config.php" ]]; then
+      local uploads_path="${project_path}wp-content/uploads"
+      
+      if [[ -d "${uploads_path}" ]]; then
+        while IFS= read -r -d $'\0' pdf_file; do
+          pdf_files+=("$pdf_file")
+        done < <(${FIND} "${uploads_path}" -type f -name "*.pdf" -print0)
+      fi
+    fi
+  done < <(${FIND} "${PROJECTS_PATH}" -maxdepth 1 -type d -print0)
 
-  #Here is a solution for getting the output of find into a bash array:
-  #array=()
-  #while IFS=  read -r -d $'\0'; do
-  #    array+=("$REPLY")
-  #done < <(find . -name "${input}" -print0)
-  #for %f in (*) do gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/screen -dNOPAUSE -dQUIET -dBATCH -sOutputFile=%f %f
-  #find -mtime -7 -type f -name "*.pdf" -exec gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.3 -dPDFSETTINGS=/screen -dNOPAUSE -dPrinted=false -dQUIET -sOutputFile=compressed.%f %f
+  if [[ ${#pdf_files[@]} -gt 0 ]]; then
+  for pdf_file in "${pdf_files[@]}"; do
+    local compressed_file="${pdf_file}.compressed"
+      
+    # Optimize PDF
+    gs -sDEVICE=pdfwrite \
+       -dCompatibilityLevel=1.4 \
+       -dPDFSETTINGS=/screen \
+       -dNOPAUSE \
+       -dBATCH \
+       -sOutputFile="${compressed_file}" \
+       "${pdf_file}" >/dev/null 2>&1
+      
+    # Replace original if successful
+    if [[ -s "${compressed_file}" ]] && [[ $(wc -c < "${compressed_file}") -lt $(wc -c < "${pdf_file}") ]]; then
+      mv "${compressed_file}" "${pdf_file}"
+    else
+      rm -f "${compressed_file}"
+    fi
+  done
+  fi
 
-  # Change ownership
-  change_ownership "www-data" "www-data" "${PROJECTS_PATH}"
-
+  # Next time will run the find command with -mtime -7 parameter
+  _update_last_optimization_date
 }
 
 ################################################################################
@@ -296,11 +299,8 @@ function truncate_large_docker_logs() {
   ${FIND} /var/lib/docker/containers/ -name "*-json.log" -exec du -sh {} + | awk '$1 ~ /^[0-9.]+G/ {print $2}' | while read -r log; do
     log_event "info" "Truncating large log: $log" "false"
     truncate -s 0 "$log"
-    display --indent 8 --text "- Truncated $log" --result "DONE" --color GREEN
   done
 
-  # Log
-  display --indent 6 --text "- Truncating large Docker container logs" --result "DONE" --color GREEN
 }
 
 ################################################################################
@@ -321,9 +321,6 @@ function delete_old_logs() {
   # Command
   ${FIND} /var/log/ -mtime +7 -type f -delete
 
-  # Log
-  display --indent 6 --text "- Deleting old system logs" --result "DONE" --color GREEN
-
   # Truncate large Docker container logs
   truncate_large_docker_logs
 }
@@ -341,13 +338,10 @@ function delete_old_logs() {
 function clean_swap() {
 
   # Log
-  log_event "info" "Cleanning Swap" "false"
+  log_event "info" "Cleaning Swap" "false"
 
   # Command
   swapoff -a && swapon -a
-
-  # Log
-  display --indent 6 --text "- Cleanning Swap" --result "DONE" --color GREEN
 
 }
 
@@ -364,13 +358,40 @@ function clean_swap() {
 function clean_ram_cache() {
 
   # Log
-  log_event "info" "Cleanning RAM cache" "false"
+  log_event "info" "Cleaning RAM cache" "false"
 
   # Cleanning RAM
   sync
   echo 1 >/proc/sys/vm/drop_caches
 
-  # Log
-  display --indent 6 --text "- Cleanning RAM cache" --result "DONE" --color GREEN
+}
 
+################################################################################
+# Fix WordPress permissions
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function fix_wordpress_permissions() {
+  log_subsection "WordPress Permissions Fix"
+  
+  for project_path in "${PROJECTS_PATH}"/*/; do
+    if [[ -f "${project_path}wp-config.php" ]]; then
+      # Directories: 755
+      find "${project_path}" -type d -exec chmod 755 {} \; >/dev/null 2>&1
+      
+      # Files: 644
+      find "${project_path}" -type f -exec chmod 644 {} \; >/dev/null 2>&1
+      
+      # Specific for uploads
+      local uploads_path="${project_path}wp-content/uploads"
+      if [[ -d "${uploads_path}" ]]; then
+        chown -R www-data:www-data "${uploads_path}" >/dev/null 2>&1
+      fi
+    fi
+  done
 }
