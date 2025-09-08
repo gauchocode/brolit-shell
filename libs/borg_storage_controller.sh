@@ -543,7 +543,7 @@ function initialize_repository() {
     fi
 
     # Log
-    lear_previous_lines "1"
+    clear_previous_lines "1"
     display --indent 6 --text "- Repository initialization" --result "DONE" --color GREEN
     log_event "info" "Repository initialized successfully" "false"
 
