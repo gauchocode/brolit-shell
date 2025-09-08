@@ -2,7 +2,7 @@
     "BROLIT_SETUP": {
         "config": [
             {
-                "version": "3.10.6",
+                "version": "3.10.7",
                 "debug": "true",
                 "skip_test": "true",
                 "tmp_dir": "tmp",
@@ -70,7 +70,7 @@
                 ],
                 "retention": [
                     {
-                        "keep_daily": "3",
+                        "keep_daily": "1",
                         "keep_weekly": "0",
                         "keep_monthly": "0"
                     }
@@ -136,12 +136,12 @@
                 "config": [
                     {
                         "maila": "",
+                        "from_email": "",
                         "smtp_server": "",
                         "smtp_port": "",
                         "smtp_tls": "",
                         "smtp_user": "",
-                        "smtp_user_pass": "",
-                        "from_email": ""
+                        "smtp_user_pass": ""
                     }
                 ]
             }
