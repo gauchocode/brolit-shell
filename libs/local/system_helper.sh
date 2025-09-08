@@ -43,7 +43,7 @@ function system_unnatended_upgrades() {
             package_install "update-notifier-common"
 
             # Uncomment to enable notifications
-            sed -i "s#//Unattended-Upgrade::Mail \"\";#Unattended-Upgrade::Mail \"${NOTIFICATION_EMAIL_MAILA}\";#" /etc/apt/apt.conf.d/50unattended-upgrades
+            sed -i "s#//Unattended-Upgrade::Mail \"\";#Unattended-Upgrade::Mail \"${NOTIFICATION_EMAIL_EMAIL_TO}\";#" /etc/apt/apt.conf.d/50unattended-upgrades
             sed -i "s#//Unattended-Upgrade::MailReport \"on-change\";#Unattended-Upgrade::Mail \"only-on-error\";#" /etc/apt/apt.conf.d/50unattended-upgrades
             sed -i "s#//Unattended-Upgrade::Remove-Unused-Dependencies \"false\";#Unattended-Upgrade::Remove-Unused-Dependencies \"true\";#" /etc/apt/apt.conf.d/50unattended-upgrades
 

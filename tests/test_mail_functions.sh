@@ -17,7 +17,7 @@ function test_mail_certificates_section() {
     CERT_MAIL_VAR=$(<"${CERT_MAIL}")
 
     # Preparing email to send
-    log_event "info" "Sending Email to ${NOTIFICATION_EMAIL_MAILA} ..." "false"
+    log_event "info" "Sending Email to ${NOTIFICATION_EMAIL_EMAIL_TO} ..." "false"
 
     email_subject="${STATUS_ICON_D} [${NOWDISPLAY}] - Cert Expiration Info on ${SERVER_NAME}"
     email_content="${HTMLOPEN} ${BODY_SRV} ${CERT_MAIL_VAR} ${MAIL_FOOTER}"
@@ -38,7 +38,7 @@ function test_mail_package_section() {
     mail_package_status_section
 
     # Preparing email to send
-    log_event "info" "Sending Email to ${NOTIFICATION_EMAIL_MAILA} ..." "false"
+    log_event "info" "Sending Email to ${NOTIFICATION_EMAIL_EMAIL_TO} ..." "false"
 
     email_subject="${EMAIL_STATUS} [${NOWDISPLAY}] Packages Status Info on ${SERVER_NAME}"
     email_content="${HTMLOPEN} ${BODY_SRV} ${PKG_MAIL_VAR} ${MAIL_FOOTER}"

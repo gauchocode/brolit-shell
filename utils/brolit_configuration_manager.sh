@@ -417,7 +417,8 @@ function _brolit_configuration_load_email() {
 
     # Globals
     declare -g NOTIFICATION_EMAIL_STATUS
-    declare -g NOTIFICATION_EMAIL_MAILA
+    declare -g NOTIFICATION_EMAIL_EMAIL_TO
+    declare -g NOTIFICATION_EMAIL_FROM_EMAIL
     declare -g NOTIFICATION_EMAIL_SMTP_SERVER
     declare -g NOTIFICATION_EMAIL_SMTP_PORT
     declare -g NOTIFICATION_EMAIL_SMTP_TLS
@@ -430,8 +431,8 @@ function _brolit_configuration_load_email() {
     if [[ ${NOTIFICATION_EMAIL_STATUS} == "enabled" ]]; then
 
         # Required
-        NOTIFICATION_EMAIL_MAILA="$(json_read_field "${server_config_file}" "NOTIFICATIONS.email[].config[].maila")"
-        [[ -z ${NOTIFICATION_EMAIL_MAILA} ]] && die "Error reading NOTIFICATION_EMAIL_MAILA from server config file."
+        NOTIFICATION_EMAIL_EMAIL_TO="$(json_read_field "${server_config_file}" "NOTIFICATIONS.email[].config[].maila")"
+        [[ -z ${NOTIFICATION_EMAIL_EMAIL_TO} ]] && die "Error reading NOTIFICATION_EMAIL_EMAIL_TO from server config file."
 
         NOTIFICATION_EMAIL_SMTP_SERVER="$(json_read_field "${server_config_file}" "NOTIFICATIONS.email[].config[].smtp_server")"
         [[ -z ${NOTIFICATION_EMAIL_SMTP_SERVER} ]] && die "Error reading NOTIFICATION_EMAIL_SMTP_SERVER from server config file."
@@ -448,6 +449,9 @@ function _brolit_configuration_load_email() {
         NOTIFICATION_EMAIL_SMTP_UPASS="$(json_read_field "${server_config_file}" "NOTIFICATIONS.email[].config[].smtp_user_pass")"
         [[ -z ${NOTIFICATION_EMAIL_SMTP_UPASS} ]] && die "Error reading NOTIFICATION_EMAIL_SMTP_UPASS from server config file."
 
+        NOTIFICATION_EMAIL_FROM_EMAIL="$(json_read_field "${server_config_file}" "NOTIFICATIONS.email[].config[].from_email")"
+        [[ -z ${NOTIFICATION_EMAIL_FROM_EMAIL} ]] && die "Error reading NOTIFICATION_EMAIL_FROM_EMAIL from server config file."
+
     else
 
         display --indent 6 --text "- Checking email notifications config" --result "WARNING" --color YELLOW
@@ -455,7 +459,7 @@ function _brolit_configuration_load_email() {
 
     fi
 
-    export NOTIFICATION_EMAIL_STATUS NOTIFICATION_EMAIL_MAILA NOTIFICATION_EMAIL_SMTP_SERVER NOTIFICATION_EMAIL_SMTP_PORT NOTIFICATION_EMAIL_SMTP_TLS NOTIFICATION_EMAIL_SMTP_USER NOTIFICATION_EMAIL_SMTP_UPASS
+    export NOTIFICATION_EMAIL_STATUS NOTIFICATION_EMAIL_EMAIL_TO NOTIFICATION_EMAIL_SMTP_SERVER NOTIFICATION_EMAIL_SMTP_PORT NOTIFICATION_EMAIL_SMTP_TLS NOTIFICATION_EMAIL_SMTP_USER NOTIFICATION_EMAIL_SMTP_UPASS NOTIFICATION_EMAIL_FROM_EMAIL
 
 }
 

@@ -34,7 +34,7 @@ set mail-format {
 set mailserver NOTIFICATION_EMAIL_SMTP_SERVER port NOTIFICATION_EMAIL_SMTP_PORT
     username NOTIFICATION_EMAIL_SMTP_USER password "NOTIFICATION_EMAIL_SMTP_UPASS"
     using TLSV12 with timeout 30 seconds
-    set alert NOTIFICATION_EMAIL_MAILA
+    set alert NOTIFICATION_EMAIL_EMAIL_TO
 
 #http settings
 set httpd port 2812 address 0.0.0.0                                   # allow connections on all adapters

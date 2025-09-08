@@ -94,7 +94,7 @@ done
 #EMAIL_STATUS=$(mail_subject_status "${STATUS_BACKUP_DBS}" "${STATUS_BACKUP_FILES}" "${STATUS_SERVER}" "${OUTDATED_PACKAGES}")
 
 # Preparing email to send
-#log_event "info" "Sending Email to ${NOTIFICATION_EMAIL_MAILA} ..." "true"
+#log_event "info" "Sending Email to ${NOTIFICATION_EMAIL_EMAIL_TO} ..." "true"
 
 #EMAIL_SUBJECT="${EMAIL_STATUS} on ${SERVER_NAME} Complete Backup - [${NOWDISPLAY}]"
 #EMAIL_CONTENT="${HTMLOPEN} ${BODY_SRV} ${PKG_MAIL_VAR} ${CERT_MAIL_VAR} ${CONFIG_MAIL_VAR} ${DB_MAIL_VAR} ${FILE_MAIL_VAR} ${MAIL_FOOTER}"
