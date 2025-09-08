@@ -272,41 +272,43 @@ function setup_project_directories() {
         
         ((total_servers++))
         
-        display --indent 6 --text "- Configuring backup server ${server} for ${project_name}" --result "WAIT" --color YELLOW
+        display --indent 6 --text "- Configuring backup server for ${project_name}" --result "WAIT" --color YELLOW
         log_event "info" "Validating connection to ${server}:p${port}" "false"
         if ! validate_ssh_connection "${user}" "${server}" "${port}"; then
             
             # Log
             clear_previous_lines "1"
-            display --indent 6 --text "- Configuring backup server ${server} for ${project_name}" --result "FAIL" --color RED
-            log_event "error" "Failed to connect to backup server ${server}" "true"
+            display --indent 6 --text "- Configuring backup server for ${project_name}" --result "FAIL" --color RED
+            display --indent 8 --text "  Server: ${server}:${port}" --tcolor RED
+            log_event "error" "Failed to connect to backup server ${server}" "false"
             
             send_notification "${SERVER_NAME}" "Critical: Failed to connect to backup server ${server} for ${project_name}" "alert"
             continue
         fi
         
-        display --indent 6 --text "- Checking disk space on backup server ${server}" --result "WAIT" --color YELLOW
+        display --indent 6 --text "- Checking disk space on backup server" --result "WAIT" --color YELLOW
         log_event "info" "Checking disk space on ${server}" "false"
         if ! check_remote_disk_space "${user}" "${server}" "${port}" "${estimated_size}" "20"; then
             
             # Log
             clear_previous_lines "1"
-            display --indent 6 --text "- Checking disk space on backup server ${server}" --result "FAIL" --color RED
-            display --indent 8 --text "  Required: ${estimated_size}MB + 20% margin" --tcolor YELLOW
-            log_event "error" "Insufficient disk space on backup server ${server}" "true"
+            display --indent 6 --text "- Checking disk space on backup server" --result "FAIL" --color RED
+            display --indent 8 --text "  Required: ${estimated_size}MB + 20% margin" --tcolor RED
+            log_event "error" "Insufficient disk space on backup server ${server}" "false"
             
             send_notification "${SERVER_NAME}" "Critical: Insufficient disk space on backup server ${server} for ${project_name}" "alert"
             continue
         fi
         
-        display --indent 6 --text "- Creating directories on backup server ${server}" --result "WAIT" --color YELLOW
+        display --indent 6 --text "- Creating directories on backup server" --result "WAIT" --color YELLOW
         log_event "info" "Creating remote directories on ${server}" "false"
         if ! create_remote_directories "${user}" "${server}" "${port}" "${BACKUP_BORG_GROUP}" "${HOSTNAME}" "${project_name}"; then
             
             # Log
             clear_previous_lines "1"
-            display --indent 6 --text "- Creating directories on backup server ${server}" --result "FAIL" --color RED
-            log_event "error" "Failed to create directories on backup server ${server}" "true"
+            display --indent 6 --text "- Creating directories on backup server" --result "FAIL" --color RED
+            display --indent 8 --text "  Server: ${server}:${port}" --tcolor RED
+            log_event "error" "Failed to create directories on backup server ${server}" "false"
             
             send_notification "${SERVER_NAME}" "Critical: Failed to create directories on backup server ${server} for ${project_name}" "alert"
             continue
@@ -408,6 +410,9 @@ function generate_config() {
     	done
 
     else
+
+        # Log
+        display --indent 6 --text "- Borg backup is not enabled" --result "SKIPPED" --color YELLOW
     	log_event "info" "Borg backup is not enabled" "false"
 
     fi
