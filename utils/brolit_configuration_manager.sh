@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.12
+# Version: 3.3.3
 ################################################################################
 #
 # Server Config Manager: Brolit server configuration management.
@@ -894,7 +894,15 @@ function _brolit_configuration_load_mariadb() {
 
             # Mysql installed but is not MariaDB
             if [[ -z ${is_mariadb} ]]; then
-                log_event "error" "Other version of mysql is already installed." "true"
+
+                mysql_output="$(mysql -V)"
+
+                # Log
+                display --indent 6 --text "- Checking MariaDB config" --result "WARNNING" --color YELLOW
+                display --indent 8 --text "Other version of mysql is already installed." --tcolor YELLOW
+                display --indent 8 --text "Installed version: ${mysql_output}" --tcolor YELLOW
+                log_event "error" "Other version of mysql is already installed." "false"
+            
             fi
 
         fi
@@ -985,7 +993,15 @@ function _brolit_configuration_load_mysql() {
 
             # Mysql installed but is MariaDB
             if [[ -n ${is_mariadb} ]]; then
-                log_event "error" "Other version of mysql is already installed (MariaDB)." "true"
+                
+                mysql_output="$(mysql -V)"
+
+                # Log
+                display --indent 6 --text "- Checking MariaDB config" --result "WARNNING" --color YELLOW
+                display --indent 8 --text "Other version of mysql is already installed." --tcolor YELLOW
+                display --indent 8 --text "Installed version: ${mysql_output}" --tcolor YELLOW
+                log_event "error" "Other version of mysql is already installed." "false"
+
             fi
         fi
 
