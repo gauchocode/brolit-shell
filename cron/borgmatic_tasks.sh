@@ -204,11 +204,11 @@ function estimate_backup_size() {
     local size_kb
     local size_mb
     
-    # Estimar tamaño del proyecto
+    # Estimate size in KB and convert to MB
     size_kb=$(du -sk "${project_path}" | awk '{print $1}')
     size_mb=$((size_kb / 1024))
     
-    # Añadir margen del 20% para compresión y metadatos
+    # Add a safety margin of 20%
     size_mb=$(((size_mb * 120) / 100))
     
     log_event "info" "Estimated backup size for $(basename "${project_path}"): ${size_mb}MB" "false"
@@ -227,20 +227,20 @@ function check_remote_disk_space() {
     local safety_margin="${5:-20}"  # margen de seguridad en porcentaje
     local mount_point="${6:-/}"
     
-    # Calcular espacio requerido con margen
+    # Calculate required space with safety margin
     local required_space_with_margin
     required_space_with_margin=$(((required_space_mb * (100 + safety_margin)) / 100))
     
-    # Obtener espacio libre en disco remoto
+    # Get free space on remote server in KB
     local free_space_kb
     free_space_kb=$(ssh -p "${port}" "${user}@${server}" "df -k '${mount_point}'" | awk 'NR==2 {print $4}')
     
-    # Convertir KB a MB
+    # Convert KB to MB
     local free_space_mb=$((free_space_kb / 1024))
     
     log_event "info" "Espacio libre en ${server}:${mount_point}: ${free_space_mb}MB, Requerido con margen: ${required_space_with_margin}MB" "false"
     
-    # Verificar si hay suficiente espacio
+    # Check if there is enough space
     if [[ ${free_space_mb} -lt ${required_space_with_margin} ]]; then
 
         log_event "error" "Espacio insuficiente en ${server}:${mount_point}. Requiere ${required_space_with_margin}MB, disponible ${free_space_mb}MB" "true"
@@ -260,7 +260,7 @@ function setup_project_directories() {
     local successful_servers=0
     local total_servers=0
     
-    # Estimar tamaño del backup
+    # Estimate backup size
     local estimated_size
     estimated_size=$(estimate_backup_size "${project_path}")
     
@@ -272,23 +272,42 @@ function setup_project_directories() {
         
         ((total_servers++))
         
+        display --indent 6 --text "- Configuring backup server ${server} for ${project_name}" --result "WAIT" --color YELLOW
         log_event "info" "Validating connection to ${server}:p${port}" "false"
         if ! validate_ssh_connection "${user}" "${server}" "${port}"; then
+            
+            # Log
+            clear_previous_lines "1"
+            display --indent 6 --text "- Configuring backup server ${server} for ${project_name}" --result "FAIL" --color RED
             log_event "error" "Failed to connect to backup server ${server}" "true"
+            
             send_notification "${SERVER_NAME}" "Critical: Failed to connect to backup server ${server} for ${project_name}" "alert"
             continue
         fi
         
+        display --indent 6 --text "- Checking disk space on backup server ${server}" --result "WAIT" --color YELLOW
         log_event "info" "Checking disk space on ${server}" "false"
         if ! check_remote_disk_space "${user}" "${server}" "${port}" "${estimated_size}" "20"; then
+            
+            # Log
+            clear_previous_lines "1"
+            display --indent 6 --text "- Checking disk space on backup server ${server}" --result "FAIL" --color RED
+            display --indent 8 --text "  Required: ${estimated_size}MB + 20% margin" --tcolor YELLOW
             log_event "error" "Insufficient disk space on backup server ${server}" "true"
+            
             send_notification "${SERVER_NAME}" "Critical: Insufficient disk space on backup server ${server} for ${project_name}" "alert"
             continue
         fi
         
+        display --indent 6 --text "- Creating directories on backup server ${server}" --result "WAIT" --color YELLOW
         log_event "info" "Creating remote directories on ${server}" "false"
         if ! create_remote_directories "${user}" "${server}" "${port}" "${BACKUP_BORG_GROUP}" "${HOSTNAME}" "${project_name}"; then
+            
+            # Log
+            clear_previous_lines "1"
+            display --indent 6 --text "- Creating directories on backup server ${server}" --result "FAIL" --color RED
             log_event "error" "Failed to create directories on backup server ${server}" "true"
+            
             send_notification "${SERVER_NAME}" "Critical: Failed to create directories on backup server ${server} for ${project_name}" "alert"
             continue
         fi
@@ -296,16 +315,21 @@ function setup_project_directories() {
         ((successful_servers++))
     done
     
-    # Si no todos los servidores fueron exitosos, es un error crítico
+    # Evaluate overall success
     if [[ ${successful_servers} -lt ${total_servers} ]]; then
 
+        # Log
+        display --indent 6 --text "- Configuring backup servers for ${project_name}" --result "FAILED" --color RED
         log_event "error" "Not all backup servers were successfully configured for ${project_name}. Success: ${successful_servers}/${total_servers}" "true"
+        
+        # Send notification
         send_notification "${SERVER_NAME}" "Critical: Incomplete backup server configuration for ${project_name}. Success: ${successful_servers}/${total_servers}" "alert"
 
         return 1
 
     fi
     
+    display --indent 6 --text "- Configuring backup servers for ${project_name}" --result "DONE" --color GREEN
     log_event "info" "All backup servers successfully configured for ${project_name}" "false"
 
     return 0
@@ -317,13 +341,18 @@ function initialize_repository_if_needed() {
     local config_file="${1}"
     local project_name="${2}"
     
+    # Check if repository is already initialized
+    display --indent 6 --text "- Checking if repository is initialized for ${project_name}" --result "WAIT" --color YELLOW
     log_event "info" "Initializing repository for ${project_name}" "false"
 
     if ! initialize_repository "${config_file}"; then
 
-        #display --indent 6 --text "- Repository initialization" --result "FAIL" --color RED
+        # Log
+        clear_previous_lines "1"
+        display --indent 6 --text "- Repository initialization" --result "FAIL" --color RED
         log_event "error" "Failed to initialize repository for ${project_name}" "false"
 
+        # Send notification
         send_notification "${SERVER_NAME}" "Critical: Failed to initialize repository for ${project_name}" "alert"
 
         return 1

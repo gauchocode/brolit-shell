@@ -247,8 +247,8 @@ function package_check_required() {
   log_event "info" "All required packages are installed" "false"
 
   # Break and space
-  log_break "true"
-  echo ""
+  #log_break "true"
+  #echo ""
 
 }
 
