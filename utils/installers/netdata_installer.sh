@@ -118,7 +118,7 @@ function _netdata_email_config() {
   send_email="YES"
   sed -i "s/^\(SEND_EMAIL\s*=\s*\).*\$/\1\"${send_email}\"/" ${health_alarm_notify_conf}
 
-  default_recipient_email="${NOTIFICATION_EMAIL_MAILA}"
+  default_recipient_email="${NOTIFICATION_EMAIL_EMAIL_TO}"
 
   # Choose the netdata alarm level
   netdata_alarm_level="${PACKAGES_NETDATA_NOTIFICATION_ALARM_LEVEL}"

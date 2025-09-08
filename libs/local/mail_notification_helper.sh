@@ -53,7 +53,7 @@ function mail_send_notification() {
     local from_email="${NOTIFICATION_EMAIL_FROM_EMAIL:-${NOTIFICATION_EMAIL_SMTP_USER}}"
 
     # Check SMTP config
-    if [[ "${NOTIFICATION_EMAIL_SMTP_SERVER}" == "" ]] || [[ "${NOTIFICATION_EMAIL_SMTP_PORT}" == "" ]] || [[ "${NOTIFICATION_EMAIL_SMTP_USER}" == "" ]] || [[ "${NOTIFICATION_EMAIL_SMTP_UPASS}" == "" ]] || [[ "${NOTIFICATION_EMAIL_MAILA}" == "" ]]; then
+    if [[ "${NOTIFICATION_EMAIL_SMTP_SERVER}" == "" ]] || [[ "${NOTIFICATION_EMAIL_SMTP_PORT}" == "" ]] || [[ "${NOTIFICATION_EMAIL_SMTP_USER}" == "" ]] || [[ "${NOTIFICATION_EMAIL_SMTP_UPASS}" == "" ]] || [[ "${NOTIFICATION_EMAIL_EMAIL_TO}" == "" ]]; then
 
         # Log
         log_event "warning" "SMTP config not found. Skipping email notification." "false"
@@ -65,12 +65,12 @@ function mail_send_notification() {
     fi
 
     # Log
-    log_event "info" "Sending Email to ${NOTIFICATION_EMAIL_MAILA} ..." "false"
-    log_event "debug" "Running: sendEmail -f \"${from_email}\" -t \"${NOTIFICATION_EMAIL_MAILA}\" -u \"${email_subject}\" -o message-content-type=html -m \"${email_content}\" -s \"${NOTIFICATION_EMAIL_SMTP_SERVER}:${NOTIFICATION_EMAIL_SMTP_PORT}\" -o tls=\"${NOTIFICATION_EMAIL_SMTP_TLS}\" -xu \"${NOTIFICATION_EMAIL_SMTP_USER}\" -xp \"${NOTIFICATION_EMAIL_SMTP_UPASS}\"" "false"
+    log_event "info" "Sending Email to ${NOTIFICATION_EMAIL_EMAIL_TO} ..." "false"
+    log_event "debug" "Running: sendEmail -f \"${from_email}\" -t \"${NOTIFICATION_EMAIL_EMAIL_TO}\" -u \"${email_subject}\" -o message-content-type=html -m \"${email_content}\" -s \"${NOTIFICATION_EMAIL_SMTP_SERVER}:${NOTIFICATION_EMAIL_SMTP_PORT}\" -o tls=\"${NOTIFICATION_EMAIL_SMTP_TLS}\" -xu \"${NOTIFICATION_EMAIL_SMTP_USER}\" -xp \"${NOTIFICATION_EMAIL_SMTP_UPASS}\"" "false"
 
     # Sending email
     ## Use -l "/${SCRIPT}/sendemail.log" for custom log file
-    sendEmail -f "${from_email}" -t "${NOTIFICATION_EMAIL_MAILA}" -u "${email_subject}" -o message-content-type=html -m "${email_content}" -s "${NOTIFICATION_EMAIL_SMTP_SERVER}:${NOTIFICATION_EMAIL_SMTP_PORT}" -o tls="${NOTIFICATION_EMAIL_SMTP_TLS}" -xu "${NOTIFICATION_EMAIL_SMTP_USER}" -xp "${NOTIFICATION_EMAIL_SMTP_UPASS}" 1>&2
+    sendEmail -f "${from_email}" -t "${NOTIFICATION_EMAIL_EMAIL_TO}" -u "${email_subject}" -o message-content-type=html -m "${email_content}" -s "${NOTIFICATION_EMAIL_SMTP_SERVER}:${NOTIFICATION_EMAIL_SMTP_PORT}" -o tls="${NOTIFICATION_EMAIL_SMTP_TLS}" -xu "${NOTIFICATION_EMAIL_SMTP_USER}" -xp "${NOTIFICATION_EMAIL_SMTP_UPASS}" 1>&2
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
