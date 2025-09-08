@@ -4,7 +4,7 @@
 # Version: 3.3.12
 ################################################################################
 
-# Generates a yml file for every directory in /var/www
+export PATH="$PATH:/root/.local/bin"
 
 # Get the main directory path
 BROLIT_MAIN_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
