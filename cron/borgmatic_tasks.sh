@@ -101,13 +101,24 @@ function validate_ssh_connection() {
     local server=$2 
     local port=$3
 
+    display --indent 6 --text "- Validating SSH connection to server" --result "WAIT" --color YELLOW
     log_event "debug" "Validating SSH connection: user='${user}', server='${server}', port='${port}'" "false"
 
     if ! ssh -o ConnectTimeout=10 -o BatchMode=yes -p "$port" "$user@$server" "exit"; then
+
+        # Log
+        clear_previous_lines "1"
+        display --indent 6 --text "- Validating SSH connection to server" --result "FAIL" --color RED
+        display --indent 8 --text "  Cannot connect to ${server}:${port}" --tcolor RED
         log_event "error" "Cannot connect to ${server}:${port}" "false"
+
         return 1
     fi
 
+    # Log
+    clear_previous_lines "1"
+    display --indent 6 --text "- Validating SSH connection to server" --result "DONE" --color GREEN
+    display --indent 8 --text "  Successfully connected to ${server}:${port}" --tcolor GREEN
     log_event "info" "Successfully connected to ${server}:${port}" "false"
 
     return 0
@@ -184,13 +195,19 @@ function generate_borg_config() {
         NTFY_SERVER="${NOTIFICATION_NTFY_SERVER}" yq -i '.constants.ntfy_server = strenv(NTFY_SERVER)' "${yml_file}"
         NTFY_TOPIC="${NOTIFICATION_NTFY_TOPIC}" yq -i '.constants.ntfy_topic = strenv(NTFY_TOPIC)' "${yml_file}"
 
+        # Log
+        display --indent 6 --text "- Generating Borg configuration for ${project_name}" --result "DONE" --color GREEN
         log_event "info" "Config file ${yml_file} generated." "false"
         echo "Please wait 3 seconds..."
+
         sleep 3
 
     else
-
+        # Log
+        display --indent 6 --text "- Generating Borg configuration for ${project_name}" --result "SKIPPED" --color YELLOW
+        display --indent 8 --text "  Config file already exists." --tcolor YELLOW
         log_event "info" "Config file ${yml_file} already exists." "false"
+
         sleep 1
 
     fi
@@ -272,7 +289,7 @@ function setup_project_directories() {
         
         ((total_servers++))
         
-        display --indent 6 --text "- Configuring backup server for ${project_name}" --result "WAIT" --color YELLOW
+        display --indent 6 --text "- Configuring backup server for ${project_name}"
         log_event "info" "Validating connection to ${server}:p${port}" "false"
         if ! validate_ssh_connection "${user}" "${server}" "${port}"; then
             
@@ -286,7 +303,7 @@ function setup_project_directories() {
             continue
         fi
         
-        display --indent 6 --text "- Checking disk space on backup server" --result "WAIT" --color YELLOW
+        display --indent 6 --text "- Checking disk space on backup server"
         log_event "info" "Checking disk space on ${server}" "false"
         if ! check_remote_disk_space "${user}" "${server}" "${port}" "${estimated_size}" "20"; then
             
@@ -300,7 +317,7 @@ function setup_project_directories() {
             continue
         fi
         
-        display --indent 6 --text "- Creating directories on backup server" --result "WAIT" --color YELLOW
+        display --indent 6 --text "- Creating directories on backup server"
         log_event "info" "Creating remote directories on ${server}" "false"
         if ! create_remote_directories "${user}" "${server}" "${port}" "${BACKUP_BORG_GROUP}" "${HOSTNAME}" "${project_name}"; then
             
