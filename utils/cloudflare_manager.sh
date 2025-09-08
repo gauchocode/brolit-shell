@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.12
+# Version: 3.3.3
 #############################################################################
 
 function cloudflare_manager_menu() {

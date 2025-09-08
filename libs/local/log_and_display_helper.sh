@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.12
+# Version: 3.3.3
 ################################################################################
 #
 # Log and Display Helper: Log and display functions.
