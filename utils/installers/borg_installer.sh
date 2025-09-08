@@ -46,6 +46,7 @@ function borg_check_if_installed() {
 #############################################################################
 
 function borg_installer() {
+
     log_subsection "Borg Installer"
 
     display --indent 6 --text "- Updating repositories"
@@ -56,11 +57,13 @@ function borg_installer() {
     clear_previous_lines "1"
     display --indent 6 --text "- Updating repositories" --result "DONE" --color GREEN
 
-    # Installing borg
+    # Installing dependencies
     display --indent 6 --text "- Installing borg and dependencies"
 
     package_install "borgbackup"
     package_install "pipx"
+
+    # Installing borgmatic
     borgmatic_installer
 
     exitstatus=$?
