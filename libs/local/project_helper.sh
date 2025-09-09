@@ -428,6 +428,73 @@ function project_ask_folder_to_install() {
 }
 
 ################################################################################
+# Get the project's database engine based on installation type
+#
+# Arguments:
+#   ${1} = ${project_name}
+#   ${2} = ${project_install_type}
+#
+# Outputs:
+#   Database engine name (mysql, postgres) or empty string if not detected
+################################################################################
+
+function project_get_database_engine() {
+
+    local project_name="${1}"
+    local project_install_type="${2}"
+
+    local project_path="/${PROJECTS_PATH}/${project_name}"
+    
+    # For Docker projects, check docker-compose configuration first
+    if [[ "$project_install_type" = "docker" ]]; then
+        # Check both docker-compose.yml and docker-compose.yaml
+        if [[ -f "${project_path}/docker-compose.yml" ]] || [[ -f "${project_path}/docker-compose.yaml" ]]; then
+            if grep -q "image:.*postgres" "${project_path}/docker-compose.yml" 2>/dev/null || 
+               grep -q "image:.*postgres" "${project_path}/docker-compose.yaml" 2>/dev/null; then
+                echo "postgres"
+                return 0
+            elif grep -q "image:.*mysql" "${project_path}/docker-compose.yml" 2>/dev/null || 
+                 grep -q "image:.*mysql" "${project_path}/docker-compose.yaml" 2>/dev/null; then
+                echo "mysql"
+                return 0
+            fi
+        fi
+    fi
+    
+    # WordPress (uses MySQL)
+    if [[ -f "${project_path}/wp-config.php" ]]; then
+        echo "mysql"
+        return 0
+    fi
+    
+    # Laravel/PHP frameworks (check .env)
+    if [[ -f "${project_path}/.env" ]]; then
+        if grep -q "DB_CONNECTION=pgsql" "${project_path}/.env"; then
+            echo "postgres"
+            return 0
+        elif grep -q "DB_CONNECTION=mysql" "${project_path}/.env"; then
+            echo "mysql"
+            return 0
+        fi
+    fi
+    
+    # Node.js/Next.js (check package.json dependencies)
+    if [[ -f "${project_path}/package.json" ]]; then
+        if jq -e '.dependencies."pg" // .devDependencies."pg"' "${project_path}/package.json" > /dev/null; then
+            echo "postgres"
+            return 0
+        elif jq -e '.dependencies."mysql2" // .devDependencies."mysql2" // .dependencies."mysql" // .devDependencies."mysql"' "${project_path}/package.json" > /dev/null; then
+            echo "mysql"
+            return 0
+        fi
+    fi
+    
+    # Default: not detected
+    echo ""
+    return 1
+}
+
+################################################################################
 # Get project name from domain
 #
 # Arguments:
@@ -438,7 +505,6 @@ function project_ask_folder_to_install() {
 ################################################################################
 
 function project_get_name_from_domain() {
-
   local project_domain="${1}"
 
   local project_stages
