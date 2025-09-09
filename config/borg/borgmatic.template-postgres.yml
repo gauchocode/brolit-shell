@@ -1,0 +1,66 @@
+constants:
+
+    # Project & Hostname
+    project: project_domain
+    group: group_server
+    hostname: hostname_server
+    
+    # Database credentials
+    postgres_user: postgres_user
+    postgres_password: postgres_password
+
+    # Servers
+    user_1: user_1
+    server_1: server_or_ip_1
+    port_1: port_1
+    
+    user_2: user_2
+    server_2: server_or_ip_2
+    port_2: port_2
+
+# List of source directories and files to back up
+source_directories:
+    - /var/www/{project}
+
+repositories:
+  - path: ssh://{user_1}@{server_1}:{port_1}/./applications/{group}/{hostname}/projects-online/site/{project}
+    label: "storage-{user_1}"
+  - path: ssh://{user_2}@{server_2}:{port_2}/./applications/{group}/{hostname}/projects-online/site/{project}
+    label: "storage-{user_2}"
+
+exclude_patterns:
+    - '*.o'
+    - '*.log'
+    - '*.tmp'
+    - '*.cache'
+    - '*.git'
+
+archive_name_format: '{project}_site-files-{now:%Y-%m-%dT%H:%M:%S}'
+
+# Retention policy
+keep_monthly: 6
+keep_yearly: 1
+
+checks:
+    - name: archives
+    - name: repository
+      frequency: 2 weeks
+
+check_last: 3
+
+# Backup hooks
+before_backup:
+    - pg_dumpall -U {postgres_user} -W{postgres_password} --clean > /tmp/{project}_backup.sql
+
+after_backup:
+    - rm -f /tmp/{project}_backup.sql
+
+postgres_databases:
+    - name: {database}
+      username: {postgres_user}
+      password: {postgres_password}
+      format: sql
+      options: --no-tablespaces
+
+on_error:
+    - send_notification "Borgmatic" "Error during backup for {project}" "alert"
