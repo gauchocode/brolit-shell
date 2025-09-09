@@ -21,7 +21,7 @@ script_init "true"
 
 # Define constants
 readonly BORG_DIR="/etc/borgmatic.d"
-readonly WWW_DIR="/var/www"
+readonly WWW_DIR="${PROJECTS_PATH}"
 readonly HTML_EXCLUDE="html"
 
 # Check required commands are available
@@ -118,7 +118,7 @@ function validate_ssh_connection() {
     # Log
     clear_previous_lines "1"
     display --indent 6 --text "- Validating SSH connection to server" --result "DONE" --color GREEN
-    display --indent 8 --text "  Successfully connected to ${server}:${port}" --tcolor GREEN
+    display --indent 8 --text "Successfully connected to ${server}:${port}" --tcolor GREEN
     log_event "info" "Successfully connected to ${server}:${port}" "false"
 
     return 0
@@ -164,13 +164,34 @@ function generate_borg_config() {
         log_event "info" "Generating configuration file..." "false"
         sleep 2
 
-        if [ "${project_install_type}" == "default" ]; then
-            echo "---- Project it's not dockerized, write the database name manually!! ----"
-            cp "${BROLIT_MAIN_DIR}/config/borg/borgmatic.template-default.yml" "${yml_file}"
-        else
-            cp "${BROLIT_MAIN_DIR}/config/borg/borgmatic.template.yml" "${yml_file}"
-        fi
+    # Determine template file based on project type
+    if [ "${project_install_type}" == "default" ]; then
+        # For non-Docker projects, determine DB engine
 
+        db_engine=$(project_get_database_engine "${project_name}" "${project_install_type}")
+        
+        if [ -z "${db_engine}" ]; then
+            if [ -t 0 ]; then  # Interactive session
+                read -p "Proyecto ${project_name} (default) - Motor de BD desconocido. Especifique (mysql/postgres): " db_engine
+            else  # Cron execution
+                log_event "error" "Motor de BD desconocido para proyecto ${project_name}" "true"
+                send_notification "${SERVER_NAME}" "Error: Motor de BD desconocido para ${project_name}" "alert"
+                return 1
+            fi
+        fi
+        template_file="borgmatic.template-${db_engine}.yml"
+    else
+        template_file="borgmatic.template-${project_install_type}.yml"
+    fi
+
+    # Verify template exists
+    if [ ! -f "${BROLIT_MAIN_DIR}/config/borg/${template_file}" ]; then
+        log_event "error" "Plantilla ${template_file} no encontrada" "true"
+        send_notification "${SERVER_NAME}" "Error: Plantilla ${template_file} no encontrada para ${project_name}" "alert"
+        return 1
+    fi
+
+    cp "${BROLIT_MAIN_DIR}/config/borg/${template_file}" "${yml_file}"
         # Update configuration file with project-specific values
         PROJECT="${project_name}" yq -i '.constants.project = strenv(PROJECT)' "${yml_file}"
         GROUP="${BACKUP_BORG_GROUP}" yq -i '.constants.group = strenv(GROUP)' "${yml_file}"
@@ -205,7 +226,7 @@ function generate_borg_config() {
     else
         # Log
         display --indent 6 --text "- Generating Borg configuration for ${project_name}" --result "SKIPPED" --color YELLOW
-        display --indent 8 --text "  Config file already exists." --tcolor YELLOW
+        display --indent 8 --text "Config file already exists" --tcolor YELLOW
         log_event "info" "Config file ${yml_file} already exists." "false"
 
         sleep 1
@@ -361,7 +382,7 @@ function initialize_repository_if_needed() {
     local project_name="${2}"
     
     # Check if repository is already initialized
-    display --indent 6 --text "- Checking if repository is initialized for ${project_name}" --result "WAIT" --color YELLOW
+    display --indent 6 --text "- Checking if repository is initialized" --result "WAIT" --color YELLOW
     log_event "info" "Initializing repository for ${project_name}" "false"
 
     if ! initialize_repository "${config_file}"; then
@@ -377,6 +398,10 @@ function initialize_repository_if_needed() {
         return 1
 
     fi
+
+    # Log
+    clear_previous_lines "1"
+    display --indent 6 --text "- Repository initialization" --result "DONE" --color GREEN
     
     return 0
 
@@ -435,5 +460,7 @@ function generate_config() {
     fi
 
 }
+
+log_section "Borgmatic Tasks"
 
 generate_config
