@@ -540,14 +540,6 @@ function restore_project_backup() {
         
         # Restore database if configured
         if [[ -n "${db_name}" && "${db_name}" != "no-database" ]]; then
-            if ! _restore_project_database "${project_backup_file}" "${project_backup_status}" "${project_backup_server}" "${project_domain}" "${project_domain_new}"; then
-                return 1
-            fi
-            
-            # Clean up old MySQL data directory
-            local mysql_dir="${project_install_path}/mysql_data"
-            [[ -d "${mysql_dir}" ]] && rm -rf "${mysql_dir}"
-            
             # Setup Docker configuration
             docker_setup_configuration "${project_name}" "${project_install_path}" "${project_domain_new}"
             
@@ -569,13 +561,6 @@ function restore_project_backup() {
                 _handle_restore_error 7 "Docker container ${container_name} is not running"
                 return 1
             fi
-            
-            # Import database
-            base_name="${db_to_restore%.tar.bz2}"
-            local dump_file="${project_install_path}/${base_name}.sql"
-            echo "Importing database..."
-            cat "${dump_file}" | docker exec -i "${container_name}" mysql -u "${mysql_user}" -p"${mysql_user_passw}" "${db_name}"
-            echo "Import completed."
             
             project_db_status="enabled"
         fi
