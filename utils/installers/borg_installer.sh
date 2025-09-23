@@ -19,20 +19,16 @@
 ################################################################################
 
 function borg_check_if_installed() {
-    local borg_installed
-    local borg
+    local installed="false"
 
-    borg="$(command -v borg)"
-    if [[ ! -x "${borg}" ]]; then
-        borg_installed="false"
-    else
-        borg_installed="true"
+    if command -v borg >/dev/null 2>&1; then
+        if command -v borgmatic >/dev/null 2>&1 || [[ -x "/root/.local/bin/borgmatic" ]]; then
+            installed="true"
+        fi
     fi
 
-    log_event "debug" "borg_installed=${borg_installed}" "false"
-
-    # Return
-    echo "${borg_installed}"
+    log_event "debug" "borg_and_borgmatic_installed=${installed}" "false"
+    echo "${installed}"
 }
 
 #############################################################################
