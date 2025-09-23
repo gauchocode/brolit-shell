@@ -172,22 +172,27 @@ function generate_borg_config() {
         
         if [ -z "${db_engine}" ]; then
             if [ -t 0 ]; then  # Interactive session
-                read -p "Proyecto ${project_name} (default) - Motor de BD desconocido. Especifique (mysql/postgres): " db_engine
+                read -p "Project ${project_name} (default) - Unknown database engine. Specify (mysql/postgres): " db_engine
             else  # Cron execution
-                log_event "error" "Motor de BD desconocido para proyecto ${project_name}" "true"
-                send_notification "${SERVER_NAME}" "Error: Motor de BD desconocido para ${project_name}" "alert"
+                log_event "error" "Unknown database engine for project ${project_name}" "true"
+                send_notification "${SERVER_NAME}" "Error: Unknown database engine for ${project_name}" "alert"
                 return 1
             fi
         fi
         template_file="borgmatic.template-${db_engine}.yml"
     else
-        template_file="borgmatic.template-${project_install_type}.yml"
+        # Normalize Docker install types to existing template
+        if [[ "${project_install_type}" == "docker"* ]]; then
+            template_file="borgmatic.template-docker.yml"
+        else
+            template_file="borgmatic.template-${project_install_type}.yml"
+        fi
     fi
 
     # Verify template exists
     if [ ! -f "${BROLIT_MAIN_DIR}/config/borg/${template_file}" ]; then
-        log_event "error" "Plantilla ${template_file} no encontrada" "true"
-        send_notification "${SERVER_NAME}" "Error: Plantilla ${template_file} no encontrada para ${project_name}" "alert"
+        log_event "error" "Template ${template_file} not found" "true"
+        send_notification "${SERVER_NAME}" "Error: Template ${template_file} not found for ${project_name}" "alert"
         return 1
     fi
 
@@ -263,8 +268,8 @@ function check_remote_disk_space() {
     local user="${1}"
     local server="${2}"
     local port="${3}"
-    local required_space_mb="${4}"  # tamaño estimado del backup
-    local safety_margin="${5:-20}"  # margen de seguridad en porcentaje
+    local required_space_mb="${4}"  # estimated backup size
+    local safety_margin="${5:-20}"  # safety margin percentage
     local mount_point="${6:-/}"
     
     # Calculate required space with safety margin
@@ -278,12 +283,12 @@ function check_remote_disk_space() {
     # Convert KB to MB
     local free_space_mb=$((free_space_kb / 1024))
     
-    log_event "info" "Espacio libre en ${server}:${mount_point}: ${free_space_mb}MB, Requerido con margen: ${required_space_with_margin}MB" "false"
+    log_event "info" "Free space on ${server}:${mount_point}: ${free_space_mb}MB, Required with margin: ${required_space_with_margin}MB" "false"
     
     # Check if there is enough space
     if [[ ${free_space_mb} -lt ${required_space_with_margin} ]]; then
 
-        log_event "error" "Espacio insuficiente en ${server}:${mount_point}. Requiere ${required_space_with_margin}MB, disponible ${free_space_mb}MB" "true"
+        log_event "error" "Insufficient space on ${server}:${mount_point}. Requires ${required_space_with_margin}MB, available ${free_space_mb}MB" "true"
 
         return 1
 
