@@ -158,6 +158,7 @@ function _verify_backup_integrity() {
 #   0 if successful, 1 on error.
 ################################################################################
 function _handle_installation_permissions() {
+  
     local destination_dir="${1}"
     local project_install_type="${2}"
     local project_type="${3}"
@@ -165,26 +166,44 @@ function _handle_installation_permissions() {
 
     # Determine application directory based on installation type
     case "${project_install_type}" in
+
         docker*|proxy)
             if [[ "${project_type}" == "wordpress" ]]; then
                 app_dir="${destination_dir}/wordpress"
             else
                 app_dir="${destination_dir}/application"
             fi
-            
-            # Only change ownership if directory exists
-            if [[ -d "${app_dir}" ]]; then
-                display --indent 6 --text "- Setting permissions for application directory"
-                change_ownership "${WSERVER_USER}" "${WSERVER_GROUP}" "${app_dir}"
-            else
-                log_event "warning" "Application directory not found: ${app_dir}" "false"
+
+            # Validate app_dir exists
+            if [[ ! -d "${app_dir}" ]]; then
+                log_event "error" "Application directory not found: ${app_dir}" "false"
+                display --indent 6 --text "- Setting permissions for application directory" --result "FAIL" --color RED
+                display --indent 8 --text "Path does not exist: ${app_dir}" --tcolor RED
+                return 1
+            fi
+
+            display --indent 6 --text "- Setting permissions for application directory"
+            change_ownership "1000" "1000" "${app_dir}"
+            if [[ $? -ne 0 ]]; then
+                log_event "error" "Failed to change ownership to 1000:1000 on ${app_dir}" "false"
+                display --indent 6 --text "- Applying ownership 1000:1000 to ${app_dir}" --result "FAIL" --color RED
+                return 1
             fi
             ;;
+
         *)
             display --indent 6 --text "- Setting permissions for standard installation"
             change_ownership "${WSERVER_USER}" "${WSERVER_GROUP}" "${destination_dir}"
+            if [[ $? -ne 0 ]]; then
+                log_event "error" "Failed to change ownership to ${WSERVER_USER}:${WSERVER_GROUP} on ${destination_dir}" "false"
+                display --indent 6 --text "- Applying ownership ${WSERVER_USER}:${WSERVER_GROUP} to ${destination_dir}" --result "FAIL" --color RED
+                return 1
+            fi
             ;;
+
     esac
+
+    return 0
 }
 
 ################################################################################
@@ -255,12 +274,10 @@ function restore_project_files() {
 
     log_subsection "Restoring project files: ${project_domain} → ${project_domain_new}"
 
-    # 1. Download backup file
-    local backup_remote_path="${project_backup_server}/projects-${project_backup_status}/site/${project_domain}/${project_backup_file}"
-    display --indent 6 --text "- Downloading files backup"
-    
-    if ! storage_download_backup "${backup_remote_path}" "${BROLIT_TMP_DIR}"; then
-        _handle_restore_error 2 "Failed to download backup from ${backup_remote_path}"
+    # 1. Ensure backup file exists locally (download must be done by caller)
+    local local_backup_path="${BROLIT_TMP_DIR}/${project_backup_file}"
+    if [[ ! -f "${local_backup_path}" ]]; then
+        _handle_restore_error 1 "Backup file missing: ${local_backup_path}"
         return 1
     fi
 
