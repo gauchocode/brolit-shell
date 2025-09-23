@@ -149,7 +149,7 @@ function package_install() {
   # sudo DEBIAN_FRONTEND=noninteractive apt-get install PACKAGE -y -qq < /dev/null > /dev/null
 
   # apt command in silent mode
-  DEBIAN_FRONTEND=noninteractive apt-get --yes install "${package}" -qq </dev/null >/dev/null
+  DEBIAN_FRONTEND=noninteractive apt-get -qq --yes install "${package}" </dev/null >/dev/null 2>&1
 
   exitstatus=$?
   if [[ $exitstatus -eq 0 ]]; then
