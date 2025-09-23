@@ -521,7 +521,7 @@ function restore_project_with_borg() {
 
 function initialize_repository() {
 
-    local config_file=$1
+    local config_file="${1}"
 
     # Check if config file exists
     if [[ ! -f "${config_file}" ]]; then
@@ -531,23 +531,50 @@ function initialize_repository() {
         return 1
     fi
 
-    if borgmatic --config "${config_file}" info &>/dev/null; then
+    # Resolve borgmatic command robustly
+    local borg_cmd=""
+    if command -v borgmatic >/dev/null 2>&1; then
+        borg_cmd="borgmatic"
+    elif [[ -x "/root/.local/bin/borgmatic" ]]; then
+        borg_cmd="/root/.local/bin/borgmatic"
+    elif command -v pipx >/dev/null 2>&1; then
+        borg_cmd="pipx run borgmatic"
+    elif command -v python3 >/dev/null 2>&1; then
+        borg_cmd="python3 -m borgmatic"
+    fi
+
+    if [[ -z "${borg_cmd}" ]]; then
+        log_event "error" "Borgmatic executable not found via PATH, /root/.local/bin, pipx, or python3 -m" "true"
+        display --indent 6 --text "- Borgmatic executable not found" --result "FAIL" --color RED
+        return 1
+    fi
+
+    # Check if repository already exists
+    if eval "${borg_cmd} --config \"${config_file}\" info" >/dev/null 2>&1; then
         log_event "info" "Repository already exists, skipping initialization" "false"
         return 0
     fi
-    
-    display --indent 6 --text "- Initializing Borg repository" --result "RUNNING" --color YELLOW
-    log_event "info" "Initializing new repository" "false"
 
-    if ! borgmatic init --encryption=none --config "${config_file}"; then
+    display --indent 6 --text "- Initializing Borg repository" --result "RUNNING" --color YELLOW
+    log_event "info" "Initializing new repository with '${borg_cmd}'" "false"
+
+    # Try to initialize and capture output for diagnostics (e.g., Python Traceback)
+    local init_output
+    if ! init_output=$(eval "${borg_cmd} init --encryption=none --config \"${config_file}\"" 2>&1); then
 
         # Log
         clear_previous_lines "1"
         display --indent 6 --text "- Repository initialization" --result "FAIL" --color RED
-        log_event "error" "Repository initialization failed" "false"
+        log_event "error" "Repository initialization failed. Command='${borg_cmd} init --encryption=none --config ${config_file}'" "false"
+        # Surface a short snippet to logs to aid troubleshooting
+        log_event "error" "borgmatic stderr: $(echo "${init_output}" | tail -n 10 | tr '\n' ' ')" "true"
+
+        # Detect Python traceback to provide a specific hint
+        if echo "${init_output}" | grep -qi "Traceback"; then
+            log_event "warning" "Python traceback detected during borgmatic execution. Environment may have broken pipx/venv or mismatched borgmatic install. Consider reinstalling borgmatic with pipx and ensuring PATH includes ~/.local/bin." "true"
+        fi
 
         return 1
-
     fi
 
     # Log
