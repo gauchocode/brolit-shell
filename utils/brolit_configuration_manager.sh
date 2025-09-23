@@ -2165,7 +2165,7 @@ function brolit_configuration_load() {
         [[ ${BACKUP_LOCAL_STATUS} != "enabled" ]]; then
         log_event "warning" "No backup method enabled" "false"
         display --indent 6 --text "- Backup method selected" --result "NONE" --color RED
-        display --indent 8 --text "Please select at least one backup method"
+        display --indent 8 --text "Please select at least one backup method" --tcolor RED
     fi
 
     ## PROJECTS_PATH
