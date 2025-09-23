@@ -22,12 +22,41 @@ function borg_check_if_installed() {
     local installed="false"
 
     if command -v borg >/dev/null 2>&1; then
+        # Prefer pipx status to detect borgmatic installation; fallback to PATH or known location
+        if command -v pipx >/dev/null 2>&1; then
+            if pipx list 2>/dev/null | grep -qi '\bborgmatic\b'; then
+                installed="true"
+            fi
+        fi
+
+        if [[ "${installed}" == "false" ]]; then
+            if command -v borgmatic >/dev/null 2>&1 || [[ -x "/root/.local/bin/borgmatic" ]]; then
+                installed="true"
+            fi
+        fi
+    fi
+
+    log_event "debug" "borg_and_borgmatic_installed=${installed}" "false"
+    echo "${installed}"
+}
+
+# Check only borgmatic installation status (robust to manual uninstalls)
+function borgmatic_is_installed() {
+    local installed="false"
+
+    if command -v pipx >/dev/null 2>&1; then
+        if pipx list 2>/dev/null | grep -qi '\bborgmatic\b'; then
+            installed="true"
+        fi
+    fi
+
+    if [[ "${installed}" == "false" ]]; then
         if command -v borgmatic >/dev/null 2>&1 || [[ -x "/root/.local/bin/borgmatic" ]]; then
             installed="true"
         fi
     fi
 
-    log_event "debug" "borg_and_borgmatic_installed=${installed}" "false"
+    log_event "debug" "borgmatic_installed=${installed}" "false"
     echo "${installed}"
 }
 
@@ -95,10 +124,15 @@ function borg_installer() {
 ##############################################################################
 
 function borg_purge() {
+
     log_subsection "Borg Uninstaller"
 
     package_purge "borgbackup"
+
     sudo pipx uninstall borgmatic
+    
+    clear_previous_lines "1"
+    
     package_purge "pipx"
 
     return $?
@@ -116,11 +150,21 @@ function borg_purge() {
 
 function borg_installer_menu() {
     
-    local borg_is_installed
+    local both_installed
+    #local only_borg_installed="false"
 
-    borg_is_installed=$(borg_check_if_installed)
+    both_installed=$(borg_check_if_installed)
 
-    if [[ ${borg_is_installed} == "false" ]]; then
+    # Auto-install borgmatic if borg is present but borgmatic is missing
+    if command -v borg >/dev/null 2>&1 && [[ "$(borgmatic_is_installed)" == "false" ]]; then
+        display --indent 6 --text "- Borg detected, Borgmatic missing. Installing Borgmatic"
+        package_install "pipx"
+        package_install "python3-venv"
+        borgmatic_installer
+        return $?
+    fi
+
+    if [[ ${both_installed} == "false" ]]; then
 
         borg_installer_title="BORG INSTALLER"
         borg_installer_message="Choose an option to run:"
