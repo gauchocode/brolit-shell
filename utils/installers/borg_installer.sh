@@ -19,19 +19,32 @@
 ################################################################################
 
 function borg_check_if_installed() {
+
     local installed="false"
 
     if command -v borg >/dev/null 2>&1; then
         # Prefer pipx status to detect borgmatic installation; fallback to PATH or known location
         if command -v pipx >/dev/null 2>&1; then
+            log_event "debug" "pipx detected for borg/borgmatic combined check" "false"
             if pipx list 2>/dev/null | grep -qi '\bborgmatic\b'; then
+                log_event "debug" "pipx list reports borgmatic installed" "false"
                 installed="true"
+            else
+                log_event "debug" "pipx list reports borgmatic NOT installed" "false"
             fi
+        else
+            log_event "debug" "pipx not found; falling back to PATH checks (combined check)" "false"
         fi
 
         if [[ "${installed}" == "false" ]]; then
-            if command -v borgmatic >/dev/null 2>&1 || [[ -x "/root/.local/bin/borgmatic" ]]; then
+            if command -v borgmatic >/dev/null 2>&1; then
+                log_event "debug" "borgmatic found in PATH via command -v (combined check)" "false"
                 installed="true"
+            elif [[ -x "/root/.local/bin/borgmatic" ]]; then
+                log_event "debug" "borgmatic found at /root/.local/bin/borgmatic (combined check)" "false"
+                installed="true"
+            else
+                log_event "debug" "borgmatic not found in PATH nor /root/.local/bin/borgmatic (combined check)" "false"
             fi
         fi
     fi
@@ -42,17 +55,30 @@ function borg_check_if_installed() {
 
 # Check only borgmatic installation status (robust to manual uninstalls)
 function borgmatic_is_installed() {
+    
     local installed="false"
 
     if command -v pipx >/dev/null 2>&1; then
+        log_event "debug" "pipx detected for borgmatic check" "false"
         if pipx list 2>/dev/null | grep -qi '\bborgmatic\b'; then
+            log_event "debug" "pipx list reports borgmatic installed" "false"
             installed="true"
+        else
+            log_event "debug" "pipx list reports borgmatic NOT installed" "false"
         fi
+    else
+        log_event "debug" "pipx not found; falling back to PATH checks (borgmatic check)" "false"
     fi
 
     if [[ "${installed}" == "false" ]]; then
-        if command -v borgmatic >/dev/null 2>&1 || [[ -x "/root/.local/bin/borgmatic" ]]; then
+        if command -v borgmatic >/dev/null 2>&1; then
+            log_event "debug" "borgmatic found in PATH via command -v" "false"
             installed="true"
+        elif [[ -x "/root/.local/bin/borgmatic" ]]; then
+            log_event "debug" "borgmatic found at /root/.local/bin/borgmatic" "false"
+            installed="true"
+        else
+            log_event "debug" "borgmatic not found in PATH nor /root/.local/bin/borgmatic" "false"
         fi
     fi
 
@@ -103,6 +129,7 @@ function borg_installer() {
 
         return 1
     else
+
         # Log
         clear_previous_lines "2"
         display --indent 6 --text "- Installing borg and dependencies" --result "DONE" --color GREEN
@@ -157,10 +184,16 @@ function borg_installer_menu() {
 
     # Auto-install borgmatic if borg is present but borgmatic is missing
     if command -v borg >/dev/null 2>&1 && [[ "$(borgmatic_is_installed)" == "false" ]]; then
+
+        # Log
         display --indent 6 --text "- Borg detected, Borgmatic missing. Installing Borgmatic"
+        log_event "info" "Borg detected, Borgmatic missing. Installing Borgmatic" "false"
+        
+        # Install dependencies
         package_install "pipx"
         package_install "python3-venv"
         borgmatic_installer
+        
         return $?
     fi
 
@@ -226,7 +259,10 @@ function borgmatic_installer() {
         clear_previous_lines "1"
         log_event "info" "Borgmatic installed" "false"
         display --indent 6 --text "- Installing borgmatic" --result "DONE" --color GREEN
+
+        # Ensure pipx binaries are in PATH
         pipx ensurepath >/dev/null
+
         return 0
     
     else
