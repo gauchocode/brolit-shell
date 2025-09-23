@@ -523,7 +523,15 @@ function initialize_repository() {
 
     local config_file=$1
 
-    if borgmatic --config "$config_file" info &>/dev/null; then
+    # Check if config file exists
+    if [[ ! -f "${config_file}" ]]; then
+        log_event "error" "Borgmatic config file not found: ${config_file}" "false"
+        display --indent 6 --text "- Borgmatic config file not found" --result "FAIL" --color RED
+        display --indent 8 --text "${config_file}" --tcolor YELLOW
+        return 1
+    fi
+
+    if borgmatic --config "${config_file}" info &>/dev/null; then
         log_event "info" "Repository already exists, skipping initialization" "false"
         return 0
     fi
@@ -531,7 +539,7 @@ function initialize_repository() {
     display --indent 6 --text "- Initializing Borg repository" --result "RUNNING" --color YELLOW
     log_event "info" "Initializing new repository" "false"
 
-    if ! borgmatic init --encryption=none --config "$config_file"; then
+    if ! borgmatic init --encryption=none --config "${config_file}"; then
 
         # Log
         clear_previous_lines "1"

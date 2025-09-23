@@ -198,6 +198,8 @@ function generate_borg_config() {
         HOST="${HOSTNAME}" yq -i '.constants.hostname = strenv(HOST)' "${yml_file}"
 
         # Add server configuration for each backup server
+        local number_of_servers
+        number_of_servers=$(jq ".BACKUPS.methods[].borg[].config | length" /root/.brolit_conf.json)
         for i in $(seq 1 "$number_of_servers"); do
 
             # Add server configuration to constants
@@ -302,6 +304,10 @@ function setup_project_directories() {
     local estimated_size
     estimated_size=$(estimate_backup_size "${project_path}")
     
+    # Read number of backup servers from configuration
+    local number_of_servers
+    number_of_servers=$(jq ".BACKUPS.methods[].borg[].config | length" /root/.brolit_conf.json)
+    
     for i in $(seq 1 "$number_of_servers"); do
 
         local user="${BACKUP_BORG_USERS[i-1]}"
@@ -356,6 +362,13 @@ function setup_project_directories() {
     done
     
     # Evaluate overall success
+    if [[ ${total_servers} -eq 0 ]]; then
+        display --indent 6 --text "- Configuring backup servers for ${project_name}" --result "FAILED" --color RED
+        log_event "error" "No backup servers configured in /root/.brolit_conf.json" "true"
+        send_notification "${SERVER_NAME}" "Critical: No backup servers configured for ${project_name}" "alert"
+        return 1
+    fi
+
     if [[ ${successful_servers} -lt ${total_servers} ]]; then
 
         # Log
@@ -383,6 +396,20 @@ function initialize_repository_if_needed() {
     
     # Check if repository is already initialized
     display --indent 6 --text "- Checking if repository is initialized" --result "WAIT" --color YELLOW
+    if [[ ! -f "${config_file}" ]]; then
+        clear_previous_lines "1"
+        display --indent 6 --text "- Borgmatic config file not found" --result "SKIPPED" --color YELLOW
+        log_event "warning" "Config file not found: ${config_file}. Skipping initialization for ${project_name}" "false"
+        return 0
+    fi
+    if borgmatic --config "${config_file}" info &>/dev/null; then
+        clear_previous_lines "1"
+        display --indent 6 --text "- Repository already initialized" --result "SKIPPED" --color YELLOW
+        log_event "info" "Repository for ${project_name} already initialized" "false"
+        return 0
+    fi
+
+    # Try to initialize repository
     log_event "info" "Initializing repository for ${project_name}" "false"
 
     if ! initialize_repository "${config_file}"; then
@@ -439,12 +466,21 @@ function generate_config() {
                 log_event "info" "Processing project: ${folder_name}" "false"
 
                 # Generate Borg configuration
-                generate_borg_config "${folder_name}"
+                if ! generate_borg_config "${folder_name}"; then
+                    display --indent 6 --text "- Generating Borg configuration for ${folder_name}" --result "FAIL" --color RED
+                    log_event "error" "Skipping ${folder_name}: failed to generate borgmatic config" "false"
+                    continue
+                fi
                 
                 # Setup project directories
                 if setup_project_directories "${folder_name}"; then
-                    # Initialize repository if needed
-                    initialize_repository_if_needed "${BORG_DIR}/${yml_file}" "${folder_name}"
+                    # Initialize repository if needed (only if config file exists)
+                    if [ -f "${BORG_DIR}/${yml_file}" ]; then
+                        initialize_repository_if_needed "${BORG_DIR}/${yml_file}" "${folder_name}"
+                    else
+                        display --indent 6 --text "- Repository initialization for ${folder_name}" --result "SKIPPED" --color YELLOW
+                        log_event "warning" "Config file ${BORG_DIR}/${yml_file} not found. Skipping repository initialization." "false"
+                    fi
                 fi
 
             fi
