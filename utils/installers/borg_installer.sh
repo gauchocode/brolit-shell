@@ -23,7 +23,7 @@ function borg_check_if_installed() {
     local installed="false"
 
     if command -v borg >/dev/null 2>&1; then
-        # Prefer pipx status to detect borgmatic installation; fallback to PATH or known location
+        # Only rely on pipx to detect borgmatic installation (no PATH/binary fallbacks)
         if command -v pipx >/dev/null 2>&1; then
             log_event "debug" "pipx detected for borg/borgmatic combined check" "false"
             if pipx list 2>/dev/null | grep -qi '\bborgmatic\b'; then
@@ -33,19 +33,7 @@ function borg_check_if_installed() {
                 log_event "debug" "pipx list reports borgmatic NOT installed" "false"
             fi
         else
-            log_event "debug" "pipx not found; falling back to PATH checks (combined check)" "false"
-        fi
-
-        if [[ "${installed}" == "false" ]]; then
-            if command -v borgmatic >/dev/null 2>&1; then
-                log_event "debug" "borgmatic found in PATH via command -v (combined check)" "false"
-                installed="true"
-            elif [[ -x "/root/.local/bin/borgmatic" ]]; then
-                log_event "debug" "borgmatic found at /root/.local/bin/borgmatic (combined check)" "false"
-                installed="true"
-            else
-                log_event "debug" "borgmatic not found in PATH nor /root/.local/bin/borgmatic (combined check)" "false"
-            fi
+            log_event "debug" "pipx not found; treating borgmatic as NOT installed (combined check)" "false"
         fi
     fi
 
