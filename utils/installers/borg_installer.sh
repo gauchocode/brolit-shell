@@ -29,7 +29,7 @@ function borg_check_if_installed() {
         borg_installed="true"
     fi
 
-    log_event "debug" "borg_installed=${borg_installed}" "false"Borgnatic
+    log_event "debug" "borg_installed=${borg_installed}" "false"
 
     # Return
     echo "${borg_installed}"
@@ -62,6 +62,7 @@ function borg_installer() {
 
     package_install "borgbackup"
     package_install "pipx"
+    package_install "python3-venv"
 
     # Installing borgmatic
     borgmatic_installer
@@ -118,6 +119,7 @@ function borg_purge() {
 ##############################################################################
 
 function borg_installer_menu() {
+    
     local borg_is_installed
 
     borg_is_installed=$(borg_check_if_installed)
@@ -130,7 +132,7 @@ function borg_installer_menu() {
             "01)" "INSTALL BORG"
         )
 
-        chosen_certbot_installer_options="$(whiptail --title "${borg_installer_title}" --menu "${borg_installer_message}" 20 78 10 "${borg_installer_options[@]}" 3>&1 1>&2 2>&3)"
+        chosen_borg_installer_options="$(whiptail --title "${borg_installer_title}" --menu "${borg_installer_message}" 20 78 10 "${borg_installer_options[@]}" 3>&1 1>&2 2>&3)"
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -148,7 +150,7 @@ function borg_installer_menu() {
             "01)" "UNINSTALL BORG"
         )
 
-        chosen_certbot_installer_options="$(whiptail --title "${borg_installer_title}" --menu "${borg_installer_message}" 20 78 10 "${borg_installer_options[@]}" 3>&1 1>&2 2>&3)"
+        chosen_borg_installer_options="$(whiptail --title "${borg_installer_title}" --menu "${borg_installer_message}" 20 78 10 "${borg_installer_options[@]}" 3>&1 1>&2 2>&3)"
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -175,12 +177,10 @@ function borg_installer_menu() {
 
 function borgmatic_installer() {
 
-    display --indent 6 --text "- Updating repositories"
+    display --indent 6 --text "- Installing borgmatic"
 
-    # Update repositories
-    sudo pipx install borgmatic > /dev/null 2>&1
-
-    if [[ $exitstatus -eq 0 ]]; then
+    # Install borgmatic
+    if sudo pipx install borgmatic > /dev/null 2>&1; then
 
         # Log
         clear_previous_lines "1"
