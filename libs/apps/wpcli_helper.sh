@@ -1514,15 +1514,21 @@ function wpcli_create_config() {
     local db_user_name="${3}"
     local db_user_passw="${4}"
     local wp_locale="${5}"
+    local install_type="${6}"
+    local wpcli_cmd
 
     # Default locale
     [[ -z ${wp_locale} ]] && wp_locale="es_ES"
 
+    # Check project_install_type
+    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose --progress=quiet -f ${wp_site}/../docker-compose.yml run -T -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
+
     # Log
-    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} config create --dbname=${database} --dbuser=${db_user_name} --dbpass=${db_user_passw} --locale=${wp_locale}"
+    log_event "debug" "Running: ${wpcli_cmd} config create --dbname=${database} --dbuser=${db_user_name} --dbpass=${db_user_passw} --locale=${wp_locale}" "false"
 
     # wp-cli command
-    sudo -u www-data wp --path="${wp_site}" config create --dbname="${database}" --dbuser="${db_user_name}" --dbpass="${db_user_passw}" --locale="${wp_locale}" --quiet > /dev/null 2>&1
+    ${wpcli_cmd} config create --dbname="${database}" --dbuser="${db_user_name}" --dbpass="${db_user_passw}" --locale="${wp_locale}" --quiet > /dev/null 2>&1
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
