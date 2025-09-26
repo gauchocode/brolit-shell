@@ -302,6 +302,7 @@ function php_select_version_to_install() {
   local phpv
 
   phpv_to_install=(
+    "8.3" " " off
     "8.2" " " off
     "8.1" " " off
     "8.0" " " off

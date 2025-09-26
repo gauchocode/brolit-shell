@@ -745,6 +745,33 @@ function docker_restore_project() {
 #   0 if ok, 1 on error.
 ################################################################################
 
+function docker_wait_for_mysql_ready() {
+    local compose_file="${1}"
+    local mysql_user="${2}"
+    local mysql_pass="${3}"
+    local max_attempts=30
+    local attempt=0
+
+    log_event "info" "Waiting for MySQL to be ready..." "false"
+    display --indent 6 --text "- Waiting for MySQL to be ready..."
+
+    while [ $attempt -lt $max_attempts ]; do
+        if docker compose -f "${compose_file}" exec mysql mysql -u"${mysql_user}" -p"${mysql_pass}" -e "SELECT 1;" >/dev/null 2>&1; then
+            clear_previous_lines "1"
+            display --indent 6 --text "- Waiting for MySQL to be ready..." --result "DONE" --color GREEN
+            log_event "info" "MySQL is ready." "false"
+            return 0
+        fi
+        sleep 2
+        attempt=$((attempt + 1))
+    done
+
+    clear_previous_lines "1"
+    display --indent 6 --text "- Waiting for MySQL to be ready..." --result "FAIL" --color RED
+    log_event "error" "MySQL did not become ready in time." "true"
+    return 1
+}
+
 function docker_project_install() {
 
     local dir_path="${1}"
@@ -886,6 +913,14 @@ function docker_project_install() {
         docker_compose_build "${compose_file}"
         [[ $? -eq 1 ]] && return 1
 
+        # Wait for MySQL to be ready
+        docker_wait_for_mysql_ready "${compose_file}" "${project_database_user}" "${project_database_user_passw}"
+        [[ $? -eq 1 ]] && return 1
+
+        # Create wp-config.php inside the container
+        wpcli_create_config "${project_path}/wordpress" "${project_database}" "${project_database_user}" "${project_database_user_passw}" "es_ES" "docker"
+        [[ $? -eq 1 ]] && return 1
+
         # Check exitcode
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
@@ -899,19 +934,7 @@ function docker_project_install() {
             display --indent 6 --text "- Downloading docker images" --result "DONE" --color GREEN
             display --indent 6 --text "- Building docker images" --result "DONE" --color GREEN
 
-            # Add .htaccess
-            echo "# PHP Values" >"${project_path}/wordpress/.htaccess"
-            echo "php_value upload_max_filesize 500M" >>"${project_path}/wordpress/.htaccess"
-            echo "php_value post_max_size 500M" >>"${project_path}/wordpress/.htaccess"
-
-            # Log
-            log_event "info" "Creating .htaccess with needed php parameters." "false"
-            display --indent 6 --text "- Creating .htaccess on project" --result "DONE" --color GREEN
-
-            # Rename wp-config-sample.php to wp-config.php
-            mv "${project_path}/wordpress/wp-config-sample.php" "${project_path}/wordpress/wp-config.php"
-
-            # Update wp-config.php
+            # Update wp-config.php with project_set (edits DB details if needed)
             project_set_configured_database "${project_path}" "wordpress" "docker" "${project_database}"
             project_set_configured_database_host "${project_path}" "wordpress" "docker" "mysql"
             project_set_configured_database_user "${project_path}" "wordpress" "docker" "${project_database_user}"
@@ -936,7 +959,21 @@ define('DISALLOW_FILE_EDIT', true);\n\
 define('FS_METHOD', 'direct');\n\
 define('WP_REDIS_HOST','redis');\n" "${project_path}/wordpress/wp-config.php"
 
-            # TODO: change wp table prefix
+            # Run startup script to install WP core
+            wpcli_run_startup_script "${project_path}/wordpress" "docker" "https://${project_domain}"
+            [[ $? -eq 1 ]] && return 1
+
+            # Shuffle salts
+            wpcli_shuffle_salts "${project_path}/wordpress" "docker"
+
+            # Add .htaccess
+            echo "# PHP Values" >"${project_path}/wordpress/.htaccess"
+            echo "php_value upload_max_filesize 500M" >>"${project_path}/wordpress/.htaccess"
+            echo "php_value post_max_size 500M" >>"${project_path}/wordpress/.htaccess"
+
+            # Log
+            log_event "info" "Creating .htaccess with needed php parameters." "false"
+            display --indent 6 --text "- Creating .htaccess on project" --result "DONE" --color GREEN
 
             # Change permissions
             wp_change_permissions "${project_path}/wordpress"
@@ -1027,17 +1064,8 @@ define('WP_REDIS_HOST','redis');\n" "${project_path}/wordpress/wp-config.php"
     # Project domain configuration (webserver+certbot+DNS)
     https_enable="$(project_update_domain_config "${project_domain}" "proxy" "docker-compose" "${port_available}")"
 
-    # Startup Script for WordPress installation
-    #if [[ ${https_enable} == "true" ]]; then
-    #    project_site_url="https://${project_domain}"
-    #else
-    #    project_site_url="http://${project_domain}"
-    #fi
-
-    #[[ ${BROLIT_EXEC_TYPE} == "default" && ${project_type} == "wordpress" ]] && wpcli_run_startup_script "${project_path}" "${project_site_url}"
-
-    # Post-restore/install tasks
-    #project_post_install_tasks "${project_path}" "${project_type}" "${project_name}" "${project_stage}" "${database_user_passw}" "" ""
+    # Post-install tasks for docker
+    project_post_install_tasks "${project_path}" "${project_type}" "docker" "${project_name}" "${project_stage}" "${project_database_user_passw}" "" "${project_domain}"
 
     # TODO: refactor this
     # Cert config files
@@ -1067,7 +1095,7 @@ define('WP_REDIS_HOST','redis');\n" "${project_path}/wordpress/wp-config.php"
     #  $13 = ${project_override_nginx_conf}
     #  $14 = ${project_use_http2}
     #  $15 = ${project_certbot_mode}
-    project_update_brolit_config "${project_path}" "${project_name}" "${project_stage}" "${project_type} " "enabled" "mysql" "${database_name}" "localhost" "${database_user}" "${database_user_passw}" "${project_domain}" "${project_secondary_subdomain}" "/etc/nginx/sites-available/${project_domain}" "" "${cert_path}"
+    project_update_brolit_config "${project_path}" "${project_name}" "${project_stage}" "${project_type}" "enabled" "mysql" "${project_database}" "localhost" "${project_database_user}" "${project_database_user_passw}" "${project_domain}" "${project_secondary_subdomain}" "/etc/nginx/sites-available/${project_domain}" "" "${cert_path}"
 
     # Log
     log_event "info" "New ${project_type} project installation for '${project_domain}' finished ok." "false"
