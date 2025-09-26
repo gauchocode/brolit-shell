@@ -918,8 +918,35 @@ function docker_project_install() {
         [[ $? -eq 1 ]] && return 1
 
         # Create wp-config.php inside the container
-        wpcli_create_config "${project_path}/wordpress" "${project_database}" "${project_database_user}" "${project_database_user_passw}" "es_ES" "docker"
-        [[ $? -eq 1 ]] && return 1
+        wpcli_create_config "${project_path}/wordpress" "${project_database}" "${project_database_user}" "${project_database_user_passw}" "es_ES" "mysql" "docker"
+        if [[ $? -ne 0 ]]; then
+          log_event "warning" "wpcli_create_config failed. Trying fallback: create config as root inside wordpress-cli container" "false"
+          # Intentar crear como root dentro del contenedor wordpress-cli
+          docker compose -f "${compose_file}" run -T -u 0 -e HOME=/tmp --rm wordpress-cli wp config create --dbname="${project_database}" --dbuser="${project_database_user}" --dbpass="${project_database_user_passw}" --dbhost="mysql" --locale="es_ES" --allow-root --skip-plugins --skip-themes --quiet >/dev/null 2>&1
+          rc=$?
+          if [[ ${rc} -eq 0 ]]; then
+            log_event "info" "wp-config.php created as root inside wordpress-cli container" "false"
+            # Intentar fijar propietario dentro del contenedor php-fpm (afectará al volumen montado)
+            app_uid="${APP_USER_ID:-33}"
+            app_gid="${APP_GROUP_ID:-33}"
+            docker compose -f "${compose_file}" exec -T php-fpm chown -R "${app_uid}:${app_gid}" /wordpress >/dev/null 2>&1 || log_event "warning" "Failed to chown inside php-fpm container; check ownership manually" "false"
+          else
+            log_event "warning" "Creating wp-config as root failed (rc=${rc}). Trying host fallback (move sample + inject DB constants)" "false"
+            # Host fallback: mover sample a wp-config y setear constantes por sed/_wp_config_set_option
+            if [[ -f "${project_path}/wordpress/wp-config-sample.php" ]]; then
+              cp "${project_path}/wordpress/wp-config-sample.php" "${project_path}/wordpress/wp-config.php" || log_event "error" "Host fallback: cp failed" "false"
+              # Aplicar DB constants vía funciones ya existentes
+              project_set_configured_database "${project_path}" "wordpress" "docker" "${project_database}"
+              project_set_configured_database_host "${project_path}" "wordpress" "docker" "mysql"
+              project_set_configured_database_user "${project_path}" "wordpress" "docker" "${project_database_user}"
+              project_set_configured_database_userpassw "${project_path}" "wordpress" "docker" "${project_database_user_passw}"
+              log_event "info" "Host fallback applied: wp-config.php created and DB constants set" "false"
+            else
+              log_event "error" "Host fallback failed: wp-config-sample.php not found" "false"
+              return 1
+            fi
+          fi
+        fi
 
         # Check exitcode
         exitstatus=$?
