@@ -887,6 +887,10 @@ function docker_project_install() {
         decompress "${project_path}/wordpress.tar.gz" "${project_path}" ""
         [[ $? -eq 1 ]] && return 1
 
+        # Cleanup: Remove the downloaded tar.gz file
+        rm -f "${project_path}/wordpress.tar.gz"
+        log_event "debug" "Cleaned up wordpress.tar.gz after decompression" "false"
+
         # Replace .env vars
         local wp_port="${port_available}"
         local project_database="${project_name}_${project_stage}"
