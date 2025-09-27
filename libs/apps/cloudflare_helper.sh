@@ -498,8 +498,18 @@ function cloudflare_set_record() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 && -n ${record_id} ]]; then
 
+        local current_content
+        current_content="$(cloudflare_get_record_details "${root_domain}" "${record_name}" "content")"
+        exitstatus_current=$?
+        if [[ ${exitstatus_current} -eq 0 && "${current_content}" == "${cur_ip}" ]]; then
+            log_event "info" "Record ${record_name} already points to ${cur_ip}, skipping update." "false"
+            display --indent 6 --text "- Verifying ${record_name} record" --result "DONE" --color GREEN
+            display --indent 8 --text "Already correct, skipping" --tcolor GREEN
+            return 0
+        fi
+
         # Log
-        display --indent 6 --text "- Changing ${record_name} IP ..."
+        display --indent 6 --text "- Changing ${record_name} record ..."
 
         # First delete existing entry
         log_event "debug" "Running: curl -s -X DELETE \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\""
@@ -523,17 +533,22 @@ function cloudflare_set_record() {
 
         if [[ ${update} == *"\"success\":false"* || ${update} == "" ]]; then
             # Log
-            log_event "error" "Update failed. Results:\n${update}" "false"
-            display --indent 6 --text "- Updating subdomain on Cloudflare" --result "FAIL" --color RED
-            display --indent 8 --text "Please red the log file" --tcolor RED
+            log_event "error" "Update failed for ${record_name}. Results:\n${update}" "false"
+            display --indent 6 --text "- Updating ${record_name} on Cloudflare" --result "FAIL" --color RED
+            display --indent 8 --text "Error details in log" --tcolor RED
 
-            return 1
+            if ! whiptail --title "Cloudflare Update Failed" --yesno "Failed to update record for ${record_name}.\n\nDo you want to continue the procedure? (No will abort the whole process)" 12 60; then
+                log_event "error" "User chose to abort on failure for ${record_name}" "false"
+                return 1
+            fi
+            log_event "warning" "Continuing despite failure for ${record_name}" "false"
+            return 0
 
         else
             # Log
-            log_event "info" "IP changed to: ${SERVER_IP}" "false"
-            display --indent 6 --text "- Updating subdomain on Cloudflare" --result "DONE" --color GREEN
-            display --indent 8 --text "IP: ${SERVER_IP}" --tcolor GREEN
+            log_event "info" "Record ${record_name} updated to: ${cur_ip}" "false"
+            display --indent 6 --text "- Updating ${record_name} on Cloudflare" --result "DONE" --color GREEN
+            display --indent 8 --text "Content: ${cur_ip}" --tcolor GREEN
 
             return 0
 
@@ -542,7 +557,7 @@ function cloudflare_set_record() {
     else
 
         # Log
-        display --indent 6 --text "- Creating subdomain ${MAGENTA}${record_name}${ENDCOLOR}"
+        display --indent 6 --text "- Creating subdomain ${record_name}"
         log_event "debug" "Record ID not found. Trying to add the subdomain: ${record_name}"
         log_event "debug" "Running: curl -s -X POST \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\" --data \"{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}\""
 
@@ -558,13 +573,18 @@ function cloudflare_set_record() {
 
         if [[ ${update} == *"\"success\":false"* || ${update} == "" ]]; then
             # Log
-            display --indent 6 --text "- Creating subdomain ${MAGENTA}${record_name}${ENDCOLOR}" --result "FAIL" --color RED
-            log_event "error" "Error creating subdomain ${record_name}" "false"
-            log_event "debug" "Command returned: ${update}" "false"
-            return 1
+            display --indent 6 --text "- Creating subdomain ${record_name}" --result "FAIL" --color RED
+            log_event "error" "Error creating subdomain ${record_name}. Results:\n${update}" "false"
+
+            if ! whiptail --title "Cloudflare Creation Failed" --yesno "Failed to create record for ${record_name}.\n\nDo you want to continue the procedure? (No will abort the whole process)" 12 60; then
+                log_event "error" "User chose to abort on failure for ${record_name}" "false"
+                return 1
+            fi
+            log_event "warning" "Continuing despite failure for ${record_name}" "false"
+            return 0
         else
             # Log
-            display --indent 6 --text "- Creating subdomain ${MAGENTA}${record_name}${ENDCOLOR}" --result "DONE" --color GREEN
+            display --indent 6 --text "- Creating subdomain ${record_name}" --result "DONE" --color GREEN
             log_event "info" "Subdomain ${record_name} added successfully" "false"
             log_event "debug" "Command returned: ${update}" "false"
             return 0
