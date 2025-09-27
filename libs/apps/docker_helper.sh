@@ -746,11 +746,28 @@ function docker_restore_project() {
 ################################################################################
 
 function docker_wait_for_mysql_ready() {
+    
     local compose_file="${1}"
     local mysql_user="${2}"
     local mysql_pass="${3}"
-    local max_attempts=60
+
+    local max_attempts=10
     local attempt=0
+    local env_file="${compose_file%/*}/.env"
+    local root_pass
+
+    # Extract root password from .env
+    if [[ -f "${env_file}" ]]; then
+        root_pass=$(grep '^MYSQL_ROOT_PASSWORD=' "${env_file}" | cut -d'=' -f2- | tr -d '[:space:]')
+    else
+        log_event "error" "Could not find .env file at ${env_file}" "true"
+        return 1
+    fi
+
+    if [[ -z "${root_pass}" ]]; then
+        log_event "error" "MYSQL_ROOT_PASSWORD not found in .env" "true"
+        return 1
+    fi
 
     log_event "info" "Waiting for MySQL container and service to be ready..." "false"
     display --indent 6 --text "- Waiting for MySQL to be ready..."
@@ -765,23 +782,46 @@ function docker_wait_for_mysql_ready() {
         fi
         log_event "debug" "MySQL container is up (attempt $((attempt + 1)))" "false"
 
-        # Stage 2: Test MySQL service with mysqladmin ping
+        # Stage 2: Test MySQL service with mysqladmin ping as root
         local ping_result
-        ping_result=$(docker compose -f "${compose_file}" exec mysql mysqladmin ping -u"${mysql_user}" -p"${mysql_pass}" 2>&1)
-        if [[ $? -eq 0 ]]; then
-            clear_previous_lines "1"
-            display --indent 6 --text "- Waiting for MySQL to be ready..." --result "DONE" --color GREEN
-            log_event "info" "MySQL is ready. Ping result: ${ping_result}" "false"
-            return 0
+        ping_result=$(docker compose -f "${compose_file}" exec mysql mysqladmin ping -uroot -p"${root_pass}" 2>&1)
+        local ping_exit=$?
+        if [[ ${ping_exit} -eq 0 && "${ping_result}" == *"mysqld is alive"* ]]; then
+            log_event "debug" "Root ping successful (attempt $((attempt + 1)))" "false"
+
+            # Stage 3: Quick sequential check for app user (up to 3 attempts)
+            local app_ready=false
+            local app_ping_result
+            for app_try in {1..3}; do
+                app_ping_result=$(docker compose -f "${compose_file}" exec mysql mysqladmin ping -u"${mysql_user}" -p"${mysql_pass}" 2>&1)
+                if [[ $? -eq 0 && "${app_ping_result}" == *"mysqld is alive"* ]]; then
+                    app_ready=true
+                    break
+                fi
+                log_event "debug" "App user ping failed (try ${app_try}: ${app_ping_result}" "false"
+                sleep 2
+            done
+
+            if [[ "${app_ready}" == "true" ]]; then
+                clear_previous_lines "1"
+                display --indent 6 --text "- Waiting for MySQL to be ready..." --result "DONE" --color GREEN
+                log_event "info" "MySQL is fully ready (root and app user). Root ping: ${ping_result}, App ping: ${app_ping_result}" "false"
+                return 0
+            else
+                log_event "warning" "Root ping OK, but app user not ready after quick check. Proceeding with caution." "false"
+                clear_previous_lines "1"
+                display --indent 6 --text "- Waiting for MySQL to be ready..." --result "WARN" --color YELLOW
+                return 0  # Allow continuation, as root confirms service is up
+            fi
         fi
 
-        log_event "debug" "MySQL ping failed (attempt $((attempt + 1)): ${ping_result}" "false"
+        log_event "debug" "Root ping failed (attempt $((attempt + 1)): ${ping_result} (exit: ${ping_exit})" "false"
         sleep 2
         attempt=$((attempt + 1))
     done
 
     # If timeout, log final error and return 1
-    final_error="${ping_result:-Timeout reached without successful ping}"
+    final_error="${ping_result:-Timeout reached without successful root ping}"
     clear_previous_lines "1"
     display --indent 6 --text "- Waiting for MySQL to be ready..." --result "FAIL" --color RED
     log_event "error" "MySQL did not become ready in time. Final error: ${final_error}" "true"
@@ -933,11 +973,17 @@ function docker_project_install() {
 
         # Wait for MySQL to be ready
         docker_wait_for_mysql_ready "${compose_file}" "${project_database_user}" "${project_database_user_passw}"
-        [[ $? -eq 1 ]] && return 1
+        local mysql_wait_status=$?
+        if [[ ${mysql_wait_status} -eq 1 ]]; then
+            log_event "warning" "MySQL wait failed completely. Proceeding with caution; DB may not be fully ready." "false"
+        fi
 
-        # Create wp-config.php directly with docker compose run and retries
+        # Pre-chown to ensure writable permissions for user 33
         APP_USER_ID="${APP_USER_ID:-33}"
         APP_GROUP_ID="${APP_GROUP_ID:-33}"
+        docker compose -f "${compose_file}" run --rm -u 0 php-fpm chown -R "${APP_USER_ID}:${APP_GROUP_ID}" /wordpress >/dev/null 2>&1
+
+        # Create wp-config.php directly with docker compose run and retries (suppressed output)
         max_retries=3
         success=false
         for retry in $(seq 1 $max_retries); do
@@ -950,7 +996,7 @@ function docker_project_install() {
                 --locale="es_ES" \
                 --skip-plugins \
                 --skip-themes \
-                --quiet; then
+                --quiet >/dev/null 2>&1; then
                 success=true
                 break
             fi
@@ -959,7 +1005,7 @@ function docker_project_install() {
 
         if [[ "${success}" != "true" ]]; then
             log_event "warning" "Direct wp config create failed after $max_retries attempts. Trying fallback: create config as root inside wordpress-cli container" "false"
-            # Fallback: create as root
+            # Fallback: create as root (suppressed output)
             if docker compose -f "${compose_file}" run -T -u 0 -e HOME=/tmp -e APP_USER_ID="${APP_USER_ID}" -e APP_GROUP_ID="${APP_GROUP_ID}" --rm wordpress-cli \
                 wp config create \
                 --dbname="${project_database}" \
@@ -970,13 +1016,13 @@ function docker_project_install() {
                 --allow-root \
                 --skip-plugins \
                 --skip-themes \
-                --quiet; then
+                --quiet >/dev/null 2>&1; then
                 log_event "info" "wp-config.php created as root inside wordpress-cli container" "false"
-                # Fix ownership in php-fpm container
+                # Fix ownership in php-fpm container (already suppressed)
                 docker compose -f "${compose_file}" exec -T php-fpm chown -R "${APP_USER_ID}":"${APP_GROUP_ID}" /wordpress >/dev/null 2>&1 || log_event "warning" "Failed to chown inside php-fpm container; check ownership manually" "false"
             else
                 log_event "warning" "Creating wp-config as root failed. Trying host fallback (move sample + inject DB constants)" "false"
-                # Host fallback
+                # Host fallback (no Docker output)
                 if [[ -f "${project_path}/wordpress/wp-config-sample.php" ]]; then
                     cp "${project_path}/wordpress/wp-config-sample.php" "${project_path}/wordpress/wp-config.php" || log_event "error" "Host fallback: cp failed" "false"
                     # Apply DB constants via existing functions
