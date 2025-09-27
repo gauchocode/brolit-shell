@@ -1258,6 +1258,12 @@ function project_set_configured_database_host() {
 
   wordpress)
 
+    # Check if already set
+    current_host="$(grep "define('DB_HOST'" "${project_config_file}" | cut -d "'" -f 4)"
+    if [[ -n "${current_host}" && "${current_host}" == "${database_host}" ]]; then
+      log_event "debug" "DB_HOST already set to ${database_host}, skipping" "false"
+      return 0
+    fi
     # Set/Update
     _wp_config_set_option "${project_config_file}" "DB_HOST" "${database_host}"
     got_error=$?
@@ -1457,6 +1463,13 @@ function project_set_configured_database() {
 
   wordpress)
 
+    # Check if already set
+    current_db="$(wp_config_get_option "${project_config_file}" "DB_NAME")"
+    if [[ -n "${current_db}" && "${current_db}" == "${database_name}" ]]; then
+      log_event "debug" "DB_NAME already set to ${database_name}, skipping" "false"
+      got_error=0
+      return 0
+    fi
     # Set/Update
     _wp_config_set_option "${project_config_file}" "DB_NAME" "${database_name}"
     got_error=$?
@@ -1648,6 +1661,13 @@ function project_set_configured_database_user() {
 
   wordpress)
 
+    # Check if already set
+    current_user="$(wp_config_get_option "${project_config_file}" "DB_USER")"
+    if [[ -n "${current_user}" && "${current_user}" == "${database_username}" ]]; then
+      log_event "debug" "DB_USER already set to ${database_username}, skipping" "false"
+      got_error=0
+      return 0
+    fi
     # Set/Update
     _wp_config_set_option "${project_config_file}" "DB_USER" "${database_username}"
     got_error=$?
