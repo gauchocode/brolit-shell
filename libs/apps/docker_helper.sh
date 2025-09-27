@@ -749,26 +749,42 @@ function docker_wait_for_mysql_ready() {
     local compose_file="${1}"
     local mysql_user="${2}"
     local mysql_pass="${3}"
-    local max_attempts=30
+    local max_attempts=60
     local attempt=0
 
-    log_event "info" "Waiting for MySQL to be ready..." "false"
+    log_event "info" "Waiting for MySQL container and service to be ready..." "false"
     display --indent 6 --text "- Waiting for MySQL to be ready..."
 
     while [ $attempt -lt $max_attempts ]; do
-        if docker compose -f "${compose_file}" exec mysql mysql -u"${mysql_user}" -p"${mysql_pass}" -e "SELECT 1;" >/dev/null 2>&1; then
+        # Stage 1: Check if mysql container is running
+        if ! docker compose -f "${compose_file}" ps mysql | grep -q "Up"; then
+            log_event "debug" "MySQL container not running (attempt $((attempt + 1)))" "false"
+            sleep 2
+            attempt=$((attempt + 1))
+            continue
+        fi
+        log_event "debug" "MySQL container is up (attempt $((attempt + 1)))" "false"
+
+        # Stage 2: Test MySQL service with mysqladmin ping
+        local ping_result
+        ping_result=$(docker compose -f "${compose_file}" exec mysql mysqladmin ping -u"${mysql_user}" -p"${mysql_pass}" 2>&1)
+        if [[ $? -eq 0 ]]; then
             clear_previous_lines "1"
             display --indent 6 --text "- Waiting for MySQL to be ready..." --result "DONE" --color GREEN
-            log_event "info" "MySQL is ready." "false"
+            log_event "info" "MySQL is ready. Ping result: ${ping_result}" "false"
             return 0
         fi
+
+        log_event "debug" "MySQL ping failed (attempt $((attempt + 1)): ${ping_result}" "false"
         sleep 2
         attempt=$((attempt + 1))
     done
 
+    # If timeout, log final error and return 1
+    final_error="${ping_result:-Timeout reached without successful ping}"
     clear_previous_lines "1"
     display --indent 6 --text "- Waiting for MySQL to be ready..." --result "FAIL" --color RED
-    log_event "error" "MySQL did not become ready in time." "true"
+    log_event "error" "MySQL did not become ready in time. Final error: ${final_error}" "true"
     return 1
 }
 
