@@ -3107,7 +3107,7 @@ function wpcli_config_set() {
     log_event "debug" "Running: ${wpcli_cmd} config set ${wp_config_option} ${wp_config_option_value}" "false"
 
     # wp-cli command
-    wp_config="$(${wpcli_cmd} config set "${wp_config_option} ${wp_config_option_value}")"
+    wp_config="$(${wpcli_cmd} config set "${wp_config_option}" "${wp_config_option_value}")"
 
     # get exit status
     exitstatus=$?
@@ -3123,7 +3123,7 @@ function wpcli_config_set() {
     else
 
         # Log failure
-        #[[ ${install_type} == "docker"* ]] && clear_previous_lines "1"
+        [[ ${install_type} == "docker"* ]] && clear_previous_lines "1"
         log_event "debug" "Command executed: ${wpcli_cmd} config set ${wp_config_option} ${wp_config_option_value}" "false"
         log_event "error" "wp config set return:${wp_config}" "false"
 
