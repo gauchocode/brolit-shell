@@ -915,50 +915,51 @@ function docker_project_install() {
         docker_wait_for_mysql_ready "${compose_file}" "${project_database_user}" "${project_database_user_passw}"
         [[ $? -eq 1 ]] && return 1
 
-        # Wait for wordpress-cli container to be ready
-        max_attempts=10
-        attempt=0
-        while [ $attempt -lt $max_attempts ]; do
-            if docker compose -f "${compose_file}" ps wordpress-cli | grep -q "running"; then
-                break
-            fi
-            sleep 2
-            attempt=$((attempt + 1))
-        done
-        if [ $attempt -eq $max_attempts ]; then
-            log_event "error" "wordpress-cli container did not become ready in time" "true"
-            return 1
-        fi
-
-        # Create wp-config.php inside the container with retries
+        # Create wp-config.php directly with docker compose run and retries
+        APP_USER_ID="${APP_USER_ID:-33}"
+        APP_GROUP_ID="${APP_GROUP_ID:-33}"
         max_retries=3
+        success=false
         for retry in $(seq 1 $max_retries); do
-            wpcli_create_config "${project_path}/wordpress" "${project_database}" "${project_database_user}" "${project_database_user_passw}" "es_ES" "mysql" "docker"
-            if [[ $? -eq 0 ]]; then
+            if docker compose -f "${compose_file}" run -T -u 33 -e HOME=/tmp -e APP_USER_ID="${APP_USER_ID}" -e APP_GROUP_ID="${APP_GROUP_ID}" --rm wordpress-cli \
+                wp config create \
+                --dbname="${project_database}" \
+                --dbuser="${project_database_user}" \
+                --dbpass="${project_database_user_passw}" \
+                --dbhost="mysql" \
+                --locale="es_ES" \
+                --skip-plugins \
+                --skip-themes \
+                --quiet; then
+                success=true
                 break
             fi
-            if [[ $retry -lt $max_retries ]]; then
-                log_event "warning" "wpcli_create_config failed (attempt $retry), retrying in $((retry * 2)) seconds..." "false"
-                sleep $((retry * 2))
-            fi
+            [[ $retry -lt $max_retries ]] && sleep $((retry * 2))
         done
-        if [[ $? -ne 0 ]]; then
-            log_event "warning" "wpcli_create_config failed after $max_retries attempts. Trying fallback: create config as root inside wordpress-cli container" "false"
-            # Intentar crear como root dentro del contenedor wordpress-cli
-            docker compose -f "${compose_file}" run -T -u 0 -e HOME=/tmp --rm wordpress-cli wp config create --dbname="${project_database}" --dbuser="${project_database_user}" --dbpass="${project_database_user_passw}" --dbhost="mysql" --locale="es_ES" --allow-root --skip-plugins --skip-themes --quiet >/dev/null 2>&1
-            rc=$?
-            if [[ ${rc} -eq 0 ]]; then
+
+        if [[ "${success}" != "true" ]]; then
+            log_event "warning" "Direct wp config create failed after $max_retries attempts. Trying fallback: create config as root inside wordpress-cli container" "false"
+            # Fallback: create as root
+            if docker compose -f "${compose_file}" run -T -u 0 -e HOME=/tmp -e APP_USER_ID="${APP_USER_ID}" -e APP_GROUP_ID="${APP_GROUP_ID}" --rm wordpress-cli \
+                wp config create \
+                --dbname="${project_database}" \
+                --dbuser="${project_database_user}" \
+                --dbpass="${project_database_user_passw}" \
+                --dbhost="mysql" \
+                --locale="es_ES" \
+                --allow-root \
+                --skip-plugins \
+                --skip-themes \
+                --quiet; then
                 log_event "info" "wp-config.php created as root inside wordpress-cli container" "false"
-                # Intentar fijar propietario dentro del contenedor php-fpm (afectará al volumen montado)
-                app_uid="${APP_USER_ID:-33}"
-                app_gid="${APP_GROUP_ID:-33}"
-                docker compose -f "${compose_file}" exec -T php-fpm chown -R "${app_uid}:${app_gid}" /wordpress >/dev/null 2>&1 || log_event "warning" "Failed to chown inside php-fpm container; check ownership manually" "false"
+                # Fix ownership in php-fpm container
+                docker compose -f "${compose_file}" exec -T php-fpm chown -R "${APP_USER_ID}":"${APP_GROUP_ID}" /wordpress >/dev/null 2>&1 || log_event "warning" "Failed to chown inside php-fpm container; check ownership manually" "false"
             else
-                log_event "warning" "Creating wp-config as root failed (rc=${rc}). Trying host fallback (move sample + inject DB constants)" "false"
-                # Host fallback: mover sample a wp-config y setear constantes por sed/_wp_config_set_option
+                log_event "warning" "Creating wp-config as root failed. Trying host fallback (move sample + inject DB constants)" "false"
+                # Host fallback
                 if [[ -f "${project_path}/wordpress/wp-config-sample.php" ]]; then
                     cp "${project_path}/wordpress/wp-config-sample.php" "${project_path}/wordpress/wp-config.php" || log_event "error" "Host fallback: cp failed" "false"
-                    # Aplicar DB constants vía funciones ya existentes
+                    # Apply DB constants via existing functions
                     project_set_configured_database "${project_path}" "wordpress" "docker" "${project_database}"
                     project_set_configured_database_host "${project_path}" "wordpress" "docker" "mysql"
                     project_set_configured_database_user "${project_path}" "wordpress" "docker" "${project_database_user}"
