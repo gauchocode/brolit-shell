@@ -476,7 +476,7 @@ function docker_mysql_database_import() {
 
     # Docker run
     # Example: docker exec -i db mysql -uroot -pexample wordpress < dump.sql
-    docker exec -i "${container_name}" mysql -u"${mysql_user}" -p"${mysql_user_passw}" "${mysql_database}" <"${dump_file}"
+    docker exec -i "${container_name}" mysql -u"${mysql_user}" -p"${mysql_user_passw}" "${mysql_database}" < "${dump_file}"
 
     # Log
     clear_previous_lines "1"
@@ -507,7 +507,7 @@ function docker_mysql_database_export() {
     log_event "debug" "Running: docker exec -i \"${container_name}\" mysql -u\"${mysql_user}\" -p\"${mysql_user_passw}\" ${mysql_database} > ${dump_file}" "false"
 
     # Docker command
-    docker exec -i "${container_name}" mysqldump -u"${mysql_user}" -p"${mysql_user_passw}" "${mysql_database}" >"${dump_file}"
+    docker exec -i "${container_name}" mysqldump -u"${mysql_user}" -p"${mysql_user_passw}" "${mysql_database}" > "${dump_file}"
 
 }
 
@@ -786,7 +786,7 @@ function docker_project_install() {
     log_section "Project Installer (${project_type} on docker)"
 
     # Project Domain
-    if [[ -z ${project_domain} ]]; then
+    if [[ -z "${project_domain}" ]]; then
         project_domain="$(project_ask_domain "")"
         [[ $? -eq 1 ]] && return 1
     fi
@@ -801,7 +801,7 @@ function docker_project_install() {
     project_root_domain="$(domain_get_root "${project_domain}")"
 
     # TODO: check when add www.DOMAIN.com and then select other stage != prod
-    if [[ -z ${project_stage} ]]; then
+    if [[ -z "${project_stage}" ]]; then
 
         suggested_state="$(domain_get_subdomain_part "${project_domain}")"
 
@@ -817,7 +817,7 @@ function docker_project_install() {
 
     fi
 
-    if [[ -z ${project_name} ]]; then
+    if [[ -z "${project_name}" ]]; then
 
         possible_project_name="$(project_get_name_from_domain "${project_domain}")"
 
@@ -851,9 +851,9 @@ function docker_project_install() {
         return 1
     fi
 
-    [[ ${project_domain} == "${project_root_domain}" ]] && project_domain="www.${project_domain}" && project_secondary_subdomain="${project_root_domain}"
+    [[ "${project_domain}" == "${project_root_domain}" ]] && project_domain="www.${project_domain}" && project_secondary_subdomain="${project_root_domain}"
 
-    case ${project_type} in
+    case "${project_type}" in
 
     wordpress)
 
@@ -908,8 +908,6 @@ function docker_project_install() {
         compose_file="${project_path}/docker-compose.yml"
 
         # Execute docker compose commands
-        docker_compose_up "${compose_file}"
-        [[ $? -eq 1 ]] && return 1
         docker_compose_build "${compose_file}"
         [[ $? -eq 1 ]] && return 1
 
@@ -953,8 +951,7 @@ function docker_project_install() {
         if [[ ${exitstatus} -eq 0 ]]; then
 
             # Log
-            wait 2
-            #clear_previous_lines "7"
+            sleep 2
             clear_previous_lines "22"
             log_event "info" "Downloading docker images." "false"
             log_event "info" "Building docker images." "false"
@@ -1060,7 +1057,7 @@ define('WP_REDIS_HOST','redis');\n" "${project_path}/wordpress/wp-config.php"
         sed -ie "s|^MYSQL_ROOT_PASSWORD=.*$|MYSQL_ROOT_PASSWORD=${project_database_root_passw}|g" "${project_path}/.env"
 
         # Remove tmp file
-        rm "${project_path}/.enve"
+        rm -f "${project_path}/.enve" 2>/dev/null
 
         compose_file="${project_path}/docker-compose.yml"
 
