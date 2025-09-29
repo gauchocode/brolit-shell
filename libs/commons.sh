@@ -550,8 +550,8 @@ function install_script_aliases() {
 
   if [[ ! -f ~/.bash_aliases ]]; then
     cp "${BROLIT_MAIN_DIR}/aliases.sh" ~/.bash_aliases
-    display --indent 2 --text "- Installing script aliases" --result "DONE" --color GREEN
-    display --indent 4 --text "Please now run: source ~/.bash_aliases" --tcolor CYAN
+    display --indent 4 --text "- Installing script aliases" --result "DONE" --color GREEN
+    display --indent 6 --text "Please now run: source ~/.bash_aliases" --tcolor CYAN
 
   else
 
@@ -560,23 +560,23 @@ function install_script_aliases() {
     timestamp="$(date +%Y%m%d_%H%M%S)"
     mv ~/.bash_aliases ~/.bash_aliases_bk-"${timestamp}"
 
-    display --indent 2 --text "- Backup old aliases" --result "DONE" --color GREEN
+    display --indent 4 --text "- Backup old aliases" --result "DONE" --color GREEN
 
     cp "${BROLIT_MAIN_DIR}/aliases.sh" ~/.bash_aliases
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-      display --indent 2 --text "- Installing BROLIT aliases" --result "DONE" --color GREEN
-      display --indent 4 --text "Please now run: source ~/.bash_aliases" --tcolor CYAN
+      display --indent 4 --text "- Installing BROLIT aliases" --result "DONE" --color GREEN
+      display --indent 6 --text "Please now run: source ~/.bash_aliases" --tcolor CYAN
       log_event "info" "BROLIT aliases installed" "false"
 
       return 0
 
     else
 
-      display --indent 2 --text "- Installing BROLIT aliases" --result "FAIL" --color RED
-      log_event "error" "Something installing BROLIT aliases" "false"
+      display --indent 4 --text "- Installing BROLIT aliases" --result "FAIL" --color RED
+      log_event "error" "Something went wrong installing BROLIT aliases" "false"
 
       return 1
 
