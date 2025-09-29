@@ -110,10 +110,16 @@ function mount_storage_box() {
                        3>&1 1>&2 2>&3)
   exitstatus=$?
   
+  # Log the raw selection for debugging
+  log_event "debug" "Raw storage box selection: '${chosen_type}'" "false"
+  
   # Clean the chosen_type to extract only the index number
   if [ $exitstatus = 0 ] && [[ -n "${chosen_type}" ]]; then
     # Extract the index number from the chosen type (e.g., "01)" -> "1")
-    chosen_index=$(echo "${chosen_type}" | sed 's/[^0-9]*//')
+    chosen_index=$(echo "${chosen_type}" | grep -o '^[0-9]*')
+    
+    # Log the extracted index for debugging
+    log_event "debug" "Extracted storage box index: '${chosen_index}'" "false"
     
     # Validate chosen_index
     if [[ -n "${chosen_index}" ]] && [[ "${chosen_index}" =~ ^[0-9]+$ ]] && [ "${chosen_index}" -ge 1 ] && [ "${chosen_index}" -le "${number_of_servers}" ]; then
@@ -124,9 +130,13 @@ function mount_storage_box() {
       BACKUP_BORG_PORT="${BACKUP_BORG_PORTS[$array_index]}"
       
       log_event "info" "Selected storage box ${chosen_index}: ${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}" "false"
+      display --indent 6 --text "- Storage box selection" --result "DONE" --color GREEN
     else
-      log_event "error" "Invalid storage box selection" "false"
+      log_event "error" "Invalid storage box selection: ${chosen_type}" "false"
+      log_event "error" "Expected numeric index between 1 and ${number_of_servers}, got: '${chosen_index}'" "false"
       display --indent 6 --text "- Invalid storage box selection" --result "FAIL" --color RED
+      display --indent 8 --text "Invalid selection: ${chosen_type}" --tcolor RED
+      display --indent 8 --text "Please try again and select a valid storage box" --tcolor YELLOW
       return 1
     fi
   else
@@ -442,6 +452,9 @@ function restore_backup_with_borg() {
         local chosen_server_config
         chosen_server_config=$(whiptail --title "BORG SERVER SELECTION" --menu "Choose a Borg server to restore from" 20 78 10 "${server_options[@]}" 3>&1 1>&2 2>&3)
         
+        # Log the raw selection for debugging
+        log_event "debug" "Raw server selection: '${chosen_server_config}'" "false"
+        
         if [[ -z "${chosen_server_config}" ]]; then
             log_event "info" "Server selection canceled by user" "false"
             display --indent 6 --text "- Server selection" --result "CANCELED" --color YELLOW
@@ -449,9 +462,14 @@ function restore_backup_with_borg() {
         fi
         
         # Extract the index number and set the global variables
+        # Improved extraction to handle formats like "01)" correctly
         local chosen_index
-        chosen_index=$(echo "${chosen_server_config}" | sed 's/[^0-9]*//')
+        chosen_index=$(echo "${chosen_server_config}" | grep -o '^[0-9]*')
         
+        # Log the extracted index for debugging
+        log_event "debug" "Extracted index: '${chosen_index}'" "false"
+        
+        # Validate the extracted index
         if [[ -n "${chosen_index}" ]] && [[ "${chosen_index}" =~ ^[0-9]+$ ]] && [ "${chosen_index}" -ge 1 ] && [ "${chosen_index}" -le "${#BACKUP_BORG_USERS[@]}" ]; then
             local array_index=$((chosen_index - 1))
             BACKUP_BORG_USER="${BACKUP_BORG_USERS[$array_index]}"
@@ -461,8 +479,12 @@ function restore_backup_with_borg() {
             log_event "info" "Selected Borg server ${chosen_index}: ${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}" "false"
             display --indent 6 --text "- Server selection" --result "DONE" --color GREEN
         else
+            # Improved error handling with user-friendly message
             log_event "error" "Invalid server selection: ${chosen_server_config}" "false"
+            log_event "error" "Expected numeric index between 1 and ${#BACKUP_BORG_USERS[@]}, got: '${chosen_index}'" "false"
             display --indent 6 --text "- Server selection" --result "FAIL" --color RED
+            display --indent 8 --text "Invalid selection: ${chosen_server_config}" --tcolor RED
+            display --indent 8 --text "Please try again and select a valid server" --tcolor YELLOW
             return 1
         fi
     else
