@@ -135,6 +135,53 @@ function mount_storage_box() {
     return 1
   fi
 
+  # Check server connectivity before attempting to mount
+  log_event "info" "Checking connectivity to selected server: ${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}" "false"
+  display --indent 6 --text "- Checking server connectivity" --result "RUNNING" --color YELLOW
+  
+  # Create temporary arrays with only the selected server for connectivity check
+  local temp_users=("${BACKUP_BORG_USER}")
+  local temp_servers=("${BACKUP_BORG_SERVER}")
+  local temp_ports=("${BACKUP_BORG_PORT}")
+  
+  # Temporarily override global arrays for single server check
+  local original_users=("${BACKUP_BORG_USERS[@]}")
+  local original_servers=("${BACKUP_BORG_SERVERS[@]}")
+  local original_ports=("${BACKUP_BORG_PORTS[@]}")
+  
+  BACKUP_BORG_USERS=("${temp_users[@]}")
+  BACKUP_BORG_SERVERS=("${temp_servers[@]}")
+  BACKUP_BORG_PORTS=("${temp_ports[@]}")
+  
+  # Run connectivity check
+  if ! check_borg_server_connectivity; then
+      # Restore original arrays
+      BACKUP_BORG_USERS=("${original_users[@]}")
+      BACKUP_BORG_SERVERS=("${original_servers[@]}")
+      BACKUP_BORG_PORTS=("${original_ports[@]}")
+      
+      log_event "error" "Server connectivity check failed, aborting mount operation" "false"
+      display --indent 6 --text "- Server connectivity check" --result "FAIL" --color RED
+      
+      # Ask user if they want to continue anyway
+      if whiptail --title "CONNECTIVITY WARNING" --yesno "Server connectivity check failed. Do you want to continue with the mount operation anyway? This may fail." 10 60; then
+          log_event "info" "User chose to continue despite connectivity issues" "false"
+          display --indent 6 --text "- User override" --result "CONTINUE" --color YELLOW
+      else
+          log_event "info" "User canceled mount due to connectivity issues" "false"
+          display --indent 6 --text "- Mount operation" --result "CANCELED" --color YELLOW
+          return 1
+      fi
+  else
+      # Restore original arrays
+      BACKUP_BORG_USERS=("${original_users[@]}")
+      BACKUP_BORG_SERVERS=("${original_servers[@]}")
+      BACKUP_BORG_PORTS=("${original_ports[@]}")
+      
+      log_event "info" "Server connectivity check passed" "false"
+      display --indent 6 --text "- Server connectivity check" --result "OK" --color GREEN
+  fi
+
   is_mounted=$(mount -v | grep "storage-box" > /dev/null; echo "$?")
 
   if [[ ${is_mounted} -eq 1 ]]; then
@@ -166,6 +213,192 @@ function mount_storage_box() {
 
 
 #################################################
+# check borg server connectivity
+#
+# Arguments:
+#   None
+#
+# Outputs:
+#   Return 0 if all servers are reachable, 1 if any server fails
+################################################
+
+function check_borg_server_connectivity() {
+    
+    log_section "Borg Server Connectivity Check"
+    
+    # Check if Borg is enabled
+    if [[ "${BACKUP_BORG_STATUS}" != "enabled" ]]; then
+        log_event "info" "Borg backup is not enabled, skipping connectivity check" "false"
+        display --indent 6 --text "- Borg backup not enabled" --result "SKIPPED" --color YELLOW
+        return 0
+    fi
+
+    # Get number of servers from the global arrays
+    local number_of_servers=${#BACKUP_BORG_USERS[@]}
+    
+    # Validate number_of_servers is a positive integer
+    if [ "${number_of_servers}" -lt 1 ]; then
+        log_event "error" "No Borg servers configured or invalid configuration" "false"
+        display --indent 6 --text "- No Borg servers configured" --result "FAIL" --color RED
+        return 1
+    fi
+    
+    local failed_servers=0
+    local total_servers=${number_of_servers}
+    
+    log_event "info" "Checking connectivity for ${total_servers} Borg server(s)" "false"
+    display --indent 6 --text "- Checking ${total_servers} server(s)" --result "RUNNING" --color YELLOW
+    
+    # Check each configured server
+    for ((i=0; i<number_of_servers; i++)); do
+        local server_user="${BACKUP_BORG_USERS[$i]}"
+        local server_server="${BACKUP_BORG_SERVERS[$i]}"
+        local server_port="${BACKUP_BORG_PORTS[$i]}"
+        
+        # Skip if any required parameter is empty
+        if [[ -z "${server_user}" || -z "${server_server}" || -z "${server_port}" ]]; then
+            log_event "warning" "Skipping incomplete server configuration at index ${i}" "false"
+            display --indent 8 --text "Server ${i}: Incomplete configuration" --tcolor YELLOW
+            ((failed_servers++))
+            continue
+        fi
+        
+        log_event "info" "Testing connectivity to ${server_user}@${server_server}:${server_port}" "false"
+        display --indent 8 --text "Testing ${server_user}@${server_server}:${server_port}"
+        
+        # Test DNS resolution first
+        if ! nslookup "${server_server}" >/dev/null 2>&1; then
+            log_event "error" "DNS resolution failed for server: ${server_server}" "false"
+            display --indent 10 --text "DNS resolution: FAIL" --tcolor RED
+            
+            # Send notification with possible causes
+            local error_msg="❌ Borg Server Connectivity Issue\n\n"
+            error_msg+="Server: ${server_user}@${server_server}:${server_port}\n"
+            error_msg+="Issue: DNS resolution failed\n\n"
+            error_msg+="🔍 Possible causes:\n"
+            error_msg+="• Incorrect server hostname\n"
+            error_msg+="• DNS server issues\n"
+            error_msg+="• Network connectivity problems\n\n"
+            error_msg+="🛠️  Solutions:\n"
+            error_msg+="• Verify server hostname in .brolit_conf.json\n"
+            error_msg+="• Check network connectivity\n"
+            error_msg+="• Test with: nslookup ${server_server}"
+            
+            send_notification "${SERVER_NAME}" "${error_msg}" "alert"
+            ((failed_servers++))
+            continue
+        fi
+        
+        # Test port connectivity
+        if ! timeout 10 bash -c "echo >/dev/tcp/${server_server}/${server_port}" 2>/dev/null; then
+            log_event "error" "Port ${server_port} is not reachable on server: ${server_server}" "false"
+            display --indent 10 --text "Port check: FAIL" --tcolor RED
+            
+            # Send notification with possible causes
+            local error_msg="❌ Borg Server Connectivity Issue\n\n"
+            error_msg+="Server: ${server_user}@${server_server}:${server_port}\n"
+            error_msg+="Issue: Port ${server_port} is not reachable\n\n"
+            error_msg+="🔍 Possible causes:\n"
+            error_msg+="• Firewall blocking the port\n"
+            error_msg+="• Server not listening on port ${server_port}\n"
+            error_msg+="• Network ACL restrictions\n\n"
+            error_msg+="🛠️  Solutions:\n"
+            error_msg+="• Verify port ${server_port} is open on the server\n"
+            error_msg+="• Check firewall rules\n"
+            error_msg+="• Test with: telnet ${server_server} ${server_port}"
+            
+            send_notification "${SERVER_NAME}" "${error_msg}" "alert"
+            ((failed_servers++))
+            continue
+        fi
+        
+        # Test SSH connection with detailed error handling
+        local ssh_result
+        ssh_result=$(ssh -o ConnectTimeout=10 -o BatchMode=yes -o StrictHostKeyChecking=no -p "${server_port}" "${server_user}@${server_server}" "exit" 2>&1)
+        local ssh_exit_code=$?
+        
+        if [ ${ssh_exit_code} -eq 0 ]; then
+            log_event "info" "Successfully connected to ${server_user}@${server_server}:${server_port}" "false"
+            display --indent 10 --text "SSH connection: OK" --tcolor GREEN
+        else
+            log_event "error" "SSH connection failed to ${server_user}@${server_server}:${server_port}" "false"
+            log_event "error" "SSH error details: ${ssh_result}" "false"
+            display --indent 10 --text "SSH connection: FAIL" --tcolor RED
+            
+            # Analyze SSH error and send appropriate notification
+            local error_msg="❌ Borg Server Connectivity Issue\n\n"
+            error_msg+="Server: ${server_user}@${server_server}:${server_port}\n"
+            error_msg+="Issue: SSH connection failed\n\n"
+            
+            if [[ "${ssh_result}" == *"Permission denied"* ]]; then
+                error_msg+="🔍 Possible causes:\n"
+                error_msg+="• Incorrect username or password\n"
+                error_msg+="• SSH key authentication issues\n"
+                error_msg+="• Account disabled on server\n\n"
+                error_msg+="🛠️  Solutions:\n"
+                error_msg+="• Verify username and credentials\n"
+                error_msg+="• Check SSH key configuration\n"
+                error_msg+="• Test manual SSH connection"
+            elif [[ "${ssh_result}" == *"Connection refused"* ]]; then
+                error_msg+="🔍 Possible causes:\n"
+                error_msg+="• SSH service not running on server\n"
+                error_msg+="• Server is down\n"
+                error_msg+="• Port forwarding issues\n\n"
+                error_msg+="🛠️  Solutions:\n"
+                error_msg+="• Check if SSH service is running on server\n"
+                error_msg+="• Verify server status\n"
+                error_msg+="• Test with: ssh -p ${server_port} ${server_user}@${server_server}"
+            elif [[ "${ssh_result}" == *"No route to host"* ]] || [[ "${ssh_result}" == *"Network is unreachable"* ]]; then
+                error_msg+="🔍 Possible causes:\n"
+                error_msg+="• Network connectivity issues\n"
+                error_msg+="• Server is unreachable\n"
+                error_msg+="• Routing problems\n\n"
+                error_msg+="🛠️  Solutions:\n"
+                error_msg+="• Check network connectivity\n"
+                error_msg+="• Verify server IP address\n"
+                error_msg+="• Test with: ping ${server_server}"
+            elif [[ "${ssh_result}" == *"Host key verification failed"* ]]; then
+                error_msg+="🔍 Possible causes:\n"
+                error_msg+="• Host key changed or mismatch\n"
+                error_msg+="• Known hosts file corruption\n\n"
+                error_msg+="🛠️  Solutions:\n"
+                error_msg+="• Remove entry from ~/.ssh/known_hosts\n"
+                error_msg+="• Use ssh-keygen -R ${server_server}"
+            else
+                error_msg+="🔍 Possible causes:\n"
+                error_msg+="• Generic SSH connection issues\n"
+                error_msg+="• Server configuration problems\n"
+                error_msg+="• Authentication failures\n\n"
+                error_msg+="🛠️  Solutions:\n"
+                error_msg+="• Check server SSH configuration\n"
+                error_msg+="• Verify authentication method\n"
+                error_msg+="• Review server logs for details"
+            fi
+            
+            error_msg+="\n📝 Error details:\n${ssh_result}"
+            
+            send_notification "${SERVER_NAME}" "${error_msg}" "alert"
+            ((failed_servers++))
+        fi
+    done
+    
+    # Summary
+    if [ ${failed_servers} -eq 0 ]; then
+        log_event "info" "All ${total_servers} Borg servers are reachable" "false"
+        display --indent 6 --text "- Connectivity check" --result "SUCCESS" --color GREEN
+        display --indent 8 --text "${total_servers} server(s) OK" --tcolor GREEN
+        return 0
+    else
+        local success_servers=$((total_servers - failed_servers))
+        log_event "warning" "${failed_servers} out of ${total_servers} Borg servers failed connectivity check" "false"
+        display --indent 6 --text "- Connectivity check" --result "PARTIAL" --color YELLOW
+        display --indent 8 --text "${success_servers}/${total_servers} server(s) OK" --tcolor YELLOW
+        display --indent 8 --text "${failed_servers} server(s) FAILED" --tcolor RED
+        return 1
+    fi
+}
+
+#################################################
 # restore backup with borg
 #
 # Arguments:
@@ -183,32 +416,174 @@ function restore_backup_with_borg() {
     [[ ! -d ${storage_box_directory} ]] && mkdir ${storage_box_directory}
 
     log_section "Restore Backup"
+    
+    # Log diagnostic information
+    log_event "debug" "Starting restore backup process" "false"
+    log_event "debug" "BACKUP_BORG_STATUS: ${BACKUP_BORG_STATUS}" "false"
+    log_event "debug" "BACKUP_BORG_GROUP: ${BACKUP_BORG_GROUP}" "false"
+    log_event "debug" "Number of configured servers: ${#BACKUP_BORG_USERS[@]}" "false"
+    
+    # Log server configurations
+    for i in "${!BACKUP_BORG_USERS[@]}"; do
+        log_event "debug" "Server ${i}: ${BACKUP_BORG_USERS[$i]}@${BACKUP_BORG_SERVERS[$i]}:${BACKUP_BORG_PORTS[$i]}" "false"
+    done
 
-    # umount storage box
+    # First, let user choose which Borg server to use for restore
+    if [[ ${#BACKUP_BORG_USERS[@]} -gt 1 ]]; then
+        log_event "debug" "Multiple servers configured, showing selection menu" "false"
+        
+        local server_options=()
+        for i in "${!BACKUP_BORG_USERS[@]}"; do
+            local index=$(printf "%02d)" $((i+1)))
+            local label="${BACKUP_BORG_USERS[$i]}@${BACKUP_BORG_SERVERS[$i]}:${BACKUP_BORG_PORTS[$i]}"
+            server_options+=("$index" "$label")
+        done
+        
+        local chosen_server_config
+        chosen_server_config=$(whiptail --title "BORG SERVER SELECTION" --menu "Choose a Borg server to restore from" 20 78 10 "${server_options[@]}" 3>&1 1>&2 2>&3)
+        
+        if [[ -z "${chosen_server_config}" ]]; then
+            log_event "info" "Server selection canceled by user" "false"
+            display --indent 6 --text "- Server selection" --result "CANCELED" --color YELLOW
+            return 1
+        fi
+        
+        # Extract the index number and set the global variables
+        local chosen_index
+        chosen_index=$(echo "${chosen_server_config}" | sed 's/[^0-9]*//')
+        
+        if [[ -n "${chosen_index}" ]] && [[ "${chosen_index}" =~ ^[0-9]+$ ]] && [ "${chosen_index}" -ge 1 ] && [ "${chosen_index}" -le "${#BACKUP_BORG_USERS[@]}" ]; then
+            local array_index=$((chosen_index - 1))
+            BACKUP_BORG_USER="${BACKUP_BORG_USERS[$array_index]}"
+            BACKUP_BORG_SERVER="${BACKUP_BORG_SERVERS[$array_index]}"
+            BACKUP_BORG_PORT="${BACKUP_BORG_PORTS[$array_index]}"
+            
+            log_event "info" "Selected Borg server ${chosen_index}: ${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}" "false"
+            display --indent 6 --text "- Server selection" --result "DONE" --color GREEN
+        else
+            log_event "error" "Invalid server selection: ${chosen_server_config}" "false"
+            display --indent 6 --text "- Server selection" --result "FAIL" --color RED
+            return 1
+        fi
+    else
+        # Use the first (and only) configured server
+        BACKUP_BORG_USER="${BACKUP_BORG_USERS[0]}"
+        BACKUP_BORG_SERVER="${BACKUP_BORG_SERVERS[0]}"
+        BACKUP_BORG_PORT="${BACKUP_BORG_PORTS[0]}"
+        
+        log_event "info" "Using single configured server: ${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}" "false"
+        display --indent 6 --text "- Server configuration" --result "SINGLE" --color GREEN
+    fi
+
+    # Check server connectivity before proceeding
+    log_event "info" "Checking connectivity to selected server: ${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}" "false"
+    display --indent 6 --text "- Checking server connectivity" --result "RUNNING" --color YELLOW
+    
+    # Create temporary arrays with only the selected server for connectivity check
+    local temp_users=("${BACKUP_BORG_USER}")
+    local temp_servers=("${BACKUP_BORG_SERVER}")
+    local temp_ports=("${BACKUP_BORG_PORT}")
+    
+    # Temporarily override global arrays for single server check
+    local original_users=("${BACKUP_BORG_USERS[@]}")
+    local original_servers=("${BACKUP_BORG_SERVERS[@]}")
+    local original_ports=("${BACKUP_BORG_PORTS[@]}")
+    
+    BACKUP_BORG_USERS=("${temp_users[@]}")
+    BACKUP_BORG_SERVERS=("${temp_servers[@]}")
+    BACKUP_BORG_PORTS=("${temp_ports[@]}")
+    
+    # Run connectivity check
+    if ! check_borg_server_connectivity; then
+        # Restore original arrays
+        BACKUP_BORG_USERS=("${original_users[@]}")
+        BACKUP_BORG_SERVERS=("${original_servers[@]}")
+        BACKUP_BORG_PORTS=("${original_ports[@]}")
+        
+        log_event "error" "Server connectivity check failed, aborting restore operation" "false"
+        display --indent 6 --text "- Server connectivity check" --result "FAIL" --color RED
+        
+        # Ask user if they want to continue anyway
+        if whiptail --title "CONNECTIVITY WARNING" --yesno "Server connectivity check failed. Do you want to continue with the restore operation anyway? This may fail." 10 60; then
+            log_event "info" "User chose to continue despite connectivity issues" "false"
+            display --indent 6 --text "- User override" --result "CONTINUE" --color YELLOW
+        else
+            log_event "info" "User canceled restore due to connectivity issues" "false"
+            display --indent 6 --text "- Restore operation" --result "CANCELED" --color YELLOW
+            return 1
+        fi
+    else
+        # Restore original arrays
+        BACKUP_BORG_USERS=("${original_users[@]}")
+        BACKUP_BORG_SERVERS=("${original_servers[@]}")
+        BACKUP_BORG_PORTS=("${original_ports[@]}")
+        
+        log_event "info" "Server connectivity check passed" "false"
+        display --indent 6 --text "- Server connectivity check" --result "OK" --color GREEN
+    fi
+
+    # umount storage box first
     umount_storage_box ${storage_box_directory} && sleep 1
 
-    # mount storage box
-    mount_storage_box ${storage_box_directory} && sleep 1
+    # mount the selected storage box
+    if ! mount_storage_box ${storage_box_directory}; then
+        log_event "error" "Failed to mount storage box" "false"
+        display --indent 6 --text "- Mounting storage box" --result "FAIL" --color RED
+        return 1
+    fi
+    
+    sleep 1
 
-    local storage_box_directory=${storage_box_directory}
-    local remote_server_list=$(find "${storage_box_directory}/${BACKUP_BORG_GROUP}" -maxdepth 1 -mindepth 1 -type d -exec basename {} \;)
+    # Log the selected server details
+    log_event "debug" "Storage box mounted with server: ${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}" "false"
+    
+    # Validate that the mount was successful
+    if [[ ! -d "${storage_box_directory}/${BACKUP_BORG_GROUP}" ]]; then
+        log_event "error" "Storage box mount failed or group directory not found: ${storage_box_directory}/${BACKUP_BORG_GROUP}" "false"
+        display --indent 6 --text "- Checking mounted directory" --result "FAIL" --color RED
+        umount_storage_box ${storage_box_directory}
+        return 1
+    fi
+    
+    log_event "debug" "Storage box mounted successfully at: ${storage_box_directory}" "false"
 
-    # Menu
-    local chosen_server=$(whiptail --title "BACKUP SELECTION" --menu "Choose a server to work with" 20 78 10 $(for x in ${remote_server_list}; do echo "${x} [D]"; done) --default-item "${SERVER_NAME}" 3>&1 1>&2 2>&3)
+    # Now list available servers in the mounted directory for final selection
+    local remote_server_list
+    remote_server_list=$(find "${storage_box_directory}/${BACKUP_BORG_GROUP}" -maxdepth 1 -mindepth 1 -type d -exec basename {} \; 2>/dev/null | sort)
+    
+    log_event "debug" "Available servers in mounted directory: ${remote_server_list}" "false"
+    
+    if [[ -z "${remote_server_list}" ]]; then
+        log_event "error" "No servers found in mounted directory: ${storage_box_directory}/${BACKUP_BORG_GROUP}" "false"
+        display --indent 6 --text "- Finding servers" --result "FAIL" --color RED
+        display --indent 8 --text "Directory is empty or inaccessible" --tcolor RED
+        umount_storage_box ${storage_box_directory}
+        return 1
+    fi
 
-    if [[ ${chosen_server} != ""  ]]; then
+    # Menu for final server selection (from mounted content)
+    local chosen_server
+    chosen_server=$(whiptail --title "BACKUP SERVER SELECTION" --menu "Choose a backup server to restore from" 20 78 10 $(for x in ${remote_server_list}; do echo "${x} [D]"; done) --default-item "${SERVER_NAME}" 3>&1 1>&2 2>&3)
+    
+    log_event "debug" "User selected backup server: ${chosen_server}" "false"
+
+    if [[ -n "${chosen_server}" ]]; then
 
         log_subsection "Restore Project Backup (Borg)"
         restore_project_with_borg "${chosen_server}"
 
     else
 
+        log_event "info" "Backup server selection canceled by user" "false"
         display --indent 6 --text "- Selecting Project Backup" --result "SKIPPED" --color YELLOW
+        umount_storage_box ${storage_box_directory}
         return 1
 
     fi
 
     umount_storage_box ${storage_box_directory}
+    
+    log_event "debug" "Restore backup process completed" "false"
 
 }
 
