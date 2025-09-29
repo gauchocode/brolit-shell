@@ -55,25 +55,53 @@ function umount_storage_box() {
 
 function mount_storage_box() {
 
-  local number_of_servers=$(jq ".BACKUPS.methods[].borg[].config | length" /root/.brolit_conf.json)
+  local directory="${1}"
+  
+  # Check if Borg is enabled
+  if [[ "${BACKUP_BORG_STATUS}" != "enabled" ]]; then
+    log_event "error" "Borg backup is not enabled" "false"
+    display --indent 6 --text "- Borg backup not enabled" --result "FAIL" --color RED
+    return 1
+  fi
 
-  local whip_title       # whiptail var
-  local whip_description # whiptail var
-  local runner_options   # whiptail array options
-  local chosen_type      # whiptail var
+  # Get number of servers from the global arrays
+  local number_of_servers=${#BACKUP_BORG_USERS[@]}
+  
+  # Validate number_of_servers is a positive integer
+  if [ "${number_of_servers}" -lt 1 ]; then
+    log_event "error" "No Borg servers configured or invalid configuration" "false"
+    display --indent 6 --text "- No Borg servers configured" --result "FAIL" --color RED
+    return 1
+  fi
 
-  ## Select storage box to work with
-
-  whip_title="SELECT STORAGE-BOX TO WORK WITH"
-  whip_description=" "
+  local whip_title="SELECT STORAGE-BOX TO WORK WITH"
+  local whip_description="Choose a storage box to work with:"
   local runner_options=()
+  local chosen_index
+  local chosen_type
 
   # Dynamically build the runner_options array options
-  for ((i=1; i<=number_of_servers; i++)); do
-    index=$(printf "%02d)" "$i")        # Format "01)", "02)", ...
-    label="STORAGE-BOX $i"                   # Associated text
+  for ((i=0; i<number_of_servers; i++)); do
+    local server_user="${BACKUP_BORG_USERS[$i]}"
+    local server_server="${BACKUP_BORG_SERVERS[$i]}"
+    local server_port="${BACKUP_BORG_PORTS[$i]}"
+    
+    # Skip if any required parameter is empty
+    if [[ -z "${server_user}" || -z "${server_server}" || -z "${server_port}" ]]; then
+      continue
+    fi
+    
+    index=$(printf "%02d)" $((i+1)))  # Format "01)", "02)", ...
+    label="STORAGE-BOX $((i+1)) (${server_user}@${server_server}:${server_port})"  # Associated text with server details
     runner_options+=("$index" "$label") # Add to array
   done
+
+  # Check if we have any valid servers
+  if [[ ${#runner_options[@]} -eq 0 ]]; then
+    log_event "error" "No valid Borg servers configured" "false"
+    display --indent 6 --text "- No valid Borg servers configured" --result "FAIL" --color RED
+    return 1
+  fi
 
   # Display the array with whiptail (e.g., using radiolist)
   chosen_type=$(whiptail --title "$whip_title" \
@@ -81,21 +109,57 @@ function mount_storage_box() {
                        "${runner_options[@]}" \
                        3>&1 1>&2 2>&3)
   exitstatus=$?
-  if [ $exitstatus = 0 ]; then
-      echo "You chose: $chosen_type"
+  
+  # Clean the chosen_type to extract only the index number
+  if [ $exitstatus = 0 ] && [[ -n "${chosen_type}" ]]; then
+    # Extract the index number from the chosen type (e.g., "01)" -> "1")
+    chosen_index=$(echo "${chosen_type}" | sed 's/[^0-9]*//')
+    
+    # Validate chosen_index
+    if [[ -n "${chosen_index}" ]] && [[ "${chosen_index}" =~ ^[0-9]+$ ]] && [ "${chosen_index}" -ge 1 ] && [ "${chosen_index}" -le "${number_of_servers}" ]; then
+      # Set the global variables for the selected server (adjusting for 0-based array indexing)
+      local array_index=$((chosen_index - 1))
+      BACKUP_BORG_USER="${BACKUP_BORG_USERS[$array_index]}"
+      BACKUP_BORG_SERVER="${BACKUP_BORG_SERVERS[$array_index]}"
+      BACKUP_BORG_PORT="${BACKUP_BORG_PORTS[$array_index]}"
+      
+      log_event "info" "Selected storage box ${chosen_index}: ${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}" "false"
+    else
+      log_event "error" "Invalid storage box selection" "false"
+      display --indent 6 --text "- Invalid storage box selection" --result "FAIL" --color RED
+      return 1
+    fi
   else
-      echo "You canceled the selection."
+    log_event "info" "Storage box selection canceled by user" "false"
+    display --indent 6 --text "- Storage box selection canceled" --result "SKIPPED" --color YELLOW
+    return 1
   fi
-
-  local directory="${1}"
 
   is_mounted=$(mount -v | grep "storage-box" > /dev/null; echo "$?")
 
   if [[ ${is_mounted} -eq 1 ]]; then
-
-      log_subsection "Mounting storage-box"
-      sshfs -o default_permissions -p "${BACKUP_BORG_PORT}" "${BACKUP_BORG_USER}"@"${BACKUP_BORG_SERVER}":/home/applications "${directory}"
-
+    log_subsection "Mounting storage-box"
+    log_event "info" "Mounting storage box: sshfs -o default_permissions -p ${BACKUP_BORG_PORT} ${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:/home/applications ${directory}" "false"
+    
+    # Test SSH connection first
+    if ssh -o ConnectTimeout=10 -o BatchMode=yes -p "${BACKUP_BORG_PORT}" "${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}" "exit" 2>/dev/null; then
+      sshfs -o default_permissions -p "${BACKUP_BORG_PORT}" "${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}":/home/applications "${directory}"
+      if [[ $? -eq 0 ]]; then
+        log_event "info" "Storage box mounted successfully" "false"
+        display --indent 6 --text "- Mount storage box" --result "DONE" --color GREEN
+      else
+        log_event "error" "Failed to mount storage box" "false"
+        display --indent 6 --text "- Mount storage box" --result "FAIL" --color RED
+        return 1
+      fi
+    else
+      log_event "error" "Cannot connect to storage box via SSH: ${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}" "false"
+      display --indent 6 --text "- SSH connection failed" --result "FAIL" --color RED
+      return 1
+    fi
+  else
+    log_event "info" "Storage box already mounted" "false"
+    display --indent 6 --text "- Storage box already mounted" --result "SKIPPED" --color YELLOW
   fi
 
 }
@@ -153,10 +217,11 @@ function generate_tar_and_decompress() {
     local chosen_archive="${1}"
     local project_domain="${2}"
     local project_install_type="${3}"
+    local server_hostname="${4}"  # Added missing parameter
 
-    local project_backup_file=${chosen_archive}.tar.bz2
+    local project_backup_file="${chosen_archive}.tar.bz2"
     local destination_dir="${PROJECTS_PATH}/${project_domain}"
-    local repo_path="ssh://${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}/./applications/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/site/${chosen_domain}"
+    local repo_path="ssh://${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}/./applications/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/site/${project_domain}"
     
     # Backup integrity verification
     display --indent 6 --text "- Verifying backup integrity: ${chosen_archive}"
@@ -204,12 +269,12 @@ function generate_tar_and_decompress() {
     fi
     
     # Exportar el backup verificado
-    # borg export-tar --tar-filter='auto' --progress ssh://${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}/./applications/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/site/${chosen_domain}::${chosen_archive} ${BROLIT_MAIN_DIR}/tmp/${project_backup_file}
+    # borg export-tar --tar-filter='auto' --progress ssh://${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}/./applications/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/site/${project_domain}::${chosen_archive} ${BROLIT_MAIN_DIR}/tmp/${project_backup_file}
     borg export-tar --tar-filter='auto' --progress "${repo_path}::{chosen_archive}" "${BROLIT_MAIN_DIR}/tmp/${project_backup_file}"
 
-    exitstatus=$?
+    local exitstatus=$?
 
-    if [[ exitstatus -eq 0 ]]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
 
         display --indent 6 --text "- Exporting compressed file from storage box" --result "DONE" --color GREEN
         log_event "info" "${project_backup_file} downloaded" "false"
@@ -218,7 +283,7 @@ function generate_tar_and_decompress() {
 
         display --indent 6 --text "- Exporting compressed file from storage box" --result "FAIL" --color RED
         log_event "error" "Error trying to export ${project_backup_file}!" "false"
-        exit 1
+        return 1
 
     fi
 
@@ -232,31 +297,31 @@ function generate_tar_and_decompress() {
 
             whiptail --title "Warning" --yesno "The project directory already exist. Do you want to continue? A backup of current directory will be stored on BROLIT tmp folder." 10 60 3>&1 1>&2 2>&3
 
-            exitstatus=$?
+            local exitstatus=$?
             if [[ ${exitstatus} -eq 0 ]]; then
 
-            # If project_install_type == docker, stop and remove containers
-            if [[ ${project_install_type} == "docker"* ]]; then
+                # If project_install_type == docker, stop and remove containers
+                if [[ ${project_install_type} == "docker"* ]]; then
 
-                # Stop containers
-                docker_compose_stop "${destination_dir}/docker-compose.yml"
+                    # Stop containers
+                    docker_compose_stop "${destination_dir}/docker-compose.yml"
 
-                # Remove containers
-                docker_compose_rm "${destination_dir}/docker-compose.yml"
+                    # Remove containers
+                    docker_compose_rm "${destination_dir}/docker-compose.yml"
 
-            fi
+                fi
 
-            # Backup old project
-            _create_tmp_copy "${destination_dir}" "move"
-            [[ $? -eq 1 ]] && return 1
+                # Backup old project
+                _create_tmp_copy "${destination_dir}" "move"
+                [[ $? -eq 1 ]] && return 1
 
             else
 
-            # Log
-            log_event "info" "The project directory already exist. User skipped operation." "false"
-            display --indent 6 --text "- Restore files" --result "SKIPPED" --color YELLOW
+                # Log
+                log_event "info" "The project directory already exist. User skipped operation." "false"
+                display --indent 6 --text "- Restore files" --result "SKIPPED" --color YELLOW
 
-            return 1
+                return 1
 
             fi
 
@@ -270,7 +335,7 @@ function generate_tar_and_decompress() {
 
             clear_previous_lines "2"
 
-            log_event "info" "${file_path} extracted ok!" "false"
+            log_event "info" "${project_backup_file} extracted ok!" "false"
             display --indent 6 --text "- Extracting compressed file" --result "DONE" --color GREEN
 
             return 0
@@ -279,7 +344,7 @@ function generate_tar_and_decompress() {
 
             clear_previous_lines "2"
 
-            log_event "error" "Error extracting ${file_path}" "false"
+            log_event "error" "Error extracting ${project_backup_file}" "false"
             display --indent 6 --text "- Extracting compressed file" --result "FAIL" --color RED
 
             return 1
@@ -289,12 +354,13 @@ function generate_tar_and_decompress() {
         sleep 1
 
         rm -rf "${BROLIT_MAIN_DIR}/tmp/${project_backup_file}"
-        [[ $? -eq 0 ]] && echo "Removing tmp files"
+        [[ $? -eq 0 ]] && log_event "info" "Removing tmp files" "false"
         
     else
 
-        echo "Error exporting file: ${project_backup_file}"
-        exit 1
+        log_event "error" "Error exporting file: ${project_backup_file}" "false"
+        display --indent 6 --text "- Exporting file" --result "FAIL" --color RED
+        return 1
 
     fi
 
@@ -318,8 +384,10 @@ function restore_project_with_borg() {
     local repo_path="ssh://${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}/./applications/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/site"
 
     # Create storage-box directory if not exists
+    local remote_domain_list
     remote_domain_list=$(find "${storage_box_directory}/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/site" -maxdepth 1 -mindepth 1 -type d -exec basename {} \; | sort | uniq)
 
+    local project_status
     project_status=$(storage_remote_status_list)
 
     if [[ $? -ne 0 ]]; then
@@ -329,6 +397,7 @@ function restore_project_with_borg() {
 
     log_event "info" "Selected project status: ${project_status}" "false"
 
+    local restore_type
     restore_type=$(storage_remote_type_list)
 
     if [[ $? -ne 0 ]]; then
@@ -338,6 +407,7 @@ function restore_project_with_borg() {
 
     log_event "info" "Selected restore type: ${restore_type}" "false"
 
+    local chosen_domain
     chosen_domain="$(whiptail --title "BACKUP SELECTION" --menu "Choose a domain to work with" 20 78 10 $(for x in ${remote_domain_list}; do echo "${x} [D]"; done) --default-item "${SERVER_NAME}" 3>&1 1>&2 2>&3)"
 
     # Repository integrity verification
@@ -374,33 +444,17 @@ function restore_project_with_borg() {
         send_notification "${SERVER_NAME}" "Repositorio ${chosen_domain} verificado correctamente" "info"
     fi
 
-    if [[ $? -ne 0 ]]; then
-        log_event "error" "Failed to choose project status" "false"
-        exit 1
-    fi
+    local project_name
+    project_name="$(project_get_name_from_domain "${chosen_domain}")"
 
-    log_event "info" "Selected project status: ${project_status}" "false"
-
-    restore_type=$(storage_remote_type_list)
-
-    if [[ $? -ne 0 ]]; then
-        log_event "error" "Failed to choose restore type" "false"
-        exit 1
-    fi
-
-    log_event "info" "Selected restore type: ${restore_type}" "false"
-
-    chosen_domain="$(whiptail --title "BACKUP SELECTION" --menu "Choose a domain to work with" 20 78 10 $(for x in ${remote_domain_list}; do echo "${x} [D]"; done) --default-item "${SERVER_NAME}" 3>&1 1>&2 2>&3)"
-
-    local project_name="$(project_get_name_from_domain "${chosen_domain}")"
-
+    local destination_dir
     if [[ ${restore_type} == "project" ]]; then
 
-        local destination_dir="${PROJECTS_PATH}/${chosen_domain}/"
+        destination_dir="${PROJECTS_PATH}/${chosen_domain}/"
 
     elif [[ ${restore_type} == "database" ]]; then
 
-        local destination_dir="${PROJECTS_PATH}/${chosen_domain}/"
+        destination_dir="${PROJECTS_PATH}/${chosen_domain}/"
         mkdir -p "${destination_dir}"
 
     fi
@@ -409,17 +463,25 @@ function restore_project_with_borg() {
 
         if [[ ${restore_type} == "project" ]]; then
 
+            local archives
             archives="$(borg list --format '{archive}{NL}' ssh://${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}/./applications/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/site/${chosen_domain} | sort -r)"
 
+            local chosen_archive
             chosen_archive="$(whiptail --title "BACKUP SELECTION" --menu "Choose an archive to work with" 20 78 10 $(for x in ${archives}; do echo "${x} [D]"; done) --default-item "${SERVER_NAME}" 3>&1 1>&2 2>&3)"
 
             if [[ ${chosen_archive} != "" ]]; then
 
                 display --indent 6 --text "- Selecting Project Backup" --result "DONE" --color GREEN
                 display --indent 8 --text "${chosen_archive}.tar.bz2" --tcolor YELLOW
-                generate_tar_and_decompress "${chosen_archive}" "${chosen_domain}" "${project_install_type}"
+                
+                # Get project install type before calling generate_tar_and_decompress
+                local project_install_type
+                project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${chosen_domain}")"
+                
+                generate_tar_and_decompress "${chosen_archive}" "${chosen_domain}" "${project_install_type}" "${server_hostname}"
 
-                local sql_file=$(find "${storage_box_directory}/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/database/${chosen_domain}" -maxdepth 1 -type f -name '*.sql' -print -quit)
+                local sql_file
+                sql_file=$(find "${storage_box_directory}/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/database/${chosen_domain}" -maxdepth 1 -type f -name '*.sql' -print -quit)
 
                 if [[ -z ${sql_file} ]]; then
 
@@ -429,13 +491,13 @@ function restore_project_with_borg() {
 
                 else
 
-                    echo "SQL file path: ${sql_file}"
+                    log_event "info" "SQL file path: ${sql_file}" "false"
 
                     cp "${sql_file}" "${destination_dir}/$(basename ${sql_file})"
 
                     if [[ $? -eq 0 ]]; then
 
-                        log_event "info" "SQL file restored successfully to ${local_project_path}" "false"
+                        log_event "info" "SQL file restored successfully to ${destination_dir}" "false"
                         display --indent 6 --text "- SQL file restored" --result "DONE" --color GREEN
 
                     else
@@ -456,7 +518,8 @@ function restore_project_with_borg() {
 
         elif [[ ${restore_type} == "database" ]]; then
 
-            local sql_file=$(find "${storage_box_directory}/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/database/${chosen_domain}" -maxdepth 1 -type f -name '*.sql' -print -quit)
+            local sql_file
+            sql_file=$(find "${storage_box_directory}/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/database/${chosen_domain}" -maxdepth 1 -type f -name '*.sql' -print -quit)
 
             if [[ -z ${sql_file} ]]; then
 
@@ -466,7 +529,7 @@ function restore_project_with_borg() {
 
             else
 
-                echo "SQL file path: ${sql_file}"
+                log_event "info" "SQL file path: ${sql_file}" "false"
                 mkdir -p "${destination_dir}"
                 cp "${sql_file}" "${destination_dir}/$(basename ${sql_file})"
 
@@ -483,6 +546,9 @@ function restore_project_with_borg() {
         fi
 
         # If project_install_type == docker, build containers
+        local project_install_type
+        project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${chosen_domain}")"
+        
         if [[ ${project_install_type} == "docker"* ]]; then
 
             log_subsection "Restore Files Backup"
@@ -490,22 +556,31 @@ function restore_project_with_borg() {
             docker_compose_build "${destination_dir}/docker-compose.yml"
 
             # Project domain configuration (webserver+certbot+DNS)
+            local https_enable
+            local project_type
+            local project_port
+            local project_domain_new="${chosen_domain}"
+            local project_install_path="${destination_dir}"
+            local project_stage
+            local db_pass
+            local project_db_status
+            local db_engine
+            local db_user
+            
             https_enable="$(project_update_domain_config "${project_domain_new}" "${project_type}" "${project_install_type}" "${project_port}")"
 
             # TODO: if and old project with same domain was found, ask what to do (delete old project or skip this step)
 
             # Post-restore/install tasks
-            project_post_install_tasks "${project_install_path}" "${project_type}" "${project_install_type}" "${project_name}" "${project_stage}" "${db_pass}" "${project_domain}" "${project_domain_new}"
+            project_post_install_tasks "${project_install_path}" "${project_type}" "${project_install_type}" "${project_name}" "${project_stage}" "${db_pass}" "${chosen_domain}" "${project_domain_new}"
 
             # Create/update brolit_project_conf.json file with project info
             project_update_brolit_config "${project_install_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db_status}" "${db_engine}" "${project_name}_${project_stage}" "localhost" "${db_user}" "${db_pass}" "${project_domain_new}" "" "" "" ""
-        #fi                
-        else
-            display --indent 6 --text "- Selecting Project Backup" --result "SKIPPED" --color YELLOW
-            return 1
-        fi
-
-    fi 
+        fi                
+    else
+        display --indent 6 --text "- Selecting Project Backup" --result "SKIPPED" --color YELLOW
+        return 1
+    fi
 
 }
 

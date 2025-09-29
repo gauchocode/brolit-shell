@@ -52,3 +52,25 @@
   - Use `--` when a parameter might start with “-” to prevent misinterpretation as an option.
   - Quote variables to prevent unexpected expansions.
   - Avoid `eval` unless strictly necessary and safe.
+
+- **Brolit Configuration**
+  - The `.brolit_conf.json` file must always be read from `@/utils/brolit_configuration_manager.sh`.
+
+- **Function Variable Definitions**
+  - Variables used to store function arguments must always be declared at the beginning of the function.
+
+- **Function Documentation**
+  - Each function must include a comment block with the following structure:
+    ```bash
+    ################################################################################
+    # Function Description
+    #
+    # Arguments:
+    #   ${1} = ${var1}
+    #   ${2} = ${var2}
+    #   ...
+    #
+    # Outputs:
+    #   Short explanation of the output
+    ################################################################################
+    ```
