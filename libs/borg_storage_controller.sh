@@ -363,35 +363,82 @@ function check_borg_server_connectivity() {
         else
             # Analyze SSH error for detailed logging and display
             local error_title="SSH connection failed"
-            local error_causes=""
-            local error_solutions=""
+            local error_causes=()
+            local error_solutions=()
             
             if [[ "${ssh_result}" == *"Permission denied"* ]]; then
                 error_title="SSH Permission denied"
-                error_causes="• Incorrect username or password\n• SSH key authentication issues\n• Account disabled on server"
-                error_solutions="• Verify username and credentials\n• Check SSH key configuration\n• Test manual SSH connection"
+                error_causes=(
+                    "• Incorrect username or password"
+                    "• SSH key authentication issues"
+                    "• Account disabled on server"
+                )
+                error_solutions=(
+                    "• Verify username and credentials"
+                    "• Check SSH key configuration"
+                    "• Test manual SSH connection"
+                )
             elif [[ "${ssh_result}" == *"Connection refused"* ]]; then
                 error_title="SSH Connection refused"
-                error_causes="• SSH service not running on server\n• Server is down\n• Port forwarding issues"
-                error_solutions="• Check if SSH service is running on server\n• Verify server status\n• Test with: ssh -p ${server_port} ${server_user}@${server_server}"
+                error_causes=(
+                    "• SSH service not running on server"
+                    "• Server is down"
+                    "• Port forwarding issues"
+                )
+                error_solutions=(
+                    "• Check if SSH service is running on server"
+                    "• Verify server status"
+                    "• Test with: ssh -p ${server_port} ${server_user}@${server_server}"
+                )
             elif [[ "${ssh_result}" == *"No route to host"* ]] || [[ "${ssh_result}" == *"Network is unreachable"* ]]; then
                 error_title="Network connectivity issues"
-                error_causes="• Network connectivity issues\n• Server is unreachable\n• Routing problems"
-                error_solutions="• Check network connectivity\n• Verify server IP address\n• Test with: ping ${server_server}"
+                error_causes=(
+                    "• Network connectivity issues"
+                    "• Server is unreachable"
+                    "• Routing problems"
+                )
+                error_solutions=(
+                    "• Check network connectivity"
+                    "• Verify server IP address"
+                    "• Test with: ping ${server_server}"
+                )
             elif [[ "${ssh_result}" == *"Host key verification failed"* ]]; then
                 error_title="Host key verification failed"
-                error_causes="• Host key changed or mismatch\n• Known hosts file corruption"
-                error_solutions="• Remove entry from ~/.ssh/known_hosts\n• Use ssh-keygen -R ${server_server}"
+                error_causes=(
+                    "• Host key changed or mismatch"
+                    "• Known hosts file corruption"
+                )
+                error_solutions=(
+                    "• Remove entry from ~/.ssh/known_hosts"
+                    "• Use ssh-keygen -R ${server_server}"
+                )
             else
                 error_title="SSH connection failed"
-                error_causes="• Generic SSH connection issues\n• Server configuration problems\n• Authentication failures"
-                error_solutions="• Check server SSH configuration\n• Verify authentication method\n• Review server logs for details"
+                error_causes=(
+                    "• Generic SSH connection issues"
+                    "• Server configuration problems"
+                    "• Authentication failures"
+                )
+                error_solutions=(
+                    "• Check server SSH configuration"
+                    "• Verify authentication method"
+                    "• Review server logs for details"
+                )
             fi
             
             # Log detailed error message
+            local causes_log=""
+            local solutions_log=""
+            for cause in "${error_causes[@]}"; do
+                causes_log+="${cause}; "
+            done
+            for solution in "${error_solutions[@]}"; do
+                solutions_log+="${solution}; "
+            done
+            
             log_event "error" "❌ Borg Server Connectivity Issue - Server: ${server_user}@${server_server}:${server_port} - Issue: ${error_title}" "false"
-            log_event "error" "🔍 Possible causes: ${error_causes}" "false"
-            log_event "error" "🛠️  Solutions: ${error_solutions}" "false"
+            log_event "error" "🔍 Possible causes: ${causes_log}" "false"
+            log_event "error" "🛠️  Solutions: ${solutions_log}" "false"
             log_event "error" "📝 SSH error details: ${ssh_result}" "false"
             
             # Display error message with proper formatting
@@ -399,15 +446,19 @@ function check_borg_server_connectivity() {
             display --indent 8 --text "Server: ${server_user}@${server_server}:${server_port}" --tcolor RED
             display --indent 8 --text "Issue: ${error_title}" --tcolor YELLOW
             display --indent 8 --text "🔍 Possible causes:" --tcolor WHITE
-            IFS=$'\n' read -rd '' -a cause_array <<<"${error_causes}"
-            for cause in "${cause_array[@]}"; do
-                [[ -n "${cause}" ]] && display --indent 10 --text "${cause}" --tcolor YELLOW
+            
+            # Display causes with proper indentation
+            for cause in "${error_causes[@]}"; do
+                display --indent 10 --text "${cause}" --tcolor YELLOW
             done
+            
             display --indent 8 --text "🛠️  Solutions:" --tcolor WHITE
-            IFS=$'\n' read -rd '' -a solution_array <<<"${error_solutions}"
-            for solution in "${solution_array[@]}"; do
-                [[ -n "${solution}" ]] && display --indent 10 --text "${solution}" --tcolor GREEN
+            
+            # Display solutions with proper indentation
+            for solution in "${error_solutions[@]}"; do
+                display --indent 10 --text "${solution}" --tcolor GREEN
             done
+            
             display --indent 8 --text "📝 Error details:" --tcolor WHITE
             display --indent 10 --text "${ssh_result}" --tcolor GRAY
             
