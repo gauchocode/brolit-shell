@@ -234,7 +234,7 @@ function mount_storage_box() {
 
 function check_borg_server_connectivity() {
     
-    log_section "Borg Server Connectivity Check"
+    log_subsection "Borg Server Connectivity Check"
     
     # Check if Borg is enabled
     if [[ "${BACKUP_BORG_STATUS}" != "enabled" ]]; then
@@ -278,8 +278,23 @@ function check_borg_server_connectivity() {
         
         # Test DNS resolution first
         if ! nslookup "${server_server}" >/dev/null 2>&1; then
-            log_event "error" "DNS resolution failed for server: ${server_server}" "false"
-            display --indent 10 --text "DNS resolution: FAIL" --tcolor RED
+            # Log detailed error message
+            log_event "error" "❌ Borg Server Connectivity Issue - Server: ${server_user}@${server_server}:${server_port} - Issue: DNS resolution failed" "false"
+            log_event "error" "🔍 Possible causes: Incorrect server hostname, DNS server issues, Network connectivity problems" "false"
+            log_event "error" "🛠️  Solutions: Verify server hostname in .brolit_conf.json, Check network connectivity, Test with: nslookup ${server_server}" "false"
+            
+            # Display error message
+            display --indent 6 --text "- Borg Server Connectivity Issue" --result "FAIL" --color RED
+            display --indent 8 --text "Server: ${server_user}@${server_server}:${server_port}" --tcolor RED
+            display --indent 8 --text "Issue: DNS resolution failed" --tcolor YELLOW
+            display --indent 8 --text "🔍 Possible causes:" --tcolor WHITE
+            display --indent 10 --text "• Incorrect server hostname" --tcolor YELLOW
+            display --indent 10 --text "• DNS server issues" --tcolor YELLOW
+            display --indent 10 --text "• Network connectivity problems" --tcolor YELLOW
+            display --indent 8 --text "🛠️  Solutions:" --tcolor WHITE
+            display --indent 10 --text "• Verify server hostname in .brolit_conf.json" --tcolor GREEN
+            display --indent 10 --text "• Check network connectivity" --tcolor GREEN
+            display --indent 10 --text "• Test with: nslookup ${server_server}" --tcolor GREEN
             
             # Send notification with possible causes
             local error_msg="❌ Borg Server Connectivity Issue\n\n"
@@ -300,9 +315,24 @@ function check_borg_server_connectivity() {
         fi
         
         # Test port connectivity
-        if ! timeout 10 bash -c "echo >/dev/tcp/${server_server}/${server_port}" 2>/dev/null; then
-            log_event "error" "Port ${server_port} is not reachable on server: ${server_server}" "false"
-            display --indent 10 --text "Port check: FAIL" --tcolor RED
+        if ! timeout 8 bash -c "echo >/dev/tcp/${server_server}/${server_port}" 2>/dev/null; then
+            # Log detailed error message
+            log_event "error" "❌ Borg Server Connectivity Issue - Server: ${server_user}@${server_server}:${server_port} - Issue: Port ${server_port} is not reachable" "false"
+            log_event "error" "🔍 Possible causes: Firewall blocking the port, Server not listening on port ${server_port}, Network ACL restrictions" "false"
+            log_event "error" "🛠️  Solutions: Verify port ${server_port} is open on the server, Check firewall rules, Test with: telnet ${server_server} ${server_port}" "false"
+            
+            # Display error message
+            display --indent 6 --text "- Borg Server Connectivity Issue" --result "FAIL" --color RED
+            display --indent 8 --text "Server: ${server_user}@${server_server}:${server_port}" --tcolor RED
+            display --indent 8 --text "Issue: Port ${server_port} is not reachable" --tcolor YELLOW
+            display --indent 8 --text "🔍 Possible causes:" --tcolor WHITE
+            display --indent 10 --text "• Firewall blocking the port" --tcolor YELLOW
+            display --indent 10 --text "• Server not listening on port ${server_port}" --tcolor YELLOW
+            display --indent 10 --text "• Network ACL restrictions" --tcolor YELLOW
+            display --indent 8 --text "🛠️  Solutions:" --tcolor WHITE
+            display --indent 10 --text "• Verify port ${server_port} is open on the server" --tcolor GREEN
+            display --indent 10 --text "• Check firewall rules" --tcolor GREEN
+            display --indent 10 --text "• Test with: telnet ${server_server} ${server_port}" --tcolor GREEN
             
             # Send notification with possible causes
             local error_msg="❌ Borg Server Connectivity Issue\n\n"
@@ -329,63 +359,65 @@ function check_borg_server_connectivity() {
         
         if [ ${ssh_exit_code} -eq 0 ]; then
             log_event "info" "Successfully connected to ${server_user}@${server_server}:${server_port}" "false"
-            display --indent 10 --text "SSH connection: OK" --tcolor GREEN
+            display --indent 8 --text "SSH connection: OK" --tcolor GREEN
         else
-            log_event "error" "SSH connection failed to ${server_user}@${server_server}:${server_port}" "false"
-            log_event "error" "SSH error details: ${ssh_result}" "false"
-            display --indent 10 --text "SSH connection: FAIL" --tcolor RED
-            
-            # Analyze SSH error and send appropriate notification
-            local error_msg="❌ Borg Server Connectivity Issue\n\n"
-            error_msg+="Server: ${server_user}@${server_server}:${server_port}\n"
-            error_msg+="Issue: SSH connection failed\n\n"
+            # Analyze SSH error for detailed logging and display
+            local error_title="SSH connection failed"
+            local error_causes=""
+            local error_solutions=""
             
             if [[ "${ssh_result}" == *"Permission denied"* ]]; then
-                error_msg+="🔍 Possible causes:\n"
-                error_msg+="• Incorrect username or password\n"
-                error_msg+="• SSH key authentication issues\n"
-                error_msg+="• Account disabled on server\n\n"
-                error_msg+="🛠️  Solutions:\n"
-                error_msg+="• Verify username and credentials\n"
-                error_msg+="• Check SSH key configuration\n"
-                error_msg+="• Test manual SSH connection"
+                error_title="SSH Permission denied"
+                error_causes="• Incorrect username or password\n• SSH key authentication issues\n• Account disabled on server"
+                error_solutions="• Verify username and credentials\n• Check SSH key configuration\n• Test manual SSH connection"
             elif [[ "${ssh_result}" == *"Connection refused"* ]]; then
-                error_msg+="🔍 Possible causes:\n"
-                error_msg+="• SSH service not running on server\n"
-                error_msg+="• Server is down\n"
-                error_msg+="• Port forwarding issues\n\n"
-                error_msg+="🛠️  Solutions:\n"
-                error_msg+="• Check if SSH service is running on server\n"
-                error_msg+="• Verify server status\n"
-                error_msg+="• Test with: ssh -p ${server_port} ${server_user}@${server_server}"
+                error_title="SSH Connection refused"
+                error_causes="• SSH service not running on server\n• Server is down\n• Port forwarding issues"
+                error_solutions="• Check if SSH service is running on server\n• Verify server status\n• Test with: ssh -p ${server_port} ${server_user}@${server_server}"
             elif [[ "${ssh_result}" == *"No route to host"* ]] || [[ "${ssh_result}" == *"Network is unreachable"* ]]; then
-                error_msg+="🔍 Possible causes:\n"
-                error_msg+="• Network connectivity issues\n"
-                error_msg+="• Server is unreachable\n"
-                error_msg+="• Routing problems\n\n"
-                error_msg+="🛠️  Solutions:\n"
-                error_msg+="• Check network connectivity\n"
-                error_msg+="• Verify server IP address\n"
-                error_msg+="• Test with: ping ${server_server}"
+                error_title="Network connectivity issues"
+                error_causes="• Network connectivity issues\n• Server is unreachable\n• Routing problems"
+                error_solutions="• Check network connectivity\n• Verify server IP address\n• Test with: ping ${server_server}"
             elif [[ "${ssh_result}" == *"Host key verification failed"* ]]; then
-                error_msg+="🔍 Possible causes:\n"
-                error_msg+="• Host key changed or mismatch\n"
-                error_msg+="• Known hosts file corruption\n\n"
-                error_msg+="🛠️  Solutions:\n"
-                error_msg+="• Remove entry from ~/.ssh/known_hosts\n"
-                error_msg+="• Use ssh-keygen -R ${server_server}"
+                error_title="Host key verification failed"
+                error_causes="• Host key changed or mismatch\n• Known hosts file corruption"
+                error_solutions="• Remove entry from ~/.ssh/known_hosts\n• Use ssh-keygen -R ${server_server}"
             else
-                error_msg+="🔍 Possible causes:\n"
-                error_msg+="• Generic SSH connection issues\n"
-                error_msg+="• Server configuration problems\n"
-                error_msg+="• Authentication failures\n\n"
-                error_msg+="🛠️  Solutions:\n"
-                error_msg+="• Check server SSH configuration\n"
-                error_msg+="• Verify authentication method\n"
-                error_msg+="• Review server logs for details"
+                error_title="SSH connection failed"
+                error_causes="• Generic SSH connection issues\n• Server configuration problems\n• Authentication failures"
+                error_solutions="• Check server SSH configuration\n• Verify authentication method\n• Review server logs for details"
             fi
             
-            error_msg+="\n📝 Error details:\n${ssh_result}"
+            # Log detailed error message
+            log_event "error" "❌ Borg Server Connectivity Issue - Server: ${server_user}@${server_server}:${server_port} - Issue: ${error_title}" "false"
+            log_event "error" "🔍 Possible causes: ${error_causes}" "false"
+            log_event "error" "🛠️  Solutions: ${error_solutions}" "false"
+            log_event "error" "📝 SSH error details: ${ssh_result}" "false"
+            
+            # Display error message with proper formatting
+            display --indent 6 --text "- Borg Server Connectivity Issue" --result "FAIL" --color RED
+            display --indent 8 --text "Server: ${server_user}@${server_server}:${server_port}" --tcolor RED
+            display --indent 8 --text "Issue: ${error_title}" --tcolor YELLOW
+            display --indent 8 --text "🔍 Possible causes:" --tcolor WHITE
+            IFS=$'\n' read -rd '' -a cause_array <<<"${error_causes}"
+            for cause in "${cause_array[@]}"; do
+                [[ -n "${cause}" ]] && display --indent 10 --text "${cause}" --tcolor YELLOW
+            done
+            display --indent 8 --text "🛠️  Solutions:" --tcolor WHITE
+            IFS=$'\n' read -rd '' -a solution_array <<<"${error_solutions}"
+            for solution in "${solution_array[@]}"; do
+                [[ -n "${solution}" ]] && display --indent 10 --text "${solution}" --tcolor GREEN
+            done
+            display --indent 8 --text "📝 Error details:" --tcolor WHITE
+            display --indent 10 --text "${ssh_result}" --tcolor GRAY
+            
+            # Send notification with possible causes
+            local error_msg="❌ Borg Server Connectivity Issue\n\n"
+            error_msg+="Server: ${server_user}@${server_server}:${server_port}\n"
+            error_msg+="Issue: ${error_title}\n\n"
+            error_msg+="🔍 Possible causes:\n${error_causes}\n\n"
+            error_msg+="🛠️  Solutions:\n${error_solutions}\n\n"
+            error_msg+="📝 Error details:\n${ssh_result}"
             
             send_notification "${SERVER_NAME}" "${error_msg}" "alert"
             ((failed_servers++))
