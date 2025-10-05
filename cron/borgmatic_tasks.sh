@@ -197,6 +197,9 @@ function generate_borg_config() {
     fi
 
     cp "${BROLIT_MAIN_DIR}/config/borg/${template_file}" "${yml_file}"
+        # Erase placeholder repositories to avoid duplication
+        yq -i '.repositories = []' "${yml_file}"
+
         # Update configuration file with project-specific values
         PROJECT="${project_name}" yq -i '.constants.project = strenv(PROJECT)' "${yml_file}"
         GROUP="${BACKUP_BORG_GROUP}" yq -i '.constants.group = strenv(GROUP)' "${yml_file}"
@@ -207,13 +210,17 @@ function generate_borg_config() {
         number_of_servers=$(jq ".BACKUPS.methods[].borg[].config | length" /root/.brolit_conf.json)
         for i in $(seq 1 "$number_of_servers"); do
 
+            local user_var="user_${i}"
+            local server_var="server_${i}"
+            local port_var="port_${i}"
+
             # Add server configuration to constants
-            sed -i "/^constants:/a\  port_${i}: ${BACKUP_BORG_PORTS[i-1]}" "${yml_file}"
-            sed -i "/^constants:/a\  server_${i}: ${BACKUP_BORG_SERVERS[i-1]}" "${yml_file}"
-            sed -i "/^constants:/a\  user_${i}: ${BACKUP_BORG_USERS[i-1]}" "${yml_file}"
+            USER_VALUE="${BACKUP_BORG_USERS[i-1]}" yq -i ".constants.${user_var} = strenv(USER_VALUE)" "${yml_file}"
+            SERVER_VALUE="${BACKUP_BORG_SERVERS[i-1]}" yq -i ".constants.${server_var} = strenv(SERVER_VALUE)" "${yml_file}"
+            PORT_VALUE="${BACKUP_BORG_PORTS[i-1]}" yq -i ".constants.${port_var} = strenv(PORT_VALUE)" "${yml_file}"
             
-            # Add repository configuration
-            sed -i "/^repositories:/a\  - path: ssh://{user_${i}}@{server_${i}}:{port_${i}}/.//applications/{group}/{hostname}/projects-online/site/{project}\n    label: \"storage-{user_${i}}\"" "${yml_file}"
+            # Add repository configuration using yq for safety
+            yq -i ".repositories += [{\"path\": \"ssh://{${user_var}}@{${server_var}}:{${port_var}}/applications/{group}/{hostname}/projects-online/site/{project}\", \"label\": \"storage-{${user_var}}\"}]" "${yml_file}"
         
         done
 
