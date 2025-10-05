@@ -220,7 +220,7 @@ function generate_borg_config() {
             PORT_VALUE="${BACKUP_BORG_PORTS[i-1]}" yq -i ".constants.${port_var} = strenv(PORT_VALUE)" "${yml_file}"
             
             # Add repository configuration using yq for safety
-            yq -i ".repositories += [{\"path\": \"ssh://{${user_var}}@{${server_var}}:{${port_var}}/applications/{group}/{hostname}/projects-online/site/{project}\", \"label\": \"storage-{${user_var}}\"}]" "${yml_file}"
+            yq -i ".repositories += [{\"path\": \"ssh://{${user_var}}@{${server_var}}:{${port_var}}/home/applications/{group}/{hostname}/projects-online/site/{project}\", \"label\": \"storage-{${user_var}}\"}]" "${yml_file}"
         
         done
 
@@ -232,8 +232,8 @@ function generate_borg_config() {
 
         # Log
         display --indent 6 --text "- Generating Borg configuration for ${project_name}" --result "DONE" --color GREEN
+        display --indent 8 --text "Please, wait..." --tcolor GREEN
         log_event "info" "Config file ${yml_file} generated." "false"
-        echo "Please wait 3 seconds..."
 
         sleep 3
 
