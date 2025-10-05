@@ -19,12 +19,6 @@ constants:
 source_directories:
     - /var/www/{project}
 
-repositories:
-  - path: ssh://{user_1}@{server_1}:{port_1}/./applications/{group}/{hostname}/projects-online/site/{project}
-    label: "storage-{user_1}"
-  - path: ssh://{user_2}@{server_2}:{port_2}/./applications/{group}/{hostname}/projects-online/site/{project}
-    label: "storage-{user_2}"
-
 exclude_patterns:
     - '*.o'
     - '*.log'
