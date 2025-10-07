@@ -3,7 +3,7 @@ services:
     mysql:
         image: 'mariadb:10.11'
         container_name: ${PROJECT_NAME}_mysql
-        restart: always
+        restart: unless-stopped
         command: --max_allowed_packet=256M
         environment:
             MYSQL_DATABASE: ${MYSQL_DATABASE}
@@ -12,6 +12,7 @@ services:
             MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
         volumes:
             - ${MYSQL_DATA_DIR}:/var/lib/mysql
+            - .${MYSQL_DATA_DIR}/conf.d/60-tuning.cnf:/etc/mysql/conf.d/60-tuning.cnf:ro
         networks:
             - internal
         healthcheck:
