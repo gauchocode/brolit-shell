@@ -156,7 +156,7 @@ function generate_borg_config() {
 # Prepare borgmatic environment if enabled
 function prepare_borgmatic_environment() {
     
-    # Integrate key functions from borgmatic_tasks.sh
+    # Load configuration and ensure borgmatic templates exist
     load_configurations
     generate_config    # Only generates missing configs
     
