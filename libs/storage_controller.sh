@@ -76,16 +76,21 @@ function storage_create_dir() {
 
     log_event "debug" "Number of configured Borg servers: ${number_of_servers}" "false"
 
+    # DROPBOX
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
         dropbox_create_dir "${remote_directory}"
 
     fi
+
+    # LOCAL
     if [[ ${BACKUP_LOCAL_STATUS} == "enabled" ]]; then
 
         mkdir --force "${BACKUP_LOCAL_CONFIG_BACKUP_PATH}/${remote_directory}"
 
     fi
+
+    # BORG
     if [[ ${BACKUP_BORG_STATUS} == "enabled" ]]; then
 
         local number_of_servers
@@ -211,6 +216,7 @@ function storage_upload_backup() {
     # Only numbers
     file_to_upload_size="$(echo "${file_to_upload_size}" | sed -E 's/[^0-9.]+//g')"
 
+    # DROPBOX
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
         # Check if account has enough space
@@ -230,6 +236,8 @@ function storage_upload_backup() {
         [[ $? -eq 1 ]] && error_type="dropbox_upload" && got_error=1
 
     fi
+
+    # LOCAL
     if [[ ${BACKUP_LOCAL_STATUS} == "enabled" ]]; then
 
         # New folder

@@ -1482,69 +1482,6 @@ function backup_docker_project() {
 }
 
 ################################################################################
-# Make root project Backup
-#
-# Arguments:
-#  ${1} = ${project_name}
-#  ${2} = ${backup_type} - (all,configs,sites,databases) - Default: all
-#
-# Outputs:
-#   0 if ok, 1 if error
-################################################################################
-
-function backup_root_project() {
-
-  local project_name="${1}"
-  local backup_type="${2}"
-
-  local got_error=0
-
-  # Backup files
-  log_subsection "Backup Root Project Files"
-  
-  # Check if the project is a hidden directory
-  if [[ "${project_name}" == .* ]]; then
-    log_event "info" "Backing up hidden directory: ${project_name}" "false"
-  fi
-
-  backup_file_size="$(backup_project_files "root" "/root" "${project_name}")"
-
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
-
-    log_break "false"
-
-    # Delete local backup
-    rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${backup_type:?}"
-
-    # Log
-    log_break "false"
-    log_event "info" "Root project backup finished!" "false"
-    display --indent 6 --text "- Root Project Backup" --result "DONE" --color GREEN
-
-    # Sending notifications
-    send_notification "${SERVER_NAME}" "Task: 'Root Project Backup' for ${project_name} completed." "success"
-
-    return ${got_error}
-
-  else
-
-    # Log
-    log_break "false"
-    log_event "error" "Something went wrong making the root project files backup" "false"
-    display --indent 6 --text "- Root Project Backup" --result "FAIL" --color RED
-    display --indent 8 --text "Something went wrong making the root project files backup" --tcolor RED
-
-    # Sending notifications
-    send_notification "${SERVER_NAME}" "Task: 'Root Project Backup' for ${project_name} failed." "error"
-
-    return 1
-
-  fi
-
-}
-
-################################################################################
 # Make additional directories Backup
 #
 # Arguments:

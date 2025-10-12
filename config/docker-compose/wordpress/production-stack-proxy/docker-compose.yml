@@ -32,7 +32,7 @@ services:
             - ${WWW_DATA_DIR}:/wordpress
             - ./php-${PHP_VERSION}_docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
         ports:
-            - '${WP_PORT}:80'
+            - '127.0.0.1:${WP_PORT}:80'
         networks:
             - internal
         healthcheck:
