@@ -1625,38 +1625,6 @@ function compress() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-function brolit_borgmatic_cronjob_install() {
-
-  local script="${1}"
-  local scheduled_time="${2}"
-
-  log_section "Borgmatic Tasks"
-
-  borgmatic_cron_file="/etc/cron.d/borgmatic"
-
-  if [[ ! -f ${borgmatic_cron_file} ]]; then
-
-    log_event "info" "Cron file for root does not exist, creating ..." "false"
-
-    touch $borgmatic_cron_file
-    echo "50 00 * * * root PATH=$PATH:/usr/bin:/usr/local/bin /root/.local/bin/borgmatic --verbosity -1 --syslog-verbosity 1" >>$borgmatic_cron_file
-
-    chmod +x $borgmatic_cron_file
-
-    log_event "info" "Cron file created"
-    display --indent 2 --text "- Creating log file" --result DONE --color GREEN
-
-    log_event "info" "Updating cron job for script: ${script}" "false"
-    service cron reload
-    display --indent 2 --text "- Updating cron job" --result DONE --color GREEN
-
-  else
-    log_event "info" "Script file already exists"
-    display --indent 2 --text "- Script already exists, not updated" --result SKIPPED --color YELLOW
-  fi
-
-}
-
 ################################################################################
 # Install script on crontab
 #
@@ -2029,14 +1997,13 @@ function menu_cron_script_tasks() {
     fi
     if [[ ${chosen_type} == *"02"* ]]; then
 
-      # BORGMATIC-TASKS
+      # BORGMATIC-TASKS (uses unified backups script)
       suggested_cron="0 * * * *" # Every hour
-      scheduled_time="$(whiptail_input "CRON BORGMATIC-TASKS" "Insert a cron expression for selected task:" "${suggested_cron}")"
+      scheduled_time="$(whiptail_input "CRON BORGMATIC-TASKS" "Insert a cron expression for unified backups (borgmatic) task:" "${suggested_cron}")"
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
-        # Borgmatic jobs
-        brolit_cronjob_install "${BROLIT_MAIN_DIR}/cron/borgmatic_tasks.sh" "0 * * * *"
-        brolit_borgmatic_cronjob_install
+        # Schedule unified backups script instead of legacy borgmatic task
+        brolit_cronjob_install "${BROLIT_MAIN_DIR}/cron/backups_tasks.sh" "${scheduled_time}"
       fi
 
     fi
