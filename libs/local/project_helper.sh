@@ -1053,6 +1053,22 @@ function project_get_configured_database_engine() {
   local db_engine
   local exitstatus
 
+  # For Docker projects, check docker-compose configuration first
+  if [[ "${project_install_type}" == "docker"* ]]; then
+    # Check both docker-compose.yml and docker-compose.yaml
+    if [[ -f "${project_path}/docker-compose.yml" ]] || [[ -f "${project_path}/docker-compose.yaml" ]]; then
+      if grep -q "image:.*postgres" "${project_path}/docker-compose.yml" 2>/dev/null || 
+         grep -q "image:.*postgres" "${project_path}/docker-compose.yaml" 2>/dev/null; then
+        echo "postgres"
+        return 0
+      elif grep -q "image:.*mysql" "${project_path}/docker-compose.yml" 2>/dev/null || 
+           grep -q "image:.*mysql" "${project_path}/docker-compose.yaml" 2>/dev/null; then
+        echo "mysql"
+        return 0
+      fi
+    fi
+  fi
+
   # Get project config file
   project_config_file="$(project_get_config_file "${project_path}" "${project_type}" "${project_install_type}")"
 

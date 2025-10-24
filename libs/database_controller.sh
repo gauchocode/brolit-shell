@@ -173,3 +173,34 @@ function database_user_delete() {
     esac
 
 }
+
+################################################################################
+# Database import
+#
+# Arguments:
+#  ${1} = ${db_engine} - Database engine (mysql, postgres)
+#  ${2} = ${db_name} - Database name
+#  ${3} = ${dump_file} - SQL dump file path
+#
+# Outputs:
+#  0 if ok, 1 on error.
+################################################################################
+
+function database_import() {
+    local db_engine="${1}"
+    local db_name="${2}"
+    local dump_file="${3}"
+
+    case ${db_engine} in
+        MYSQL|mysql)
+            mysql_database_import "${db_name}" "false" "${dump_file}"
+            ;;
+        POSTGRESQL|postgres)
+            postgres_database_import "${db_name}" "${dump_file}"
+            ;;
+        *)
+            log_event "error" "Database engine not supported: ${db_engine}" "false"
+            return 1
+            ;;
+    esac
+}
