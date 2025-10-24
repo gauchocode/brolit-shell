@@ -1844,8 +1844,20 @@ function restore_backup_project_database() {
       # Detect database engine from project
       database_engine="$(project_get_configured_database_engine "${PROJECTS_PATH}/${filename}" "${project_type}" "${project_install_type}")"
       
+      # Get container name for PostgreSQL Docker projects
+      local container_name=""
+      if [[ "${database_engine}" == "postgres" ]]; then
+      
+        # Get project name from .env file for container naming
+        local project_name
+
+        project_name="$(grep PROJECT_NAME "${docker_env_file}" | cut -d '=' -f2)"
+        container_name="${project_name}_postgres"
+
+      fi
+      
       # Use database_import function from database_controller
-      database_import "${database_engine}" "${docker_mysql_database}" "${BROLIT_TMP_DIR}/${dump_file}"
+      database_import "${database_engine}" "${docker_mysql_database}" "${BROLIT_TMP_DIR}/${dump_file}" "${container_name}"
 
     else
 
