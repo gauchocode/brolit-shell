@@ -891,8 +891,8 @@ function postgres_database_import() {
     display --indent 6 --text "- Importing into database: ${database}" --tcolor YELLOW
     log_event "info" "Importing dump file ${dump_file} into database: ${database}" "false"
 
-    # Execute command
-    ${psql_exec} "${database}" <"${dump_file}"
+    # Execute command with quiet options
+    ${psql_exec} -q -v ON_ERROR_STOP=1 "${database}" <"${dump_file}" >/dev/null 2>&1
     #pv --width 70 "${dump_file}" | ${psql_exec} -f -D "${database}"
 
     # Check result
