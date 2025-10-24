@@ -190,13 +190,14 @@ function database_import() {
     local db_engine="${1}"
     local db_name="${2}"
     local dump_file="${3}"
+    local container_name="${4}"
 
     case ${db_engine} in
         MYSQL|mysql)
             mysql_database_import "${db_name}" "false" "${dump_file}"
             ;;
         POSTGRESQL|postgres)
-            postgres_database_import "${db_name}" "${dump_file}"
+            postgres_database_import "${db_name}" "${container_name}" "${dump_file}"
             ;;
         *)
             log_event "error" "Database engine not supported: ${db_engine}" "false"
