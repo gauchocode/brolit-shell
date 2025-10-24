@@ -356,7 +356,7 @@ function postgres_user_create() {
 
     local db_user="${1}"
     local db_user_psw="${2}"
-    #local db_user_scope="${3}"
+    local db_user_scope="${3}"
 
     local query
 
@@ -615,7 +615,7 @@ function postgres_user_grant_privileges() {
     display --indent 6 --text "- Granting privileges to ${db_user}"
 
     # DB user host
-    [[ -z ${db_scope} ]] && db_scope="$(postgres_ask_user_db_scope "localhost")"
+    [[ -z ${db_scope} ]] && db_user_scope="$(postgres_ask_user_db_scope "localhost")"
 
     # Query
     query_1="GRANT ALL PRIVILEGES ON ${db_target}.* TO '${db_user}'@'${db_scope}';"
@@ -855,7 +855,8 @@ function postgres_database_drop() {
 #
 # Arguments:
 #  ${1} = ${database} (.sql)
-#  ${2} = ${dump_file}
+#  ${2} = ${container_name}
+#  ${3} = ${dump_file}
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -868,24 +869,76 @@ function postgres_database_import() {
     local dump_file="${3}"
 
     local import_status
+    local psql_exec
+    local start_time
+    local end_time
+    local duration
 
+    # Start timing
+    start_time=$(date +%s)
+
+    log_event "debug" "Starting PostgreSQL import: database='${database}', file='${dump_file}'" "false"
+
+    # Validate dump file exists
+    if [[ ! -f "${dump_file}" ]]; then
+        log_event "error" "Dump file does not exist: ${dump_file}" "true"
+        return 1
+    fi
+
+    # Get file size for debug
+    local file_size
+    file_size=$(du -h "${dump_file}" | cut -f1)
+    log_event "debug" "Dump file size: ${file_size}" "false"
+
+    # Set up psql execution command
     if [[ -n ${container_name} && ${container_name} != "false" ]]; then
 
         local psql_container_user
         local psql_container_user_pssw
 
+        log_event "debug" "Configuring for Docker container: ${container_name}" "false"
+
         # Get POSTGRES_USER and POSTGRES_PASSWORD from container
-        ## Ref: https://www.baeldung.com/ops/docker-get-environment-variable
         psql_container_user="$(docker exec -i "${container_name}" printenv POSTGRES_USER)"
         psql_container_user_pssw="$(docker exec -i "${container_name}" printenv POSTGRES_PASSWORD)"
+        
+        log_event "debug" "Container PostgreSQL user: ${psql_container_user}" "false"
+        
         # Set psql_exec
         psql_exec="docker exec -i ${container_name} env PGPASSWORD=${psql_container_user_pssw} psql -U ${psql_container_user} --quiet"
 
-    else
-        # Set psql_exec
-        psql_exec="${PSQL_ROOT}"
+        # Test container connection
+        if ! docker exec -i "${container_name}" pg_isready -U "${psql_container_user}" >/dev/null 2>&1; then
+            log_event "error" "Cannot connect to PostgreSQL in container: ${container_name}" "true"
+            return 1
+        fi
+        log_event "debug" "Container PostgreSQL connection successful" "false"
 
+    else
+        # Set psql_exec for local PostgreSQL
+        psql_exec="${PSQL_ROOT}"
+        
+        # Test local PostgreSQL connection
+        if ! sudo -u postgres pg_isready >/dev/null 2>&1; then
+            log_event "error" "Cannot connect to local PostgreSQL server" "true"
+            return 1
+        fi
+        log_event "debug" "Local PostgreSQL connection successful" "false"
     fi
+
+    # Verify database exists and is accessible
+    if [[ -n ${container_name} && ${container_name} != "false" ]]; then
+        if ! docker exec -i "${container_name}" env PGPASSWORD=${psql_container_user_pssw} psql -U ${psql_container_user} -lqt | cut -d \| -f 1 | grep -qw "${database}"; then
+            log_event "error" "Database '${database}' does not exist or is not accessible in container" "true"
+            return 1
+        fi
+    else
+        if ! sudo -u postgres psql -lqt | cut -d \| -f 1 | grep -qw "${database}"; then
+            log_event "error" "Database '${database}' does not exist or is not accessible" "true"
+            return 1
+        fi
+    fi
+    log_event "debug" "Database '${database}' accessibility verified" "false"
 
     # Log
     display --indent 6 --text "- Importing into database: ${database}" --tcolor YELLOW
@@ -893,16 +946,21 @@ function postgres_database_import() {
 
     # Execute command with quiet options
     ${psql_exec} -q -v ON_ERROR_STOP=1 "${database}" <"${dump_file}" >/dev/null 2>&1
-    #pv --width 70 "${dump_file}" | ${psql_exec} -f -D "${database}"
 
     # Check result
     import_status=$?
+    
+    # Calculate duration
+    end_time=$(date +%s)
+    duration=$((end_time - start_time))
+
     if [[ ${import_status} -eq 0 ]]; then
 
         # Log
         clear_previous_lines "1"
         display --indent 6 --text "- Database backup import" --result "DONE" --color GREEN
-        log_event "info" "Database ${database} imported successfully" "false"
+        log_event "info" "Database ${database} imported successfully in ${duration} seconds" "false"
+        log_event "debug" "Last command executed: ${psql_exec} -q -v ON_ERROR_STOP=1 ${database} < ${dump_file}" "false"
 
         return 0
 
@@ -912,9 +970,8 @@ function postgres_database_import() {
         clear_previous_lines "1"
         display --indent 6 --text "- Database backup import" --result "ERROR" --color RED
         display --indent 8 --text "Please, read the log file!" --tcolor RED
-        log_event "error" "Something went wrong importing database: ${database}"
-        log_event "debug" "Last command executed: ${psql_exec} ${database} < ${dump_file}"
-        #log_event "debug" "Last command executed: pv ${dump_file} | ${psql_exec} -f -D ${database}"
+        log_event "error" "Something went wrong importing database: ${database} after ${duration} seconds" "false"
+        log_event "debug" "Last command executed: ${psql_exec} -q -v ON_ERROR_STOP=1 ${database} < ${dump_file}" "false"
 
         return 1
 
