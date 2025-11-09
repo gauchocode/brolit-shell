@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bash -n:*)",
+      "Bash(chmod:*)",
+      "Bash(./runner.sh:*)",
+      "Bash(TERM=xterm ./runner.sh:*)",
+      "Bash(/tmp/commons_new.sh)",
+      "Bash(echo:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
