@@ -28,6 +28,7 @@ function it_utils_menu() {
     "13)" "INSTALL WELCOME MESSAGE"
     "14)" "ADD BROLIT UI INTEGRATION"
     "15)" "ENABLE SSH ROOT ACCESS"
+    "16)" "REGENERATE BORGMATIC TEMPLATES"
   )
   chosen_it_util_options="$(whiptail --title "IT UTILS" --menu "Choose a script to Run" 20 78 10 "${it_util_options[@]}" 3>&1 1>&2 2>&3)"
 
@@ -167,6 +168,13 @@ function it_utils_menu() {
 
       fi
 
+    fi
+
+    # REGENERATE BORGMATIC TEMPLATES
+    if [[ ${chosen_it_util_options} == *"16"* ]]; then
+      # shellcheck source=${BROLIT_MAIN_DIR}/libs/borg_storage_controller.sh
+      source "${BROLIT_MAIN_DIR}/libs/borg_storage_controller.sh"
+      borg_update_templates
     fi
 
     prompt_return_or_finish
