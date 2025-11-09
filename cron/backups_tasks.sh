@@ -41,7 +41,14 @@ function generate_config() {
 
         local number_of_servers
         number_of_servers=$(jq ".BACKUPS.methods[].borg[].config | length" /root/.brolit_conf.json 2>/dev/null || echo "0")
-        
+
+        # Counters for reporting
+        local total_projects=0
+        local configs_created=0
+        local configs_existing=0
+        local configs_failed=0
+        local projects_without_config=()
+
         # Process each directory in PROJECTS_PATH
         for folder in "${PROJECTS_PATH}"/*; do
 
@@ -55,17 +62,55 @@ function generate_config() {
                     continue
                 fi
 
+                ((total_projects++))
                 log_event "info" "Processing project: ${folder_name}" "false"
 
                 # Generate Borg configuration
-                if ! generate_borg_config "${folder_name}"; then
-                    log_event "error" "Skipping ${folder_name}: failed to generate borgmatic config" "false"
-                    continue
-                fi
+                local config_status
+                config_status=$(generate_borg_config "${folder_name}")
+
+                case "${config_status}" in
+                    "created")
+                        ((configs_created++))
+                        log_event "info" "✓ Created borgmatic config for: ${folder_name}" "false"
+                        display --indent 6 --text "- Config created for ${folder_name}" --result "DONE" --color GREEN
+                        ;;
+                    "exists")
+                        ((configs_existing++))
+                        log_event "debug" "✓ Config already exists for: ${folder_name}" "false"
+                        ;;
+                    "failed")
+                        ((configs_failed++))
+                        projects_without_config+=("${folder_name}")
+                        log_event "error" "✗ Failed to generate config for: ${folder_name}" "false"
+                        display --indent 6 --text "- Config failed for ${folder_name}" --result "FAIL" --color RED
+                        ;;
+                esac
 
             fi
 
         done
+
+        # Report summary
+        log_event "info" "=== Borgmatic Configuration Summary ===" "false"
+        log_event "info" "Total projects: ${total_projects}" "false"
+        log_event "info" "Configs created: ${configs_created}" "false"
+        log_event "info" "Configs existing: ${configs_existing}" "false"
+        log_event "info" "Configs failed: ${configs_failed}" "false"
+
+        display --indent 4 --text "Borgmatic configuration summary:" --tcolor YELLOW
+        display --indent 6 --text "Total projects: ${total_projects}" --tcolor WHITE
+        display --indent 6 --text "New configs created: ${configs_created}" --tcolor GREEN
+        display --indent 6 --text "Existing configs: ${configs_existing}" --tcolor BLUE
+
+        if [ ${configs_failed} -gt 0 ]; then
+            display --indent 6 --text "Failed configs: ${configs_failed}" --tcolor RED
+            log_event "warning" "Projects without config: ${projects_without_config[*]}" "false"
+            display --indent 6 --text "Projects without config:" --tcolor RED
+            for project in "${projects_without_config[@]}"; do
+                display --indent 8 --text "- ${project}" --tcolor RED
+            done
+        fi
 
     else
 
@@ -81,12 +126,12 @@ function generate_borg_config() {
     local project_name="${1}"
     local yml_file="/etc/borgmatic.d/${project_name}.yml"
     local project_install_type
-    
+
     project_install_type="$(project_get_install_type "/var/www/${project_name}" 2>/dev/null || echo "unknown")"
-    
+
     # Check if config file already exists
     if [ ! -f "${yml_file}" ]; then
-    
+
         log_event "info" "Config file ${yml_file} does not exist" "false"
         log_event "info" "Generating configuration file..." "false"
 
@@ -94,7 +139,7 @@ function generate_borg_config() {
         if [ "${project_install_type}" == "default" ]; then
             # For non-Docker projects, determine DB engine
             db_engine=$(project_get_database_engine "${project_name}" "${project_install_type}" 2>/dev/null || echo "")
-            
+
             if [ -z "${db_engine}" ]; then
                 # Default to mysql template if engine cannot be determined
                 template_file="borgmatic.template-mysql.yml"
@@ -116,8 +161,21 @@ function generate_borg_config() {
             template_file="borgmatic.template-default.yml"
         fi
 
+        # Final check if default template exists
+        if [ ! -f "${BROLIT_MAIN_DIR}/config/borg/${template_file}" ]; then
+            log_event "error" "No template file available for ${project_name}" "false"
+            echo "failed"
+            return 1
+        fi
+
         cp "${BROLIT_MAIN_DIR}/config/borg/${template_file}" "${yml_file}"
-        
+
+        if [ $? -ne 0 ]; then
+            log_event "error" "Failed to copy template for ${project_name}" "false"
+            echo "failed"
+            return 1
+        fi
+
         # Erase placeholder repositories to avoid duplication
         yq -i '.repositories = []' "${yml_file}" 2>/dev/null || true
 
@@ -139,16 +197,27 @@ function generate_borg_config() {
             USER_VALUE="${BACKUP_BORG_USERS[i-1]}" yq -i ".constants.${user_var} = strenv(USER_VALUE)" "${yml_file}" 2>/dev/null || true
             SERVER_VALUE="${BACKUP_BORG_SERVERS[i-1]}" yq -i ".constants.${server_var} = strenv(SERVER_VALUE)" "${yml_file}" 2>/dev/null || true
             PORT_VALUE="${BACKUP_BORG_PORTS[i-1]}" yq -i ".constants.${port_var} = strenv(PORT_VALUE)" "${yml_file}" 2>/dev/null || true
-            
+
             # Add repository configuration using yq for safety
             yq -i ".repositories += [{\"path\": \"ssh://{${user_var}}@{${server_var}}:{${port_var}}/home/applications/{group}/{hostname}/projects-online/site/{project}\", \"label\": \"storage-{${user_var}}\"}]" "${yml_file}" 2>/dev/null || true
-        
+
         done
 
-        log_event "info" "Config file ${yml_file} generated." "false"
+        # Verify the config file was created successfully
+        if [ -f "${yml_file}" ]; then
+            log_event "info" "Config file ${yml_file} generated successfully." "false"
+            echo "created"
+            return 0
+        else
+            log_event "error" "Config file ${yml_file} creation failed." "false"
+            echo "failed"
+            return 1
+        fi
 
     else
-        log_event "info" "Config file ${yml_file} already exists." "false"
+        log_event "debug" "Config file ${yml_file} already exists." "false"
+        echo "exists"
+        return 0
     fi
 
 }
@@ -166,34 +235,65 @@ function prepare_borgmatic_environment() {
 
 # Backup project using all enabled methods
 function backup_project_all_enabled_methods() {
-    
+
     local project_domain="${1}"
-    
+
     log_event "info" "Starting multi-method backup for: ${project_domain}" "false"
-    
-    # 1. Database backup with borgmatic (if configured)
-    if [[ ${BACKUP_BORG_STATUS} == "enabled" ]] && [[ -f "/etc/borgmatic.d/${project_domain}.yml" ]]; then
-        
-        log_event "info" "Running borgmatic backup for ${project_domain}" "false"
-        
-        # Setup project directories and initialize repository if needed
-        setup_project_directories "${project_domain}"
-        initialize_repository_if_needed "/etc/borgmatic.d/${project_domain}.yml" "${project_domain}"
-        
-        # Run borgmatic backup
-        if borgmatic --config "/etc/borgmatic.d/${project_domain}.yml" --stats; then
-            log_event "info" "Borgmatic backup completed for ${project_domain}" "false"
+
+    # Check if Borg is enabled
+    if [[ ${BACKUP_BORG_STATUS} == "enabled" ]]; then
+
+        # Verify config file exists
+        if [[ -f "/etc/borgmatic.d/${project_domain}.yml" ]]; then
+
+            log_event "info" "Running borgmatic backup for ${project_domain}" "false"
+            display --indent 6 --text "- Backing up ${project_domain} with borgmatic" --tcolor YELLOW
+
+            # Setup project directories and initialize repository if needed
+            setup_project_directories "${project_domain}"
+            initialize_repository_if_needed "/etc/borgmatic.d/${project_domain}.yml" "${project_domain}"
+
+            # Run borgmatic backup
+            if borgmatic --config "/etc/borgmatic.d/${project_domain}.yml" --stats; then
+                log_event "info" "Borgmatic backup completed for ${project_domain}" "false"
+                display --indent 8 --text "Backup completed" --result "DONE" --color GREEN
+            else
+                log_event "error" "Borgmatic backup failed for ${project_domain}" "false"
+                display --indent 8 --text "Backup failed" --result "FAIL" --color RED
+            fi
+
         else
-            log_event "error" "Borgmatic backup failed for ${project_domain}" "false"
+
+            # Config file missing - log warning
+            log_event "warning" "Borgmatic config missing for ${project_domain} at /etc/borgmatic.d/${project_domain}.yml" "false"
+            display --indent 6 --text "- No borgmatic config for ${project_domain}" --result "SKIP" --color YELLOW
+
+            # Fallback to traditional database backup for Docker projects
+            if [[ -f "${PROJECTS_PATH}/${project_domain}/.env" ]]; then
+                log_event "info" "Running traditional database backup for Docker project: ${project_domain}" "false"
+                display --indent 6 --text "- Using traditional backup method" --tcolor YELLOW
+                borg_backup_database "${project_domain}"
+
+                if [[ $? -eq 0 ]]; then
+                    log_event "info" "Traditional database backup for ${project_domain} completed successfully." "false"
+                    display --indent 8 --text "Backup completed" --result "DONE" --color GREEN
+                else
+                    log_event "error" "Traditional database backup for ${project_domain} failed." "false"
+                    display --indent 8 --text "Backup failed" --result "FAIL" --color RED
+                fi
+            else
+                log_event "info" "No database backup method available for project: ${project_domain}" "false"
+            fi
+
         fi
-        
+
     else
-        
-        # Fallback to traditional database backup for Docker projects
+
+        # Borg not enabled - use traditional backup
         if [[ -f "${PROJECTS_PATH}/${project_domain}/.env" ]]; then
-            log_event "info" "Running traditional database backup for Docker project: ${project_domain}" "false"
+            log_event "info" "Running traditional database backup for project: ${project_domain}" "false"
             borg_backup_database "${project_domain}"
-            
+
             if [[ $? -eq 0 ]]; then
                 log_event "info" "Traditional database backup for ${project_domain} completed successfully." "false"
             else
@@ -202,9 +302,9 @@ function backup_project_all_enabled_methods() {
         else
             log_event "info" "No database backup needed for project: ${project_domain}" "false"
         fi
-        
+
     fi
-    
+
 }
 
 ################################################################################
