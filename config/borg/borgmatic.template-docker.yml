@@ -40,11 +40,10 @@ check_last: 3
 
 # Backup hooks
 before_backup:
-    - docker compose -f /var/www/{project}/docker-compose.yml down -v
-    - docker compose -f /var/www/{project}/docker-compose.yml stop
+    - docker compose -f /var/www/{project}/docker-compose.yml pause
 
 after_backup:
-    - docker compose -f /var/www/{project}/docker-compose.yml up -d
+    - docker compose -f /var/www/{project}/docker-compose.yml unpause
     - docker compose -f /var/www/{project}/docker-compose.yml logs -t > /var/log/{project}_docker.log
 
 on_error:
