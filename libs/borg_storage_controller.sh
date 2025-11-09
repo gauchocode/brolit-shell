@@ -1170,16 +1170,14 @@ function borg_update_templates() {
         display --indent 6 --text "- Borg config directory not found" --result "FAIL" --color RED
         return 1
     fi
-    
-    # Use only borgmatic.template-default.yml
-    local template="${template_dir}/borgmatic.template-default.yml"
-    
-    if [[ ! -f "${template}" ]]; then
-        log_event "error" "Template file not found: ${template}" "false"
-        display --indent 6 --text "- Template file not found" --result "FAIL" --color RED
+
+    # Check if template directory exists
+    if [[ ! -d "${template_dir}" ]]; then
+        log_event "error" "Template directory not found: ${template_dir}" "false"
+        display --indent 6 --text "- Template directory not found" --result "FAIL" --color RED
         return 1
     fi
-    
+
     # Ask for confirmation
     if ! whiptail --title "UPDATE BORGMATIC TEMPLATES" --yesno "This operation will update all borgmatic configuration files and may affect backup creation. A backup will be created in ${BROLIT_TMP_DIR}. Do you want to continue?" 10 80; then
         log_event "info" "User canceled borgmatic template update" "false"
@@ -1230,11 +1228,41 @@ function borg_update_templates() {
             continue
         fi
         
-        # Use only borgmatic.template-default.yml
-        local template_name="borgmatic.template-default.yml"
-        
-        display --indent 6 --text "- Processing ${config_name}"
-        
+        # Determine project name from config file
+        local project=$(basename "${config_file}" .yml)
+
+        # Detect if project is Docker
+        local project_path="${PROJECTS_PATH}/${project}"
+        local project_install_type
+
+        if [[ -d "${project_path}" ]]; then
+            # shellcheck source=${BROLIT_MAIN_DIR}/libs/local/project_helper.sh
+            source "${BROLIT_MAIN_DIR}/libs/local/project_helper.sh"
+            project_install_type="$(project_get_install_type "${project_path}" 2>/dev/null || echo "default")"
+        else
+            project_install_type="default"
+        fi
+
+        # Select appropriate template based on project type
+        local template_name
+        if [[ "${project_install_type}" == "docker-compose" ]]; then
+            template_name="borgmatic.template-docker.yml"
+        else
+            template_name="borgmatic.template-default.yml"
+        fi
+
+        # Update template path
+        template="${template_dir}/${template_name}"
+
+        # Check if selected template exists
+        if [[ ! -f "${template}" ]]; then
+            log_event "error" "Template file not found: ${template}" "false"
+            display --indent 8 --text "- Template ${template_name} not found" --result "FAIL" --color RED
+            continue
+        fi
+
+        display --indent 6 --text "- Processing ${config_name} (type: ${project_install_type})" --tcolor YELLOW
+
         # Compare template with config
         if ! diff -q "${template}" "${config_file}" >/dev/null 2>&1; then
 
@@ -1249,10 +1277,7 @@ function borg_update_templates() {
                 
                 # Copy template content
                 cp "${template}" "${temp_file}"
-                
-                # Obtener project del nombre del archivo
-                local project=$(basename "${config_file}" .yml)
-                
+
                 # Leer valores reales desde .brolit_conf.json
                 local group=$(yq -r '.BACKUPS.methods[].borg[].group // ""' /root/.brolit_conf.json)
                 local ntfy_username=$(yq -r '.NOTIFICATIONS.ntfy[].config[].username // ""' /root/.brolit_conf.json)
