@@ -364,9 +364,11 @@ function backup_all_projects_files() {
   # Get all directories
   working_sites_directories="$(get_all_directories "${PROJECTS_PATH}")"
 
-  # Get length of ${working_sites_directories}
-  COUNT_TOTAL_SITES="$(find "${PROJECTS_PATH}" -maxdepth 1 -type d -printf '.' | wc -c)"
-  COUNT_TOTAL_SITES="$((COUNT_TOTAL_SITES - 1))"
+  # Count directories (using the same criteria as get_all_directories)
+  COUNT_TOTAL_SITES=0
+  if [[ -n "${working_sites_directories}" ]]; then
+    COUNT_TOTAL_SITES=$(echo "${working_sites_directories}" | wc -l)
+  fi
 
   # Log
   display --indent 6 --text "- Directories found" --result "${COUNT_TOTAL_SITES}" --color WHITE
