@@ -250,4 +250,4 @@ $ ./runner.sh --task cloudflare-api --subtask clear_cache --domain example.com
 
 Implemented by: Claude Code Assistant
 Date: 2025-11-08
-BROLIT Version: 3.3.4
+BROLIT Version: 3.3.5

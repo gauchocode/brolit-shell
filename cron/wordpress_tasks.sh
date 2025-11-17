@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.4
+# Version: 3.3.5
 ################################################################################
 
 _wordpress_cronned_tasks() {
