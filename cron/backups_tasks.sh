@@ -237,6 +237,7 @@ function prepare_borgmatic_environment() {
 function backup_project_all_enabled_methods() {
 
     local project_domain="${1}"
+    local backup_status=0
 
     log_event "info" "Starting multi-method backup for: ${project_domain}" "false"
 
@@ -260,6 +261,7 @@ function backup_project_all_enabled_methods() {
             else
                 log_event "error" "Borgmatic backup failed for ${project_domain}" "false"
                 display --indent 8 --text "Backup failed" --result "FAIL" --color RED
+                backup_status=1
             fi
 
         else
@@ -280,6 +282,7 @@ function backup_project_all_enabled_methods() {
                 else
                     log_event "error" "Traditional database backup for ${project_domain} failed." "false"
                     display --indent 8 --text "Backup failed" --result "FAIL" --color RED
+                    backup_status=1
                 fi
             else
                 log_event "info" "No database backup method available for project: ${project_domain}" "false"
@@ -298,12 +301,15 @@ function backup_project_all_enabled_methods() {
                 log_event "info" "Traditional database backup for ${project_domain} completed successfully." "false"
             else
                 log_event "error" "Traditional database backup for ${project_domain} failed." "false"
+                backup_status=1
             fi
         else
             log_event "info" "No database backup needed for project: ${project_domain}" "false"
         fi
 
     fi
+
+    return ${backup_status}
 
 }
 
@@ -357,20 +363,36 @@ fi
 # Projects Backup with multi-method support
 log_subsection "Backup Projects with Multi-Method Support"
 
+# Initialize borg backup status
+borg_backup_result=0
+
 # Iterate over projects in PROJECTS_PATH
 for project_dir in "${PROJECTS_PATH}"/*/; do
     # Verify that the directory exists and is actually a directory
     if [[ -d "${project_dir}" ]]; then
         project_domain=$(basename "${project_dir}")
-        
+
         # Multi-method backup for each project
         backup_project_all_enabled_methods "${project_domain}"
-        
+
+        # Capture any borg failures during project backups
+        if [[ $? -ne 0 ]]; then
+            borg_backup_result=1
+        fi
+
     fi
 done
 
 # Files Backup
 files_backup_result="$(backup_all_files)"
+
+# Backup All with Borg (runs borgmatic for all project configs if enabled)
+if [[ ${BACKUP_BORG_STATUS} == "enabled" ]]; then
+    backup_all_files_with_borg
+    if [[ $? -ne 0 ]]; then
+        borg_backup_result=1
+    fi
+fi
 
 # Footer
 mail_footer "${SCRIPT_V}"
@@ -412,14 +434,26 @@ mv "${email_html_file}_tmp" "${email_html_file}"
 # Send html to a var
 mail_html="$(cat "${email_html_file}")"
 
-# Checking result status for mail subject
-email_status="$(mail_subject_status "${database_backup_result}" "${files_backup_result}" "${STATUS_SERVER}" "${STATUS_CERTS}" "${OUTDATED_PACKAGES}")"
+# Checking result status for mail subject (including borg backup status)
+email_status="$(mail_subject_status "${database_backup_result}" "${files_backup_result}" "${STATUS_SERVER}" "${STATUS_CERTS}" "${OUTDATED_PACKAGES}" "${borg_backup_result}")"
 
 # Preparing email to send
 email_subject="${email_status} [${NOWDISPLAY}] - Complete Backup on ${SERVER_NAME}"
 
+# Determine notification status based on all backup results
+notification_status="success"
+notification_message="Complete backup completed successfully."
+
+if [[ ${database_backup_result} -eq 1 ]] || [[ ${files_backup_result} -eq 1 ]] || [[ ${borg_backup_result} -eq 1 ]]; then
+    notification_status="alert"
+    notification_message="Complete backup completed with errors. Check logs for details."
+fi
+
 # Sending email notification
 mail_send_notification "${email_subject}" "${mail_html}"
+
+# Send push notification if available
+send_notification "${SERVER_NAME}" "${notification_message}" "${notification_status}"
 
 # Write e-mail (debug)
 # echo "${mail_html}" >"${BROLIT_TMP_DIR}/email-${NOW}.mail"

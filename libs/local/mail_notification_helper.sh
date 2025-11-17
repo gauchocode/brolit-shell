@@ -122,10 +122,12 @@ function mail_subject_status() {
     local status_s="${3}"
     local status_c="${4}"
     local outdated="${5}"
+    local status_b="${6}"  # Borg backup status
 
     local status
 
-    if [[ ${status_d} == 1 ]] || [[ ${status_f} == 1 ]] || [[ ${status_s} == 1 ]] || [[ ${status_c} == 1 ]]; then
+    # Check for errors in any backup method
+    if [[ ${status_d} == 1 ]] || [[ ${status_f} == 1 ]] || [[ ${status_s} == 1 ]] || [[ ${status_c} == 1 ]] || [[ ${status_b} == 1 ]]; then
         status="⛔ ERROR"
 
     else

@@ -52,8 +52,9 @@ function backup_manager_menu() {
       # Files Backup
       backup_all_files
 
-      # Configs Backup
+      # Backup All with Borg (runs borgmatic for all project configs)
       backup_all_files_with_borg
+      STATUS_BACKUP_BORG=$?
 
       # Footer
       mail_footer "${SCRIPT_V}"
@@ -94,13 +95,19 @@ function backup_manager_menu() {
       mail_html="$(cat "${email_html_file}")"
 
       # Checking result status for mail subject
-      email_status="$(mail_subject_status "${STATUS_BACKUP_DBS}" "${STATUS_BACKUP_FILES}" "${STATUS_SERVER}" "${OUTDATED_PACKAGES}")"
+      email_status="$(mail_subject_status "${STATUS_BACKUP_DBS}" "${STATUS_BACKUP_FILES}" "${STATUS_SERVER}" "${OUTDATED_PACKAGES}" "${STATUS_BACKUP_BORG}")"
 
       email_subject="${email_status} [${NOWDISPLAY}] - Complete Backup on ${SERVER_NAME}"
 
+      # Determine notification status based on all backup results
+      notification_status="success"
+      if [[ ${STATUS_BACKUP_DBS} -eq 1 ]] || [[ ${STATUS_BACKUP_FILES} -eq 1 ]] || [[ ${STATUS_BACKUP_BORG} -eq 1 ]]; then
+        notification_status="error"
+      fi
+
       # Sending notifications
       mail_send_notification "${email_subject}" "${mail_html}"
-      send_notification "${SERVER_NAME}" "Task: 'Backup All' completed." "success"
+      send_notification "${SERVER_NAME}" "Task: 'Backup All' completed." "${notification_status}"
 
     fi
     

@@ -469,29 +469,46 @@ function backup_all_files_with_borg() {
 
   if [[ ${BACKUP_BORG_STATUS} == "enabled" ]]; then
 
-    display --indent 6 --text "- Backup with Borg" --result "RUNNING" --color YELLOW
+    log_subsection "Backup Projects (Borg)"
 
-    #borgmatic --verbosity 1 --list --stats
-    borgmatic --list --stats
-    
+    # Check if there are any borgmatic config files
+    local config_count
+    config_count=$(find /etc/borgmatic.d/ -maxdepth 1 -name "*.yml" -type f 2>/dev/null | wc -l)
+
+    if [[ ${config_count} -eq 0 ]]; then
+      log_event "warning" "No borgmatic configuration files found in /etc/borgmatic.d/" "false"
+      display --indent 6 --text "- Backup with Borg" --result "SKIP" --color YELLOW
+      display --indent 8 --text "No project configs found" --tcolor YELLOW
+      log_event "info" "Skipping borgmatic backup - no project configurations found" "false"
+      return 0
+    fi
+
+    log_event "info" "Found ${config_count} borgmatic configuration file(s)" "false"
+    display --indent 6 --text "- Backup with Borg (${config_count} projects)" --result "RUNNING" --color YELLOW
+
+    # Run borgmatic for all configs in /etc/borgmatic.d/
+    # Using --config to specify the directory containing all project configs
+    borgmatic --config /etc/borgmatic.d/ --list --stats
+
     if [[ $? -eq 0 ]]; then
 
       clear_previous_lines "1"
-      display --indent 6 --text "- Backup with Borg" --result "DONE" --color GREEN
+      display --indent 6 --text "- Backup with Borg (${config_count} projects)" --result "DONE" --color GREEN
       return 0
 
     else
 
-      display --indent 6 --text "- Backup with Borg" --result "FAIL" --color RED
+      display --indent 6 --text "- Backup with Borg (${config_count} projects)" --result "FAIL" --color RED
+      log_event "error" "Borgmatic backup failed - check logs for details" "false"
       return 1
-    
+
     fi
 
   else
 
     # Log
     log_event "error" "Borg backup support is not enabled." "false"
-  
+
   fi
 
 }
