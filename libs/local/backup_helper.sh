@@ -364,10 +364,15 @@ function backup_all_projects_files() {
   # Get all directories
   working_sites_directories="$(get_all_directories "${PROJECTS_PATH}")"
 
+  # Debug: log what get_all_directories returned
+  log_event "debug" "PROJECTS_PATH: ${PROJECTS_PATH}" "false"
+  log_event "debug" "working_sites_directories: ${working_sites_directories}" "false"
+
   # Count directories (using the same criteria as get_all_directories)
   COUNT_TOTAL_SITES=0
   if [[ -n "${working_sites_directories}" ]]; then
-    COUNT_TOTAL_SITES=$(echo "${working_sites_directories}" | wc -l)
+    # Count non-empty lines that look like paths
+    COUNT_TOTAL_SITES=$(echo "${working_sites_directories}" | grep -c '^/' 2>/dev/null || echo "0")
   fi
 
   # Log
