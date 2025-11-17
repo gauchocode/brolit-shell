@@ -839,8 +839,27 @@ function get_all_directories() {
 
   local main_dir="${1}"
 
-  # -not -path '*/.*' will ommit hidden directories
-  first_level_dir="$(find "${main_dir}" -maxdepth 1 -mindepth 1 -type d -not -path '*/.*')"
+  # Check if we should follow symlinks from config
+  local find_opts=""
+  if [[ ${BACKUP_CONFIG_FOLLOW_SYMLINKS} == "true" ]]; then
+    find_opts="-L"
+    log_event "debug" "get_all_directories: Following symlinks (BACKUP_CONFIG_FOLLOW_SYMLINKS=true)" "false"
+  else
+    log_event "debug" "get_all_directories: Not following symlinks (BACKUP_CONFIG_FOLLOW_SYMLINKS=${BACKUP_CONFIG_FOLLOW_SYMLINKS})" "false"
+  fi
+
+  # -L follows symlinks, -not -path '*/.*' will ommit hidden directories
+  first_level_dir="$(find ${find_opts} "${main_dir}" -maxdepth 1 -mindepth 1 -type d -not -path '*/.*' 2>&1)"
+
+  # Debug logging
+  if [[ -z "${first_level_dir}" ]]; then
+    log_event "debug" "get_all_directories: No directories found in ${main_dir}" "false"
+    # Try a simpler find to see what's there
+    all_items="$(find ${find_opts} "${main_dir}" -maxdepth 1 -mindepth 1 2>&1)"
+    log_event "debug" "get_all_directories: All items in ${main_dir}: ${all_items}" "false"
+  else
+    log_event "debug" "get_all_directories: Found directories: ${first_level_dir}" "false"
+  fi
 
   # Return
   echo "${first_level_dir}"
