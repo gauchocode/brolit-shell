@@ -231,5 +231,5 @@ This refactoring significantly improves code organization without affecting exis
 
 Implemented by: Claude Code Assistant
 Date: 2025-11-08
-BROLIT Version: 3.3.4
+BROLIT Version: 3.3.5
 Type: Non-breaking refactoring
