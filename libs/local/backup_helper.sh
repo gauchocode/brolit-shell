@@ -476,15 +476,66 @@ function backup_all_files_with_borg() {
     config_count=$(find /etc/borgmatic.d/ -maxdepth 1 -name "*.yml" -type f 2>/dev/null | wc -l)
 
     if [[ ${config_count} -eq 0 ]]; then
-      log_event "warning" "No borgmatic configuration files found in /etc/borgmatic.d/" "false"
-      display --indent 6 --text "- Backup with Borg" --result "SKIP" --color YELLOW
-      display --indent 8 --text "No project configs found" --tcolor YELLOW
-      log_event "info" "Skipping borgmatic backup - no project configurations found" "false"
-      return 0
+      log_event "error" "No borgmatic configuration files found in /etc/borgmatic.d/" "false"
+      display --indent 6 --text "- Backup with Borg" --result "FAIL" --color RED
+      display --indent 8 --text "No borgmatic configs found" --tcolor RED
+
+      # Log clear instructions for resolution
+      log_event "error" "Borgmatic requires configuration before backups can run" "false"
+      log_event "info" "To generate configs: Run 'REGENERATE BORGMATIC TEMPLATES' from IT UTILS menu" "false"
+
+      # Send notification about missing configuration
+      send_notification "Borg Backup Configuration Required" "No borgmatic configs found. Generate templates from IT UTILS menu option 16." "alert"
+
+      return 1
     fi
 
-    log_event "info" "Found ${config_count} borgmatic configuration file(s)" "false"
-    display --indent 6 --text "- Backup with Borg (${config_count} projects)" --result "RUNNING" --color YELLOW
+    # Count actual projects in PROJECTS_PATH (excluding 'html' directory)
+    local projects_count=0
+    local projects_without_config=()
+
+    if [[ -d "${PROJECTS_PATH}" ]]; then
+      for project_dir in "${PROJECTS_PATH}"/*/; do
+        if [[ -d "${project_dir}" ]]; then
+          local project_name
+          project_name=$(basename "${project_dir}")
+
+          # Skip html directory
+          if [[ "${project_name}" == "html" ]]; then
+            continue
+          fi
+
+          ((projects_count++))
+
+          # Check if this project has a borgmatic config
+          if [[ ! -f "/etc/borgmatic.d/${project_name}.yml" ]]; then
+            projects_without_config+=("${project_name}")
+          fi
+        fi
+      done
+    fi
+
+    log_event "info" "Found ${config_count} borgmatic config(s) for ${projects_count} project(s)" "false"
+
+    # Check for missing configurations
+    local missing_count=${#projects_without_config[@]}
+    if [[ ${missing_count} -gt 0 ]]; then
+      log_event "warning" "${missing_count} project(s) without borgmatic configuration" "false"
+      display --indent 6 --text "- Backup with Borg (${config_count}/${projects_count} projects)" --result "WARNING" --color YELLOW
+      display --indent 8 --text "Projects without config:" --tcolor YELLOW
+
+      for project in "${projects_without_config[@]}"; do
+        log_event "warning" "Missing borgmatic config for: ${project}" "false"
+        display --indent 10 --text "- ${project}" --tcolor YELLOW
+      done
+
+      display --indent 8 --text "Run IT UTILS menu option 16 to generate configs" --tcolor YELLOW
+
+      # Send notification about missing configs
+      send_notification "Borg Backup: Missing Configurations" "${missing_count} project(s) without borgmatic config. Check logs for details." "alert"
+    else
+      display --indent 6 --text "- Backup with Borg (${config_count} projects)" --result "RUNNING" --color YELLOW
+    fi
 
     # Run borgmatic for all configs in /etc/borgmatic.d/
     # Using --config to specify the directory containing all project configs
@@ -493,8 +544,17 @@ function backup_all_files_with_borg() {
     if [[ $? -eq 0 ]]; then
 
       clear_previous_lines "1"
-      display --indent 6 --text "- Backup with Borg (${config_count} projects)" --result "DONE" --color GREEN
-      return 0
+
+      if [[ ${missing_count} -gt 0 ]]; then
+        # Partial success - some projects backed up but others missing config
+        display --indent 6 --text "- Backup with Borg (${config_count}/${projects_count} projects)" --result "WARNING" --color YELLOW
+        log_event "warning" "Borgmatic backup completed with ${missing_count} project(s) missing configuration" "false"
+        return 1  # Return error to trigger notification
+      else
+        # Complete success - all projects backed up
+        display --indent 6 --text "- Backup with Borg (${config_count} projects)" --result "DONE" --color GREEN
+        return 0
+      fi
 
     else
 
