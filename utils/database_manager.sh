@@ -167,26 +167,26 @@ function database_manager_menu() {
   else
     log_event "warn" "Docker not available" "false"
   fi
-    # Is not empty?
-    if [[ -n ${database_container} ]]; then
-      # Whiptail to prompt user if want to use docker
-      whiptail_message_with_skip_option "Docker Support" "Database containers are running, do you want to work with an specific docker container?"
+  
+  # Is not empty?
+  if [[ -n ${database_container} ]]; then
+    # Whiptail to prompt user if want to use docker
+    whiptail_message_with_skip_option "Docker Support" "Database containers are running, do you want to work with an specific docker container?"
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+      # Database Container selection menu
+      database_container_selected="$(whiptail --title "Select a Database Container" --menu "Choose a Database Container to work with" 20 78 10 $(for x in ${database_container}; do echo "$x [X]"; done) 3>&1 1>&2 2>&3)"
       exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
+      [[ ${exitstatus} -eq 1 ]] && log_event "info" "Docker container selection cancelled" "false" && database_container_selected=""
 
-        # Database Container selection menu
-        database_container_selected="$(whiptail --title "Select a Database Container" --menu "Choose a Database Container to work with" 20 78 10 $(for x in ${database_container}; do echo "$x [X]"; done) 3>&1 1>&2 2>&3)"
-        exitstatus=$?
-        [[ ${exitstatus} -eq 1 ]] && log_event "info" "Docker container selection cancelled" "false" && database_container_selected=""
-
-        if [[ -n ${database_container_selected} ]]; then
-          # Check if database engine is mysql or postgres
-          [[ ${database_container_selected} == *"mysql"* ]] && chosen_database_engine="MYSQL"
-          [[ ${database_container_selected} == *"postgres"* ]] && chosen_database_engine="POSTGRESQL"
-          log_event "info" "Selected Docker container '${database_container_selected}' → Engine '${chosen_database_engine}'" "false"
-        fi
-
+      if [[ -n ${database_container_selected} ]]; then
+        # Check if database engine is mysql or postgres
+        [[ ${database_container_selected} == *"mysql"* ]] && chosen_database_engine="MYSQL"
+        [[ ${database_container_selected} == *"postgres"* ]] && chosen_database_engine="POSTGRESQL"
+        log_event "info" "Selected Docker container '${database_container_selected}' → Engine '${chosen_database_engine}'" "false"
       fi
+
     fi
   fi
 
