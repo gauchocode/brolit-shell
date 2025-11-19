@@ -157,11 +157,16 @@ function database_manager_menu() {
   local database_container_selected
 
   log_section "Database Manager"
+  log_event "debug" "Entering Database Manager. PACKAGES_DOCKER_STATUS='${PACKAGES_DOCKER_STATUS}'" "false"
 
-  # Check if docker is installed
-  if [[ ${PACKAGES_DOCKER_STATUS} == "enabled" ]]; then
-    # List mysql and postgres containers
-    database_container="$(docker ps --format "{{.Names}}" | grep -e mysql -e postgres)"
+  # Always check for docker containers if docker available
+  database_container=""
+  if command -v docker >/dev/null 2>&1; then
+    database_container="$(docker ps --format "{{.Names}}" | grep -iE 'mysql|postgres')"
+    log_event "debug" "Docker containers found: '${database_container}'" "false"
+  else
+    log_event "warn" "Docker not available" "false"
+  fi
     # Is not empty?
     if [[ -n ${database_container} ]]; then
       # Whiptail to prompt user if want to use docker
@@ -171,19 +176,34 @@ function database_manager_menu() {
 
         # Database Container selection menu
         database_container_selected="$(whiptail --title "Select a Database Container" --menu "Choose a Database Container to work with" 20 78 10 $(for x in ${database_container}; do echo "$x [X]"; done) 3>&1 1>&2 2>&3)"
-        [[ ${exitstatus} -eq 1 ]] && return 1
+        exitstatus=$?
+        [[ ${exitstatus} -eq 1 ]] && log_event "info" "Docker container selection cancelled" "false" && database_container_selected=""
 
-        # Check if database engine is mysql or postgres
-        [[ ${database_container_selected} == *"mysql"* ]] && chosen_database_engine="MYSQL"
-        [[ ${database_container_selected} == *"postgres"* ]] && chosen_database_engine="POSTGRESQL"
+        if [[ -n ${database_container_selected} ]]; then
+          # Check if database engine is mysql or postgres
+          [[ ${database_container_selected} == *"mysql"* ]] && chosen_database_engine="MYSQL"
+          [[ ${database_container_selected} == *"postgres"* ]] && chosen_database_engine="POSTGRESQL"
+          log_event "info" "Selected Docker container '${database_container_selected}' → Engine '${chosen_database_engine}'" "false"
+        fi
 
       fi
     fi
   fi
 
-  # Select database engine
-  [[ -z ${chosen_database_engine} ]] && chosen_database_engine="$(database_ask_engine)"
-  [[ -z ${chosen_database_engine} ]] && echo "No database engine found!" && menu_main_options
+  # Select database engine (host only if no Docker)
+  if [[ -z ${chosen_database_engine} ]]; then
+    log_event "debug" "No Docker engine, trying host via database_ask_engine" "false"
+    chosen_database_engine="$(database_ask_engine)"
+  fi
+  log_event "debug" "Final engine selected: '${chosen_database_engine}'" "false"
+
+  if [[ -z ${chosen_database_engine} ]]; then
+    log_event "error" "No database engine found! Check: Docker containers running? Host MySQL/Postgres enabled/installed?" "true"
+    whiptail --title "DATABASE MANAGER ERROR" --msgbox "No database engine detected.\n\n- Verify Docker containers (mysql/postgres names).\n- Or enable/install host MySQL/MariaDB/PostgreSQL.\n\nCheck logs for details." 12 70
+    prompt_return_or_finish
+    database_manager_menu  # Recurse to retry
+    return 1
+  fi
 
   database_manager_options=(
     "01)" "LIST DATABASES"
