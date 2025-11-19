@@ -162,12 +162,12 @@ function database_manager_menu() {
   # Always check for docker containers if docker available
   database_container=""
   if command -v docker >/dev/null 2>&1; then
-    database_container="$(docker ps --format "{{.Names}}" | grep -iE 'mysql|postgres')"
+    database_container="$(docker ps --format "{{.Names}}" | grep -iE 'mysql|mariadb|postgres')"
     log_event "debug" "Docker containers found: '${database_container}'" "false"
   else
     log_event "warn" "Docker not available" "false"
   fi
-  
+
   # Is not empty?
   if [[ -n ${database_container} ]]; then
     # Whiptail to prompt user if want to use docker
