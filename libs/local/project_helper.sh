@@ -355,6 +355,51 @@ function project_ask_install_type() {
 }
 
 ################################################################################
+# Extract port from project .env file
+#
+# Arguments:
+#   ${1} - ${project_path}
+#
+# Outputs:
+#   Port number if found, empty string otherwise
+################################################################################
+
+function project_get_port_from_env() {
+
+  local project_path="${1}"
+  local env_file="${project_path}/.env"
+  local port=""
+
+  # Check if .env file exists
+  if [[ ! -f "${env_file}" ]]; then
+    return 0
+  fi
+
+  # Try to extract port from common environment variables
+  # Common patterns: PORT=3000, APP_PORT=3000, SERVER_PORT=3000, HTTP_PORT=3000, etc.
+  port="$(grep -E '^[A-Z_]*PORT=' "${env_file}" | grep -v '^#' | head -n 1 | cut -d '=' -f 2 | tr -d ' "')"
+
+  # If no port found with the simple pattern, try to extract from specific known variables
+  if [[ -z "${port}" ]]; then
+    # Try NODE_PORT, APP_PORT, SERVER_PORT, HTTP_PORT, WEBSERVER_PORT, WP_PORT
+    for var_name in "PORT" "APP_PORT" "SERVER_PORT" "HTTP_PORT" "NODE_PORT" "WEBSERVER_PORT" "WP_PORT"; do
+      port="$(grep -E "^${var_name}=" "${env_file}" | grep -v '^#' | head -n 1 | cut -d '=' -f 2 | tr -d ' "')"
+      if [[ -n "${port}" ]]; then
+        break
+      fi
+    done
+  fi
+
+  # Validate port is a number
+  if [[ "${port}" =~ ^[0-9]+$ ]]; then
+    echo "${port}"
+  fi
+
+  return 0
+
+}
+
+################################################################################
 # Ask project port
 #
 # Arguments:
@@ -2905,9 +2950,16 @@ function project_create_nginx_server() {
     # Aks project type
     project_type="$(project_ask_type "${suggested_project_type}")"
     project_install_type="$(project_ask_install_type "${suggested_project_install_type}")"
+
+    # Unify docker and proxy as they are the same
     if [[ ${project_install_type} == "docker" || ${project_install_type} == "proxy" ]]; then
       project_install_type="proxy"
-      project_port="$(project_ask_port "")"
+
+      # Try to extract port from .env file
+      suggested_port="$(project_get_port_from_env "${filepath}/${filename}")"
+
+      # Ask for port with the suggestion from .env (if found)
+      project_port="$(project_ask_port "${suggested_port}")"
     fi
 
     # Update project domain config
