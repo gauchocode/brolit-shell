@@ -195,7 +195,7 @@ function dropbox_upload() {
 
     # Log
     log_event "info" "Uploading file to Dropbox ..." "false"
-    log_event "debug" "Running: \"${DROPBOX_UPLOADER}\" -q upload \"${file_to_upload}\" \"${dropbox_directory}\"" "false"
+    log_event "debug" "Executing: \"${DROPBOX_UPLOADER}\" -q upload \"${file_to_upload}\" \"${dropbox_directory}\"" "false"
 
     # Command
     output="$("${DROPBOX_UPLOADER}" -q upload "${file_to_upload}" "${dropbox_directory}")"
@@ -249,6 +249,7 @@ function dropbox_download() {
 
     # Log
     log_event "info" "Trying to download ${file_to_download} from Dropbox" "false"
+    log_event "debug" "Executing: \"${DROPBOX_UPLOADER}\" -q download \"${file_to_download}\" \"${local_directory}/${tmp_file_name}\"" "false"
 
     spinner_start "- Downloading file from Dropbox"
 
@@ -270,7 +271,6 @@ function dropbox_download() {
         display --indent 6 --text "- Downloading file from Dropbox" --result "FAIL" --color RED
         display --indent 8 --text "Please read log file" --tcolor RED
         log_event "error" "Can't download file ${file_to_download} from dropbox." "false"
-        log_event "error" "Last command executed: ${DROPBOX_UPLOADER} -q download ${file_to_download} ${local_directory}/${tmp_file_name}" "false"
         log_event "debug" "Last command output: ${dropbox_output}" "false"
 
         return 1
@@ -306,7 +306,7 @@ function dropbox_delete() {
 
         # Log
         log_event "info" "Search \"${to_delete}\" to delete on Dropbox account" "false"
-        log_event "debug" "Running: \"${DROPBOX_UPLOADER}\" -hq search \"${to_delete}\"" "false"
+        log_event "debug" "Executing: \"${DROPBOX_UPLOADER}\" -hq search \"${to_delete}\"" "false"
 
         search_file="$(basename "${to_delete}")"
 

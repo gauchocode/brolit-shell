@@ -9,6 +9,13 @@
 ################################################################################
 
 ################################################################################
+# * Private Functions
+#
+# Todas las funciones auxiliares deben declararse al inicio del archivo
+# antes de las funciones públicas
+################################################################################
+
+################################################################################
 # Make temp directory backup.
 # This should be executed if we want to restore a file backup on directory
 # with the same name.
@@ -56,13 +63,6 @@ function _create_tmp_copy() {
 }
 
 ################################################################################
-# * Private Functions
-#
-# Todas las funciones auxiliares deben declararse al inicio del archivo
-# antes de las funciones públicas
-################################################################################
-
-################################################################################
 # Validate restore parameters
 #
 # Validates the required parameters for project restoration.
@@ -76,6 +76,7 @@ function _create_tmp_copy() {
 # Outputs:
 #   0 if valid, 1 on error.
 ################################################################################
+
 function _validate_restore_params() {
     local project_backup_file="${1}"
     local project_backup_status="${2}"
@@ -107,6 +108,7 @@ function _validate_restore_params() {
 # Outputs:
 #   Returns the error code.
 ################################################################################
+
 function _handle_restore_error() {
     local error_code="${1}"
     local error_message="${2}"
@@ -130,6 +132,7 @@ function _handle_restore_error() {
 # Outputs:
 #   0 if valid, 1 on error.
 ################################################################################
+
 function _verify_backup_integrity() {
     local backup_file="${1}"
     local checksum_file="${backup_file}.sha256"
@@ -157,6 +160,7 @@ function _verify_backup_integrity() {
 # Outputs:
 #   0 if successful, 1 on error.
 ################################################################################
+
 function _handle_installation_permissions() {
   
     local destination_dir="${1}"
@@ -218,6 +222,7 @@ function _handle_installation_permissions() {
 # Outputs:
 #   0 if confirmed, 1 if cancelled.
 ################################################################################
+
 function _confirm_overwrite_destination() {
     local destination_dir="${1}"
     local project_install_type="${2}"
@@ -289,7 +294,9 @@ function restore_project_files() {
 
     # 3. Decompress backup
     display --indent 6 --text "- Decompressing backup"
-    if ! decompress "${BROLIT_TMP_DIR}/${project_backup_file}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"; then
+    local exclude_params="--exclude=*.log --exclude=cache"
+    log_event "debug" "Excluding from restore: *.log files and cache directories" "false"
+    if ! decompress "${BROLIT_TMP_DIR}/${project_backup_file}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}" "${exclude_params}"; then
         _handle_restore_error 3 "Failed to decompress ${project_backup_file}"
         return 1
     fi
@@ -755,7 +762,7 @@ function restore_backup_from_local() {
       if [[ "${filename}" != *.sql && "${filename}" != *.dump ]]; then
 
         # Decompress
-        decompress "${tmp_dir}/${filename}" "${tmp_dir}" ""
+        decompress "${tmp_dir}/${filename}" "${tmp_dir}" "${BACKUP_CONFIG_COMPRESSION_TYPE}" ""
 
         dump_file="$(find "${tmp_dir}" -maxdepth 1 -mindepth 1 -type f -not -path '*/.*')"
 
@@ -1387,7 +1394,7 @@ function restore_config_files_from_storage() {
     mv "${chosen_config_bk}" "${chosen_config_type}"
 
     # Decompress
-    decompress "${chosen_config_bk}" "${BROLIT_MAIN_DIR}/tmp/${chosen_config_type}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
+    decompress "${chosen_config_bk}" "${BROLIT_MAIN_DIR}/tmp/${chosen_config_type}" "${BACKUP_CONFIG_COMPRESSION_TYPE}" ""
 
     if [[ "${chosen_config_bk}" == *"nginx"* ]]; then
 
@@ -1436,7 +1443,7 @@ function restore_nginx_site_files() {
 
   # Extract
   mkdir -p "${BROLIT_MAIN_DIR}/tmp/nginx"
-  decompress "${bk_file}" "${BROLIT_MAIN_DIR}/tmp/nginx" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
+  decompress "${bk_file}" "${BROLIT_MAIN_DIR}/tmp/nginx" "${BACKUP_CONFIG_COMPRESSION_TYPE}" ""
 
   # TODO: if nginx is installed, ask if nginx.conf must be replace
 
@@ -1524,7 +1531,7 @@ function restore_letsencrypt_site_files() {
 
   # Extract
   mkdir "${BROLIT_MAIN_DIR}/tmp/letsencrypt"
-  decompress "${bk_file}" "${BROLIT_MAIN_DIR}/tmp/letsencrypt" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
+  decompress "${bk_file}" "${BROLIT_MAIN_DIR}/tmp/letsencrypt" "${BACKUP_CONFIG_COMPRESSION_TYPE}" ""
 
   # Creating directories
   if [[ ! -d "/etc/letsencrypt/archive/" ]]; then
@@ -1638,6 +1645,21 @@ function restore_backup_files() {
 
 }
 
+################################################################################
+# Restore database backup
+#
+# Arguments:
+#   ${1} = ${db_engine}
+#   ${2} = ${project_stage}
+#   ${3} = ${db_name}
+#   ${4} = ${db_user}
+#   ${5} = ${db_pass}
+#   ${6} = ${project_backup_file}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
 # TODO: Use database_manager.sh abstraction layer
 function restore_backup_database() {
 
@@ -1713,6 +1735,21 @@ function restore_backup_database() {
   database_user_grant_privileges "${db_engine}" "${db_user}" "${db_name}" "localhost"
 }
 
+################################################################################
+# Restore project files
+#
+# Arguments:
+#   ${1} = ${project_backup_file}
+#   ${2} = ${project_domain}
+#   ${3} = ${project_domain_new} - Optional
+#
+# Outputs:
+#   Echo array with:
+#     [0] = project_type
+#     [1] = project_install_type
+#     [2] = project_port
+################################################################################
+
 function restore_backup_project_files() {
 
   local project_backup_file="${1}"
@@ -1729,7 +1766,7 @@ function restore_backup_project_files() {
   project_install_path="${PROJECTS_PATH}/${project_domain_new}"
 
   # Decompress
-  decompress "${BROLIT_TMP_DIR}/${project_backup_file}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
+  decompress "${BROLIT_TMP_DIR}/${project_backup_file}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}" ""
   [[ $? -eq 1 ]] && return 1
 
   # If user change project domains, we need to do this
@@ -1782,6 +1819,17 @@ function restore_backup_project_files() {
   return 0
 
 }
+
+################################################################################
+# Restore project database
+#
+# Arguments:
+#   ${1} = ${chosen_project}
+#   ${2} = ${chosen_backup_to_restore}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function restore_backup_project_database() {
 
@@ -1928,6 +1976,18 @@ function restore_backup_project_database() {
   fi
 
 }
+
+################################################################################
+# Setup docker configuration after restore
+#
+# Arguments:
+#   ${1} = ${project_name}
+#   ${2} = ${project_install_path}
+#   ${3} = ${project_domain_new}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
 
 function docker_setup_configuration() {
 
