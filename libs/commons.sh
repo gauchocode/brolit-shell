@@ -1402,6 +1402,7 @@ function extract_filename_from_path() {
 #   ${1} = ${file_path} - File to uncompress or extract
 #   ${2} = ${directory_to_extract} - Dir to uncompress file
 #   ${3} = ${compress_type} - Optional: compress-program (ex: lbzip2)
+#   ${4} = ${exclude_parameters} - Optional: exclude patterns (ex: "--exclude=*.log --exclude=cache")
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -1414,6 +1415,7 @@ function decompress() {
   local file_path="${1}"
   local directory_to_extract="${2}"
   local compress_type="${3}"
+  local exclude_parameters="${4}"
 
   # Get filename and file extension
   filename=$(basename -- "${file_path}")
@@ -1422,6 +1424,7 @@ function decompress() {
   # Log
   log_event "info" "Extracting compressed file: ${file_path}" "false"
   log_event "debug" "Compress type: ${compress_type}" "false"
+  [[ -n "${exclude_parameters}" ]] && log_event "debug" "Exclude parameters: ${exclude_parameters}" "false"
   display --indent 6 --text "- Extracting compressed file"
 
   if [[ -f "${file_path}" ]]; then
@@ -1430,14 +1433,17 @@ function decompress() {
 
     *.tar.bz2)
       if [[ -n "${compress_type}" ]]; then
-        pv --width 70 "${file_path}" | tar xp -C "${directory_to_extract}" --use-compress-program="${compress_type}"
+        # shellcheck disable=SC2086
+        pv --width 70 "${file_path}" | tar xp -C "${directory_to_extract}" --use-compress-program="${compress_type}" ${exclude_parameters}
       else
-        pv --width 70 "${file_path}" | tar xp -C "${directory_to_extract}"
+        # shellcheck disable=SC2086
+        pv --width 70 "${file_path}" | tar xp -C "${directory_to_extract}" ${exclude_parameters}
       fi
       ;;
 
     *.tar.gz)
-      pigz -dc "${file_path}" | pv --width 70 | tar xf - -C "${directory_to_extract}"
+      # shellcheck disable=SC2086
+      pigz -dc "${file_path}" | pv --width 70 | tar xf - -C "${directory_to_extract}" ${exclude_parameters}
       ;;
 
     *.bz2)
@@ -1445,6 +1451,9 @@ function decompress() {
       ;;
 
     *.rar)
+      if [[ -n "${exclude_parameters}" ]]; then
+        log_event "warning" "RAR format does not support exclude patterns via decompress()" "false"
+      fi
       unrar x "${file_path}" "${directory_to_extract}" | pv -l >/dev/null
       ;;
 
@@ -1453,27 +1462,44 @@ function decompress() {
       ;;
 
     *.tar)
-      pv --width 70 "${file_path}" | tar xf -C "${directory_to_extract}"
+      # shellcheck disable=SC2086
+      pv --width 70 "${file_path}" | tar xf -C "${directory_to_extract}" ${exclude_parameters}
       ;;
 
     *.tbz2)
-      pv --width 70 "${file_path}" | tar xjf -C "${directory_to_extract}"
+      # shellcheck disable=SC2086
+      pv --width 70 "${file_path}" | tar xjf -C "${directory_to_extract}" ${exclude_parameters}
       ;;
 
     *.tgz)
-      pv --width 70 "${file_path}" | tar xzf -C "${directory_to_extract}"
+      # shellcheck disable=SC2086
+      pv --width 70 "${file_path}" | tar xzf -C "${directory_to_extract}" ${exclude_parameters}
       ;;
 
     *.xz)
-      pv --width 70 "${file_path}" | tar xvf -C "${directory_to_extract}"
+      # shellcheck disable=SC2086
+      pv --width 70 "${file_path}" | tar xvf -C "${directory_to_extract}" ${exclude_parameters}
       ;;
 
     *.zip)
-      unzip -o "${file_path}" -d "${directory_to_extract}" | pv -l >/dev/null
+      if [[ -n "${exclude_parameters}" ]]; then
+        # Convert tar-style excludes to unzip format
+        local unzip_excludes=""
+        for pattern in ${exclude_parameters}; do
+          # Extract pattern from --exclude=pattern format
+          pattern="${pattern#--exclude=}"
+          unzip_excludes="${unzip_excludes} -x ${pattern}"
+        done
+        # shellcheck disable=SC2086
+        unzip -o "${file_path}" -d "${directory_to_extract}" ${unzip_excludes} | pv -l >/dev/null
+      else
+        unzip -o "${file_path}" -d "${directory_to_extract}" | pv -l >/dev/null
+      fi
       ;;
 
     *.zst)
-      pv --width 70 "${file_path}" | tar xp -C "${directory_to_extract}" --use-compress-program="${compress_type}"
+      # shellcheck disable=SC2086
+      pv --width 70 "${file_path}" | tar xp -C "${directory_to_extract}" --use-compress-program="${compress_type}" ${exclude_parameters}
       ;;
 
     *.Z)

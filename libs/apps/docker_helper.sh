@@ -540,7 +540,7 @@ function docker_project_files_import() {
 
     mkdir -p "${project_backup_path}"
 
-    decompress "${project_backup_file}" "${project_backup_path}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
+    decompress "${project_backup_file}" "${project_backup_path}" "${BACKUP_CONFIG_COMPRESSION_TYPE}" ""
 
     # Get inner directory (should be only one)
     inner_dir="$(get_all_directories "${project_backup_path}")"
@@ -563,6 +563,20 @@ function docker_project_files_import() {
 
 }
 
+################################################################################
+# Docker restore project
+#
+# Arguments:
+#   ${1} = ${backup_to_restore}
+#   ${2} = ${backup_status}
+#   ${3} = ${backup_server}
+#   ${4} = ${project_domain}
+#   ${5} = ${project_domain_new}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
 function docker_restore_project() {
 
     local backup_to_restore="${1}"
@@ -572,7 +586,7 @@ function docker_restore_project() {
     local project_domain_new="${5}"
 
     # Extract backup
-    decompress "${BROLIT_TMP_DIR}/${backup_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
+    decompress "${BROLIT_TMP_DIR}/${backup_to_restore}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}" ""
     [[ $? -eq 1 ]] && display --indent 6 --text "- Extracting Project Backup" --result "ERROR" --color RED && return 1
 
     # Check project install type
