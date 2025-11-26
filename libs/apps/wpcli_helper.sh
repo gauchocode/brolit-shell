@@ -1568,12 +1568,9 @@ function wpcli_shuffle_salts() {
     local install_type="${2}"
 
     # Check project_install_type
-    if [[ ${install_type} == "docker"* ]]; then
-        wpcli_cmd="docker compose --progress=quiet -f ${wp_site}/../docker-compose.yml run -T --rm wordpress-cli wp"
-    else
-        # Default to sudo -u www-data for non-docker installations
-        wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
-    fi
+    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
+    ## -u 33 -e HOME=/tmp to avoid permission denied error: https://github.com/docker-library/wordpress/issues/417
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose --progress=quiet -f ${wp_site}/../docker-compose.yml run -T -u 33 -e HOME=/tmp --rm wordpress-cli wp"
 
     log_event "debug" "Running: ${wpcli_cmd} config shuffle-salts" "false"
 
