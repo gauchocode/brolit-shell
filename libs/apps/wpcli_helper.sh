@@ -2463,6 +2463,60 @@ function wpcli_user_reset_passw() {
 }
 
 ################################################################################
+# Delete WordPress user
+#
+# Arguments:
+#   ${1} = ${wp_site} (site path)
+#   ${2} = ${install_type}
+#   ${3} = ${wp_user} (username to delete)
+#
+# Outputs:
+#   0 if user was deleted, 1 if not.
+################################################################################
+
+function wpcli_user_delete() {
+
+    local wp_site="${1}"
+    local install_type="${2}"
+    local wp_user="${3}"
+
+    # Check project_install_type
+    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
+    ## -u 33 -e HOME=/tmp to avoid permission denied error: https://github.com/docker-library/wordpress/issues/417
+    ## --no-color added to avoid unwanted wp-cli output
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose --progress=quiet -f ${wp_site}/../docker-compose.yml run -T -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
+
+    # Log
+    log_event "info" "Deleting user ${wp_user}" "false"
+    log_event "debug" "Running: ${wpcli_cmd} user delete \"${wp_user}\" --yes" "false"
+
+    # Command - --yes to skip confirmation, --reassign to reassign posts if needed
+    ${wpcli_cmd} user delete "${wp_user}" --yes --reassign=1 > /dev/null 2>&1
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Log success
+        clear_previous_lines "1"
+        display --indent 6 --text "- User ${wp_user} deleted" --result "DONE" --color GREEN
+        log_event "info" "User ${wp_user} deleted from site ${wp_site}" "false"
+
+        return 0
+
+    else
+
+        # Log failure
+        clear_previous_lines "1"
+        display --indent 6 --text "- User ${wp_user} deleted" --result "FAIL" --color RED
+        log_event "error" "Failed to delete user ${wp_user} from site ${wp_site}" "false"
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
 # Change seo visibility
 #
 # Arguments:
