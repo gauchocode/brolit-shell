@@ -2335,18 +2335,24 @@ function wpcli_user_list() {
     [[ -n ${role} && ${role} != "all" ]] && role_filter="--role=${role}"
 
     # Log
-    log_event "debug" "Running: ${wpcli_cmd} user list --fields=user_login,user_email,roles --format=table ${role_filter}" "false"
+    log_event "debug" "Running: ${wpcli_cmd} user list --fields=user_login,user_email,roles --format=csv ${role_filter}" "false"
 
     # Command - capture output and suppress PHP warnings (2>/dev/null redirects stderr)
-    user_list=$(${wpcli_cmd} user list --fields=user_login,user_email,roles --format=table --quiet ${role_filter} 2>/dev/null)
+    # Using CSV format and then formatting with column for better readability
+    user_list=$(${wpcli_cmd} user list --fields=user_login,user_email,roles --format=csv --quiet ${role_filter} 2>/dev/null | column -t -s ",")
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Display the user list with proper indentation
         echo ""
+        echo "      USERNAME          EMAIL                    ROLE"
+        echo "      ────────────────  ───────────────────────  ──────────────"
         while IFS= read -r line; do
-            echo "      ${line}"
+            # Skip the header line from CSV output
+            if [[ "${line}" != "user_login"* ]]; then
+                echo "      ${line}"
+            fi
         done <<< "${user_list}"
         echo ""
 
