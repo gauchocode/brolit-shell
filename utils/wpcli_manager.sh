@@ -146,13 +146,14 @@ function wpcli_main_menu() {
     "13)" "DELETE NOT CORE FILES"
     "14)" "LIST WP USERS"
     "15)" "CREATE WP USER"
-    "16)" "RESET WP USER PASSW"
-    "17)" "SHUFFLE SALTS"
-    "18)" "DELETE SPAM COMMENTS"
-    "19)" "SET MAINTENANCE MODE"
-    "20)" "CREATE APP-PASS"
-    "21)" "LIST APP-PASS"
-    "22)" "DELETE APP-PASS"
+    "16)" "DELETE WP USER"
+    "17)" "RESET WP USER PASSW"
+    "18)" "SHUFFLE SALTS"
+    "19)" "DELETE SPAM COMMENTS"
+    "20)" "SET MAINTENANCE MODE"
+    "21)" "CREATE APP-PASS"
+    "22)" "LIST APP-PASS"
+    "23)" "DELETE APP-PASS"
   )
 
   chosen_wpcli_options="$(whiptail --title "WP-CLI HELPER" --menu "Choose an option to run" 20 78 10 "${wpcli_options[@]}" 3>&1 1>&2 2>&3)"
@@ -271,8 +272,25 @@ function wpcli_main_menu() {
 
     fi
 
-    # RESET WP USER PASSW
+    # DELETE WP USER
     if [[ ${chosen_wpcli_options} == *"16"* ]]; then
+
+      log_subsection "WP Delete User"
+
+      choosen_user="$(whiptail_input "WORDPRESS USERNAME" "Insert the username to delete:" "")"
+      if [[ -n ${choosen_user} ]]; then
+
+        # Confirm deletion
+        if whiptail --title "CONFIRM DELETE USER" --yesno "Are you sure you want to delete user '${choosen_user}'? Posts will be reassigned to admin (user ID 1)." 10 60; then
+          wpcli_user_delete "${wp_site}" "${project_install_type}" "${choosen_user}"
+        fi
+
+      fi
+
+    fi
+
+    # RESET WP USER PASSW
+    if [[ ${chosen_wpcli_options} == *"17"* ]]; then
 
       log_subsection "WP Reset User Pass"
 
@@ -289,7 +307,7 @@ function wpcli_main_menu() {
     fi
 
     # SHUFLE SALTS
-    if [[ ${chosen_wpcli_options} == *"17"* ]]; then
+    if [[ ${chosen_wpcli_options} == *"18"* ]]; then
 
       log_subsection "WP Shuffle Salts"
 
@@ -298,7 +316,7 @@ function wpcli_main_menu() {
     fi
 
     # DELETE SPAM COMMENTS
-    if [[ ${chosen_wpcli_options} == *"18"* ]]; then
+    if [[ ${chosen_wpcli_options} == *"19"* ]]; then
 
       log_subsection "WP Delete Spam Comments"
 
@@ -307,16 +325,16 @@ function wpcli_main_menu() {
 
     fi
 
-    if [[ ${chosen_wpcli_options} == *"19"* ]]; then
+    if [[ ${chosen_wpcli_options} == *"20"* ]]; then
 
-      choosen_mode="$(whiptail --title "WORDPRESS MAINTENANCE MODE" --inputbox "Set new maintenance mode (‘activate’, ‘deactivate’)" 10 60 "" 3>&1 1>&2 2>&3)"
+      choosen_mode="$(whiptail --title "WORDPRESS MAINTENANCE MODE" --inputbox "Set new maintenance mode ('activate', 'deactivate')" 10 60 "" 3>&1 1>&2 2>&3)"
       exitstatus=$?
       [[ ${exitstatus} -eq 0 ]] && wpcli_maintenance_mode_set "${wp_site}" "${project_install_type}" "${choosen_mode}"
 
     fi
 
     # CREATE APP-PASS
-    if [[ ${chosen_wpcli_options} == *"20"* ]]; then
+    if [[ ${chosen_wpcli_options} == *"21"* ]]; then
 
       log_subsection "WP Create Application Password"
 
@@ -327,7 +345,7 @@ function wpcli_main_menu() {
         if [[ -n ${choosen_app_name} ]]; then
 
           app_pass="$(wpcli_user_create_application_password "${wp_site}" "${project_install_type}" "${choosen_user}" "${choosen_app_name}")"
-          
+
           whiptail_message "APPLICATION PASSWORD" "The application password is: ${app_pass}"
 
         fi
@@ -337,7 +355,7 @@ function wpcli_main_menu() {
     fi
 
     # LIST APP-PASS
-    if [[ ${chosen_wpcli_options} == *"21"* ]]; then
+    if [[ ${chosen_wpcli_options} == *"22"* ]]; then
 
       log_subsection "WP List Application Passwords"
 
@@ -351,7 +369,7 @@ function wpcli_main_menu() {
     fi
 
     # DELETE APP-PASS
-    if [[ ${chosen_wpcli_options} == *"22"* ]]; then
+    if [[ ${chosen_wpcli_options} == *"23"* ]]; then
 
       log_subsection "WP Delete Application Password"
 
