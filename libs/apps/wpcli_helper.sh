@@ -2323,6 +2323,7 @@ function wpcli_user_list() {
     local install_type="${2}"
     local role="${3}"
     local role_filter=""
+    local user_list
 
     # Check project_install_type
     [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
@@ -2334,13 +2335,20 @@ function wpcli_user_list() {
     [[ -n ${role} && ${role} != "all" ]] && role_filter="--role=${role}"
 
     # Log
-    log_event "debug" "Running: ${wpcli_cmd} user list --fields=user_login,user_email,roles --format=csv ${role_filter}" "false"
+    log_event "debug" "Running: ${wpcli_cmd} user list --fields=user_login,user_email,roles --format=table ${role_filter}" "false"
 
-    # Command
-    ${wpcli_cmd} user list --fields=user_login,user_email,roles --format=csv --quiet ${role_filter}
+    # Command - capture output and suppress PHP warnings (2>/dev/null redirects stderr)
+    user_list=$(${wpcli_cmd} user list --fields=user_login,user_email,roles --format=table --quiet ${role_filter} 2>/dev/null)
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Display the user list with proper indentation
+        echo ""
+        while IFS= read -r line; do
+            echo "      ${line}"
+        done <<< "${user_list}"
+        echo ""
 
         if [[ -n ${role} && ${role} != "all" ]]; then
             display --indent 6 --text "- Listing ${role} users" --result "DONE" --color GREEN
