@@ -2311,6 +2311,7 @@ function wpcli_export_database() {
 # Arguments:
 #   ${1} = ${wp_site}
 #   ${2} = ${install_type}
+#   ${3} = ${role} (optional - filter by role: administrator, editor, author, contributor, subscriber, or 'all')
 #
 # Outputs:
 #   0 on success, 1 on error
@@ -2320,6 +2321,8 @@ function wpcli_user_list() {
 
     local wp_site="${1}"
     local install_type="${2}"
+    local role="${3}"
+    local role_filter=""
 
     # Check project_install_type
     [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
@@ -2327,16 +2330,23 @@ function wpcli_user_list() {
     ## --no-color added to avoid unwanted wp-cli output
     [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose --progress=quiet -f ${wp_site}/../docker-compose.yml run -T -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
 
+    # Add role filter if specified
+    [[ -n ${role} && ${role} != "all" ]] && role_filter="--role=${role}"
+
     # Log
-    log_event "debug" "Running: ${wpcli_cmd} user list --fields=user_login,user_email,roles --format=csv" "false"
+    log_event "debug" "Running: ${wpcli_cmd} user list --fields=user_login,user_email,roles --format=csv ${role_filter}" "false"
 
     # Command
-    ${wpcli_cmd} user list --fields=user_login,user_email,roles --format=csv --quiet
+    ${wpcli_cmd} user list --fields=user_login,user_email,roles --format=csv --quiet ${role_filter}
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        display --indent 6 --text "- Listing users" --result "DONE" --color GREEN
+        if [[ -n ${role} && ${role} != "all" ]]; then
+            display --indent 6 --text "- Listing ${role} users" --result "DONE" --color GREEN
+        else
+            display --indent 6 --text "- Listing users" --result "DONE" --color GREEN
+        fi
 
         return 0
 
