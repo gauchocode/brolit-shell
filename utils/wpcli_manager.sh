@@ -247,7 +247,13 @@ function wpcli_main_menu() {
     if [[ ${chosen_wpcli_options} == *"14"* ]]; then
 
       log_subsection "WP List Users"
-      wpcli_user_list "${wp_site}" "${project_install_type}" 
+
+      # Ask user to select role filter
+      choosen_role="$(whiptail_selection_menu "FILTER BY ROLE" "Choose user role to list (or 'all' for all users):" "all administrator editor author contributor subscriber")"
+
+      if [[ -n ${choosen_role} ]]; then
+        wpcli_user_list "${wp_site}" "${project_install_type}" "${choosen_role}"
+      fi
 
     fi
 
