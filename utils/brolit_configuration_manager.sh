@@ -430,8 +430,15 @@ function _brolit_configuration_load_email() {
 
     if [[ ${NOTIFICATION_EMAIL_STATUS} == "enabled" ]]; then
 
-        # Required
-        NOTIFICATION_EMAIL_EMAIL_TO="$(json_read_field "${server_config_file}" "NOTIFICATIONS.email[].config[].maila")"
+        # Required - Try new field name first, fallback to old typo for backward compatibility
+        NOTIFICATION_EMAIL_EMAIL_TO="$(json_read_field "${server_config_file}" "NOTIFICATIONS.email[].config[].email_to")"
+        if [[ -z ${NOTIFICATION_EMAIL_EMAIL_TO} ]]; then
+            # Fallback to old typo 'maila' for backward compatibility
+            NOTIFICATION_EMAIL_EMAIL_TO="$(json_read_field "${server_config_file}" "NOTIFICATIONS.email[].config[].maila")"
+            if [[ -n ${NOTIFICATION_EMAIL_EMAIL_TO} ]]; then
+                log_event "warning" "Config field 'maila' is deprecated, please update to 'email_to' in your config file" "false"
+            fi
+        fi
         [[ -z ${NOTIFICATION_EMAIL_EMAIL_TO} ]] && die "Error reading NOTIFICATION_EMAIL_EMAIL_TO from server config file."
 
         NOTIFICATION_EMAIL_SMTP_SERVER="$(json_read_field "${server_config_file}" "NOTIFICATIONS.email[].config[].smtp_server")"

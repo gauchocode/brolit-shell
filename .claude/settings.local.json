@@ -6,7 +6,8 @@
       "Bash(./runner.sh:*)",
       "Bash(TERM=xterm ./runner.sh:*)",
       "Bash(/tmp/commons_new.sh)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(./TEST_NOTIFICATION_TYPES.sh:*)"
     ],
     "deny": [],
     "ask": []

@@ -4,6 +4,59 @@
 # Version: 3.3.5
 ################################################################################
 
+# Load email template engine
+source "${BROLIT_MAIN_DIR}/libs/local/mail_template_engine.sh"
+
+# Global array to track temporary mail files for cleanup
+declare -ga MAIL_TEMP_FILES=()
+
+# Trap to ensure cleanup on script exit
+trap '_cleanup_mail_temp_files' EXIT ERR INT TERM
+
+################################################################################
+# Cleanup all tracked temporary mail files
+#
+# This function is called automatically via trap on EXIT/ERR/INT/TERM
+################################################################################
+function _cleanup_mail_temp_files() {
+    if [[ ${#MAIL_TEMP_FILES[@]} -gt 0 ]]; then
+        log_event "debug" "Cleaning up ${#MAIL_TEMP_FILES[@]} temporary mail files..." "false" 2>/dev/null || true
+        for temp_file in "${MAIL_TEMP_FILES[@]}"; do
+            if [[ -f "${temp_file}" ]]; then
+                rm -f "${temp_file}" 2>/dev/null || true
+            fi
+        done
+        MAIL_TEMP_FILES=()
+    fi
+}
+
+################################################################################
+# Create a temporary mail file and track it for cleanup
+#
+# Arguments:
+#   ${1} = ${base_name} // Base name for the temp file (e.g., "server_info")
+#
+# Outputs:
+#   Path to the created temporary file
+################################################################################
+function _create_temp_mail_file() {
+    local base_name="${1}"
+    local timestamp
+    timestamp="$(date +%Y%m%d_%H%M%S)"
+    local temp_file="${BROLIT_TMP_DIR}/${base_name}-${timestamp}-$$.mail"
+
+    # Track this file for cleanup
+    MAIL_TEMP_FILES+=("${temp_file}")
+
+    # Create empty file
+    touch "${temp_file}" 2>/dev/null || {
+        log_event "error" "Failed to create temporary mail file: ${temp_file}" "false"
+        return 1
+    }
+
+    echo "${temp_file}"
+}
+
 # sendmail --help
 #
 # Required:
@@ -36,21 +89,48 @@
 #
 
 ################################################################################
-# Mail subject status.
+# Send email notification
 #
 # Arguments:
-#   ${1} = ${email_subject} // Email's subject
-#   ${2} = ${email_content} // Email's content
+#   ${1} = ${email_subject}     // Email's subject
+#   ${2} = ${email_content}     // Email's content (HTML or plain text)
+#   ${3} = ${notification_type} // Optional: alert, warning, info, success (default: info)
 #
 # Outputs:
 #   0 if ok, 1 on error.
+#
+# Notes:
+#   - If email_content is plain text, it will be wrapped in a template based on notification_type
+#   - If email_content is already HTML (starts with <), it will be sent as-is
+#   - This provides parity with Telegram, Discord, and ntfy channels
 ################################################################################
 
 function mail_send_notification() {
 
     local email_subject="${1}"
     local email_content="${2}"
+    local notification_type="${3:-info}"  # Default to 'info' if not specified
     local from_email="${NOTIFICATION_EMAIL_FROM_EMAIL:-${NOTIFICATION_EMAIL_SMTP_USER}}"
+
+    # If content is NOT already HTML, wrap it in a notification template
+    # This allows simple text notifications to have proper formatting based on type
+    if [[ ! "${email_content}" =~ ^[[:space:]]*\< ]]; then
+        log_event "debug" "Email content is plain text, wrapping in notification-${notification_type} template" "false"
+
+        # Try to render notification template
+        local wrapped_content
+        if wrapped_content="$(mail_template_render "notification-${notification_type}" \
+            "title=${email_subject}" \
+            "content=${email_content}" 2>/dev/null)"; then
+            email_content="${wrapped_content}"
+            log_event "debug" "Email content wrapped in ${notification_type} template" "false"
+        else
+            # Template not found, use content as-is but log warning
+            log_event "warning" "Notification template 'notification-${notification_type}' not found, using plain content" "false"
+        fi
+    else
+        log_event "debug" "Email content is already HTML, using as-is" "false"
+    fi
 
     # Check SMTP config
     if [[ "${NOTIFICATION_EMAIL_SMTP_SERVER}" == "" ]] || [[ "${NOTIFICATION_EMAIL_SMTP_PORT}" == "" ]] || [[ "${NOTIFICATION_EMAIL_SMTP_USER}" == "" ]] || [[ "${NOTIFICATION_EMAIL_SMTP_UPASS}" == "" ]] || [[ "${NOTIFICATION_EMAIL_EMAIL_TO}" == "" ]]; then
@@ -147,8 +227,8 @@ function mail_subject_status() {
 
 function _remove_mail_notifications_files() {
 
-    # Remove tmp files
-    rm --force "${BROLIT_TMP_DIR}/*.mail"
+    # Call the new cleanup function
+    _cleanup_mail_temp_files
 
     log_event "debug" "Email temporary files removed!" "false"
 
@@ -170,9 +250,8 @@ function mail_server_status_section() {
 
     local disk_u
     local disk_u_ns
-    local body
-
-    local email_template="default"
+    local casted_disk_u_ns
+    local server_status_icon
 
     # Disk Usage
     disk_u="$(calculate_disk_usage "${MAIN_VOL}")"
@@ -181,32 +260,44 @@ function mail_server_status_section() {
     disk_u_ns="$(echo "${disk_u}" | cut -f1 -d'%')"
 
     # Cast to int
-    casted_disk_u_ns=$(int() { printf '%d' "${disk_u_ns:-}" 2>/dev/null || :; })
+    casted_disk_u_ns=$(printf '%d' "${disk_u_ns:-0}" 2>/dev/null || echo "0")
 
     if [[ ${casted_disk_u_ns} -gt 45 ]]; then
-
         server_status="WARNING"
         server_status_icon="⚠"
-        #server_status_color="#fb2f2f"
-
     else
-
         server_status="OK"
         server_status_icon="✅"
-        #server_status_color="#503fe0"
-
     fi
 
-    html_server_info_details="$(cat "${BROLIT_MAIN_DIR}/templates/emails/${email_template}/server_info-tpl.html")"
+    # Create temporary file with tracking
+    local mail_file
+    if ! mail_file="$(_create_temp_mail_file "server_info-${NOW}")"; then
+        log_event "error" "Failed to create temporary mail file for server status section" "false"
+        return 1
+    fi
 
-    html_server_info_details="$(echo "${html_server_info_details}" | sed -e "s/{{server_status}}/${server_status}/g")"
-    html_server_info_details="$(echo "${html_server_info_details}" | sed -e "s/{{server_status_icon}}/${server_status_icon}/g")"
-    html_server_info_details="$(echo "${html_server_info_details}" | sed -e "s/{{server_ipv4}}/${SERVER_IP}/g")"
-    html_server_info_details="$(echo "${html_server_info_details}" | sed -e "s/{{server_ipv6}}/${SERVER_IPv6}/g")"
-    html_server_info_details="$(echo "${html_server_info_details}" | sed -e "s/{{disk_usage}}/${disk_u}/g")"
+    # Render template with new engine
+    local rendered_html
+    if ! rendered_html="$(mail_template_render "server_info" \
+        "server_status=${server_status}" \
+        "server_status_icon=${server_status_icon}" \
+        "server_ipv4=${SERVER_IP}" \
+        "server_ipv6=${SERVER_IPv6:-}" \
+        "disk_usage=${disk_u}")"; then
+        log_event "error" "Failed to render server status template" "false"
+        return 1
+    fi
 
-    # Write e-mail parts files
-    echo "${html_server_info_details}" >"${BROLIT_TMP_DIR}/server_info-${NOW}.mail"
+    # Write to file
+    echo "${rendered_html}" > "${mail_file}" || {
+        log_event "error" "Failed to write server status section to ${mail_file}" "false"
+        return 1
+    }
+
+    log_event "debug" "Server status section created: ${mail_file}" "false"
+
+    return 0
 
 }
 
@@ -226,38 +317,44 @@ function mail_package_status_section() {
     local pkg_status
     local pkg_status_icon
 
-    # TODO: config support
-    local email_template="default"
-
     # Check for important packages updates
     pkg_details=$(mail_package_section "${PACKAGES[@]}") # ${PACKAGES[@]} is a Global array with packages names
 
-    #if not empty, system is outdated
-    if [[ ${pkg_details} != "" ]]; then
-
-        #OUTDATED_PACKAGES=true
-        #pkg_color="#b51c1c"
+    # If not empty, system is outdated
+    if [[ -n "${pkg_details}" ]]; then
         pkg_status="OUTDATED_PACKAGES"
         pkg_status_icon="⚠"
-
     else
-
-        #pkg_color='#503fe0'
         pkg_status="OK"
         pkg_status_icon="✅"
-
     fi
 
-    html_pkg_details="$(cat "${BROLIT_MAIN_DIR}/templates/emails/${email_template}/packages-tpl.html")"
+    # Create temporary file with tracking
+    local mail_file
+    if ! mail_file="$(_create_temp_mail_file "packages-${NOW}")"; then
+        log_event "error" "Failed to create temporary mail file for packages section" "false"
+        return 1
+    fi
 
-    html_pkg_details="$(echo "${html_pkg_details}" | sed -e 's|{{packages_status}}|'"${pkg_status}"'|g')"
-    html_pkg_details="$(echo "${html_pkg_details}" | sed -e 's|{{packages_status_icon}}|'"${pkg_status_icon}"'|g')"
+    # Render template with new engine
+    local rendered_html
+    if ! rendered_html="$(mail_template_render "packages" \
+        "packages_status=${pkg_status}" \
+        "packages_status_icon=${pkg_status_icon}" \
+        "packages_status_details=${pkg_details}")"; then
+        log_event "error" "Failed to render packages template" "false"
+        return 1
+    fi
 
-    # Ref: https://stackoverflow.com/questions/7189604/replacing-html-tag-content-using-sed/7189726
-    html_pkg_details="$(echo "${html_pkg_details}" | sed -e 's|{{packages_status_details}}|'"${pkg_details}"'|g')"
+    # Write to file
+    echo "${rendered_html}" > "${mail_file}" || {
+        log_event "error" "Failed to write packages section to ${mail_file}" "false"
+        return 1
+    }
 
-    # Write e-mail parts files
-    echo "${html_pkg_details}" >"${BROLIT_TMP_DIR}/packages-${NOW}.mail"
+    log_event "debug" "Packages section created: ${mail_file}" "false"
+
+    return 0
 
 }
 
@@ -313,22 +410,20 @@ function mail_package_section() {
 
 function mail_certificates_section() {
 
-    local email_template="default"
-
     local domain
     local all_sites
     local cert_days
     local email_cert_line
     local email_cert_new_line
+    local email_cert_domain
+    local email_cert_days
+    local email_cert_days_container
+    local email_cert_end_line
     local cert_status_icon
     local status_certs="OK"
 
-    # TODO: config support
-    local email_template="default"
-
-    # Changing locals
+    # Initialize
     cert_status_icon="✅"
-    #cert_status_color="#503fe0"
     email_cert_line=""
 
     all_sites="$(get_all_directories "${PROJECTS_PATH}")"
@@ -350,34 +445,29 @@ function mail_certificates_section() {
 
             cert_days="$(certbot_certificate_valid_days "${domain}")"
 
-            if [[ ${cert_days} == "" ]]; then
-                # GREY LABEL
+            if [[ -z "${cert_days}" ]]; then
+                # GREY LABEL - No certificate
                 email_cert_days_container=" <span style=\"color:white;background-color:#5d5d5d;border-radius:12px;padding:0 5px 0 5px;\">"
                 email_cert_days="${email_cert_days_container} no certificate"
                 cert_status_icon="⚠️"
-                #cert_status_color="red"
                 status_certs="WARNING"
 
-            else #certificate found
-
+            else
+                # Certificate found - color based on days remaining
                 if (("${cert_days}" >= 14)); then
                     # GREEN LABEL
                     email_cert_days_container=" <span style=\"color:white;background-color:#27b50d;border-radius:12px;padding:0 5px 0 5px;\">"
+                elif (("${cert_days}" >= 7)); then
+                    # ORANGE LABEL
+                    email_cert_days_container=" <span style=\"color:white;background-color:#df761d;border-radius:12px;padding:0 5px 0 5px;\">"
                 else
-                    if (("${cert_days}" >= 7)); then
-                        # ORANGE LABEL
-                        email_cert_days_container=" <span style=\"color:white;background-color:#df761d;border-radius:12px;padding:0 5px 0 5px;\">"
-                    else
-                        # RED LABEL
-                        email_cert_days_container=" <span style=\"color:white;background-color:#df1d1d;border-radius:12px;padding:0 5px 0 5px;\">"
-                        cert_status_icon="⚠️"
-                        #cert_status_color="red"
-                        status_certs="WARNING"
-                    fi
-
+                    # RED LABEL
+                    email_cert_days_container=" <span style=\"color:white;background-color:#df1d1d;border-radius:12px;padding:0 5px 0 5px;\">"
+                    cert_status_icon="⚠️"
+                    status_certs="WARNING"
                 fi
-                email_cert_days="${email_cert_days_container}${cert_days} days"
 
+                email_cert_days="${email_cert_days_container}${cert_days} days"
             fi
 
             email_cert_end_line="</span></div></div>"
@@ -387,18 +477,32 @@ function mail_certificates_section() {
 
     done
 
-    body="${email_cert_line}"
+    # Create temporary file with tracking
+    local mail_file
+    if ! mail_file="$(_create_temp_mail_file "certificates-${NOW}")"; then
+        log_event "error" "Failed to create temporary mail file for certificates section" "false"
+        return 1
+    fi
 
-    mail_certificates_html="$(cat "${BROLIT_MAIN_DIR}/templates/emails/${email_template}/certificates-tpl.html")"
+    # Render template with new engine
+    local rendered_html
+    if ! rendered_html="$(mail_template_render "certificates" \
+        "certificates_status=${status_certs}" \
+        "certificates_status_icon=${cert_status_icon}" \
+        "certificates_list=${email_cert_line}")"; then
+        log_event "error" "Failed to render certificates template" "false"
+        return 1
+    fi
 
-    mail_certificates_html="$(echo "${mail_certificates_html}" | sed -e 's|{{certificates_status}}|'"${status_certs}"'|g')"
-    mail_certificates_html="$(echo "${mail_certificates_html}" | sed -e 's|{{certificates_status_icon}}|'"${cert_status_icon}"'|g')"
+    # Write to file
+    echo "${rendered_html}" > "${mail_file}" || {
+        log_event "error" "Failed to write certificates section to ${mail_file}" "false"
+        return 1
+    }
 
-    # Ref: https://stackoverflow.com/questions/7189604/replacing-html-tag-content-using-sed/7189726
-    mail_certificates_html="$(echo "${mail_certificates_html}" | sed -e 's|{{certificates_list}}|'"${body}"'|g')"
+    log_event "debug" "Certificates section created: ${mail_file}" "false"
 
-    # Return
-    echo "${mail_certificates_html}" >"${BROLIT_TMP_DIR}/certificates-${NOW}.mail"
+    return 0
 
 }
 
@@ -423,9 +527,9 @@ function mail_backup_section() {
 
     # Move args to array
     shift 3
-    local backuped_list="$@"
+    local backuped_list=("$@")
 
-    #local count
+    local bk_name
     local bk_size
     local backup_status
     local backup_status_icon
@@ -436,27 +540,20 @@ function mail_backup_section() {
     local files_inc_line_p2
     local files_inc_line_p3
     local files_inc_line_p4
-
-    local mail_backup_html
-
-    # TODO: config support
-    local email_template="default"
+    local files_label_d_end
 
     # Log
     log_event "debug" "Preparing mail ${backup_type} backup section ..." "false"
     log_event "debug" "error_msg=${error_msg}" "false"
     log_event "debug" "error_type=${error_type}" "false"
     log_event "debug" "backup_type=${backup_type}" "false"
-    log_event "debug" "backuped_list=${backuped_list}" "false"
 
     if [[ ${error_msg} != "none" ]]; then
-
         backup_status="ERROR"
         backup_status_icon="⛔"
         section_content="<b>${backup_type} backup with errors:<br />${error_type}<br /><br />Please check log file.</b> <br />"
 
     else
-
         backup_status="OK"
         backup_status_icon="✅"
         section_content=""
@@ -483,23 +580,36 @@ function mail_backup_section() {
         done
 
         files_label_d_end="</div>"
-
         section_content="${files_inc}${files_label_d_end}"
 
     fi
 
-    # Log
-    log_event "debug" "Using template: ${BROLIT_MAIN_DIR}/templates/emails/${email_template}/backup_${backup_type}-tpl.html" "false"
+    # Create temporary file with tracking
+    local mail_file
+    if ! mail_file="$(_create_temp_mail_file "${backup_type}-bk-${NOW}")"; then
+        log_event "error" "Failed to create temporary mail file for ${backup_type} backup section" "false"
+        return 1
+    fi
 
-    mail_backup_html="$(cat "${BROLIT_MAIN_DIR}/templates/emails/${email_template}/backup_${backup_type}-tpl.html")"
+    # Render template with new engine
+    local rendered_html
+    if ! rendered_html="$(mail_template_render "backup_${backup_type}" \
+        "backup_status=${backup_status}" \
+        "backup_status_icon=${backup_status_icon}" \
+        "backup_list=${section_content}")"; then
+        log_event "error" "Failed to render ${backup_type} backup template" "false"
+        return 1
+    fi
 
-    # Ref: https://stackoverflow.com/questions/7189604/replacing-html-tag-content-using-sed/7189726
-    mail_backup_html="$(echo "${mail_backup_html}" | sed -e 's|{{backup_status}}|'"${backup_status}"'|g')"
-    mail_backup_html="$(echo "${mail_backup_html}" | sed -e 's|{{backup_status_icon}}|'"${backup_status_icon}"'|g')"
-    mail_backup_html="$(echo "${mail_backup_html}" | sed -e 's|{{backup_list}}|'"${section_content}"'|g')"
+    # Write to file
+    echo "${rendered_html}" > "${mail_file}" || {
+        log_event "error" "Failed to write ${backup_type} backup section to ${mail_file}" "false"
+        return 1
+    }
 
-    # Write e-mail parts files
-    echo "${mail_backup_html}" >"${BROLIT_TMP_DIR}/${backup_type}-bk-${NOW}.mail"
+    log_event "debug" "${backup_type} backup section created: ${mail_file}" "false"
+
+    return 0
 
 }
 
