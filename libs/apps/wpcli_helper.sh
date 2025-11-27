@@ -1174,15 +1174,27 @@ function wpcli_plugin_list() {
     [[ -z ${status} ]] && status="active"
     [[ -z ${format} ]] && format="table"
 
+    local plugin_list_output
+    local exitstatus
+
     # Log
-    display --indent 6 --text "- Listing plugins"
+    log_subsection "WP Plugins List"
     log_event "debug" "Running: ${wpcli_cmd} plugin list --status=${status} --format=${format}" "false"
 
-    # Command
-    ${wpcli_cmd} plugin list --status="${status}" --format="${format}"
+    # Command - capture output and suppress PHP warnings
+    plugin_list_output=$(${wpcli_cmd} plugin list --status="${status}" --format="${format}" 2>/dev/null)
+    exitstatus=$?
 
-    # Return
-    echo $?
+    if [[ ${exitstatus} -eq 0 ]]; then
+        # Display the clean output
+        echo "${plugin_list_output}"
+        log_event "info" "Plugin list retrieved successfully" "false"
+        return 0
+    else
+        display --indent 6 --text "- Getting plugin list" --result "FAIL" --color RED
+        log_event "error" "Failed to retrieve plugin list" "false"
+        return 1
+    fi
 
 }
 
@@ -1235,7 +1247,7 @@ function wpcli_plugin_reinstall() {
 
             [[ -z ${plugin} ]] && continue
 
-            display --indent 6 --text "- Re-installing plugin ${plugin}"
+            display --indent 6 --text "- Re-installing ${plugin}"
             log_event "debug" "Running: ${wpcli_cmd} plugin install ${plugin} --force --quiet" "false"
 
             eval "${wpcli_cmd}" plugin install "${plugin}" --force --quiet < /dev/null > /dev/null 2>&1
@@ -1243,12 +1255,12 @@ function wpcli_plugin_reinstall() {
             exitstatus=$?
             if [[ ${exitstatus} -eq 0 ]]; then
                 clear_previous_lines "1"
-                display --indent 6 --text "- Re-installing plugin ${plugin}" --result "DONE" --color GREEN
+                display --indent 6 --text "- Re-installing ${plugin}" --result "DONE" --color GREEN
                 log_event "info" "Plugin ${plugin} re-installed successfully" "false"
                 ((success_count++))
             else
                 clear_previous_lines "1"
-                display --indent 6 --text "- Re-installing plugin ${plugin}" --result "FAIL" --color RED
+                display --indent 6 --text "- Re-installing ${plugin}" --result "FAIL" --color RED
                 log_event "error" "Error re-installing plugin ${plugin}" "false"
                 ((fail_count++))
             fi
@@ -1280,10 +1292,6 @@ function wpcli_plugin_reinstall() {
 
     fi
 
-    # TODO: save ouput on array with mapfile
-    #mapfile verify_plugin < <(sudo -u www-data wp --path="${wp_site}" plugin verify-checksums "${plugin}" 2>&1)
-    #echo "${verify_plugin[@]}"
-
 }
 
 # The idea is that when you update WordPress or a plugin, get the actual version,
@@ -1293,9 +1301,9 @@ function wpcli_plugin_reinstall() {
 function wpcli_plugin_version_rollback() {
 
     # TODO: implement this
-    # $1= wp_site
+    # ${1}= wp_site
     # ${2} = wp_plugin
-    # $3= wp_plugin_v (version to install)
+    # ${3}= wp_plugin_v (version to install)
 
     #sudo -u www-data wp --path="${wp_site}" plugin update "${wp_plugin}" --version="${wp_plugin_v}" --dry-run
     #sudo -u www-data wp --path="${wp_site}" plugin update "${wp_plugin}" --version="${wp_plugin_v}"
@@ -3288,12 +3296,14 @@ function wpcli_delete_comments() {
     [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose --progress=quiet -f ${wp_site}/../docker-compose.yml run -T -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
 
     # List comments ids
-    comments_ids="$(${wpcli_cmd} comment list --status="${wp_comment_status}" --format=ids)"
+    display --indent 6 --text "- Deleting comments marked as ${wp_comment_status}"
+    comments_ids="$(${wpcli_cmd} comment list --status="${wp_comment_status}" --format=ids 2>/dev/null)"
 
     if [[ -z "${comments_ids}" ]]; then
 
         # Log success
         log_event "info" "There are no comments marked as ${wp_comment_status} for ${wp_site}" "false"
+        clear_previous_lines "1"
         display --indent 6 --text "- Deleting comments marked as ${wp_comment_status}" --result "0" --color WHITE
 
         return 0
@@ -3301,14 +3311,15 @@ function wpcli_delete_comments() {
     else
 
         # Delete all comments listed as "${wp_comment_status}"
-        wpcli_result="$(${wpcli_cmd} comment delete "${comments_ids}" --force)"
+        wpcli_result="$(${wpcli_cmd} comment delete "${comments_ids}" --force 2>/dev/null)"
 
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
-            # Log failure
+            # Log success
             log_event "info" "Comments marked as ${wp_comment_status} deleted for ${wp_site}" "false"
             log_event "debug" "Command result: ${wpcli_result}" "false"
+            clear_previous_lines "1"
             display --indent 6 --text "- Deleting comments marked as ${wp_comment_status}" --result "DONE" --color GREEN
 
             return 0
@@ -3317,7 +3328,8 @@ function wpcli_delete_comments() {
 
             # Log
             log_event "error" "Deleting comments marked as ${wp_comment_status} for ${wp_site}" "false"
-            log_event "debug" "Las command executed: ${wpcli_cmd} comment delete \"${comments_ids}\" --format=ids) --force" "false"
+            log_event "debug" "Last command executed: ${wpcli_cmd} comment delete \"${comments_ids}\" --format=ids) --force" "false"
+            clear_previous_lines "1"
             display --indent 6 --text "- Deleting comments marked as ${wp_comment_status}" --result "FAIL" --color RED
 
             return 1
