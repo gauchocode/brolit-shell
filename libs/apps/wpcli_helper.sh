@@ -1223,18 +1223,22 @@ function wpcli_plugin_reinstall() {
         local exitstatus
         local success_count=0
         local fail_count=0
+        local plugins_array
 
         plugin_list_output=$(eval "${wpcli_cmd}" plugin list --field=name 2>/dev/null)
 
+        # Store plugins in array to avoid stdin conflicts
+        mapfile -t plugins_array <<< "${plugin_list_output}"
+
         # Loop through each plugin and reinstall individually
-        while IFS= read -r plugin; do
+        for plugin in "${plugins_array[@]}"; do
 
             [[ -z ${plugin} ]] && continue
 
             display --indent 6 --text "- Re-installing plugin ${plugin}"
             log_event "debug" "Running: ${wpcli_cmd} plugin install ${plugin} --force --quiet" "false"
 
-            eval "${wpcli_cmd}" plugin install "${plugin}" --force --quiet > /dev/null 2>&1
+            eval "${wpcli_cmd}" plugin install "${plugin}" --force --quiet < /dev/null > /dev/null 2>&1
 
             exitstatus=$?
             if [[ ${exitstatus} -eq 0 ]]; then
@@ -1249,7 +1253,7 @@ function wpcli_plugin_reinstall() {
                 ((fail_count++))
             fi
 
-        done <<< "${plugin_list_output}"
+        done
 
         # Summary
         log_event "info" "Re-install summary: ${success_count} successful, ${fail_count} failed" "false"
