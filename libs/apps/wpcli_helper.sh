@@ -1681,7 +1681,18 @@ function wpcli_shuffle_salts() {
             original_owner=$(stat -c "%U:%G" "${wp_config_path}")
             log_event "debug" "Original permissions: ${original_permissions}, owner: ${original_owner}" "false"
 
-            # Make wp-config.php writable
+            # Make wp-config.php writable by changing owner to www-data or setting 666
+            if [[ ${install_type} == "docker"* ]]; then
+                # For Docker, change owner to 33:33 (www-data inside container)
+                chown 33:33 "${wp_config_path}"
+                log_event "debug" "Changed owner to 33:33 for shuffle operation" "false"
+            else
+                # For default installation, ensure it's writable by www-data
+                chown www-data:www-data "${wp_config_path}"
+                log_event "debug" "Changed owner to www-data:www-data for shuffle operation" "false"
+            fi
+
+            # Also ensure permissions allow writing
             chmod 644 "${wp_config_path}"
             permissions_changed=true
             log_event "debug" "Changed permissions to 644 for shuffle operation" "false"
@@ -1690,9 +1701,10 @@ function wpcli_shuffle_salts() {
             error_output=$(${wpcli_cmd} config shuffle-salts 2>&1)
             exitstatus=$?
 
-            # Restore original permissions
+            # Restore original permissions and owner
             chmod "${original_permissions}" "${wp_config_path}"
-            log_event "debug" "Restored original permissions: ${original_permissions}" "false"
+            chown "${original_owner}" "${wp_config_path}"
+            log_event "debug" "Restored original permissions: ${original_permissions} and owner: ${original_owner}" "false"
 
             if [[ ${exitstatus} -eq 0 ]]; then
                 # Log success
