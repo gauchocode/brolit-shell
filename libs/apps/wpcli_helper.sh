@@ -1636,12 +1636,11 @@ function wpcli_shuffle_salts() {
     local original_owner
     local permissions_changed=false
 
-    # Determine wp-config.php path based on install type
-    if [[ ${install_type} == "docker"* ]]; then
-        wp_config_path="${wp_site}/../wp-config.php"
-    else
-        wp_config_path="${wp_site}/wp-config.php"
-    fi
+    # Determine wp-config.php path
+    # For both docker and default installations, wp-config.php is in the wp_site directory
+    wp_config_path="${wp_site}/wp-config.php"
+
+    log_event "debug" "Looking for wp-config.php at: ${wp_config_path}" "false"
 
     log_event "debug" "Running: ${wpcli_cmd} config shuffle-salts" "false"
     display --indent 6 --text "- Shuffle salts"
