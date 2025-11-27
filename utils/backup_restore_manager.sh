@@ -53,8 +53,13 @@ function backup_manager_menu() {
       backup_all_files
 
       # Backup All with Borg (runs borgmatic for all project configs)
-      backup_all_files_with_borg
-      STATUS_BACKUP_BORG=$?
+      if [[ "${BACKUP_BORG_STATUS}" == "enabled" ]]; then
+        backup_all_files_with_borg
+        STATUS_BACKUP_BORG=$?
+      else
+        log_event "debug" "Borg backup skipped (disabled in configuration)" "false"
+        STATUS_BACKUP_BORG=0  # Set to success since it's intentionally skipped
+      fi
 
       # Footer
       mail_footer "${SCRIPT_V}"
@@ -209,7 +214,12 @@ function backup_manager_menu() {
 
         fi
 
-        backup_project_with_borg "${DOMAIN}"
+        # Borg backup (only if enabled)
+        if [[ "${BACKUP_BORG_STATUS}" == "enabled" ]]; then
+          backup_project_with_borg "${DOMAIN}"
+        else
+          log_event "debug" "Borg backup skipped (disabled in configuration)" "false"
+        fi
 
         # Sending notifications
         local backup_notification_content="<b>Project:</b> ${DOMAIN}<br>"
