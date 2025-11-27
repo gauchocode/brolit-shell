@@ -1040,6 +1040,12 @@ function backup_project_with_borg() {
   local project_domain="${1}"
   #local backup_type="${2}"
 
+  # Check if Borg backup is enabled
+  if [[ "${BACKUP_BORG_STATUS}" != "enabled" ]]; then
+    log_event "debug" "Borg backup is disabled, skipping backup for ${project_domain}" "false"
+    return 0
+  fi
+
   local config_directory="/etc/borgmatic.d/${project_domain}.yml"
 
   local got_error=0
