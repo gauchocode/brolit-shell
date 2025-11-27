@@ -1218,28 +1218,41 @@ function wpcli_plugin_reinstall() {
     if [[ -z ${wp_plugin} || ${wp_plugin} == "all" ]]; then
 
         # Get list of plugins first
-        local plugin_list
         local plugin_list_output
+        local plugin
         local exitstatus
+        local success_count=0
+        local fail_count=0
 
         plugin_list_output=$(eval "${wpcli_cmd}" plugin list --field=name 2>/dev/null)
-        plugin_list=$(echo "${plugin_list_output}" | tr '\n' ' ')
 
-        log_event "debug" "Running: ${wpcli_cmd} plugin install ${plugin_list} --force --quiet"
-        display --indent 6 --text "- Re-installing all plugins"
+        # Loop through each plugin and reinstall individually
+        while IFS= read -r plugin; do
 
-        eval "${wpcli_cmd}" plugin install ${plugin_list} --force --quiet > /dev/null 2>&1
+            [[ -z ${plugin} ]] && continue
 
-        exitstatus=$?
-        if [[ ${exitstatus} -eq 0 ]]; then
-            clear_previous_lines "1"
-            display --indent 6 --text "- Re-installing all plugins" --result "DONE" --color GREEN
-            log_event "info" "All plugins re-installed successfully" "false"
-        else
-            clear_previous_lines "1"
-            display --indent 6 --text "- Re-installing all plugins" --result "FAIL" --color RED
-            log_event "error" "Error re-installing plugins" "false"
-        fi
+            display --indent 6 --text "- Re-installing plugin ${plugin}"
+            log_event "debug" "Running: ${wpcli_cmd} plugin install ${plugin} --force --quiet" "false"
+
+            eval "${wpcli_cmd}" plugin install "${plugin}" --force --quiet > /dev/null 2>&1
+
+            exitstatus=$?
+            if [[ ${exitstatus} -eq 0 ]]; then
+                clear_previous_lines "1"
+                display --indent 6 --text "- Re-installing plugin ${plugin}" --result "DONE" --color GREEN
+                log_event "info" "Plugin ${plugin} re-installed successfully" "false"
+                ((success_count++))
+            else
+                clear_previous_lines "1"
+                display --indent 6 --text "- Re-installing plugin ${plugin}" --result "FAIL" --color RED
+                log_event "error" "Error re-installing plugin ${plugin}" "false"
+                ((fail_count++))
+            fi
+
+        done <<< "${plugin_list_output}"
+
+        # Summary
+        log_event "info" "Re-install summary: ${success_count} successful, ${fail_count} failed" "false"
 
     else
 
