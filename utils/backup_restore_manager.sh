@@ -75,21 +75,17 @@ function backup_manager_menu() {
       sed -i '/{{files_backup_section}}/r '"${BROLIT_TMP_DIR}/files-bk-${NOW}.mail" "${email_html_file}"
       sed -i '/{{footer}}/r '"${BROLIT_TMP_DIR}/footer-${NOW}.mail" "${email_html_file}"
 
-      # Delete vars not used anymore
-      grep -v "{{packages_section}}" "${email_html_file}" >"${email_html_file}_tmp"
-      mv "${email_html_file}_tmp" "${email_html_file}"
-      grep -v "{{certificates_section}}" "${email_html_file}" >"${email_html_file}_tmp"
-      mv "${email_html_file}_tmp" "${email_html_file}"
-      grep -v "{{server_info}}" "${email_html_file}" >"${email_html_file}_tmp"
-      mv "${email_html_file}_tmp" "${email_html_file}"
-      grep -v "{{databases_backup_section}}" "${email_html_file}" >"${email_html_file}_tmp"
-      mv "${email_html_file}_tmp" "${email_html_file}"
-      grep -v "{{configs_backup_section}}" "${email_html_file}" >"${email_html_file}_tmp"
-      mv "${email_html_file}_tmp" "${email_html_file}"
-      grep -v "{{files_backup_section}}" "${email_html_file}" >"${email_html_file}_tmp"
-      mv "${email_html_file}_tmp" "${email_html_file}"
-      grep -v "{{footer}}" "${email_html_file}" >"${email_html_file}_tmp"
-      mv "${email_html_file}_tmp" "${email_html_file}"
+      # Assemble complete email using new template engine (Phase 2 refactor)
+      if ! mail_template_assemble "${email_html_file}" "main" \
+        "${BROLIT_TMP_DIR}/server_info-${NOW}.mail" \
+        "${BROLIT_TMP_DIR}/packages-${NOW}.mail" \
+        "${BROLIT_TMP_DIR}/certificates-${NOW}.mail" \
+        "${BROLIT_TMP_DIR}/databases-bk-${NOW}.mail" \
+        "${BROLIT_TMP_DIR}/configuration-bk-${NOW}.mail" \
+        "${BROLIT_TMP_DIR}/files-bk-${NOW}.mail" \
+        "${BROLIT_TMP_DIR}/footer-${NOW}.mail"; then
+        log_event "error" "Failed to assemble complete backup email template" "false"
+      fi
 
       # Send html to a var
       mail_html="$(cat "${email_html_file}")"
@@ -101,13 +97,25 @@ function backup_manager_menu() {
 
       # Determine notification status based on all backup results
       notification_status="success"
+      local status_text="completed successfully"
       if [[ ${STATUS_BACKUP_DBS} -eq 1 ]] || [[ ${STATUS_BACKUP_FILES} -eq 1 ]] || [[ ${STATUS_BACKUP_BORG} -eq 1 ]]; then
-        notification_status="error"
+        notification_status="alert"
+        status_text="completed with errors"
       fi
 
       # Sending notifications
       mail_send_notification "${email_subject}" "${mail_html}"
-      send_notification "${SERVER_NAME}" "Task: 'Backup All' completed." "${notification_status}"
+
+      # Simple notification for other channels
+      local backup_summary="Complete backup ${status_text}.<br><br>"
+      backup_summary+="<b>Server:</b> ${SERVER_NAME}<br>"
+      backup_summary+="<b>Time:</b> ${NOWDISPLAY}<br>"
+      backup_summary+="<b>Databases:</b> $([ "${STATUS_BACKUP_DBS}" -eq 0 ] && echo '✅ OK' || echo '❌ ERROR')<br>"
+      backup_summary+="<b>Files:</b> $([ "${STATUS_BACKUP_FILES}" -eq 0 ] && echo '✅ OK' || echo '❌ ERROR')<br>"
+      backup_summary+="<b>Borg:</b> $([ "${STATUS_BACKUP_BORG}" -eq 0 ] && echo '✅ OK' || echo '❌ ERROR')<br><br>"
+      backup_summary+="Check email for detailed report."
+
+      send_notification "${SERVER_NAME} - Complete Backup ${status_text^}" "${backup_summary}" "${notification_status}"
 
     fi
     
@@ -131,7 +139,14 @@ function backup_manager_menu() {
 
       # Sending notifications
       mail_send_notification "${email_subject}" "${email_content}"
-      send_notification "${SERVER_NAME}" "Task: 'Databases Backup' completed." "success"
+
+      # Simple notification for other channels
+      local db_backup_summary="Database backup completed successfully.<br>"
+      db_backup_summary+="<b>Server:</b> ${SERVER_NAME}<br>"
+      db_backup_summary+="<b>Time:</b> $(date '+%Y-%m-%d %H:%M:%S')<br><br>"
+      db_backup_summary+="All databases have been backed up. Check email for detailed report."
+
+      send_notification "${SERVER_NAME} - Database Backup Completed" "${db_backup_summary}" "success"
 
     fi
 
@@ -157,7 +172,14 @@ function backup_manager_menu() {
 
       # Sending notifications
       mail_send_notification "${email_subject}" "${email_content}"
-      send_notification "${SERVER_NAME}" "Task: 'Files Backup' completed." "success"
+
+      # Simple notification for other channels (Telegram, Discord, etc.)
+      local files_backup_summary="Files and configuration backup completed successfully.<br>"
+      files_backup_summary+="<b>Server:</b> ${SERVER_NAME}<br>"
+      files_backup_summary+="<b>Time:</b> $(date '+%Y-%m-%d %H:%M:%S')<br><br>"
+      files_backup_summary+="Check email for detailed report."
+
+      send_notification "${SERVER_NAME} - Files Backup Completed" "${files_backup_summary}" "success"
 
     fi
 
@@ -190,8 +212,13 @@ function backup_manager_menu() {
         backup_project_with_borg "${DOMAIN}"
 
         # Sending notifications
-        #mail_send_notification "${email_subject}" "${email_content}"
-        send_notification "${SERVER_NAME}" "Task: 'Project Backup' completed." "success"
+        local backup_notification_content="<b>Project:</b> ${DOMAIN}<br>"
+        backup_notification_content+="<b>Type:</b> ${INSTALL_TYPE}<br>"
+        backup_notification_content+="<b>Location:</b> ${filepath}/${filename}<br>"
+        backup_notification_content+="<b>Time:</b> $(date '+%Y-%m-%d %H:%M:%S')<br><br>"
+        backup_notification_content+="Backup completed successfully and stored in configured backup location."
+
+        send_notification "${SERVER_NAME} - Project Backup: ${DOMAIN}" "${backup_notification_content}" "success"
 
       else
 
@@ -216,15 +243,26 @@ function backup_manager_menu() {
         log_event "error" "Docker Volumes Backup failed: ${catch_error}" "false"
         display --indent 6 --text "- Docker Volumes Backup" --result "FAILED" --color RED
 
-        # Send notification
-        send_notification "${SERVER_NAME} " "Docker Volumes Backup failed." "alert"
+        # Send notification with error details
+        local docker_backup_error="Docker Volumes Backup failed!<br><br>"
+        docker_backup_error+="<b>Server:</b> ${SERVER_NAME}<br>"
+        docker_backup_error+="<b>Error:</b> ${catch_error}<br>"
+        docker_backup_error+="<b>Time:</b> $(date '+%Y-%m-%d %H:%M:%S')<br><br>"
+        docker_backup_error+="Please check logs for more details."
+
+        send_notification "${SERVER_NAME} - Docker Volumes Backup Failed" "${docker_backup_error}" "alert"
 
         return 1
 
       fi
 
       # Send notification
-      send_notification "${SERVER_NAME} " "Task: 'Docker Volumes Backup' completed." "success"
+      local docker_backup_summary="Docker Volumes backup completed successfully.<br>"
+      docker_backup_summary+="<b>Server:</b> ${SERVER_NAME}<br>"
+      docker_backup_summary+="<b>Time:</b> $(date '+%Y-%m-%d %H:%M:%S')<br><br>"
+      docker_backup_summary+="All Docker volumes have been backed up successfully."
+
+      send_notification "${SERVER_NAME} - Docker Volumes Backup Completed" "${docker_backup_summary}" "success"
 
     fi
 
