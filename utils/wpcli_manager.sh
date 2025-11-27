@@ -174,7 +174,7 @@ function wpcli_main_menu() {
     [[ ${chosen_wpcli_options} == *"03"* ]] && wpcli_delete_plugins_menu "${wp_site}" "${project_install_type}"
 
     # RE-INSTALL_PLUGINS
-    [[ ${chosen_wpcli_options} == *"04"* ]] && wpcli_plugin_reinstall "${wp_site}" "all"
+    [[ ${chosen_wpcli_options} == *"04"* ]] && wpcli_plugin_reinstall "${wp_site}" "${project_install_type}" "all"
 
     # VERIFY_WP
     if [[ ${chosen_wpcli_options} == *"05"* ]]; then

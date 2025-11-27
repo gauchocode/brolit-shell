@@ -1215,9 +1215,6 @@ function wpcli_plugin_reinstall() {
 
     log_subsection "WP Re-install Plugins"
 
-    log_event "debug" "install_type: ${install_type}"
-    log_event "debug" "wpcli_cmd: ${wpcli_cmd}"
-
     if [[ -z ${wp_plugin} || ${wp_plugin} == "all" ]]; then
 
         # Get list of plugins first
@@ -1227,7 +1224,6 @@ function wpcli_plugin_reinstall() {
         plugin_list_output=$(eval "${wpcli_cmd}" plugin list --field=name)
         plugin_list=$(echo "${plugin_list_output}" | tr '\n' ' ')
 
-        log_event "debug" "plugin_list: ${plugin_list}"
         log_event "debug" "Running: ${wpcli_cmd} plugin install ${plugin_list} --force"
 
         eval "${wpcli_cmd}" plugin install ${plugin_list} --force
