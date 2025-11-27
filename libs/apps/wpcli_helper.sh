@@ -1215,21 +1215,28 @@ function wpcli_plugin_reinstall() {
 
     log_subsection "WP Re-install Plugins"
 
+    log_event "debug" "install_type: ${install_type}"
+    log_event "debug" "wpcli_cmd: ${wpcli_cmd}"
+
     if [[ -z ${wp_plugin} || ${wp_plugin} == "all" ]]; then
 
         # Get list of plugins first
         local plugin_list
-        plugin_list=$(eval "${wpcli_cmd} plugin list --field=name" | tr '\n' ' ')
+        local plugin_list_output
 
+        plugin_list_output=$(eval "${wpcli_cmd}" plugin list --field=name)
+        plugin_list=$(echo "${plugin_list_output}" | tr '\n' ' ')
+
+        log_event "debug" "plugin_list: ${plugin_list}"
         log_event "debug" "Running: ${wpcli_cmd} plugin install ${plugin_list} --force"
 
-        eval "${wpcli_cmd} plugin install ${plugin_list} --force"
+        eval "${wpcli_cmd}" plugin install ${plugin_list} --force
 
     else
 
         log_event "debug" "Running: ${wpcli_cmd} plugin install ${wp_plugin} --force"
 
-        eval "${wpcli_cmd} plugin install \"${wp_plugin}\" --force"
+        eval "${wpcli_cmd}" plugin install "${wp_plugin}" --force
 
         display --indent 6 --text "- Plugin force install ${wp_plugin}" --result "DONE" --color GREEN
 
