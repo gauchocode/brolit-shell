@@ -1629,27 +1629,111 @@ function wpcli_shuffle_salts() {
     ## -u 33 -e HOME=/tmp to avoid permission denied error: https://github.com/docker-library/wordpress/issues/417
     [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose --progress=quiet -f ${wp_site}/../docker-compose.yml run -T -u 33 -e HOME=/tmp --rm wordpress-cli wp"
 
+    local error_output
+    local exitstatus
+    local wp_config_path
+    local original_permissions
+    local original_owner
+    local permissions_changed=false
+
+    # Determine wp-config.php path based on install type
+    if [[ ${install_type} == "docker"* ]]; then
+        wp_config_path="${wp_site}/../wp-config.php"
+    else
+        wp_config_path="${wp_site}/wp-config.php"
+    fi
+
     log_event "debug" "Running: ${wpcli_cmd} config shuffle-salts" "false"
+    display --indent 6 --text "- Shuffle salts"
 
-    # Command
-    ${wpcli_cmd} config shuffle-salts --quiet > /dev/null 2>&1
-
+    # Command - capture stderr to get error messages
+    error_output=$(${wpcli_cmd} config shuffle-salts 2>&1)
     exitstatus=$?
+
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Log success
-        log_event "info" "Salts shuffled" "false"
+        log_event "info" "Salts shuffled successfully" "false"
+        clear_previous_lines "1"
         display --indent 6 --text "- Shuffle salts" --result "DONE" --color GREEN
 
         return 0
 
     else
 
-        # Log failure
-        log_event "error" "Something went wrong when trying to shuffle salts" "false"
-        display --indent 6 --text "- Shuffle salts" --result "FAIL" --color RED
+        # Check if error is due to wp-config.php not being writable
+        if echo "${error_output}" | grep -qi "not writable"; then
 
-        return 1
+            log_event "info" "wp-config.php is not writable, attempting to fix permissions temporarily" "false"
+            clear_previous_lines "1"
+            display --indent 6 --text "- Shuffle salts (fixing permissions)"
+
+            # Check if wp-config.php exists
+            if [[ ! -f ${wp_config_path} ]]; then
+                log_event "error" "wp-config.php not found at ${wp_config_path}" "false"
+                clear_previous_lines "1"
+                display --indent 6 --text "- Shuffle salts" --result "FAIL" --color RED
+                display --indent 8 --text "wp-config.php not found" --tcolor YELLOW
+                return 1
+            fi
+
+            # Save original permissions and owner
+            original_permissions=$(stat -c "%a" "${wp_config_path}")
+            original_owner=$(stat -c "%U:%G" "${wp_config_path}")
+            log_event "debug" "Original permissions: ${original_permissions}, owner: ${original_owner}" "false"
+
+            # Make wp-config.php writable
+            chmod 644 "${wp_config_path}"
+            permissions_changed=true
+            log_event "debug" "Changed permissions to 644 for shuffle operation" "false"
+
+            # Try shuffle again
+            error_output=$(${wpcli_cmd} config shuffle-salts 2>&1)
+            exitstatus=$?
+
+            # Restore original permissions
+            chmod "${original_permissions}" "${wp_config_path}"
+            log_event "debug" "Restored original permissions: ${original_permissions}" "false"
+
+            if [[ ${exitstatus} -eq 0 ]]; then
+                # Log success
+                log_event "info" "Salts shuffled successfully after fixing permissions" "false"
+                clear_previous_lines "1"
+                display --indent 6 --text "- Shuffle salts" --result "DONE" --color GREEN
+                return 0
+            else
+                # Still failed after permission fix
+                log_event "error" "Failed to shuffle salts even after fixing permissions" "false"
+                log_event "error" "Error output: ${error_output}" "false"
+                clear_previous_lines "1"
+                display --indent 6 --text "- Shuffle salts" --result "FAIL" --color RED
+                display --indent 8 --text "Failed even with correct permissions" --tcolor YELLOW
+                return 1
+            fi
+
+        else
+
+            # Extract the error reason if present
+            local error_reason=""
+            if echo "${error_output}" | grep -q "Reason:"; then
+                error_reason=$(echo "${error_output}" | grep "Reason:" | sed 's/^Reason: //')
+            fi
+
+            # Log failure with details
+            log_event "error" "Failed to shuffle salts" "false"
+            log_event "error" "Error output: ${error_output}" "false"
+
+            clear_previous_lines "1"
+            display --indent 6 --text "- Shuffle salts" --result "FAIL" --color RED
+
+            # Show error reason to user
+            if [[ -n ${error_reason} ]]; then
+                display --indent 8 --text "${error_reason}" --tcolor YELLOW
+            fi
+
+            return 1
+
+        fi
 
     fi
 
