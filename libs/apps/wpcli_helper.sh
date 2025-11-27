@@ -1217,15 +1217,19 @@ function wpcli_plugin_reinstall() {
 
     if [[ -z ${wp_plugin} || ${wp_plugin} == "all" ]]; then
 
-        log_event "debug" "Running: ${wpcli_cmd} plugin install $(${wpcli_cmd} plugin list --field=name | tr '\n' ' ') --force"
+        # Get list of plugins first
+        local plugin_list
+        plugin_list=$(eval "${wpcli_cmd} plugin list --field=name" | tr '\n' ' ')
 
-        ${wpcli_cmd} plugin install "$(${wpcli_cmd} plugin list --field=name | tr '\n' ' ')" --force
+        log_event "debug" "Running: ${wpcli_cmd} plugin install ${plugin_list} --force"
+
+        eval "${wpcli_cmd} plugin install ${plugin_list} --force"
 
     else
 
-        log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} plugin install ${wp_plugin} --force"
+        log_event "debug" "Running: ${wpcli_cmd} plugin install ${wp_plugin} --force"
 
-        ${wpcli_cmd} plugin install "${wp_plugin}" --force
+        eval "${wpcli_cmd} plugin install \"${wp_plugin}\" --force"
 
         display --indent 6 --text "- Plugin force install ${wp_plugin}" --result "DONE" --color GREEN
 
