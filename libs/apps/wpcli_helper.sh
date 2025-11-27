@@ -1220,21 +1220,46 @@ function wpcli_plugin_reinstall() {
         # Get list of plugins first
         local plugin_list
         local plugin_list_output
+        local exitstatus
 
-        plugin_list_output=$(eval "${wpcli_cmd}" plugin list --field=name)
+        plugin_list_output=$(eval "${wpcli_cmd}" plugin list --field=name 2>/dev/null)
         plugin_list=$(echo "${plugin_list_output}" | tr '\n' ' ')
 
-        log_event "debug" "Running: ${wpcli_cmd} plugin install ${plugin_list} --force"
+        log_event "debug" "Running: ${wpcli_cmd} plugin install ${plugin_list} --force --quiet"
+        display --indent 6 --text "- Re-installing all plugins"
 
-        eval "${wpcli_cmd}" plugin install ${plugin_list} --force
+        eval "${wpcli_cmd}" plugin install ${plugin_list} --force --quiet > /dev/null 2>&1
+
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+            clear_previous_lines "1"
+            display --indent 6 --text "- Re-installing all plugins" --result "DONE" --color GREEN
+            log_event "info" "All plugins re-installed successfully" "false"
+        else
+            clear_previous_lines "1"
+            display --indent 6 --text "- Re-installing all plugins" --result "FAIL" --color RED
+            log_event "error" "Error re-installing plugins" "false"
+        fi
 
     else
 
-        log_event "debug" "Running: ${wpcli_cmd} plugin install ${wp_plugin} --force"
+        local exitstatus
 
-        eval "${wpcli_cmd}" plugin install "${wp_plugin}" --force
+        log_event "debug" "Running: ${wpcli_cmd} plugin install ${wp_plugin} --force --quiet"
+        display --indent 6 --text "- Re-installing plugin ${wp_plugin}"
 
-        display --indent 6 --text "- Plugin force install ${wp_plugin}" --result "DONE" --color GREEN
+        eval "${wpcli_cmd}" plugin install "${wp_plugin}" --force --quiet > /dev/null 2>&1
+
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+            clear_previous_lines "1"
+            display --indent 6 --text "- Re-installing plugin ${wp_plugin}" --result "DONE" --color GREEN
+            log_event "info" "Plugin ${wp_plugin} re-installed successfully" "false"
+        else
+            clear_previous_lines "1"
+            display --indent 6 --text "- Re-installing plugin ${wp_plugin}" --result "FAIL" --color RED
+            log_event "error" "Error re-installing plugin ${wp_plugin}" "false"
+        fi
 
     fi
 
