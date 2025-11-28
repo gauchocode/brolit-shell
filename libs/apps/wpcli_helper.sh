@@ -695,7 +695,7 @@ function wpcli_core_verify() {
     log_event "debug" "Running: ${wpcli_cmd} core verify-checksums" "false"
 
     # Verify WordPress Checksums
-    ${wpcli_cmd} core verify-checksums | awk -F": " '/File (doesn'\''t|should not) exist/ {print $3}' >"${wp_verify_checksum_output_file}"
+    ${wpcli_cmd} core verify-checksums 2>&1 | awk -F": " '/File (doesn'\''t|should not) exist/ {print $3}' >"${wp_verify_checksum_output_file}"
 
     # Replace new lines with ","
     sed -i 's/\r//g; :a;N;$!ba;s/\n/,/g' ${wp_verify_checksum_output_file}
