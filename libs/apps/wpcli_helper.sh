@@ -2096,6 +2096,7 @@ function wpcli_get_wpcore_version() {
 
     # Log
     log_event "debug" "Running: ${wpcli_cmd} core version" "false"
+    display --indent 6 --text "- Getting WordPress core version"
 
     # Command
     core_version="$(${wpcli_cmd} core version)"
