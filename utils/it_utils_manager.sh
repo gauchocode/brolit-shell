@@ -246,14 +246,16 @@ function menu_security_wordfencecli_scan() {
 
     to_scan=$filepath"/"$filename
 
-    include_all_files=$(whiptail --title "WORFENCE-CLI MALWARE SCAN" --yesno "Do you want to include all files?" 10 60 3>&1 1>&2 2>&3)
+    whiptail --title "WORFENCE-CLI MALWARE SCAN" --yesno "Do you want to include all files?" 10 60 3>&1 1>&2 2>&3
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
-
-      wordfencecli_malware_scan "${to_scan}" "${include_all_files}"
-
+      include_all_files="true"
+    else
+      include_all_files="false"
     fi
+
+    wordfencecli_malware_scan "${to_scan}" "${include_all_files}"
 
   fi
 
