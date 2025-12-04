@@ -1134,7 +1134,7 @@ function postgres_database_search_string() {
     fi
 
     log_event "info" "Searching for '${search_string}' in database '${database_name}'" "false"
-    display --indent 6 --text "Searching in database: ${database_name}" --tcolor YELLOW
+    display --indent 6 --text "- Searching in database: ${database_name}" --tcolor YELLOW
 
     # Get all tables from database
     tables="$(${psql_exec} -d "${database_name}" -c "SELECT tablename FROM pg_tables WHERE schemaname = 'public';" -t)"
@@ -1147,6 +1147,14 @@ function postgres_database_search_string() {
         return 1
     fi
 
+    # Count total tables (excluding empty lines)
+    local total_tables
+    total_tables="$(echo "${tables}" | grep -c .)"
+    display --indent 6 --text "- Total tables found: ${total_tables}" --tcolor CYAN
+    log_event "info" "Found ${total_tables} tables in database '${database_name}'" "false"
+
+    local tables_processed=0
+
     # Search in each table
     while IFS= read -r table; do
 
@@ -1157,7 +1165,9 @@ function postgres_database_search_string() {
         table="$(echo "${table}" | xargs)"
         [[ -z ${table} ]] && continue
 
-        display --indent 8 --text "Searching in table: ${table}" --tcolor WHITE
+        ((tables_processed++))
+
+        display --indent 8 --text "[${tables_processed}/${total_tables}] Searching in table: ${table}" --tcolor WHITE
 
         # Get all columns for the table
         local columns
@@ -1198,11 +1208,13 @@ function postgres_database_search_string() {
 
     done <<< "${tables}"
 
+    display --indent 6 --text "- Tables processed: ${tables_processed}" --tcolor CYAN
+
     if [[ ${results_found} -eq 0 ]]; then
-        display --indent 8 --text "No matches found" --result "INFO" --color YELLOW
+        display --indent 6 --text "- No matches found in any table" --result "INFO" --color YELLOW
         log_event "info" "No matches found for '${search_string}' in database '${database_name}'" "false"
     else
-        display --indent 6 --text "Search completed" --result "DONE" --color GREEN
+        display --indent 6 --text "- Search completed" --result "DONE" --color GREEN
     fi
 
     return 0
