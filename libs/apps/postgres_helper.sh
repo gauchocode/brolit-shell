@@ -1093,3 +1093,118 @@ function postgres_database_clone() {
     postgres_database_import "${database_new_name}" "${dump_file}"
 
 }
+
+################################################################################
+# Search string in all tables of a database
+#
+# Arguments:
+#  ${1} = ${database_name}
+#  ${2} = ${search_string}
+#  ${3} = ${container_name} - Optional
+#
+# Outputs:
+#  Search results, 1 on error.
+################################################################################
+
+function postgres_database_search_string() {
+
+    local database_name="${1}"
+    local search_string="${2}"
+    local container_name="${3}"
+
+    local psql_exec
+    local tables
+    local results_found=0
+
+    if [[ -n ${container_name} && ${container_name} != "false" ]]; then
+
+        local psql_container_user
+        local psql_container_user_pssw
+
+        # Get POSTGRES_USER and POSTGRES_PASSWORD from container
+        psql_container_user="$(docker exec -i "${container_name}" printenv POSTGRES_USER)"
+        psql_container_user_pssw="$(docker exec -i "${container_name}" printenv POSTGRES_PASSWORD)"
+
+        psql_exec="docker exec -i ${container_name} env PGPASSWORD=${psql_container_user_pssw} psql -U ${psql_container_user} --quiet"
+
+    else
+
+        psql_exec="${PSQL_ROOT}"
+
+    fi
+
+    log_event "info" "Searching for '${search_string}' in database '${database_name}'" "false"
+    display --indent 6 --text "Searching in database: ${database_name}" --tcolor YELLOW
+
+    # Get all tables from database
+    tables="$(${psql_exec} -d "${database_name}" -c "SELECT tablename FROM pg_tables WHERE schemaname = 'public';" -t)"
+
+    # Check if tables were retrieved
+    postgres_result=$?
+    if [[ ${postgres_result} -ne 0 ]]; then
+        display --indent 6 --text "- Getting tables from database" --result "FAIL" --color RED
+        log_event "error" "Failed to get tables from database '${database_name}'" "false"
+        return 1
+    fi
+
+    # Search in each table
+    while IFS= read -r table; do
+
+        # Skip empty lines
+        [[ -z ${table} ]] && continue
+
+        # Trim whitespace
+        table="$(echo "${table}" | xargs)"
+        [[ -z ${table} ]] && continue
+
+        display --indent 8 --text "Searching in table: ${table}" --tcolor WHITE
+
+        # Get all columns for the table
+        local columns
+        columns="$(${psql_exec} -d "${database_name}" -c "SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = '${table}';" -t)"
+
+        # Build WHERE clause for all columns
+        local where_clause=""
+        local first_column=1
+
+        while IFS= read -r column; do
+            # Trim whitespace
+            column="$(echo "${column}" | xargs)"
+            [[ -z ${column} ]] && continue
+
+            if [[ ${first_column} -eq 1 ]]; then
+                where_clause="CAST(\"${column}\" AS TEXT) LIKE '%${search_string}%'"
+                first_column=0
+            else
+                where_clause="${where_clause} OR CAST(\"${column}\" AS TEXT) LIKE '%${search_string}%'"
+            fi
+        done <<< "${columns}"
+
+        # Execute search query
+        if [[ -n ${where_clause} ]]; then
+            local count
+            count="$(${psql_exec} -d "${database_name}" -c "SELECT COUNT(*) FROM \"${table}\" WHERE ${where_clause};" -t | xargs)"
+
+            if [[ ${count} -gt 0 ]]; then
+                results_found=1
+                display --indent 10 --text "Found ${count} matches" --result "FOUND" --color GREEN
+                log_event "info" "Found ${count} matches in table '${table}'" "false"
+
+                # Show sample results (first 5 rows)
+                display --indent 10 --text "Sample results (first 5):" --tcolor CYAN
+                ${psql_exec} -d "${database_name}" -c "SELECT * FROM \"${table}\" WHERE ${where_clause} LIMIT 5;"
+            fi
+        fi
+
+    done <<< "${tables}"
+
+    if [[ ${results_found} -eq 0 ]]; then
+        display --indent 8 --text "No matches found" --result "INFO" --color YELLOW
+        log_event "info" "No matches found for '${search_string}' in database '${database_name}'" "false"
+    else
+        display --indent 6 --text "Search completed" --result "DONE" --color GREEN
+    fi
+
+    return 0
+
+}

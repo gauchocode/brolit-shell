@@ -1045,3 +1045,112 @@ function mysql_database_clone() {
     mysql_database_import "${database_new_name}" "false" "${dump_file}"
 
 }
+
+################################################################################
+# Search string in all tables of a database
+#
+# Arguments:
+#  ${1} = ${database_name}
+#  ${2} = ${search_string}
+#  ${3} = ${container_name} - Optional
+#
+# Outputs:
+#  Search results, 1 on error.
+################################################################################
+
+function mysql_database_search_string() {
+
+    local database_name="${1}"
+    local search_string="${2}"
+    local container_name="${3}"
+
+    local mysql_exec
+    local tables
+    local results_found=0
+
+    if [[ -n ${container_name} && ${container_name} != "false" ]]; then
+
+        local mysql_container_user
+        local mysql_container_user_pssw
+
+        # Get MYSQL_USER and MYSQL_PASSWORD from container
+        mysql_container_user="$(docker exec -i "${container_name}" printenv MYSQL_USER)"
+        mysql_container_user_pssw="$(docker exec -i "${container_name}" printenv MYSQL_PASSWORD)"
+
+        mysql_exec="docker exec -i ${container_name} mysql -u${mysql_container_user} -p${mysql_container_user_pssw}"
+
+    else
+
+        mysql_exec="${MYSQL_ROOT}"
+
+    fi
+
+    log_event "info" "Searching for '${search_string}' in database '${database_name}'" "false"
+    display --indent 6 --text "Searching in database: ${database_name}" --tcolor YELLOW
+
+    # Get all tables from database
+    tables="$(${mysql_exec} -Bse "SHOW TABLES FROM ${database_name}")"
+
+    # Check if tables were retrieved
+    mysql_result=$?
+    if [[ ${mysql_result} -ne 0 ]]; then
+        display --indent 6 --text "- Getting tables from database" --result "FAIL" --color RED
+        log_event "error" "Failed to get tables from database '${database_name}'" "false"
+        return 1
+    fi
+
+    # Search in each table
+    while IFS= read -r table; do
+
+        # Skip empty lines
+        [[ -z ${table} ]] && continue
+
+        display --indent 8 --text "Searching in table: ${table}" --tcolor WHITE
+
+        # Get all columns for the table
+        local columns
+        columns="$(${mysql_exec} -Bse "SHOW COLUMNS FROM ${database_name}.${table}" | awk '{print $1}')"
+
+        # Build WHERE clause for all columns
+        local where_clause=""
+        local first_column=1
+
+        while IFS= read -r column; do
+            [[ -z ${column} ]] && continue
+
+            if [[ ${first_column} -eq 1 ]]; then
+                where_clause="CAST(\`${column}\` AS CHAR) LIKE '%${search_string}%'"
+                first_column=0
+            else
+                where_clause="${where_clause} OR CAST(\`${column}\` AS CHAR) LIKE '%${search_string}%'"
+            fi
+        done <<< "${columns}"
+
+        # Execute search query
+        if [[ -n ${where_clause} ]]; then
+            local count
+            count="$(${mysql_exec} -Bse "SELECT COUNT(*) FROM ${database_name}.\`${table}\` WHERE ${where_clause}")"
+
+            if [[ ${count} -gt 0 ]]; then
+                results_found=1
+                display --indent 10 --text "Found ${count} matches" --result "FOUND" --color GREEN
+                log_event "info" "Found ${count} matches in table '${table}'" "false"
+
+                # Show sample results (first 5 rows)
+                display --indent 10 --text "Sample results (first 5):" --tcolor CYAN
+                ${mysql_exec} -e "SELECT * FROM ${database_name}.\`${table}\` WHERE ${where_clause} LIMIT 5"
+            fi
+        fi
+
+    done <<< "${tables}"
+
+    if [[ ${results_found} -eq 0 ]]; then
+        display --indent 8 --text "No matches found" --result "INFO" --color YELLOW
+        log_event "info" "No matches found for '${search_string}' in database '${database_name}'" "false"
+    else
+        display --indent 6 --text "Search completed" --result "DONE" --color GREEN
+    fi
+
+    return 0
+
+}

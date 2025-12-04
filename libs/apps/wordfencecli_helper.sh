@@ -146,9 +146,9 @@ function wordfencecli_malware_scan() {
         [[ $include_all_files == "true" ]] && scan_option="--include-all-files" || scan_option=""
 
         # Log
-        log_event "info" "Starting wordfence-cli malware scan on: ${directory_to_scan}" "false"
+        log_event "info" "Starting malware scan on: ${directory_to_scan}" "false"
         log_event "debug" "Running: docker run -v /var/www:/var/www wordfence-cli:latest malware-scan ${scan_option} --accept-terms --license ${license} ${directory_to_scan}" "false"
-        display --indent 6 --text "- Starting wordfence-cli malware scan on: ${directory_to_scan}"
+        display --indent 6 --text "- Starting malware scan on: ${directory_to_scan}" 
 
         # Output file path
         local output_file
