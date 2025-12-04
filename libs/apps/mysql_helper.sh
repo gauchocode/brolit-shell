@@ -1119,7 +1119,7 @@ function mysql_database_search_string() {
 
         # Get all columns for the table
         local columns
-        columns="$(${mysql_exec} -Bse "SHOW COLUMNS FROM ${database_name}.${table}" | awk '{print $1}')"
+        columns="$(${mysql_exec} -Bse "SHOW COLUMNS FROM ${database_name}.${table}" </dev/null | awk '{print $1}')"
 
         # Build WHERE clause for all columns
         local where_clause=""
@@ -1139,7 +1139,7 @@ function mysql_database_search_string() {
         # Execute search query
         if [[ -n ${where_clause} ]]; then
             local count
-            count="$(${mysql_exec} -Bse "SELECT COUNT(*) FROM ${database_name}.\`${table}\` WHERE ${where_clause}")"
+            count="$(${mysql_exec} -Bse "SELECT COUNT(*) FROM ${database_name}.\`${table}\` WHERE ${where_clause}" </dev/null)"
 
             if [[ ${count} -gt 0 ]]; then
                 results_found=1
@@ -1148,7 +1148,7 @@ function mysql_database_search_string() {
 
                 # Show sample results (first 5 rows)
                 display --indent 10 --text "Sample results (first 5):" --tcolor CYAN
-                ${mysql_exec} -e "SELECT * FROM ${database_name}.\`${table}\` WHERE ${where_clause} LIMIT 5"
+                ${mysql_exec} -e "SELECT * FROM ${database_name}.\`${table}\` WHERE ${where_clause} LIMIT 5" </dev/null
             fi
         fi
 
