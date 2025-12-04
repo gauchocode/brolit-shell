@@ -1171,7 +1171,7 @@ function postgres_database_search_string() {
 
         # Get all columns for the table
         local columns
-        columns="$(${psql_exec} -d "${database_name}" -c "SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = '${table}';" -t)"
+        columns="$(${psql_exec} -d "${database_name}" -c "SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = '${table}';" -t </dev/null)"
 
         # Build WHERE clause for all columns
         local where_clause=""
@@ -1193,7 +1193,7 @@ function postgres_database_search_string() {
         # Execute search query
         if [[ -n ${where_clause} ]]; then
             local count
-            count="$(${psql_exec} -d "${database_name}" -c "SELECT COUNT(*) FROM \"${table}\" WHERE ${where_clause};" -t | xargs)"
+            count="$(${psql_exec} -d "${database_name}" -c "SELECT COUNT(*) FROM \"${table}\" WHERE ${where_clause};" -t </dev/null | xargs)"
 
             if [[ ${count} -gt 0 ]]; then
                 results_found=1
@@ -1202,7 +1202,7 @@ function postgres_database_search_string() {
 
                 # Show sample results (first 5 rows)
                 display --indent 10 --text "Sample results (first 5):" --tcolor CYAN
-                ${psql_exec} -d "${database_name}" -c "SELECT * FROM \"${table}\" WHERE ${where_clause} LIMIT 5;"
+                ${psql_exec} -d "${database_name}" -c "SELECT * FROM \"${table}\" WHERE ${where_clause} LIMIT 5;" </dev/null
             fi
         fi
 
