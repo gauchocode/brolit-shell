@@ -220,6 +220,7 @@ function database_manager_menu() {
     "10)" "EXPORT DATABASE DUMP"
     "11)" "IMPORT DUMP INTO DATABASE"
     "12)" "RENAME DATABASE (ALPHA)"
+    "13)" "SEARCH STRING IN DATABASE"
   )
 
   chosen_database_manager_option="$(whiptail --title "DATABASE MANAGER" --menu " " 20 78 10 "${database_manager_options[@]}" 3>&1 1>&2 2>&3)"
@@ -522,6 +523,46 @@ function database_manager_menu() {
       else
 
         return 1
+
+      fi
+
+    fi
+
+    # SEARCH STRING IN DATABASE
+    if [[ ${chosen_database_manager_option} == *"13"* ]]; then
+
+      log_section "Database Manager"
+      log_subsection "Search string in database"
+
+      # List databases
+      databases="$(database_list "all" "${chosen_database_engine}" "${database_container_selected}")"
+
+      # shellcheck disable=SC2046
+      chosen_database="$(whiptail --title "DATABASE MANAGER" --menu "Choose the database to search in" 20 78 10 $(for x in ${databases}; do echo "$x [DB]"; done) 3>&1 1>&2 2>&3)"
+
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        search_string="$(whiptail_input "Search String" "Enter the string you want to search for in all tables:" "")"
+
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 && -n ${search_string} ]]; then
+
+          if [[ ${chosen_database_engine} == "MYSQL" ]]; then
+            # MySQL
+            mysql_database_search_string "${chosen_database}" "${search_string}" "${database_container_selected}"
+
+          else
+            # PostgreSQL
+            [[ ${chosen_database_engine} == "POSTGRESQL" ]] && postgres_database_search_string "${chosen_database}" "${search_string}" "${database_container_selected}"
+
+          fi
+
+        else
+
+          display --indent 6 --text "Search cancelled or empty string" --result "SKIPPED" --color YELLOW
+
+        fi
 
       fi
 
