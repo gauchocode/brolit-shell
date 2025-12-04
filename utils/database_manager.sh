@@ -645,6 +645,9 @@ function database_manager_menu() {
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
 
+          # Trim whitespace from chosen table name
+          chosen_table="$(echo "${chosen_table}" | xargs)"
+
           # Show warning and confirmation
           whiptail --title "WARNING: DELETE TABLE" \
             --yesno "You are about to DELETE the table '${chosen_table}' from database '${chosen_database}'.\n\nThis action is IRREVERSIBLE and will permanently delete all data in this table.\n\nAre you sure you want to continue?" \
