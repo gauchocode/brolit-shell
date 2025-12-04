@@ -1220,3 +1220,137 @@ function postgres_database_search_string() {
     return 0
 
 }
+
+################################################################################
+# List tables in a database
+#
+# Arguments:
+#  ${1} = ${database_name}
+#  ${2} = ${container_name} - Optional
+#
+# Outputs:
+#  Table names, 1 on error.
+################################################################################
+
+function postgres_list_tables() {
+
+    local database_name="${1}"
+    local container_name="${2}"
+
+    local psql_exec
+    local tables
+
+    if [[ -n ${container_name} && ${container_name} != "false" ]]; then
+
+        local psql_container_user
+        local psql_container_user_pssw
+
+        # Get POSTGRES_USER and POSTGRES_PASSWORD from container
+        psql_container_user="$(docker exec -i "${container_name}" printenv POSTGRES_USER)"
+        psql_container_user_pssw="$(docker exec -i "${container_name}" printenv POSTGRES_PASSWORD)"
+
+        psql_exec="docker exec -i ${container_name} env PGPASSWORD=${psql_container_user_pssw} psql -U ${psql_container_user} --quiet"
+
+    else
+
+        psql_exec="${PSQL_ROOT}"
+
+    fi
+
+    log_event "info" "Listing tables in database '${database_name}'" "false"
+
+    # Get all tables from database
+    tables="$(${psql_exec} -d "${database_name}" -c "SELECT tablename FROM pg_tables WHERE schemaname = 'public';" -t)"
+
+    # Check if tables were retrieved
+    postgres_result=$?
+    if [[ ${postgres_result} -eq 0 ]]; then
+
+        # Replace all newlines with a space
+        tables="${tables//$'\n'/ }"
+        # Replace all strings \n with a space
+        tables="${tables//\\n/ }"
+
+        # Log
+        display --indent 6 --text "- Listing tables in database '${database_name}'" --result "DONE" --color GREEN
+        log_event "info" "Tables found: '${tables}'" "false"
+
+        # Return
+        echo "${tables}"
+
+    else
+
+        # Log
+        display --indent 6 --text "- Listing tables in database '${database_name}'" --result "FAIL" --color RED
+        log_event "error" "Failed to list tables in database '${database_name}'" "false"
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
+# Drop a table from database
+#
+# Arguments:
+#  ${1} = ${database_name}
+#  ${2} = ${table_name}
+#  ${3} = ${container_name} - Optional
+#
+# Outputs:
+#  0 if ok, 1 on error.
+################################################################################
+
+function postgres_table_drop() {
+
+    local database_name="${1}"
+    local table_name="${2}"
+    local container_name="${3}"
+
+    local psql_exec
+
+    if [[ -n ${container_name} && ${container_name} != "false" ]]; then
+
+        local psql_container_user
+        local psql_container_user_pssw
+
+        # Get POSTGRES_USER and POSTGRES_PASSWORD from container
+        psql_container_user="$(docker exec -i "${container_name}" printenv POSTGRES_USER)"
+        psql_container_user_pssw="$(docker exec -i "${container_name}" printenv POSTGRES_PASSWORD)"
+
+        psql_exec="docker exec -i ${container_name} env PGPASSWORD=${psql_container_user_pssw} psql -U ${psql_container_user} --quiet"
+
+    else
+
+        psql_exec="${PSQL_ROOT}"
+
+    fi
+
+    log_event "info" "Dropping table '${table_name}' from database '${database_name}'" "false"
+    display --indent 6 --text "- Dropping table '${table_name}'" --tcolor YELLOW
+
+    # Drop table
+    ${psql_exec} -d "${database_name}" -c "DROP TABLE \"${table_name}\";" </dev/null
+
+    # Check result
+    postgres_result=$?
+    if [[ ${postgres_result} -eq 0 ]]; then
+
+        # Log
+        display --indent 6 --text "- Table '${table_name}' dropped" --result "DONE" --color GREEN
+        log_event "success" "Table '${table_name}' dropped from database '${database_name}'" "false"
+
+        return 0
+
+    else
+
+        # Log
+        display --indent 6 --text "- Dropping table '${table_name}'" --result "FAIL" --color RED
+        log_event "error" "Failed to drop table '${table_name}' from database '${database_name}'" "false"
+
+        return 1
+
+    fi
+
+}
