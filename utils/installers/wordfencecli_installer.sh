@@ -71,7 +71,7 @@ function wordfencecli_installer () {
 
 function wordfencecli_updater () {
 
-  log_subsection "Wordfence-cli Updater"
+  log_subsection "Wordfence-cli"
 
   # Download wordfence-cli
   display --indent 6 --text "- Updating Wordfence-cli"
@@ -83,7 +83,7 @@ function wordfencecli_updater () {
   docker build -t wordfence-cli:latest /root/wordfence-cli > /dev/null 2>&1
 
   # Log
-  clear_previous_lines "1"
+  clear_previous_lines "2"
   log_event "info" "Wordfence-cli update finished" "false"
   display --indent 6 --text "- Updating Wordfence-cli" --result "DONE" --color GREEN
 
