@@ -1206,16 +1206,26 @@ function mysql_list_tables() {
     log_event "info" "Listing tables in database '${database_name}'" "false"
 
     # Get all tables from database
-    tables="$(${mysql_exec} -Bse "SHOW TABLES FROM ${database_name}")"
+    local tables_raw
+    tables_raw="$(${mysql_exec} -Bse "SHOW TABLES FROM ${database_name}")"
 
     # Check if tables were retrieved
     mysql_result=$?
     if [[ ${mysql_result} -eq 0 ]]; then
 
-        # Replace all newlines with a space
-        tables="${tables//$'\n'/ }"
-        # Replace all strings \n with a space
-        tables="${tables//\\n/ }"
+        # Trim whitespace from each table name and build space-separated list
+        tables=""
+        while IFS= read -r table; do
+            # Trim whitespace
+            table="$(echo "${table}" | xargs)"
+            [[ -z ${table} ]] && continue
+            # Add to list with space separator
+            if [[ -z ${tables} ]]; then
+                tables="${table}"
+            else
+                tables="${tables} ${table}"
+            fi
+        done <<< "${tables_raw}"
 
         # Log
         display --indent 6 --text "- Listing tables in database '${database_name}'" --result "DONE" --color GREEN
