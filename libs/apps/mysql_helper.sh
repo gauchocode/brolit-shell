@@ -1166,3 +1166,137 @@ function mysql_database_search_string() {
     return 0
 
 }
+
+################################################################################
+# List tables in a database
+#
+# Arguments:
+#  ${1} = ${database_name}
+#  ${2} = ${container_name} - Optional
+#
+# Outputs:
+#  Table names, 1 on error.
+################################################################################
+
+function mysql_list_tables() {
+
+    local database_name="${1}"
+    local container_name="${2}"
+
+    local mysql_exec
+    local tables
+
+    if [[ -n ${container_name} && ${container_name} != "false" ]]; then
+
+        local mysql_container_user
+        local mysql_container_user_pssw
+
+        # Get MYSQL_USER and MYSQL_PASSWORD from container
+        mysql_container_user="$(docker exec -i "${container_name}" printenv MYSQL_USER)"
+        mysql_container_user_pssw="$(docker exec -i "${container_name}" printenv MYSQL_PASSWORD)"
+
+        mysql_exec="docker exec -i ${container_name} mysql -u${mysql_container_user} -p${mysql_container_user_pssw}"
+
+    else
+
+        mysql_exec="${MYSQL_ROOT}"
+
+    fi
+
+    log_event "info" "Listing tables in database '${database_name}'" "false"
+
+    # Get all tables from database
+    tables="$(${mysql_exec} -Bse "SHOW TABLES FROM ${database_name}")"
+
+    # Check if tables were retrieved
+    mysql_result=$?
+    if [[ ${mysql_result} -eq 0 ]]; then
+
+        # Replace all newlines with a space
+        tables="${tables//$'\n'/ }"
+        # Replace all strings \n with a space
+        tables="${tables//\\n/ }"
+
+        # Log
+        display --indent 6 --text "- Listing tables in database '${database_name}'" --result "DONE" --color GREEN
+        log_event "info" "Tables found: '${tables}'" "false"
+
+        # Return
+        echo "${tables}"
+
+    else
+
+        # Log
+        display --indent 6 --text "- Listing tables in database '${database_name}'" --result "FAIL" --color RED
+        log_event "error" "Failed to list tables in database '${database_name}'" "false"
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
+# Drop a table from database
+#
+# Arguments:
+#  ${1} = ${database_name}
+#  ${2} = ${table_name}
+#  ${3} = ${container_name} - Optional
+#
+# Outputs:
+#  0 if ok, 1 on error.
+################################################################################
+
+function mysql_table_drop() {
+
+    local database_name="${1}"
+    local table_name="${2}"
+    local container_name="${3}"
+
+    local mysql_exec
+
+    if [[ -n ${container_name} && ${container_name} != "false" ]]; then
+
+        local mysql_container_user
+        local mysql_container_user_pssw
+
+        # Get MYSQL_USER and MYSQL_PASSWORD from container
+        mysql_container_user="$(docker exec -i "${container_name}" printenv MYSQL_USER)"
+        mysql_container_user_pssw="$(docker exec -i "${container_name}" printenv MYSQL_PASSWORD)"
+
+        mysql_exec="docker exec -i ${container_name} mysql -u${mysql_container_user} -p${mysql_container_user_pssw}"
+
+    else
+
+        mysql_exec="${MYSQL_ROOT}"
+
+    fi
+
+    log_event "info" "Dropping table '${table_name}' from database '${database_name}'" "false"
+    display --indent 6 --text "- Dropping table '${table_name}'" --tcolor YELLOW
+
+    # Drop table
+    ${mysql_exec} -e "DROP TABLE ${database_name}.\`${table_name}\`" </dev/null
+
+    # Check result
+    mysql_result=$?
+    if [[ ${mysql_result} -eq 0 ]]; then
+
+        # Log
+        display --indent 6 --text "- Table '${table_name}' dropped" --result "DONE" --color GREEN
+        log_event "success" "Table '${table_name}' dropped from database '${database_name}'" "false"
+
+        return 0
+
+    else
+
+        # Log
+        display --indent 6 --text "- Dropping table '${table_name}'" --result "FAIL" --color RED
+        log_event "error" "Failed to drop table '${table_name}' from database '${database_name}'" "false"
+
+        return 1
+
+    fi
+
+}

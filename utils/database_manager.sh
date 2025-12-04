@@ -221,6 +221,8 @@ function database_manager_menu() {
     "11)" "IMPORT DUMP INTO DATABASE"
     "12)" "RENAME DATABASE (ALPHA)"
     "13)" "SEARCH STRING IN DATABASE"
+    "14)" "LIST TABLES"
+    "15)" "DELETE TABLE"
   )
 
   chosen_database_manager_option="$(whiptail --title "DATABASE MANAGER" --menu " " 20 78 10 "${database_manager_options[@]}" 3>&1 1>&2 2>&3)"
@@ -561,6 +563,111 @@ function database_manager_menu() {
         else
 
           display --indent 6 --text "Search cancelled or empty string" --result "SKIPPED" --color YELLOW
+
+        fi
+
+      fi
+
+    fi
+
+    # LIST TABLES
+    if [[ ${chosen_database_manager_option} == *"14"* ]]; then
+
+      log_section "Database Manager"
+      log_subsection "List tables"
+
+      # List databases
+      databases="$(database_list "all" "${chosen_database_engine}" "${database_container_selected}")"
+
+      # shellcheck disable=SC2046
+      chosen_database="$(whiptail --title "DATABASE MANAGER" --menu "Choose the database to list tables from" 20 78 10 $(for x in ${databases}; do echo "$x" "[DB]"; done) 3>&1 1>&2 2>&3)"
+
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        local tables
+
+        if [[ ${chosen_database_engine} == "MYSQL" ]]; then
+          # MySQL
+          tables="$(mysql_list_tables "${chosen_database}" "${database_container_selected}")"
+
+        else
+          # PostgreSQL
+          [[ ${chosen_database_engine} == "POSTGRESQL" ]] && tables="$(postgres_list_tables "${chosen_database}" "${database_container_selected}")"
+
+        fi
+
+        # Display tables
+        display --indent 8 --text "Tables in database '${chosen_database}':" --tcolor WHITE
+
+        for table in ${tables}; do
+          # Trim whitespace
+          table="$(echo "${table}" | xargs)"
+          [[ -z ${table} ]] && continue
+          display --indent 12 --text "${table}" --tcolor GREEN
+        done
+
+      fi
+
+    fi
+
+    # DELETE TABLE
+    if [[ ${chosen_database_manager_option} == *"15"* ]]; then
+
+      log_section "Database Manager"
+      log_subsection "Delete table"
+
+      # List databases
+      databases="$(database_list "all" "${chosen_database_engine}" "${database_container_selected}")"
+
+      # shellcheck disable=SC2046
+      chosen_database="$(whiptail --title "DATABASE MANAGER" --menu "Choose the database" 20 78 10 $(for x in ${databases}; do echo "$x" "[DB]"; done) 3>&1 1>&2 2>&3)"
+
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        local tables
+
+        if [[ ${chosen_database_engine} == "MYSQL" ]]; then
+          # MySQL
+          tables="$(mysql_list_tables "${chosen_database}" "${database_container_selected}")"
+
+        else
+          # PostgreSQL
+          [[ ${chosen_database_engine} == "POSTGRESQL" ]] && tables="$(postgres_list_tables "${chosen_database}" "${database_container_selected}")"
+
+        fi
+
+        # Select table to delete
+        # shellcheck disable=SC2046
+        chosen_table="$(whiptail --title "DATABASE MANAGER" --menu "Choose the table to delete" 20 78 10 $(for x in ${tables}; do x="$(echo "${x}" | xargs)"; [[ -n ${x} ]] && echo "$x" "[TABLE]"; done) 3>&1 1>&2 2>&3)"
+
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+
+          # Show warning and confirmation
+          whiptail --title "WARNING: DELETE TABLE" \
+            --yesno "You are about to DELETE the table '${chosen_table}' from database '${chosen_database}'.\n\nThis action is IRREVERSIBLE and will permanently delete all data in this table.\n\nAre you sure you want to continue?" \
+            15 78
+
+          exitstatus=$?
+          if [[ ${exitstatus} -eq 0 ]]; then
+
+            if [[ ${chosen_database_engine} == "MYSQL" ]]; then
+              # MySQL
+              mysql_table_drop "${chosen_database}" "${chosen_table}" "${database_container_selected}"
+
+            else
+              # PostgreSQL
+              [[ ${chosen_database_engine} == "POSTGRESQL" ]] && postgres_table_drop "${chosen_database}" "${chosen_table}" "${database_container_selected}"
+
+            fi
+
+          else
+
+            display --indent 6 --text "Table deletion cancelled" --result "SKIPPED" --color YELLOW
+
+          fi
 
         fi
 
