@@ -3453,7 +3453,10 @@ function wpcli_wordpress_malware_scan() {
 
     local wpcli_result
     local results_found=0
-    local detailed_results_file="/tmp/wpcli_malware_scan_$$.txt"
+
+    # Ensure malware scan results directory exists
+    mkdir -p "${BROLIT_TMP_DIR}/malware_scan_results"
+    local detailed_results_file="${BROLIT_TMP_DIR}/malware_scan_results/wpcli_${db_name}_$$.txt"
 
     # Clean up any previous results file
     [[ -f ${detailed_results_file} ]] && rm -f "${detailed_results_file}"
@@ -3501,9 +3504,7 @@ function wpcli_wordpress_malware_scan() {
         "error_reporting(0)"
         "ini_restore"
         "ini_set"
-        "<script>eval"
-        "<script>document.write"
-        "<script src=\"data:"
+        "<script"
         "document.write"
         "fromCharCode"
         "unescape("
@@ -3513,8 +3514,6 @@ function wpcli_wordpress_malware_scan() {
         ".ini_set("
         "phpinfo("
         "chmod("
-        "javascript:eval"
-        "javascript:alert"
         "onerror="
         "onload="
         "onclick="
@@ -3547,22 +3546,18 @@ function wpcli_wordpress_malware_scan() {
 
         ((tables_processed++))
 
-        display --indent 8 --text "[${tables_processed}/${total_tables}] Scanning table: ${table}" --tcolor WHITE
-
         # Get all TEXT/VARCHAR columns from this table
         local text_columns
         text_columns=$(${wpcli_cmd} db query "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${db_name}' AND TABLE_NAME = '${table}' AND DATA_TYPE IN ('text', 'mediumtext', 'longtext', 'varchar', 'char', 'tinytext')" --skip-column-names 2>/dev/null | tr -d '\r')
 
         # Skip table if no text columns
         if [[ -z ${text_columns} ]]; then
-            display --indent 10 --text "No text columns, skipping" --tcolor GRAY
+            display --indent 8 --text "[${tables_processed}/${total_tables}] Scanning table: ${table}" --result "SKIPPED" --color GRAY
             continue
         fi
 
-        # Count text columns
-        local text_col_count
-        text_col_count=$(echo "${text_columns}" | grep -c .)
-        display --indent 10 --text "Text columns: ${text_col_count}" --tcolor GRAY
+        # Track if table has any findings
+        local table_has_findings=0
 
         for pattern in "${malware_patterns[@]}"; do
 
@@ -3586,7 +3581,14 @@ function wpcli_wordpress_malware_scan() {
 
             if [[ ${matches} -gt 0 ]]; then
                 results_found=1
-                display --indent 10 --text "⚠ SUSPICIOUS: '${pattern}' found ${matches} times" --result "WARNING" --color RED
+
+                # Show table name only on first finding for this table
+                if [[ ${table_has_findings} -eq 0 ]]; then
+                    display --indent 8 --text "[${tables_processed}/${total_tables}] Scanning table: ${table}" --result "WARNING" --color RED
+                    table_has_findings=1
+                fi
+
+                display --indent 10 --text "⚠ SUSPICIOUS: '${pattern}' found ${matches} times" --tcolor RED
                 log_event "warning" "Malware pattern '${pattern}' found ${matches} times in ${table}" "false"
 
                 # Add to detailed report
@@ -3633,6 +3635,11 @@ function wpcli_wordpress_malware_scan() {
                 done
             fi
         done
+
+        # If no findings in this table, show OK
+        if [[ ${table_has_findings} -eq 0 ]]; then
+            display --indent 8 --text "[${tables_processed}/${total_tables}] Scanning table: ${table}" --result "OK" --color GREEN
+        fi
     done <<< "${all_tables}"
 
     # Check for suspicious admin users
