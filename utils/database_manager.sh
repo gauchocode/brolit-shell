@@ -158,7 +158,7 @@ function database_manager_menu() {
 
   # Log
   log_event "debug" "Entering Database Manager. PACKAGES_DOCKER_STATUS='${PACKAGES_DOCKER_STATUS}'" "false"
-  log_subsection "Database Manager"
+  log_section "Database Manager"
 
   # Always check for docker containers if docker available
   database_container=""
