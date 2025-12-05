@@ -1510,16 +1510,17 @@ function mysql_wordpress_malware_scan() {
                         fi
                     done <<< "${text_columns}"
 
-                    # Generate full bash command for deletion
+                    # Generate SQL delete command
                     local delete_sql="DELETE FROM \`${table}\` WHERE \`${pk_column}\` = '${record_id}';"
                     echo "  SQL: ${delete_sql}" >> "${detailed_results_file}"
 
-                    # Generate the full bash command
+                    # Generate the full bash command with proper escaping
                     if [[ -n ${container_name} && ${container_name} != "false" ]]; then
-                        echo "  Bash command: docker exec -i ${container_name} mysql -u${mysql_container_user} -p${mysql_container_user_pssw} -e \"${delete_sql}\" ${database_name}" >> "${detailed_results_file}"
+                        # Use single quotes to avoid backtick interpretation
+                        echo "  Bash command: docker exec -i ${container_name} mysql -u${mysql_container_user} -p${mysql_container_user_pssw} ${database_name} -e 'DELETE FROM \`${table}\` WHERE \`${pk_column}\` = \"${record_id}\";'" >> "${detailed_results_file}"
                     else
                         # For host MySQL, show command with proper credentials
-                        echo "  Bash command: mysql -u root -p -e \"${delete_sql}\" ${database_name}" >> "${detailed_results_file}"
+                        echo "  Bash command: mysql -u root -p ${database_name} -e 'DELETE FROM \`${table}\` WHERE \`${pk_column}\` = \"${record_id}\";'" >> "${detailed_results_file}"
                         echo "  (Note: Replace 'root' and add password as needed)" >> "${detailed_results_file}"
                     fi
                     echo "" >> "${detailed_results_file}"
