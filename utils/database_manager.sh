@@ -156,7 +156,6 @@ function database_manager_menu() {
   local database_container
   local database_container_selected
 
-  log_section "Database Manager"
   log_event "debug" "Entering Database Manager. PACKAGES_DOCKER_STATUS='${PACKAGES_DOCKER_STATUS}'" "false"
 
   # Always check for docker containers if docker available
@@ -537,7 +536,6 @@ function database_manager_menu() {
     # SEARCH STRING IN DATABASE
     if [[ ${chosen_database_manager_option} == *"13"* ]]; then
 
-      log_section "Database Manager"
       log_subsection "Search string in database"
 
       # List databases
@@ -577,7 +575,6 @@ function database_manager_menu() {
     # LIST TABLES
     if [[ ${chosen_database_manager_option} == *"14"* ]]; then
 
-      log_section "Database Manager"
       log_subsection "List tables"
 
       # List databases
@@ -618,8 +615,7 @@ function database_manager_menu() {
     # DELETE TABLE
     if [[ ${chosen_database_manager_option} == *"15"* ]]; then
 
-      log_section "Database Manager"
-      log_subsection "Delete table"
+       log_subsection "Delete table"
 
       # List databases
       databases="$(database_list "all" "${chosen_database_engine}" "${database_container_selected}")"
@@ -685,8 +681,7 @@ function database_manager_menu() {
     # SCAN DATABASE FOR MALWARE
     if [[ ${chosen_database_manager_option} == *"16"* ]]; then
 
-      log_section "Database Manager"
-      log_subsection "Scan database for malware"
+      log_subsection "Database Malware Scanner"
 
       # List databases
       databases="$(database_list "all" "${chosen_database_engine}" "${database_container_selected}")"

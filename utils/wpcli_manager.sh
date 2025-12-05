@@ -154,6 +154,7 @@ function wpcli_main_menu() {
     "21)" "CREATE APP-PASS"
     "22)" "LIST APP-PASS"
     "23)" "DELETE APP-PASS"
+    "24)" "SCAN DATABASE FOR MALWARE"
   )
 
   chosen_wpcli_options="$(whiptail --title "WP-CLI HELPER" --menu "Choose an option to run" 20 78 10 "${wpcli_options[@]}" 3>&1 1>&2 2>&3)"
@@ -390,6 +391,15 @@ function wpcli_main_menu() {
         fi
 
       fi
+
+    fi
+
+    # SCAN DATABASE FOR MALWARE
+    if [[ ${chosen_wpcli_options} == *"24"* ]]; then
+
+      log_subsection "WP Scan Database for Malware"
+
+      wpcli_wordpress_malware_scan "${wp_site}" "${project_install_type}"
 
     fi
 
