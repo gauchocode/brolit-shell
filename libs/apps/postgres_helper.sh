@@ -232,13 +232,13 @@ function postgres_list_databases() {
 
     if [[ ${stage} == "all" ]]; then
 
-        # List postgress databases
-        databases="$(${psql_exec} -c "SELECT datname FROM pg_database WHERE datistemplate = false;" -t)"
+        # List postgres databases and filter out system databases
+        databases="$(${psql_exec} -c "SELECT datname FROM pg_database WHERE datistemplate = false AND datname NOT IN ('postgres', 'template0', 'template1');" -t)"
 
     else
 
-        # Run command
-        databases="$(${psql_exec} -c "SELECT datname FROM pg_database WHERE datistemplate = false;" -t | grep "${stage}")"
+        # Run command and filter out system databases
+        databases="$(${psql_exec} -c "SELECT datname FROM pg_database WHERE datistemplate = false AND datname NOT IN ('postgres', 'template0', 'template1');" -t | grep "${stage}")"
 
     fi
 

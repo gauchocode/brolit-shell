@@ -207,6 +207,9 @@ function database_manager_menu() {
     return 1
   fi
 
+  # Loop to keep showing menu after each action
+  while true; do
+
   database_manager_options=(
     "01)" "LIST DATABASES"
     "02)" "CREATE DATABASE"
@@ -679,9 +682,19 @@ function database_manager_menu() {
     fi
 
     prompt_return_or_finish
-    database_manager_menu
+    exitstatus=$?
+    if [[ ${exitstatus} -ne 0 ]]; then
+      # User chose to finish, exit loop
+      break
+    fi
+    # User chose to return to menu, continue loop
 
+  else
+    # User cancelled menu selection, exit loop
+    break
   fi
+
+  done # End of while true loop
 
   menu_main_options
 
