@@ -1384,7 +1384,10 @@ function postgres_database_malware_scan() {
     local psql_exec
     local tables
     local results_found=0
-    local detailed_results_file="/tmp/malware_scan_${database_name}_$$.txt"
+
+    # Ensure malware scan results directory exists
+    mkdir -p "${BROLIT_TMP_DIR}/malware_scan_results"
+    local detailed_results_file="${BROLIT_TMP_DIR}/malware_scan_results/postgres_${database_name}_$$.txt"
 
     # Clean up any previous results file
     [[ -f ${detailed_results_file} ]] && rm -f "${detailed_results_file}"
@@ -1418,6 +1421,16 @@ function postgres_database_malware_scan() {
         "RewriteRule"
         "ini_set"
         "set_time_limit(0)"
+        "<script"
+        "document.write"
+        "fromCharCode"
+        "String.fromCharCode"
+        "unescape"
+        "javascript:"
+        "onerror="
+        "onload="
+        "<iframe src=\"data:"
+        "<iframe src=\"javascript:"
     )
 
     if [[ -n ${container_name} && ${container_name} != "false" ]]; then
@@ -1471,82 +1484,76 @@ function postgres_database_malware_scan() {
 
         ((tables_processed++))
 
-        display --indent 8 --text "[${tables_processed}/${total_tables}] Scanning table: ${table}" --tcolor WHITE
+        # Get all text/varchar columns from this table
+        local text_columns
+        text_columns="$(${psql_exec} -d "${database_name}" -c "SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = '${table}' AND data_type IN ('text', 'character varying', 'character');" -t </dev/null)"
+
+        # Skip table if no text columns
+        if [[ -z ${text_columns} ]]; then
+            display --indent 8 --text "[${tables_processed}/${total_tables}] Scanning table: ${table}" --result "SKIPPED" --color GRAY
+            continue
+        fi
+
+        # Track if table has any findings
+        local table_has_findings=0
 
         # Scan for each malware pattern
         for pattern in "${malware_patterns[@]}"; do
 
-            local count
-            local content_column
+            # Build WHERE clause for all text columns
+            local where_clause=""
+            local first_col=1
 
-            # Different queries for different table types
-            if [[ ${table} == *"options"* ]]; then
-                content_column="option_value"
-                count="$(${psql_exec} -d "${database_name}" -c "SELECT COUNT(*) FROM \"${table}\" WHERE option_value LIKE '%${pattern}%';" -t </dev/null | xargs)"
-            elif [[ ${table} == *"posts"* ]]; then
-                content_column="post_content"
-                count="$(${psql_exec} -d "${database_name}" -c "SELECT COUNT(*) FROM \"${table}\" WHERE post_content LIKE '%${pattern}%' OR post_title LIKE '%${pattern}%';" -t </dev/null | xargs)"
-            elif [[ ${table} == *"meta"* ]]; then
-                content_column="meta_value"
-                count="$(${psql_exec} -d "${database_name}" -c "SELECT COUNT(*) FROM \"${table}\" WHERE meta_value LIKE '%${pattern}%';" -t </dev/null | xargs)"
-            else
-                continue
-            fi
+            while IFS= read -r col; do
+                col="$(echo "${col}" | xargs)"
+                [[ -z ${col} ]] && continue
+
+                if [[ ${first_col} -eq 1 ]]; then
+                    where_clause="\"${col}\" LIKE '%${pattern}%'"
+                    first_col=0
+                else
+                    where_clause="${where_clause} OR \"${col}\" LIKE '%${pattern}%'"
+                fi
+            done <<< "${text_columns}"
+
+            # Skip if no columns to search
+            [[ -z ${where_clause} ]] && continue
+
+            # Count occurrences
+            local count
+            count="$(${psql_exec} -d "${database_name}" -c "SELECT COUNT(*) FROM \"${table}\" WHERE ${where_clause};" -t </dev/null | xargs)"
 
             if [[ ${count} -gt 0 ]]; then
                 results_found=1
-                display --indent 10 --text "⚠ SUSPICIOUS: '${pattern}' found ${count} times" --result "WARNING" --color RED
+
+                # Show table name only on first finding for this table
+                if [[ ${table_has_findings} -eq 0 ]]; then
+                    display --indent 8 --text "[${tables_processed}/${total_tables}] Scanning table: ${table}" --result "WARNING" --color RED
+                    table_has_findings=1
+                fi
+
+                display --indent 10 --text "⚠ SUSPICIOUS: '${pattern}' found ${count} times" --tcolor RED
                 log_event "warning" "Malware pattern '${pattern}' found ${count} times in table '${table}'" "false"
 
                 # Get detailed results with ID and preview
                 echo "========================================" >> "${detailed_results_file}"
                 echo "Pattern: ${pattern}" >> "${detailed_results_file}"
                 echo "Table: ${table}" >> "${detailed_results_file}"
-                echo "Column: ${content_column}" >> "${detailed_results_file}"
+                echo "Text columns scanned: $(echo "${text_columns}" | tr '\n' ', ' | sed 's/,$//')" >> "${detailed_results_file}"
                 echo "Occurrences: ${count}" >> "${detailed_results_file}"
                 echo "----------------------------------------" >> "${detailed_results_file}"
-
-                # Get specific records with ID and preview (limit to first 10 results)
-                if [[ ${table} == *"options"* ]]; then
-                    ${psql_exec} -d "${database_name}" -c "SELECT option_id, option_name, LEFT(option_value, 200) FROM \"${table}\" WHERE option_value LIKE '%${pattern}%' LIMIT 10;" -t </dev/null | while IFS='|' read -r id name preview; do
-                        id="$(echo "${id}" | xargs)"
-                        name="$(echo "${name}" | xargs)"
-                        preview="$(echo "${preview}" | xargs)"
-                        echo "  ID: ${id}" >> "${detailed_results_file}"
-                        echo "  Name: ${name}" >> "${detailed_results_file}"
-                        echo "  Preview: ${preview}..." >> "${detailed_results_file}"
-                        echo "  Delete command: DELETE FROM \"${table}\" WHERE option_id = ${id};" >> "${detailed_results_file}"
-                        echo "" >> "${detailed_results_file}"
-                    done
-                elif [[ ${table} == *"posts"* ]]; then
-                    ${psql_exec} -d "${database_name}" -c "SELECT id, post_title, post_type, LEFT(post_content, 200) FROM \"${table}\" WHERE post_content LIKE '%${pattern}%' OR post_title LIKE '%${pattern}%' LIMIT 10;" -t </dev/null | while IFS='|' read -r id title type preview; do
-                        id="$(echo "${id}" | xargs)"
-                        title="$(echo "${title}" | xargs)"
-                        type="$(echo "${type}" | xargs)"
-                        preview="$(echo "${preview}" | xargs)"
-                        echo "  ID: ${id}" >> "${detailed_results_file}"
-                        echo "  Title: ${title}" >> "${detailed_results_file}"
-                        echo "  Type: ${type}" >> "${detailed_results_file}"
-                        echo "  Preview: ${preview}..." >> "${detailed_results_file}"
-                        echo "  Delete command: DELETE FROM \"${table}\" WHERE id = ${id};" >> "${detailed_results_file}"
-                        echo "" >> "${detailed_results_file}"
-                    done
-                elif [[ ${table} == *"meta"* ]]; then
-                    ${psql_exec} -d "${database_name}" -c "SELECT meta_id, meta_key, LEFT(meta_value, 200) FROM \"${table}\" WHERE meta_value LIKE '%${pattern}%' LIMIT 10;" -t </dev/null | while IFS='|' read -r id key preview; do
-                        id="$(echo "${id}" | xargs)"
-                        key="$(echo "${key}" | xargs)"
-                        preview="$(echo "${preview}" | xargs)"
-                        echo "  ID: ${id}" >> "${detailed_results_file}"
-                        echo "  Key: ${key}" >> "${detailed_results_file}"
-                        echo "  Preview: ${preview}..." >> "${detailed_results_file}"
-                        echo "  Delete command: DELETE FROM \"${table}\" WHERE meta_id = ${id};" >> "${detailed_results_file}"
-                        echo "" >> "${detailed_results_file}"
-                    done
-                fi
+                echo "Manual inspection required to identify specific records." >> "${detailed_results_file}"
+                echo "Use PostgreSQL queries to investigate further." >> "${detailed_results_file}"
+                echo "" >> "${detailed_results_file}"
 
             fi
 
         done
+
+        # If no findings in this table, show OK
+        if [[ ${table_has_findings} -eq 0 ]]; then
+            display --indent 8 --text "[${tables_processed}/${total_tables}] Scanning table: ${table}" --result "OK" --color GREEN
+        fi
 
     done <<< "${tables}"
 
