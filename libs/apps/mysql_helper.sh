@@ -1365,8 +1365,9 @@ function mysql_wordpress_malware_scan() {
         "error_reporting(0)"
         "ini_restore"
         "ini_set"
-        "<script"
-        "<iframe"
+        "<script>eval"
+        "<script>document.write"
+        "<script src=\"data:"
         "document.write"
         "fromCharCode"
         "unescape("
@@ -1376,12 +1377,15 @@ function mysql_wordpress_malware_scan() {
         ".ini_set("
         "phpinfo("
         "chmod("
-        "javascript:"
+        "javascript:eval"
+        "javascript:alert"
         "onerror="
         "onload="
         "onclick="
         "onfocus="
         "onmouseover="
+        "<iframe src=\"data:"
+        "<iframe src=\"javascript:"
     )
 
     if [[ -n ${container_name} && ${container_name} != "false" ]]; then
