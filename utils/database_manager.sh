@@ -226,6 +226,7 @@ function database_manager_menu() {
     "13)" "SEARCH STRING IN DATABASE"
     "14)" "LIST TABLES"
     "15)" "DELETE TABLE"
+    "16)" "SCAN DATABASE FOR MALWARE"
   )
 
   chosen_database_manager_option="$(whiptail --title "DATABASE MANAGER" --menu " " 20 78 10 "${database_manager_options[@]}" 3>&1 1>&2 2>&3)"
@@ -674,6 +675,46 @@ function database_manager_menu() {
             display --indent 6 --text "Table deletion cancelled" --result "SKIPPED" --color YELLOW
 
           fi
+
+        fi
+
+      fi
+
+    fi
+
+    # SCAN DATABASE FOR MALWARE
+    if [[ ${chosen_database_manager_option} == *"16"* ]]; then
+
+      log_section "Database Manager"
+      log_subsection "Scan database for malware"
+
+      # List databases
+      databases="$(database_list "all" "${chosen_database_engine}" "${database_container_selected}")"
+
+      # shellcheck disable=SC2046
+      chosen_database="$(whiptail --title "DATABASE MANAGER" --menu "Choose the database to scan" 20 78 10 $(for x in ${databases}; do echo "$x" "[DB]"; done) 3>&1 1>&2 2>&3)"
+
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Show warning about scan
+        if [[ ${chosen_database_engine} == "MYSQL" ]]; then
+          whiptail --title "Database Malware Scanner" \
+            --msgbox "This will scan the database for common malware patterns:\n\nMySQL/MariaDB (optimized for WordPress):\n- base64_decode, eval(), exec(), system()\n- Suspicious PHP functions\n- Unsafe superglobals (\$_POST, \$_GET)\n- Script injections\n\nThis may take several minutes.\n\nPress OK to continue..." \
+            16 78
+        else
+          whiptail --title "Database Malware Scanner" \
+            --msgbox "This will scan the database for common malware patterns:\n\nPostgreSQL (generic scan):\n- base64_decode, eval(), exec(), system()\n- Suspicious PHP/JS functions\n- XSS patterns (script tags, event handlers)\n- Shell commands\n\nThis may take several minutes.\n\nPress OK to continue..." \
+            16 78
+        fi
+
+        if [[ ${chosen_database_engine} == "MYSQL" ]]; then
+          # MySQL - WordPress optimized scan
+          mysql_wordpress_malware_scan "${chosen_database}" "${database_container_selected}"
+
+        else
+          # PostgreSQL - Generic database scan
+          [[ ${chosen_database_engine} == "POSTGRESQL" ]] && postgres_database_malware_scan "${chosen_database}" "${database_container_selected}"
 
         fi
 

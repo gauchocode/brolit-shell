@@ -1364,3 +1364,147 @@ function postgres_table_drop() {
     fi
 
 }
+
+################################################################################
+# Scan database for malicious code patterns (generic scan for any database)
+#
+# Arguments:
+#  ${1} = ${database_name}
+#  ${2} = ${container_name} - Optional
+#
+# Outputs:
+#  Scan results, 1 on error.
+################################################################################
+
+function postgres_database_malware_scan() {
+
+    local database_name="${1}"
+    local container_name="${2}"
+
+    local psql_exec
+    local tables
+    local results_found=0
+
+    # Malware patterns to search for
+    local malware_patterns=(
+        "base64_decode"
+        "eval("
+        "exec("
+        "system("
+        "assert("
+        "shell_exec"
+        "passthru"
+        "proc_open"
+        "popen"
+        "curl_exec"
+        "curl_multi_exec"
+        "parse_ini_file"
+        "show_source"
+        "file_get_contents"
+        "file_put_contents"
+        "preg_replace.*\/e"
+        "create_function"
+        "call_user_func"
+        "\$_POST["
+        "\$_GET["
+        "\$_REQUEST["
+        "\$_COOKIE["
+        "<?php.*@"
+        "RewriteCond"
+        "RewriteRule"
+        "ini_set"
+        "set_time_limit(0)"
+    )
+
+    if [[ -n ${container_name} && ${container_name} != "false" ]]; then
+
+        local psql_container_user
+        local psql_container_user_pssw
+
+        # Get POSTGRES_USER and POSTGRES_PASSWORD from container
+        psql_container_user="$(docker exec -i "${container_name}" printenv POSTGRES_USER)"
+        psql_container_user_pssw="$(docker exec -i "${container_name}" printenv POSTGRES_PASSWORD)"
+
+        psql_exec="docker exec -i ${container_name} env PGPASSWORD=${psql_container_user_pssw} psql -U ${psql_container_user} --quiet"
+
+    else
+
+        psql_exec="${PSQL_ROOT}"
+
+    fi
+
+    log_event "info" "Scanning database '${database_name}' for malicious patterns" "false"
+    display --indent 6 --text "- Scanning database: ${database_name}" --tcolor YELLOW
+    display --indent 8 --text "This is a generic malware scanner for PostgreSQL databases" --tcolor CYAN
+
+    # Get all tables from public schema
+    tables="$(${psql_exec} -d "${database_name}" -c "SELECT tablename FROM pg_tables WHERE schemaname = 'public';" -t </dev/null)"
+
+    # Check if tables were retrieved
+    postgres_result=$?
+    if [[ ${postgres_result} -ne 0 ]]; then
+        display --indent 6 --text "- Getting tables from database" --result "FAIL" --color RED
+        log_event "error" "Failed to get tables from database '${database_name}'" "false"
+        return 1
+    fi
+
+    # Count total tables (excluding empty lines)
+    local total_tables
+    total_tables="$(echo "${tables}" | grep -c .)"
+    display --indent 6 --text "- Tables found: ${total_tables}" --tcolor CYAN
+
+    local tables_processed=0
+
+    # Search in each table
+    while IFS= read -r table; do
+
+        # Skip empty lines
+        [[ -z ${table} ]] && continue
+
+        # Trim whitespace
+        table="$(echo "${table}" | xargs)"
+        [[ -z ${table} ]] && continue
+
+        ((tables_processed++))
+
+        display --indent 8 --text "[${tables_processed}/${total_tables}] Scanning table: ${table}" --tcolor WHITE
+
+        # Scan for each malware pattern
+        for pattern in "${malware_patterns[@]}"; do
+
+            local count
+
+            # Different queries for different table types
+            if [[ ${table} == *"options"* ]]; then
+                count="$(${psql_exec} -d "${database_name}" -c "SELECT COUNT(*) FROM \"${table}\" WHERE option_value LIKE '%${pattern}%';" -t </dev/null | xargs)"
+            elif [[ ${table} == *"posts"* ]]; then
+                count="$(${psql_exec} -d "${database_name}" -c "SELECT COUNT(*) FROM \"${table}\" WHERE post_content LIKE '%${pattern}%' OR post_title LIKE '%${pattern}%';" -t </dev/null | xargs)"
+            elif [[ ${table} == *"meta"* ]]; then
+                count="$(${psql_exec} -d "${database_name}" -c "SELECT COUNT(*) FROM \"${table}\" WHERE meta_value LIKE '%${pattern}%';" -t </dev/null | xargs)"
+            else
+                continue
+            fi
+
+            if [[ ${count} -gt 0 ]]; then
+                results_found=1
+                display --indent 10 --text "⚠ SUSPICIOUS: '${pattern}' found ${count} times" --result "WARNING" --color RED
+                log_event "warning" "Malware pattern '${pattern}' found ${count} times in table '${table}'" "false"
+            fi
+
+        done
+
+    done <<< "${tables}"
+
+    display --indent 6 --text "- Tables scanned: ${tables_processed}" --tcolor CYAN
+
+    if [[ ${results_found} -eq 0 ]]; then
+        display --indent 6 --text "- No suspicious patterns found" --result "CLEAN" --color GREEN
+        log_event "info" "No malware patterns found in database '${database_name}'" "false"
+    else
+        display --indent 6 --text "- Scan completed - SUSPICIOUS CONTENT FOUND" --result "WARNING" --color RED
+        display --indent 6 --text "⚠ Manual review recommended!" --tcolor RED
+    fi
+
+    return 0
+
+}

@@ -3435,3 +3435,100 @@ function wpcli_delete_comments() {
     fi
 
 }
+
+################################################################################
+# Scan WordPress database for malicious code using WP-CLI
+#
+# Arguments:
+#  ${1} = ${wp_path}
+#
+# Outputs:
+#  Scan results, 1 on error.
+################################################################################
+
+function wpcli_wordpress_malware_scan() {
+
+    local wp_path="${1}"
+
+    local wpcli_result
+    local results_found=0
+
+    # Malware patterns to search for
+    local malware_patterns=(
+        "base64_decode"
+        "eval("
+        "exec("
+        "system("
+        "shell_exec"
+        "passthru"
+        "<?php @"
+    )
+
+    log_event "info" "Scanning WordPress database for malware at '${wp_path}'" "false"
+    display --indent 6 --text "- Scanning WordPress database for malware" --tcolor YELLOW
+
+    # Check WordPress posts for malware patterns
+    display --indent 8 --text "Scanning posts and pages..." --tcolor WHITE
+    for pattern in "${malware_patterns[@]}"; do
+
+        local count
+        count=$(cd "${wp_path}" && wp post list --post_type=any --field=ID --format=csv 2>/dev/null | wc -l)
+
+        if [[ ${count} -gt 0 ]]; then
+            # Search in post content
+            local matches
+            matches=$(cd "${wp_path}" && wp db query "SELECT COUNT(*) as count FROM wp_posts WHERE post_content LIKE '%${pattern}%'" --skip-column-names 2>/dev/null)
+
+            if [[ ${matches} -gt 0 ]]; then
+                results_found=1
+                display --indent 10 --text "⚠ SUSPICIOUS: '${pattern}' found ${matches} times in posts" --result "WARNING" --color RED
+                log_event "warning" "Malware pattern '${pattern}' found ${matches} times in posts" "false"
+            fi
+        fi
+    done
+
+    # Check WordPress options for malware patterns
+    display --indent 8 --text "Scanning options..." --tcolor WHITE
+    for pattern in "${malware_patterns[@]}"; do
+
+        local matches
+        matches=$(cd "${wp_path}" && wp db query "SELECT COUNT(*) as count FROM wp_options WHERE option_value LIKE '%${pattern}%'" --skip-column-names 2>/dev/null)
+
+        if [[ ${matches} -gt 0 ]]; then
+            results_found=1
+            display --indent 10 --text "⚠ SUSPICIOUS: '${pattern}' found ${matches} times in options" --result "WARNING" --color RED
+            log_event "warning" "Malware pattern '${pattern}' found ${matches} times in options" "false"
+        fi
+    done
+
+    # Check for suspicious admin users
+    display --indent 8 --text "Checking for suspicious admin users..." --tcolor WHITE
+    local admin_count
+    admin_count=$(cd "${wp_path}" && wp user list --role=administrator --field=ID --format=count 2>/dev/null)
+
+    if [[ ${admin_count} -gt 5 ]]; then
+        results_found=1
+        display --indent 10 --text "⚠ WARNING: ${admin_count} administrator users found (may be suspicious)" --result "WARNING" --color YELLOW
+        log_event "warning" "${admin_count} administrator users found" "false"
+    fi
+
+    # Check for inactive plugins
+    display --indent 8 --text "Checking for inactive plugins..." --tcolor WHITE
+    local inactive_plugins
+    inactive_plugins=$(cd "${wp_path}" && wp plugin list --status=inactive --field=name --format=count 2>/dev/null)
+
+    if [[ ${inactive_plugins} -gt 10 ]]; then
+        display --indent 10 --text "INFO: ${inactive_plugins} inactive plugins (clean up recommended)" --tcolor CYAN
+    fi
+
+    if [[ ${results_found} -eq 0 ]]; then
+        display --indent 6 --text "- No suspicious patterns found" --result "CLEAN" --color GREEN
+        log_event "info" "No malware patterns found in WordPress database" "false"
+    else
+        display --indent 6 --text "- Scan completed - SUSPICIOUS CONTENT FOUND" --result "WARNING" --color RED
+        display --indent 6 --text "⚠ Manual review recommended!" --tcolor RED
+    fi
+
+    return 0
+
+}
