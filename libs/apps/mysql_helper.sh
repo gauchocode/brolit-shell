@@ -1335,7 +1335,7 @@ function mysql_wordpress_malware_scan() {
     # Clean up any previous results file
     [[ -f ${detailed_results_file} ]] && rm -f "${detailed_results_file}"
 
-    # Malware patterns to search for
+    # Malware patterns to search for (using LIKE syntax with %)
     local malware_patterns=(
         "base64_decode"
         "eval("
@@ -1350,31 +1350,38 @@ function mysql_wordpress_malware_scan() {
         "curl_multi_exec"
         "parse_ini_file"
         "show_source"
-        "file_get_contents.*http"
+        "file_get_contents"
         "file_put_contents"
-        "preg_replace.*\/e"
+        "preg_replace"
         "create_function"
         "call_user_func"
-        "\$_POST\["
-        "\$_GET\["
-        "\$_REQUEST\["
-        "\$_COOKIE\["
-        "<?php.*@"
+        "\$_POST["
+        "\$_GET["
+        "\$_REQUEST["
+        "\$_COOKIE["
         "RewriteCond"
         "RewriteRule"
-        "set_time_limit\(0\)"
-        "error_reporting\(0\)"
+        "set_time_limit(0)"
+        "error_reporting(0)"
         "ini_restore"
-        "<script.*src.*http"
+        "ini_set"
+        "<script"
         "<iframe"
-        "document\.write"
+        "document.write"
         "fromCharCode"
-        "unescape"
-        "String\.fromCharCode"
-        "&#[0-9]+;"
-        "\\x[0-9a-f]{2}"
+        "unescape("
+        "String.fromCharCode"
         "atob("
         "btoa("
+        ".ini_set("
+        "phpinfo("
+        "chmod("
+        "javascript:"
+        "onerror="
+        "onload="
+        "onclick="
+        "onfocus="
+        "onmouseover="
     )
 
     if [[ -n ${container_name} && ${container_name} != "false" ]]; then
@@ -1428,13 +1435,18 @@ function mysql_wordpress_malware_scan() {
 
         # Get all TEXT/VARCHAR columns from this table
         local text_columns
-        text_columns="$(${mysql_exec} -Bse "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${database_name}' AND TABLE_NAME = '${table}' AND DATA_TYPE IN ('text', 'mediumtext', 'longtext', 'varchar', 'char', 'tinytext');" </dev/null)"
+        text_columns="$(${mysql_exec} -Bse "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${database_name}' AND TABLE_NAME = '${table}' AND DATA_TYPE IN ('text', 'mediumtext', 'longtext', 'varchar', 'char', 'tinytext');" </dev/null 2>/dev/null)"
 
         # Skip table if no text columns
         if [[ -z ${text_columns} ]]; then
             display --indent 10 --text "No text columns, skipping" --tcolor GRAY
             continue
         fi
+
+        # Count text columns for debugging
+        local text_col_count
+        text_col_count="$(echo "${text_columns}" | grep -c .)"
+        display --indent 10 --text "Text columns: ${text_col_count}" --tcolor GRAY
 
         # Get primary key column name for this table
         local pk_column
