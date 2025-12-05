@@ -3454,13 +3454,6 @@ function wpcli_wordpress_malware_scan() {
     local wpcli_result
     local results_found=0
 
-    # Ensure malware scan results directory exists
-    mkdir -p "${BROLIT_TMP_DIR}/malware_scan_results"
-    local detailed_results_file="${BROLIT_TMP_DIR}/malware_scan_results/wpcli_${db_name}_$$.txt"
-
-    # Clean up any previous results file
-    [[ -f ${detailed_results_file} ]] && rm -f "${detailed_results_file}"
-
     # Check project_install_type and set wp command
     local wpcli_cmd
     if [[ ${project_install_type} == "docker" ]]; then
@@ -3473,6 +3466,17 @@ function wpcli_wordpress_malware_scan() {
     local wp_prefix
     wp_prefix=$(${wpcli_cmd} config get table_prefix 2>/dev/null | tr -d '\r')
     [[ -z ${wp_prefix} ]] && wp_prefix="wp_"
+
+    # Get database name
+    local db_name
+    db_name=$(${wpcli_cmd} config get DB_NAME 2>/dev/null | tr -d '\r')
+
+    # Ensure malware scan results directory exists
+    mkdir -p "${BROLIT_TMP_DIR}/malware_scan_results"
+    local detailed_results_file="${BROLIT_TMP_DIR}/malware_scan_results/wpcli_${db_name}_$$.txt"
+
+    # Clean up any previous results file
+    [[ -f ${detailed_results_file} ]] && rm -f "${detailed_results_file}"
 
     # Malware patterns to search for (same as Database Manager)
     local malware_patterns=(
@@ -3524,15 +3528,16 @@ function wpcli_wordpress_malware_scan() {
     )
 
     log_event "info" "Scanning WordPress database for malware at '${wp_path}'" "false"
+    log_event "debug" "WP-CLI command: ${wpcli_cmd}" "false"
+    log_event "debug" "Database name: ${db_name}" "false"
     display --indent 6 --text "- Scanning WordPress database for malware" --tcolor YELLOW
     display --indent 8 --text "Using table prefix: ${wp_prefix}" --tcolor CYAN
 
     # Get ALL tables from database
-    local db_name
-    db_name=$(${wpcli_cmd} config get DB_NAME 2>/dev/null | tr -d '\r')
-
     local all_tables
-    all_tables=$(${wpcli_cmd} db query "SHOW TABLES" --skip-column-names 2>/dev/null | tr -d '\r')
+    all_tables=$(${wpcli_cmd} db query "SHOW TABLES" --skip-column-names 2>&1 | tr -d '\r')
+
+    log_event "debug" "SHOW TABLES output: '${all_tables}'" "false"
 
     local total_tables
     total_tables=$(echo "${all_tables}" | grep -c .)
@@ -3622,15 +3627,33 @@ function wpcli_wordpress_malware_scan() {
                         fi
                     done <<< "${text_columns}"
 
-                    # Add delete commands
+                    # Generate SQL delete command
+                    local delete_sql="DELETE FROM \`${table}\` WHERE \`${pk_column}\` = '${record_id}';"
+                    echo "  SQL: ${delete_sql}" >> "${detailed_results_file}"
+
+                    # Add WP-CLI delete commands with full bash syntax
                     if [[ ${table} == *"posts" ]]; then
-                        echo "  WP-CLI delete: wp post delete ${record_id} --force" >> "${detailed_results_file}"
+                        if [[ ${project_install_type} == "docker" ]]; then
+                            echo "  WP-CLI (Docker): docker compose -f ${wp_path}/docker-compose.yml exec -T wordpress-${WP_SITE_NAME} wp post delete ${record_id} --force" >> "${detailed_results_file}"
+                        else
+                            echo "  WP-CLI (Host): sudo -u www-data wp --path=${wp_path} post delete ${record_id} --force" >> "${detailed_results_file}"
+                        fi
                     elif [[ ${table} == *"options" ]]; then
                         local opt_name
                         opt_name=$(${wpcli_cmd} db query "SELECT option_name FROM \`${table}\` WHERE \`${pk_column}\` = '${record_id}' LIMIT 1" --skip-column-names 2>/dev/null | tr -d '\r')
-                        echo "  WP-CLI delete: wp option delete '${opt_name}'" >> "${detailed_results_file}"
+                        if [[ ${project_install_type} == "docker" ]]; then
+                            echo "  WP-CLI (Docker): docker compose -f ${wp_path}/docker-compose.yml exec -T wordpress-${WP_SITE_NAME} wp option delete '${opt_name}'" >> "${detailed_results_file}"
+                        else
+                            echo "  WP-CLI (Host): sudo -u www-data wp --path=${wp_path} option delete '${opt_name}'" >> "${detailed_results_file}"
+                        fi
                     fi
-                    echo "  SQL delete: DELETE FROM \`${table}\` WHERE \`${pk_column}\` = '${record_id}';" >> "${detailed_results_file}"
+
+                    # Add bash command for SQL deletion
+                    if [[ ${project_install_type} == "docker" ]]; then
+                        echo "  Bash (Docker): docker compose -f ${wp_path}/docker-compose.yml exec -T wordpress-${WP_SITE_NAME} wp db query \"${delete_sql}\"" >> "${detailed_results_file}"
+                    else
+                        echo "  Bash (Host): sudo -u www-data wp --path=${wp_path} db query \"${delete_sql}\"" >> "${detailed_results_file}"
+                    fi
                     echo "" >> "${detailed_results_file}"
                 done
             fi

@@ -1510,7 +1510,18 @@ function mysql_wordpress_malware_scan() {
                         fi
                     done <<< "${text_columns}"
 
-                    echo "  Delete command: DELETE FROM \`${table}\` WHERE \`${pk_column}\` = '${record_id}';" >> "${detailed_results_file}"
+                    # Generate full bash command for deletion
+                    local delete_sql="DELETE FROM \`${table}\` WHERE \`${pk_column}\` = '${record_id}';"
+                    echo "  SQL: ${delete_sql}" >> "${detailed_results_file}"
+
+                    # Generate the full bash command
+                    if [[ -n ${container_name} && ${container_name} != "false" ]]; then
+                        echo "  Bash command: docker exec -i ${container_name} mysql -u${mysql_container_user} -p${mysql_container_user_pssw} -e \"${delete_sql}\" ${database_name}" >> "${detailed_results_file}"
+                    else
+                        # For host MySQL, show command with proper credentials
+                        echo "  Bash command: mysql -u root -p -e \"${delete_sql}\" ${database_name}" >> "${detailed_results_file}"
+                        echo "  (Note: Replace 'root' and add password as needed)" >> "${detailed_results_file}"
+                    fi
                     echo "" >> "${detailed_results_file}"
                 done
 
