@@ -3449,62 +3449,152 @@ function wpcli_delete_comments() {
 function wpcli_wordpress_malware_scan() {
 
     local wp_path="${1}"
+    local project_install_type="${2}"
 
     local wpcli_result
     local results_found=0
+    local detailed_results_file="/tmp/wpcli_malware_scan_$$.txt"
 
-    # Malware patterns to search for
+    # Clean up any previous results file
+    [[ -f ${detailed_results_file} ]] && rm -f "${detailed_results_file}"
+
+    # Check project_install_type and set wp command
+    local wpcli_cmd
+    if [[ ${project_install_type} == "docker" ]]; then
+        wpcli_cmd="docker compose -f ${wp_path}/docker-compose.yml exec -T wordpress-${WP_SITE_NAME} wp"
+    else
+        wpcli_cmd="sudo -u www-data wp --path=${wp_path}"
+    fi
+
+    # Get WordPress table prefix using WP-CLI
+    local wp_prefix
+    wp_prefix=$(${wpcli_cmd} config get table_prefix 2>/dev/null | tr -d '\r')
+    [[ -z ${wp_prefix} ]] && wp_prefix="wp_"
+
+    # Malware patterns to search for (same as Database Manager)
     local malware_patterns=(
         "base64_decode"
         "eval("
         "exec("
         "system("
+        "assert("
         "shell_exec"
         "passthru"
-        "<?php @"
+        "proc_open"
+        "popen"
+        "curl_exec"
+        "curl_multi_exec"
+        "parse_ini_file"
+        "show_source"
+        "file_get_contents"
+        "file_put_contents"
+        "preg_replace"
+        "create_function"
+        "call_user_func"
+        "\$_POST["
+        "\$_GET["
+        "\$_REQUEST["
+        "\$_COOKIE["
+        "RewriteCond"
+        "RewriteRule"
+        "set_time_limit(0)"
+        "error_reporting(0)"
+        "ini_restore"
+        "ini_set"
+        "<script"
+        "<iframe"
+        "document.write"
+        "fromCharCode"
+        "unescape("
+        "String.fromCharCode"
+        "atob("
+        "btoa("
+        ".ini_set("
+        "phpinfo("
+        "chmod("
+        "javascript:"
+        "onerror="
+        "onload="
+        "onclick="
+        "onfocus="
+        "onmouseover="
     )
 
     log_event "info" "Scanning WordPress database for malware at '${wp_path}'" "false"
     display --indent 6 --text "- Scanning WordPress database for malware" --tcolor YELLOW
+    display --indent 8 --text "Using table prefix: ${wp_prefix}" --tcolor CYAN
 
-    # Check WordPress posts for malware patterns
-    display --indent 8 --text "Scanning posts and pages..." --tcolor WHITE
-    for pattern in "${malware_patterns[@]}"; do
+    # Scan WordPress tables
+    local tables_to_scan=("${wp_prefix}posts" "${wp_prefix}options" "${wp_prefix}postmeta" "${wp_prefix}usermeta" "${wp_prefix}commentmeta")
 
-        local count
-        count=$(cd "${wp_path}" && wp post list --post_type=any --field=ID --format=csv 2>/dev/null | wc -l)
+    for table in "${tables_to_scan[@]}"; do
 
-        if [[ ${count} -gt 0 ]]; then
-            # Search in post content
-            local matches
-            matches=$(cd "${wp_path}" && wp db query "SELECT COUNT(*) as count FROM wp_posts WHERE post_content LIKE '%${pattern}%'" --skip-column-names 2>/dev/null)
+        display --indent 8 --text "Scanning table: ${table}" --tcolor WHITE
+
+        for pattern in "${malware_patterns[@]}"; do
+
+            local matches=0
+            local query=""
+
+            # Build query based on table type
+            if [[ ${table} == *"posts" ]]; then
+                query="SELECT COUNT(*) FROM ${table} WHERE post_content LIKE '%${pattern}%' OR post_title LIKE '%${pattern}%'"
+            elif [[ ${table} == *"options" ]]; then
+                query="SELECT COUNT(*) FROM ${table} WHERE option_value LIKE '%${pattern}%'"
+            elif [[ ${table} == *"meta" ]]; then
+                query="SELECT COUNT(*) FROM ${table} WHERE meta_value LIKE '%${pattern}%'"
+            else
+                continue
+            fi
+
+            matches=$(${wpcli_cmd} db query "${query}" --skip-column-names 2>/dev/null | tr -d '\r' | xargs)
 
             if [[ ${matches} -gt 0 ]]; then
                 results_found=1
-                display --indent 10 --text "⚠ SUSPICIOUS: '${pattern}' found ${matches} times in posts" --result "WARNING" --color RED
-                log_event "warning" "Malware pattern '${pattern}' found ${matches} times in posts" "false"
+                display --indent 10 --text "⚠ SUSPICIOUS: '${pattern}' found ${matches} times" --result "WARNING" --color RED
+                log_event "warning" "Malware pattern '${pattern}' found ${matches} times in ${table}" "false"
+
+                # Add to detailed report
+                echo "========================================" >> "${detailed_results_file}"
+                echo "Pattern: ${pattern}" >> "${detailed_results_file}"
+                echo "Table: ${table}" >> "${detailed_results_file}"
+                echo "Occurrences: ${matches}" >> "${detailed_results_file}"
+                echo "----------------------------------------" >> "${detailed_results_file}"
+
+                # Get specific records with details
+                if [[ ${table} == *"posts" ]]; then
+                    ${wpcli_cmd} db query "SELECT ID, post_title, post_type FROM ${table} WHERE post_content LIKE '%${pattern}%' OR post_title LIKE '%${pattern}%' LIMIT 10" --skip-column-names 2>/dev/null | while IFS=$'\t' read -r id title type; do
+                        echo "  Post ID: ${id}" >> "${detailed_results_file}"
+                        echo "  Title: ${title}" >> "${detailed_results_file}"
+                        echo "  Type: ${type}" >> "${detailed_results_file}"
+                        echo "  WP-CLI delete: wp post delete ${id} --force" >> "${detailed_results_file}"
+                        echo "" >> "${detailed_results_file}"
+                    done
+                elif [[ ${table} == *"options" ]]; then
+                    ${wpcli_cmd} db query "SELECT option_id, option_name FROM ${table} WHERE option_value LIKE '%${pattern}%' LIMIT 10" --skip-column-names 2>/dev/null | while IFS=$'\t' read -r id name; do
+                        echo "  Option ID: ${id}" >> "${detailed_results_file}"
+                        echo "  Option Name: ${name}" >> "${detailed_results_file}"
+                        echo "  WP-CLI delete: wp option delete '${name}'" >> "${detailed_results_file}"
+                        echo "  SQL delete: DELETE FROM ${table} WHERE option_id = ${id};" >> "${detailed_results_file}"
+                        echo "" >> "${detailed_results_file}"
+                    done
+                elif [[ ${table} == *"meta" ]]; then
+                    local id_col="meta_id"
+                    ${wpcli_cmd} db query "SELECT ${id_col}, meta_key FROM ${table} WHERE meta_value LIKE '%${pattern}%' LIMIT 10" --skip-column-names 2>/dev/null | while IFS=$'\t' read -r id key; do
+                        echo "  Meta ID: ${id}" >> "${detailed_results_file}"
+                        echo "  Meta Key: ${key}" >> "${detailed_results_file}"
+                        echo "  SQL delete: DELETE FROM ${table} WHERE ${id_col} = ${id};" >> "${detailed_results_file}"
+                        echo "" >> "${detailed_results_file}"
+                    done
+                fi
             fi
-        fi
-    done
-
-    # Check WordPress options for malware patterns
-    display --indent 8 --text "Scanning options..." --tcolor WHITE
-    for pattern in "${malware_patterns[@]}"; do
-
-        local matches
-        matches=$(cd "${wp_path}" && wp db query "SELECT COUNT(*) as count FROM wp_options WHERE option_value LIKE '%${pattern}%'" --skip-column-names 2>/dev/null)
-
-        if [[ ${matches} -gt 0 ]]; then
-            results_found=1
-            display --indent 10 --text "⚠ SUSPICIOUS: '${pattern}' found ${matches} times in options" --result "WARNING" --color RED
-            log_event "warning" "Malware pattern '${pattern}' found ${matches} times in options" "false"
-        fi
+        done
     done
 
     # Check for suspicious admin users
     display --indent 8 --text "Checking for suspicious admin users..." --tcolor WHITE
     local admin_count
-    admin_count=$(cd "${wp_path}" && wp user list --role=administrator --field=ID --format=count 2>/dev/null)
+    admin_count=$(${wpcli_cmd} user list --role=administrator --field=ID --format=count 2>/dev/null)
 
     if [[ ${admin_count} -gt 5 ]]; then
         results_found=1
@@ -3515,7 +3605,7 @@ function wpcli_wordpress_malware_scan() {
     # Check for inactive plugins
     display --indent 8 --text "Checking for inactive plugins..." --tcolor WHITE
     local inactive_plugins
-    inactive_plugins=$(cd "${wp_path}" && wp plugin list --status=inactive --field=name --format=count 2>/dev/null)
+    inactive_plugins=$(${wpcli_cmd} plugin list --status=inactive --field=name --format=count 2>/dev/null)
 
     if [[ ${inactive_plugins} -gt 10 ]]; then
         display --indent 10 --text "INFO: ${inactive_plugins} inactive plugins (clean up recommended)" --tcolor CYAN
@@ -3524,9 +3614,25 @@ function wpcli_wordpress_malware_scan() {
     if [[ ${results_found} -eq 0 ]]; then
         display --indent 6 --text "- No suspicious patterns found" --result "CLEAN" --color GREEN
         log_event "info" "No malware patterns found in WordPress database" "false"
+        # Clean up results file if no results
+        [[ -f ${detailed_results_file} ]] && rm -f "${detailed_results_file}"
     else
         display --indent 6 --text "- Scan completed - SUSPICIOUS CONTENT FOUND" --result "WARNING" --color RED
         display --indent 6 --text "⚠ Manual review recommended!" --tcolor RED
+        echo ""
+        display --indent 6 --text "📄 Detailed report saved to:" --tcolor CYAN
+        display --indent 8 --text "${detailed_results_file}" --tcolor WHITE
+        echo ""
+        display --indent 6 --text "To view the report, run:" --tcolor YELLOW
+        display --indent 8 --text "less ${detailed_results_file}" --tcolor WHITE
+        display --indent 8 --text "or" --tcolor WHITE
+        display --indent 8 --text "cat ${detailed_results_file}" --tcolor WHITE
+        echo ""
+
+        # Ask if user wants to view the report now
+        if whiptail --title "Malware Scan Results" --yesno "Suspicious content found!\n\nDetailed report saved to:\n${detailed_results_file}\n\nThe report contains:\n- Specific IDs of affected records\n- WP-CLI commands to delete\n- SQL commands as alternative\n\nDo you want to view the report now?" 18 78; then
+            less "${detailed_results_file}"
+        fi
     fi
 
     return 0
