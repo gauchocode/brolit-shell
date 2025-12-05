@@ -3501,8 +3501,9 @@ function wpcli_wordpress_malware_scan() {
         "error_reporting(0)"
         "ini_restore"
         "ini_set"
-        "<script"
-        "<iframe"
+        "<script>eval"
+        "<script>document.write"
+        "<script src=\"data:"
         "document.write"
         "fromCharCode"
         "unescape("
@@ -3512,42 +3513,76 @@ function wpcli_wordpress_malware_scan() {
         ".ini_set("
         "phpinfo("
         "chmod("
-        "javascript:"
+        "javascript:eval"
+        "javascript:alert"
         "onerror="
         "onload="
         "onclick="
         "onfocus="
         "onmouseover="
+        "<iframe src=\"data:"
+        "<iframe src=\"javascript:"
     )
 
     log_event "info" "Scanning WordPress database for malware at '${wp_path}'" "false"
     display --indent 6 --text "- Scanning WordPress database for malware" --tcolor YELLOW
     display --indent 8 --text "Using table prefix: ${wp_prefix}" --tcolor CYAN
 
-    # Scan WordPress tables
-    local tables_to_scan=("${wp_prefix}posts" "${wp_prefix}options" "${wp_prefix}postmeta" "${wp_prefix}usermeta" "${wp_prefix}commentmeta")
+    # Get ALL tables from database
+    local db_name
+    db_name=$(${wpcli_cmd} config get DB_NAME 2>/dev/null | tr -d '\r')
 
-    for table in "${tables_to_scan[@]}"; do
+    local all_tables
+    all_tables=$(${wpcli_cmd} db query "SHOW TABLES" --skip-column-names 2>/dev/null | tr -d '\r')
 
-        display --indent 8 --text "Scanning table: ${table}" --tcolor WHITE
+    local total_tables
+    total_tables=$(echo "${all_tables}" | grep -c .)
+    display --indent 6 --text "- Total tables found: ${total_tables}" --tcolor CYAN
+
+    local tables_processed=0
+
+    # Scan ALL tables
+    while IFS= read -r table; do
+        [[ -z ${table} ]] && continue
+
+        ((tables_processed++))
+
+        display --indent 8 --text "[${tables_processed}/${total_tables}] Scanning table: ${table}" --tcolor WHITE
+
+        # Get all TEXT/VARCHAR columns from this table
+        local text_columns
+        text_columns=$(${wpcli_cmd} db query "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${db_name}' AND TABLE_NAME = '${table}' AND DATA_TYPE IN ('text', 'mediumtext', 'longtext', 'varchar', 'char', 'tinytext')" --skip-column-names 2>/dev/null | tr -d '\r')
+
+        # Skip table if no text columns
+        if [[ -z ${text_columns} ]]; then
+            display --indent 10 --text "No text columns, skipping" --tcolor GRAY
+            continue
+        fi
+
+        # Count text columns
+        local text_col_count
+        text_col_count=$(echo "${text_columns}" | grep -c .)
+        display --indent 10 --text "Text columns: ${text_col_count}" --tcolor GRAY
 
         for pattern in "${malware_patterns[@]}"; do
 
             local matches=0
-            local query=""
 
-            # Build query based on table type
-            if [[ ${table} == *"posts" ]]; then
-                query="SELECT COUNT(*) FROM ${table} WHERE post_content LIKE '%${pattern}%' OR post_title LIKE '%${pattern}%'"
-            elif [[ ${table} == *"options" ]]; then
-                query="SELECT COUNT(*) FROM ${table} WHERE option_value LIKE '%${pattern}%'"
-            elif [[ ${table} == *"meta" ]]; then
-                query="SELECT COUNT(*) FROM ${table} WHERE meta_value LIKE '%${pattern}%'"
-            else
-                continue
+            # Build WHERE clause for all text columns
+            local where_clause=""
+            while IFS= read -r col; do
+                [[ -z ${col} ]] && continue
+                if [[ -z ${where_clause} ]]; then
+                    where_clause="\`${col}\` LIKE '%${pattern}%'"
+                else
+                    where_clause="${where_clause} OR \`${col}\` LIKE '%${pattern}%'"
+                fi
+            done <<< "${text_columns}"
+
+            # Execute search query
+            if [[ -n ${where_clause} ]]; then
+                matches=$(${wpcli_cmd} db query "SELECT COUNT(*) FROM \`${table}\` WHERE ${where_clause}" --skip-column-names 2>/dev/null | tr -d '\r' | xargs || echo "0")
             fi
-
-            matches=$(${wpcli_cmd} db query "${query}" --skip-column-names 2>/dev/null | tr -d '\r' | xargs)
 
             if [[ ${matches} -gt 0 ]]; then
                 results_found=1
@@ -3559,37 +3594,46 @@ function wpcli_wordpress_malware_scan() {
                 echo "Pattern: ${pattern}" >> "${detailed_results_file}"
                 echo "Table: ${table}" >> "${detailed_results_file}"
                 echo "Occurrences: ${matches}" >> "${detailed_results_file}"
+                echo "Columns scanned: $(echo "${text_columns}" | tr '\n' ', ' | sed 's/,$//')" >> "${detailed_results_file}"
                 echo "----------------------------------------" >> "${detailed_results_file}"
 
-                # Get specific records with details
-                if [[ ${table} == *"posts" ]]; then
-                    ${wpcli_cmd} db query "SELECT ID, post_title, post_type FROM ${table} WHERE post_content LIKE '%${pattern}%' OR post_title LIKE '%${pattern}%' LIMIT 10" --skip-column-names 2>/dev/null | while IFS=$'\t' read -r id title type; do
-                        echo "  Post ID: ${id}" >> "${detailed_results_file}"
-                        echo "  Title: ${title}" >> "${detailed_results_file}"
-                        echo "  Type: ${type}" >> "${detailed_results_file}"
-                        echo "  WP-CLI delete: wp post delete ${id} --force" >> "${detailed_results_file}"
-                        echo "" >> "${detailed_results_file}"
-                    done
-                elif [[ ${table} == *"options" ]]; then
-                    ${wpcli_cmd} db query "SELECT option_id, option_name FROM ${table} WHERE option_value LIKE '%${pattern}%' LIMIT 10" --skip-column-names 2>/dev/null | while IFS=$'\t' read -r id name; do
-                        echo "  Option ID: ${id}" >> "${detailed_results_file}"
-                        echo "  Option Name: ${name}" >> "${detailed_results_file}"
-                        echo "  WP-CLI delete: wp option delete '${name}'" >> "${detailed_results_file}"
-                        echo "  SQL delete: DELETE FROM ${table} WHERE option_id = ${id};" >> "${detailed_results_file}"
-                        echo "" >> "${detailed_results_file}"
-                    done
-                elif [[ ${table} == *"meta" ]]; then
-                    local id_col="meta_id"
-                    ${wpcli_cmd} db query "SELECT ${id_col}, meta_key FROM ${table} WHERE meta_value LIKE '%${pattern}%' LIMIT 10" --skip-column-names 2>/dev/null | while IFS=$'\t' read -r id key; do
-                        echo "  Meta ID: ${id}" >> "${detailed_results_file}"
-                        echo "  Meta Key: ${key}" >> "${detailed_results_file}"
-                        echo "  SQL delete: DELETE FROM ${table} WHERE ${id_col} = ${id};" >> "${detailed_results_file}"
-                        echo "" >> "${detailed_results_file}"
-                    done
-                fi
+                # Get primary key column name for this table
+                local pk_column
+                pk_column=$(${wpcli_cmd} db query "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${db_name}' AND TABLE_NAME = '${table}' AND COLUMN_KEY = 'PRI' LIMIT 1" --skip-column-names 2>/dev/null | tr -d '\r')
+                [[ -z ${pk_column} ]] && pk_column="id"
+
+                # Get records that match the pattern (limit to first 10)
+                ${wpcli_cmd} db query "SELECT \`${pk_column}\` FROM \`${table}\` WHERE ${where_clause} LIMIT 10" --skip-column-names 2>/dev/null | while IFS=$'\t' read -r record_id; do
+                    [[ -z ${record_id} ]] && continue
+                    record_id=$(echo "${record_id}" | tr -d '\r')
+
+                    echo "  ---" >> "${detailed_results_file}"
+                    echo "  Record ID (${pk_column}): ${record_id}" >> "${detailed_results_file}"
+
+                    # Show which columns contain the pattern
+                    while IFS= read -r col; do
+                        [[ -z ${col} ]] && continue
+                        local col_value
+                        col_value=$(${wpcli_cmd} db query "SELECT LEFT(\`${col}\`, 200) FROM \`${table}\` WHERE \`${pk_column}\` = '${record_id}' AND \`${col}\` LIKE '%${pattern}%' LIMIT 1" --skip-column-names 2>/dev/null | tr -d '\r')
+                        if [[ -n ${col_value} ]]; then
+                            echo "  Column '${col}': ${col_value}..." >> "${detailed_results_file}"
+                        fi
+                    done <<< "${text_columns}"
+
+                    # Add delete commands
+                    if [[ ${table} == *"posts" ]]; then
+                        echo "  WP-CLI delete: wp post delete ${record_id} --force" >> "${detailed_results_file}"
+                    elif [[ ${table} == *"options" ]]; then
+                        local opt_name
+                        opt_name=$(${wpcli_cmd} db query "SELECT option_name FROM \`${table}\` WHERE \`${pk_column}\` = '${record_id}' LIMIT 1" --skip-column-names 2>/dev/null | tr -d '\r')
+                        echo "  WP-CLI delete: wp option delete '${opt_name}'" >> "${detailed_results_file}"
+                    fi
+                    echo "  SQL delete: DELETE FROM \`${table}\` WHERE \`${pk_column}\` = '${record_id}';" >> "${detailed_results_file}"
+                    echo "" >> "${detailed_results_file}"
+                done
             fi
         done
-    done
+    done <<< "${all_tables}"
 
     # Check for suspicious admin users
     display --indent 8 --text "Checking for suspicious admin users..." --tcolor WHITE
