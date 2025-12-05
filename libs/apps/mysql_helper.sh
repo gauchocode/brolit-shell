@@ -1330,6 +1330,10 @@ function mysql_wordpress_malware_scan() {
     local mysql_exec
     local tables
     local results_found=0
+    local detailed_results_file="/tmp/malware_scan_${database_name}_$$.txt"
+
+    # Clean up any previous results file
+    [[ -f ${detailed_results_file} ]] && rm -f "${detailed_results_file}"
 
     # Malware patterns to search for
     local malware_patterns=(
@@ -1414,13 +1418,17 @@ function mysql_wordpress_malware_scan() {
         for pattern in "${malware_patterns[@]}"; do
 
             local count
+            local content_column
 
             # Different queries for different table types
             if [[ ${table} == *"options"* ]]; then
+                content_column="option_value"
                 count="$(${mysql_exec} -Bse "SELECT COUNT(*) FROM ${database_name}.\`${table}\` WHERE option_value LIKE '%${pattern}%'" </dev/null)"
             elif [[ ${table} == *"posts"* ]]; then
+                content_column="post_content"
                 count="$(${mysql_exec} -Bse "SELECT COUNT(*) FROM ${database_name}.\`${table}\` WHERE post_content LIKE '%${pattern}%' OR post_title LIKE '%${pattern}%'" </dev/null)"
             elif [[ ${table} == *"meta"* ]]; then
+                content_column="meta_value"
                 count="$(${mysql_exec} -Bse "SELECT COUNT(*) FROM ${database_name}.\`${table}\` WHERE meta_value LIKE '%${pattern}%'" </dev/null)"
             else
                 continue
@@ -1430,6 +1438,44 @@ function mysql_wordpress_malware_scan() {
                 results_found=1
                 display --indent 10 --text "⚠ SUSPICIOUS: '${pattern}' found ${count} times" --result "WARNING" --color RED
                 log_event "warning" "Malware pattern '${pattern}' found ${count} times in table '${table}'" "false"
+
+                # Get detailed results with ID and preview
+                echo "========================================" >> "${detailed_results_file}"
+                echo "Pattern: ${pattern}" >> "${detailed_results_file}"
+                echo "Table: ${table}" >> "${detailed_results_file}"
+                echo "Column: ${content_column}" >> "${detailed_results_file}"
+                echo "Occurrences: ${count}" >> "${detailed_results_file}"
+                echo "----------------------------------------" >> "${detailed_results_file}"
+
+                # Get specific records with ID and preview (limit to first 10 results)
+                if [[ ${table} == *"options"* ]]; then
+                    ${mysql_exec} -Bse "SELECT option_id, option_name, LEFT(option_value, 200) FROM ${database_name}.\`${table}\` WHERE option_value LIKE '%${pattern}%' LIMIT 10" </dev/null | while IFS=$'\t' read -r id name preview; do
+                        echo "  ID: ${id}" >> "${detailed_results_file}"
+                        echo "  Name: ${name}" >> "${detailed_results_file}"
+                        echo "  Preview: ${preview}..." >> "${detailed_results_file}"
+                        echo "  Delete command: DELETE FROM ${table} WHERE option_id = ${id};" >> "${detailed_results_file}"
+                        echo "" >> "${detailed_results_file}"
+                    done
+                elif [[ ${table} == *"posts"* ]]; then
+                    ${mysql_exec} -Bse "SELECT ID, post_title, post_type, LEFT(post_content, 200) FROM ${database_name}.\`${table}\` WHERE post_content LIKE '%${pattern}%' OR post_title LIKE '%${pattern}%' LIMIT 10" </dev/null | while IFS=$'\t' read -r id title type preview; do
+                        echo "  ID: ${id}" >> "${detailed_results_file}"
+                        echo "  Title: ${title}" >> "${detailed_results_file}"
+                        echo "  Type: ${type}" >> "${detailed_results_file}"
+                        echo "  Preview: ${preview}..." >> "${detailed_results_file}"
+                        echo "  Delete command: DELETE FROM ${table} WHERE ID = ${id};" >> "${detailed_results_file}"
+                        echo "  Or via WP-CLI: wp post delete ${id} --force" >> "${detailed_results_file}"
+                        echo "" >> "${detailed_results_file}"
+                    done
+                elif [[ ${table} == *"meta"* ]]; then
+                    ${mysql_exec} -Bse "SELECT meta_id, meta_key, LEFT(meta_value, 200) FROM ${database_name}.\`${table}\` WHERE meta_value LIKE '%${pattern}%' LIMIT 10" </dev/null | while IFS=$'\t' read -r id key preview; do
+                        echo "  ID: ${id}" >> "${detailed_results_file}"
+                        echo "  Key: ${key}" >> "${detailed_results_file}"
+                        echo "  Preview: ${preview}..." >> "${detailed_results_file}"
+                        echo "  Delete command: DELETE FROM ${table} WHERE meta_id = ${id};" >> "${detailed_results_file}"
+                        echo "" >> "${detailed_results_file}"
+                    done
+                fi
+
             fi
 
         done
@@ -1441,9 +1487,25 @@ function mysql_wordpress_malware_scan() {
     if [[ ${results_found} -eq 0 ]]; then
         display --indent 6 --text "- No suspicious patterns found" --result "CLEAN" --color GREEN
         log_event "info" "No malware patterns found in database '${database_name}'" "false"
+        # Clean up results file if no results
+        [[ -f ${detailed_results_file} ]] && rm -f "${detailed_results_file}"
     else
         display --indent 6 --text "- Scan completed - SUSPICIOUS CONTENT FOUND" --result "WARNING" --color RED
         display --indent 6 --text "⚠ Manual review recommended!" --tcolor RED
+        echo ""
+        display --indent 6 --text "📄 Detailed report saved to:" --tcolor CYAN
+        display --indent 8 --text "${detailed_results_file}" --tcolor WHITE
+        echo ""
+        display --indent 6 --text "To view the report, run:" --tcolor YELLOW
+        display --indent 8 --text "less ${detailed_results_file}" --tcolor WHITE
+        display --indent 8 --text "or" --tcolor WHITE
+        display --indent 8 --text "cat ${detailed_results_file}" --tcolor WHITE
+        echo ""
+
+        # Ask if user wants to view the report now
+        if whiptail --title "Malware Scan Results" --yesno "Suspicious content found!\n\nDetailed report saved to:\n${detailed_results_file}\n\nThe report contains:\n- Specific IDs of affected records\n- Preview of suspicious content\n- SQL commands to delete each record\n- WP-CLI commands (when applicable)\n\nDo you want to view the report now?" 18 78; then
+            less "${detailed_results_file}"
+        fi
     fi
 
     return 0

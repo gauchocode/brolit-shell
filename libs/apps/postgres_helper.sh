@@ -1384,6 +1384,10 @@ function postgres_database_malware_scan() {
     local psql_exec
     local tables
     local results_found=0
+    local detailed_results_file="/tmp/malware_scan_${database_name}_$$.txt"
+
+    # Clean up any previous results file
+    [[ -f ${detailed_results_file} ]] && rm -f "${detailed_results_file}"
 
     # Malware patterns to search for
     local malware_patterns=(
@@ -1473,13 +1477,17 @@ function postgres_database_malware_scan() {
         for pattern in "${malware_patterns[@]}"; do
 
             local count
+            local content_column
 
             # Different queries for different table types
             if [[ ${table} == *"options"* ]]; then
+                content_column="option_value"
                 count="$(${psql_exec} -d "${database_name}" -c "SELECT COUNT(*) FROM \"${table}\" WHERE option_value LIKE '%${pattern}%';" -t </dev/null | xargs)"
             elif [[ ${table} == *"posts"* ]]; then
+                content_column="post_content"
                 count="$(${psql_exec} -d "${database_name}" -c "SELECT COUNT(*) FROM \"${table}\" WHERE post_content LIKE '%${pattern}%' OR post_title LIKE '%${pattern}%';" -t </dev/null | xargs)"
             elif [[ ${table} == *"meta"* ]]; then
+                content_column="meta_value"
                 count="$(${psql_exec} -d "${database_name}" -c "SELECT COUNT(*) FROM \"${table}\" WHERE meta_value LIKE '%${pattern}%';" -t </dev/null | xargs)"
             else
                 continue
@@ -1489,6 +1497,53 @@ function postgres_database_malware_scan() {
                 results_found=1
                 display --indent 10 --text "⚠ SUSPICIOUS: '${pattern}' found ${count} times" --result "WARNING" --color RED
                 log_event "warning" "Malware pattern '${pattern}' found ${count} times in table '${table}'" "false"
+
+                # Get detailed results with ID and preview
+                echo "========================================" >> "${detailed_results_file}"
+                echo "Pattern: ${pattern}" >> "${detailed_results_file}"
+                echo "Table: ${table}" >> "${detailed_results_file}"
+                echo "Column: ${content_column}" >> "${detailed_results_file}"
+                echo "Occurrences: ${count}" >> "${detailed_results_file}"
+                echo "----------------------------------------" >> "${detailed_results_file}"
+
+                # Get specific records with ID and preview (limit to first 10 results)
+                if [[ ${table} == *"options"* ]]; then
+                    ${psql_exec} -d "${database_name}" -c "SELECT option_id, option_name, LEFT(option_value, 200) FROM \"${table}\" WHERE option_value LIKE '%${pattern}%' LIMIT 10;" -t </dev/null | while IFS='|' read -r id name preview; do
+                        id="$(echo "${id}" | xargs)"
+                        name="$(echo "${name}" | xargs)"
+                        preview="$(echo "${preview}" | xargs)"
+                        echo "  ID: ${id}" >> "${detailed_results_file}"
+                        echo "  Name: ${name}" >> "${detailed_results_file}"
+                        echo "  Preview: ${preview}..." >> "${detailed_results_file}"
+                        echo "  Delete command: DELETE FROM \"${table}\" WHERE option_id = ${id};" >> "${detailed_results_file}"
+                        echo "" >> "${detailed_results_file}"
+                    done
+                elif [[ ${table} == *"posts"* ]]; then
+                    ${psql_exec} -d "${database_name}" -c "SELECT id, post_title, post_type, LEFT(post_content, 200) FROM \"${table}\" WHERE post_content LIKE '%${pattern}%' OR post_title LIKE '%${pattern}%' LIMIT 10;" -t </dev/null | while IFS='|' read -r id title type preview; do
+                        id="$(echo "${id}" | xargs)"
+                        title="$(echo "${title}" | xargs)"
+                        type="$(echo "${type}" | xargs)"
+                        preview="$(echo "${preview}" | xargs)"
+                        echo "  ID: ${id}" >> "${detailed_results_file}"
+                        echo "  Title: ${title}" >> "${detailed_results_file}"
+                        echo "  Type: ${type}" >> "${detailed_results_file}"
+                        echo "  Preview: ${preview}..." >> "${detailed_results_file}"
+                        echo "  Delete command: DELETE FROM \"${table}\" WHERE id = ${id};" >> "${detailed_results_file}"
+                        echo "" >> "${detailed_results_file}"
+                    done
+                elif [[ ${table} == *"meta"* ]]; then
+                    ${psql_exec} -d "${database_name}" -c "SELECT meta_id, meta_key, LEFT(meta_value, 200) FROM \"${table}\" WHERE meta_value LIKE '%${pattern}%' LIMIT 10;" -t </dev/null | while IFS='|' read -r id key preview; do
+                        id="$(echo "${id}" | xargs)"
+                        key="$(echo "${key}" | xargs)"
+                        preview="$(echo "${preview}" | xargs)"
+                        echo "  ID: ${id}" >> "${detailed_results_file}"
+                        echo "  Key: ${key}" >> "${detailed_results_file}"
+                        echo "  Preview: ${preview}..." >> "${detailed_results_file}"
+                        echo "  Delete command: DELETE FROM \"${table}\" WHERE meta_id = ${id};" >> "${detailed_results_file}"
+                        echo "" >> "${detailed_results_file}"
+                    done
+                fi
+
             fi
 
         done
@@ -1500,9 +1555,25 @@ function postgres_database_malware_scan() {
     if [[ ${results_found} -eq 0 ]]; then
         display --indent 6 --text "- No suspicious patterns found" --result "CLEAN" --color GREEN
         log_event "info" "No malware patterns found in database '${database_name}'" "false"
+        # Clean up results file if no results
+        [[ -f ${detailed_results_file} ]] && rm -f "${detailed_results_file}"
     else
         display --indent 6 --text "- Scan completed - SUSPICIOUS CONTENT FOUND" --result "WARNING" --color RED
         display --indent 6 --text "⚠ Manual review recommended!" --tcolor RED
+        echo ""
+        display --indent 6 --text "📄 Detailed report saved to:" --tcolor CYAN
+        display --indent 8 --text "${detailed_results_file}" --tcolor WHITE
+        echo ""
+        display --indent 6 --text "To view the report, run:" --tcolor YELLOW
+        display --indent 8 --text "less ${detailed_results_file}" --tcolor WHITE
+        display --indent 8 --text "or" --tcolor WHITE
+        display --indent 8 --text "cat ${detailed_results_file}" --tcolor WHITE
+        echo ""
+
+        # Ask if user wants to view the report now
+        if whiptail --title "Malware Scan Results" --yesno "Suspicious content found!\n\nDetailed report saved to:\n${detailed_results_file}\n\nThe report contains:\n- Specific IDs of affected records\n- Preview of suspicious content\n- SQL commands to delete each record\n\nDo you want to view the report now?" 18 78; then
+            less "${detailed_results_file}"
+        fi
     fi
 
     return 0
