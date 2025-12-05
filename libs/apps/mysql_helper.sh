@@ -1350,7 +1350,7 @@ function mysql_wordpress_malware_scan() {
         "curl_multi_exec"
         "parse_ini_file"
         "show_source"
-        "file_get_contents"
+        "file_get_contents.*http"
         "file_put_contents"
         "preg_replace.*\/e"
         "create_function"
@@ -1362,8 +1362,19 @@ function mysql_wordpress_malware_scan() {
         "<?php.*@"
         "RewriteCond"
         "RewriteRule"
-        "ini_set"
         "set_time_limit\(0\)"
+        "error_reporting\(0\)"
+        "ini_restore"
+        "<script.*src.*http"
+        "<iframe"
+        "document\.write"
+        "fromCharCode"
+        "unescape"
+        "String\.fromCharCode"
+        "&#[0-9]+;"
+        "\\x[0-9a-f]{2}"
+        "atob("
+        "btoa("
     )
 
     if [[ -n ${container_name} && ${container_name} != "false" ]]; then
@@ -1383,16 +1394,17 @@ function mysql_wordpress_malware_scan() {
 
     fi
 
-    log_event "info" "Scanning WordPress database '${database_name}' for malware" "false"
+    log_event "info" "Scanning database '${database_name}' for malware" "false"
     display --indent 6 --text "- Scanning database: ${database_name}" --tcolor YELLOW
+    display --indent 8 --text "Scanning ALL tables in the database" --tcolor CYAN
 
-    # Get WordPress tables
-    tables="$(${mysql_exec} -Bse "SHOW TABLES FROM ${database_name}" </dev/null | grep -E 'wp_.*posts|wp_.*options|wp_.*postmeta|wp_.*usermeta')"
+    # Get ALL tables from database
+    tables="$(${mysql_exec} -Bse "SHOW TABLES FROM ${database_name}" </dev/null)"
 
     # Check if tables were retrieved
     mysql_result=$?
     if [[ ${mysql_result} -ne 0 ]]; then
-        display --indent 6 --text "- Getting WordPress tables" --result "FAIL" --color RED
+        display --indent 6 --text "- Getting tables from database" --result "FAIL" --color RED
         log_event "error" "Failed to get tables from database '${database_name}'" "false"
         return 1
     fi
@@ -1400,7 +1412,7 @@ function mysql_wordpress_malware_scan() {
     # Count total tables
     local total_tables
     total_tables="$(echo "${tables}" | grep -c .)"
-    display --indent 6 --text "- WordPress tables found: ${total_tables}" --tcolor CYAN
+    display --indent 6 --text "- Total tables found: ${total_tables}" --tcolor CYAN
 
     local tables_processed=0
 
@@ -1414,24 +1426,40 @@ function mysql_wordpress_malware_scan() {
 
         display --indent 8 --text "[${tables_processed}/${total_tables}] Scanning table: ${table}" --tcolor WHITE
 
+        # Get all TEXT/VARCHAR columns from this table
+        local text_columns
+        text_columns="$(${mysql_exec} -Bse "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${database_name}' AND TABLE_NAME = '${table}' AND DATA_TYPE IN ('text', 'mediumtext', 'longtext', 'varchar', 'char', 'tinytext');" </dev/null)"
+
+        # Skip table if no text columns
+        if [[ -z ${text_columns} ]]; then
+            display --indent 10 --text "No text columns, skipping" --tcolor GRAY
+            continue
+        fi
+
+        # Get primary key column name for this table
+        local pk_column
+        pk_column="$(${mysql_exec} -Bse "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${database_name}' AND TABLE_NAME = '${table}' AND COLUMN_KEY = 'PRI' LIMIT 1;" </dev/null)"
+        [[ -z ${pk_column} ]] && pk_column="id"  # fallback to 'id'
+
         # Scan for each malware pattern
         for pattern in "${malware_patterns[@]}"; do
 
-            local count
-            local content_column
+            local count=0
 
-            # Different queries for different table types
-            if [[ ${table} == *"options"* ]]; then
-                content_column="option_value"
-                count="$(${mysql_exec} -Bse "SELECT COUNT(*) FROM ${database_name}.\`${table}\` WHERE option_value LIKE '%${pattern}%'" </dev/null)"
-            elif [[ ${table} == *"posts"* ]]; then
-                content_column="post_content"
-                count="$(${mysql_exec} -Bse "SELECT COUNT(*) FROM ${database_name}.\`${table}\` WHERE post_content LIKE '%${pattern}%' OR post_title LIKE '%${pattern}%'" </dev/null)"
-            elif [[ ${table} == *"meta"* ]]; then
-                content_column="meta_value"
-                count="$(${mysql_exec} -Bse "SELECT COUNT(*) FROM ${database_name}.\`${table}\` WHERE meta_value LIKE '%${pattern}%'" </dev/null)"
-            else
-                continue
+            # Build WHERE clause for all text columns
+            local where_clause=""
+            while IFS= read -r col; do
+                [[ -z ${col} ]] && continue
+                if [[ -z ${where_clause} ]]; then
+                    where_clause="\`${col}\` LIKE '%${pattern}%'"
+                else
+                    where_clause="${where_clause} OR \`${col}\` LIKE '%${pattern}%'"
+                fi
+            done <<< "${text_columns}"
+
+            # Execute search query
+            if [[ -n ${where_clause} ]]; then
+                count="$(${mysql_exec} -Bse "SELECT COUNT(*) FROM ${database_name}.\`${table}\` WHERE ${where_clause}" </dev/null 2>/dev/null || echo "0")"
             fi
 
             if [[ ${count} -gt 0 ]]; then
@@ -1443,38 +1471,30 @@ function mysql_wordpress_malware_scan() {
                 echo "========================================" >> "${detailed_results_file}"
                 echo "Pattern: ${pattern}" >> "${detailed_results_file}"
                 echo "Table: ${table}" >> "${detailed_results_file}"
-                echo "Column: ${content_column}" >> "${detailed_results_file}"
                 echo "Occurrences: ${count}" >> "${detailed_results_file}"
+                echo "Columns scanned: $(echo "${text_columns}" | tr '\n' ', ' | sed 's/,$//')" >> "${detailed_results_file}"
                 echo "----------------------------------------" >> "${detailed_results_file}"
 
-                # Get specific records with ID and preview (limit to first 10 results)
-                if [[ ${table} == *"options"* ]]; then
-                    ${mysql_exec} -Bse "SELECT option_id, option_name, LEFT(option_value, 200) FROM ${database_name}.\`${table}\` WHERE option_value LIKE '%${pattern}%' LIMIT 10" </dev/null | while IFS=$'\t' read -r id name preview; do
-                        echo "  ID: ${id}" >> "${detailed_results_file}"
-                        echo "  Name: ${name}" >> "${detailed_results_file}"
-                        echo "  Preview: ${preview}..." >> "${detailed_results_file}"
-                        echo "  Delete command: DELETE FROM ${table} WHERE option_id = ${id};" >> "${detailed_results_file}"
-                        echo "" >> "${detailed_results_file}"
-                    done
-                elif [[ ${table} == *"posts"* ]]; then
-                    ${mysql_exec} -Bse "SELECT ID, post_title, post_type, LEFT(post_content, 200) FROM ${database_name}.\`${table}\` WHERE post_content LIKE '%${pattern}%' OR post_title LIKE '%${pattern}%' LIMIT 10" </dev/null | while IFS=$'\t' read -r id title type preview; do
-                        echo "  ID: ${id}" >> "${detailed_results_file}"
-                        echo "  Title: ${title}" >> "${detailed_results_file}"
-                        echo "  Type: ${type}" >> "${detailed_results_file}"
-                        echo "  Preview: ${preview}..." >> "${detailed_results_file}"
-                        echo "  Delete command: DELETE FROM ${table} WHERE ID = ${id};" >> "${detailed_results_file}"
-                        echo "  Or via WP-CLI: wp post delete ${id} --force" >> "${detailed_results_file}"
-                        echo "" >> "${detailed_results_file}"
-                    done
-                elif [[ ${table} == *"meta"* ]]; then
-                    ${mysql_exec} -Bse "SELECT meta_id, meta_key, LEFT(meta_value, 200) FROM ${database_name}.\`${table}\` WHERE meta_value LIKE '%${pattern}%' LIMIT 10" </dev/null | while IFS=$'\t' read -r id key preview; do
-                        echo "  ID: ${id}" >> "${detailed_results_file}"
-                        echo "  Key: ${key}" >> "${detailed_results_file}"
-                        echo "  Preview: ${preview}..." >> "${detailed_results_file}"
-                        echo "  Delete command: DELETE FROM ${table} WHERE meta_id = ${id};" >> "${detailed_results_file}"
-                        echo "" >> "${detailed_results_file}"
-                    done
-                fi
+                # Get records that match the pattern (limit to first 10)
+                ${mysql_exec} -Bse "SELECT ${pk_column} FROM ${database_name}.\`${table}\` WHERE ${where_clause} LIMIT 10" </dev/null 2>/dev/null | while IFS=$'\t' read -r record_id; do
+                    [[ -z ${record_id} ]] && continue
+
+                    echo "  ---" >> "${detailed_results_file}"
+                    echo "  Record ID (${pk_column}): ${record_id}" >> "${detailed_results_file}"
+
+                    # Show which columns contain the pattern and their preview
+                    while IFS= read -r col; do
+                        [[ -z ${col} ]] && continue
+                        local col_value
+                        col_value="$(${mysql_exec} -Bse "SELECT LEFT(\`${col}\`, 200) FROM ${database_name}.\`${table}\` WHERE \`${pk_column}\` = '${record_id}' AND \`${col}\` LIKE '%${pattern}%' LIMIT 1" </dev/null 2>/dev/null)"
+                        if [[ -n ${col_value} ]]; then
+                            echo "  Column '${col}': ${col_value}..." >> "${detailed_results_file}"
+                        fi
+                    done <<< "${text_columns}"
+
+                    echo "  Delete command: DELETE FROM \`${table}\` WHERE \`${pk_column}\` = '${record_id}';" >> "${detailed_results_file}"
+                    echo "" >> "${detailed_results_file}"
+                done
 
             fi
 
@@ -1491,14 +1511,13 @@ function mysql_wordpress_malware_scan() {
         [[ -f ${detailed_results_file} ]] && rm -f "${detailed_results_file}"
     else
         display --indent 6 --text "- Scan completed - SUSPICIOUS CONTENT FOUND" --result "WARNING" --color RED
-        display --indent 6 --text "⚠ Manual review recommended!" --tcolor RED
+        display --indent 6 --text "  ⚠ Manual review recommended!" --tcolor RED
         echo ""
         display --indent 6 --text "📄 Detailed report saved to:" --tcolor CYAN
         display --indent 8 --text "${detailed_results_file}" --tcolor WHITE
         echo ""
         display --indent 6 --text "To view the report, run:" --tcolor YELLOW
-        display --indent 8 --text "less ${detailed_results_file}" --tcolor WHITE
-        display --indent 8 --text "or" --tcolor WHITE
+
         display --indent 8 --text "cat ${detailed_results_file}" --tcolor WHITE
         echo ""
 
