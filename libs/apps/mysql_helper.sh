@@ -233,11 +233,11 @@ function mysql_list_databases() {
     log_event "info" "Listing '${stage}' MySQL databases" "false"
 
     if [[ ${stage} == "all" ]]; then
-        # Run command
-        databases="$(${mysql_exec} -Bse 'show databases')"
+        # Run command and filter out system databases
+        databases="$(${mysql_exec} -Bse 'show databases' | grep -Ev '^(information_schema|performance_schema|mysql|sys)$')"
     else
-        # Run command
-        databases="$(${mysql_exec} -Bse 'show databases' | grep "${stage}")"
+        # Run command and filter out system databases
+        databases="$(${mysql_exec} -Bse 'show databases' | grep -Ev '^(information_schema|performance_schema|mysql|sys)$' | grep "${stage}")"
     fi
 
     # Check result
