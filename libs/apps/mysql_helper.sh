@@ -1310,3 +1310,142 @@ function mysql_table_drop() {
     fi
 
 }
+
+################################################################################
+# Scan WordPress database for malicious code patterns
+#
+# Arguments:
+#  ${1} = ${database_name}
+#  ${2} = ${container_name} - Optional
+#
+# Outputs:
+#  Scan results, 1 on error.
+################################################################################
+
+function mysql_wordpress_malware_scan() {
+
+    local database_name="${1}"
+    local container_name="${2}"
+
+    local mysql_exec
+    local tables
+    local results_found=0
+
+    # Malware patterns to search for
+    local malware_patterns=(
+        "base64_decode"
+        "eval("
+        "exec("
+        "system("
+        "assert("
+        "shell_exec"
+        "passthru"
+        "proc_open"
+        "popen"
+        "curl_exec"
+        "curl_multi_exec"
+        "parse_ini_file"
+        "show_source"
+        "file_get_contents"
+        "file_put_contents"
+        "preg_replace.*\/e"
+        "create_function"
+        "call_user_func"
+        "\$_POST\["
+        "\$_GET\["
+        "\$_REQUEST\["
+        "\$_COOKIE\["
+        "<?php.*@"
+        "RewriteCond"
+        "RewriteRule"
+        "ini_set"
+        "set_time_limit\(0\)"
+    )
+
+    if [[ -n ${container_name} && ${container_name} != "false" ]]; then
+
+        local mysql_container_user
+        local mysql_container_user_pssw
+
+        # Get MYSQL_USER and MYSQL_PASSWORD from container
+        mysql_container_user="$(docker exec -i "${container_name}" printenv MYSQL_USER)"
+        mysql_container_user_pssw="$(docker exec -i "${container_name}" printenv MYSQL_PASSWORD)"
+
+        mysql_exec="docker exec -i ${container_name} mysql -u${mysql_container_user} -p${mysql_container_user_pssw}"
+
+    else
+
+        mysql_exec="${MYSQL_ROOT}"
+
+    fi
+
+    log_event "info" "Scanning WordPress database '${database_name}' for malware" "false"
+    display --indent 6 --text "- Scanning database: ${database_name}" --tcolor YELLOW
+
+    # Get WordPress tables
+    tables="$(${mysql_exec} -Bse "SHOW TABLES FROM ${database_name}" </dev/null | grep -E 'wp_.*posts|wp_.*options|wp_.*postmeta|wp_.*usermeta')"
+
+    # Check if tables were retrieved
+    mysql_result=$?
+    if [[ ${mysql_result} -ne 0 ]]; then
+        display --indent 6 --text "- Getting WordPress tables" --result "FAIL" --color RED
+        log_event "error" "Failed to get tables from database '${database_name}'" "false"
+        return 1
+    fi
+
+    # Count total tables
+    local total_tables
+    total_tables="$(echo "${tables}" | grep -c .)"
+    display --indent 6 --text "- WordPress tables found: ${total_tables}" --tcolor CYAN
+
+    local tables_processed=0
+
+    # Search in each table
+    while IFS= read -r table; do
+
+        # Skip empty lines
+        [[ -z ${table} ]] && continue
+
+        ((tables_processed++))
+
+        display --indent 8 --text "[${tables_processed}/${total_tables}] Scanning table: ${table}" --tcolor WHITE
+
+        # Scan for each malware pattern
+        for pattern in "${malware_patterns[@]}"; do
+
+            local count
+
+            # Different queries for different table types
+            if [[ ${table} == *"options"* ]]; then
+                count="$(${mysql_exec} -Bse "SELECT COUNT(*) FROM ${database_name}.\`${table}\` WHERE option_value LIKE '%${pattern}%'" </dev/null)"
+            elif [[ ${table} == *"posts"* ]]; then
+                count="$(${mysql_exec} -Bse "SELECT COUNT(*) FROM ${database_name}.\`${table}\` WHERE post_content LIKE '%${pattern}%' OR post_title LIKE '%${pattern}%'" </dev/null)"
+            elif [[ ${table} == *"meta"* ]]; then
+                count="$(${mysql_exec} -Bse "SELECT COUNT(*) FROM ${database_name}.\`${table}\` WHERE meta_value LIKE '%${pattern}%'" </dev/null)"
+            else
+                continue
+            fi
+
+            if [[ ${count} -gt 0 ]]; then
+                results_found=1
+                display --indent 10 --text "⚠ SUSPICIOUS: '${pattern}' found ${count} times" --result "WARNING" --color RED
+                log_event "warning" "Malware pattern '${pattern}' found ${count} times in table '${table}'" "false"
+            fi
+
+        done
+
+    done <<< "${tables}"
+
+    display --indent 6 --text "- Tables scanned: ${tables_processed}" --tcolor CYAN
+
+    if [[ ${results_found} -eq 0 ]]; then
+        display --indent 6 --text "- No suspicious patterns found" --result "CLEAN" --color GREEN
+        log_event "info" "No malware patterns found in database '${database_name}'" "false"
+    else
+        display --indent 6 --text "- Scan completed - SUSPICIOUS CONTENT FOUND" --result "WARNING" --color RED
+        display --indent 6 --text "⚠ Manual review recommended!" --tcolor RED
+    fi
+
+    return 0
+
+}
