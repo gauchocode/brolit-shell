@@ -1809,7 +1809,7 @@ function menu_main_options() {
     "06)" "WP-CLI MANAGER"
     "07)" "CERTBOT MANAGER"
     "08)" "CLOUDFLARE MANAGER"
-    "09)" "IT UTILS"
+    "09)" "ENVIRONMENT MANAGER"
     "10)" "CRON TASKS"
   )
 
@@ -1897,8 +1897,12 @@ function menu_main_options() {
 
     fi
 
-    # IT UTILS
-    [[ ${chosen_type} == *"09"* ]] && it_utils_menu
+    # ENVIRONMENT MANAGER
+    if [[ ${chosen_type} == *"09"* ]]; then
+      # shellcheck source=${BROLIT_MAIN_DIR}/utils/environment_manager.sh
+      source "${BROLIT_MAIN_DIR}/utils/environment_manager.sh"
+      environment_manager_menu
+    fi
 
     # CRON SCRIPT TASKS
     [[ ${chosen_type} == *"10"* ]] && menu_cron_script_tasks
