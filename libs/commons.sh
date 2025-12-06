@@ -1806,11 +1806,12 @@ function menu_main_options() {
     "03)" "PROJECT CREATION"
     "04)" "MORE PROJECT UTILS"
     "05)" "DATABASE MANAGER"
-    "06)" "WP-CLI MANAGER"
-    "07)" "CERTBOT MANAGER"
-    "08)" "CLOUDFLARE MANAGER"
-    "09)" "ENVIRONMENT MANAGER"
-    "10)" "CRON TASKS"
+    "06)" "ENVIRONMENT MANAGER"
+    "07)" "WP-CLI MANAGER"
+    "08)" "CERTBOT MANAGER"
+    "09)" "CLOUDFLARE MANAGER"
+    "10)" "IT UTILS"
+    "11)" "CRON TASKS"
   )
 
   chosen_type="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${runner_options[@]}" 3>&1 1>&2 2>&3)"
@@ -1839,8 +1840,15 @@ function menu_main_options() {
 
     fi
 
-    # WP-CLI MANAGER
+    # ENVIRONMENT MANAGER
     if [[ ${chosen_type} == *"06"* ]]; then
+      # shellcheck source=${BROLIT_MAIN_DIR}/utils/environment_manager.sh
+      source "${BROLIT_MAIN_DIR}/utils/environment_manager.sh"
+      environment_manager_menu
+    fi
+
+    # WP-CLI MANAGER
+    if [[ ${chosen_type} == *"07"* ]]; then
       # shellcheck source=${BROLIT_MAIN_DIR}/utils/wpcli_manager.sh
       source "${BROLIT_MAIN_DIR}/utils/wpcli_manager.sh"
 
@@ -1850,7 +1858,7 @@ function menu_main_options() {
     fi
 
     # CERTBOT MANAGER
-    if [[ ${chosen_type} == *"07"* ]]; then
+    if [[ ${chosen_type} == *"08"* ]]; then
 
       if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
 
@@ -1874,7 +1882,7 @@ function menu_main_options() {
     fi
 
     # CLOUDFLARE MANAGER
-    if [[ ${chosen_type} == *"08"* ]]; then
+    if [[ ${chosen_type} == *"09"* ]]; then
 
       if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
 
@@ -1897,15 +1905,11 @@ function menu_main_options() {
 
     fi
 
-    # ENVIRONMENT MANAGER
-    if [[ ${chosen_type} == *"09"* ]]; then
-      # shellcheck source=${BROLIT_MAIN_DIR}/utils/environment_manager.sh
-      source "${BROLIT_MAIN_DIR}/utils/environment_manager.sh"
-      environment_manager_menu
-    fi
+    # IT UTILS
+    [[ ${chosen_type} == *"10"* ]] && it_utils_menu
 
     # CRON SCRIPT TASKS
-    [[ ${chosen_type} == *"10"* ]] && menu_cron_script_tasks
+    [[ ${chosen_type} == *"11"* ]] && menu_cron_script_tasks
 
   else
 
