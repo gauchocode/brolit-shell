@@ -363,6 +363,78 @@ EOF
     display --indent 6 --text "- Reloading PHP-FPM" --result "DONE" --color GREEN
     log_event "info" "PHP-FPM reloaded successfully" "false"
 
+    # Verify settings were applied - read from file
+    echo ""
+    display --indent 6 --text "- Verifying Applied Settings" --tcolor CYAN
+    log_event "info" "Verifying settings were applied correctly" "false"
+    log_event "debug" "Running: grep -E '^pm\\.max_children' ${config_file}" "false"
+
+    local verified_pm_max_children
+    local verified_pm_start_servers
+    local verified_pm_min_spare_servers
+    local verified_pm_max_spare_servers
+    local verified_pm_max_requests
+    local verified_pm_process_idle_timeout
+    local verification_failed=false
+
+    verified_pm_max_children="$(grep -E "^pm\.max_children" "${config_file}" 2>/dev/null | awk '{print $3}')"
+    verified_pm_start_servers="$(grep -E "^pm\.start_servers" "${config_file}" 2>/dev/null | awk '{print $3}')"
+    verified_pm_min_spare_servers="$(grep -E "^pm\.min_spare_servers" "${config_file}" 2>/dev/null | awk '{print $3}')"
+    verified_pm_max_spare_servers="$(grep -E "^pm\.max_spare_servers" "${config_file}" 2>/dev/null | awk '{print $3}')"
+    verified_pm_max_requests="$(grep -E "^pm\.max_requests" "${config_file}" 2>/dev/null | awk '{print $3}')"
+    verified_pm_process_idle_timeout="$(grep -E "^pm\.process_idle_timeout" "${config_file}" 2>/dev/null | awk '{print $3}')"
+
+    log_event "debug" "Verified values: pm.max_children=${verified_pm_max_children}, pm.start_servers=${verified_pm_start_servers}" "false"
+
+    # Check each value
+    if [[ ${verified_pm_max_children} -eq ${pm_max_children} ]]; then
+      display --indent 8 --text "pm.max_children: ${verified_pm_max_children}" --result "✓" --color GREEN
+    else
+      display --indent 8 --text "pm.max_children: ${verified_pm_max_children} (expected: ${pm_max_children})" --result "✗" --color RED
+      log_event "error" "Verification failed: pm.max_children = ${verified_pm_max_children}, expected ${pm_max_children}" "false"
+      verification_failed=true
+    fi
+
+    if [[ ${verified_pm_start_servers} -eq ${pm_start_servers} ]]; then
+      display --indent 8 --text "pm.start_servers: ${verified_pm_start_servers}" --result "✓" --color GREEN
+    else
+      display --indent 8 --text "pm.start_servers: ${verified_pm_start_servers} (expected: ${pm_start_servers})" --result "✗" --color RED
+      log_event "error" "Verification failed: pm.start_servers = ${verified_pm_start_servers}, expected ${pm_start_servers}" "false"
+      verification_failed=true
+    fi
+
+    if [[ ${verified_pm_min_spare_servers} -eq ${pm_min_spare_servers} ]]; then
+      display --indent 8 --text "pm.min_spare_servers: ${verified_pm_min_spare_servers}" --result "✓" --color GREEN
+    else
+      display --indent 8 --text "pm.min_spare_servers: ${verified_pm_min_spare_servers} (expected: ${pm_min_spare_servers})" --result "✗" --color RED
+      log_event "error" "Verification failed: pm.min_spare_servers = ${verified_pm_min_spare_servers}, expected ${pm_min_spare_servers}" "false"
+      verification_failed=true
+    fi
+
+    if [[ ${verified_pm_max_spare_servers} -eq ${pm_max_spare_servers} ]]; then
+      display --indent 8 --text "pm.max_spare_servers: ${verified_pm_max_spare_servers}" --result "✓" --color GREEN
+    else
+      display --indent 8 --text "pm.max_spare_servers: ${verified_pm_max_spare_servers} (expected: ${pm_max_spare_servers})" --result "✗" --color RED
+      log_event "error" "Verification failed: pm.max_spare_servers = ${verified_pm_max_spare_servers}, expected ${pm_max_spare_servers}" "false"
+      verification_failed=true
+    fi
+
+    if [[ ${verified_pm_max_requests} -eq ${pm_max_requests} ]]; then
+      display --indent 8 --text "pm.max_requests: ${verified_pm_max_requests}" --result "✓" --color GREEN
+    else
+      display --indent 8 --text "pm.max_requests: ${verified_pm_max_requests} (expected: ${pm_max_requests})" --result "✗" --color RED
+      log_event "error" "Verification failed: pm.max_requests = ${verified_pm_max_requests}, expected ${pm_max_requests}" "false"
+      verification_failed=true
+    fi
+
+    if [[ "${verified_pm_process_idle_timeout}" == "${pm_process_idle_timeout}" ]]; then
+      display --indent 8 --text "pm.process_idle_timeout: ${verified_pm_process_idle_timeout}" --result "✓" --color GREEN
+    else
+      display --indent 8 --text "pm.process_idle_timeout: ${verified_pm_process_idle_timeout} (expected: ${pm_process_idle_timeout})" --result "✗" --color RED
+      log_event "error" "Verification failed: pm.process_idle_timeout = ${verified_pm_process_idle_timeout}, expected ${pm_process_idle_timeout}" "false"
+      verification_failed=true
+    fi
+
     # Log summary of changes
     echo ""
     display --indent 6 --text "- Optimization Summary" --tcolor GREEN
@@ -377,8 +449,14 @@ EOF
     log_event "info" "  - pm.max_spare_servers: ${current_pm_max_spare_servers} → ${pm_max_spare_servers}" "false"
     log_event "info" "  - pm.max_requests: ${current_pm_max_requests} → ${pm_max_requests}" "false"
     log_event "info" "  - pm.process_idle_timeout: ${current_pm_process_idle_timeout} → ${pm_process_idle_timeout}" "false"
-    log_event "info" "PHP-FPM optimization completed successfully" "false"
-    display --indent 8 --text "All settings applied and PHP-FPM reloaded" --tcolor GREEN
+
+    if [[ ${verification_failed} == true ]]; then
+      log_event "warning" "Settings verification completed with errors" "false"
+      display --indent 8 --text "Settings applied but verification found discrepancies" --tcolor YELLOW
+    else
+      log_event "info" "PHP-FPM optimization completed and verified successfully" "false"
+      display --indent 8 --text "All settings applied, verified, and PHP-FPM reloaded" --tcolor GREEN
+    fi
   else
     display --indent 6 --text "- Reloading PHP-FPM" --result "FAIL" --color RED
     log_event "error" "Failed to reload PHP-FPM with command: docker compose -f ${compose_file} exec -T php-fpm kill -USR2 1" "false"
@@ -632,7 +710,64 @@ function docker_nginx_optimize() {
   docker compose -f "${compose_file}" exec -T webserver nginx -s reload 2>/dev/null
 
   if [[ $? -eq 0 ]]; then
+    display --indent 6 --text "- Reloading Nginx" --result "DONE" --color GREEN
+    log_event "info" "Nginx reloaded successfully" "false"
+
+    # Verify settings were applied - read from file
+    echo ""
+    display --indent 6 --text "- Verifying Applied Settings" --tcolor CYAN
+    log_event "info" "Verifying settings were applied correctly" "false"
+    log_event "debug" "Running: grep -E '^[[:space:]]*worker_processes' ${nginx_conf_file}" "false"
+
+    local verified_worker_processes
+    local verified_worker_connections
+    local verified_fastcgi_buffers
+    local verified_fastcgi_buffer_size
+    local verification_failed=false
+
+    verified_worker_processes="$(grep -E "^[[:space:]]*worker_processes" "${nginx_conf_file}" 2>/dev/null | awk '{print $2}' | tr -d ';')"
+    verified_worker_connections="$(grep -E "worker_connections" "${nginx_conf_file}" 2>/dev/null | awk '{print $2}' | tr -d ';')"
+    verified_fastcgi_buffers="$(grep -E "fastcgi_buffers" "${nginx_conf_file}" 2>/dev/null | awk '{print $2" "$3}' | tr -d ';')"
+    verified_fastcgi_buffer_size="$(grep -E "fastcgi_buffer_size" "${nginx_conf_file}" 2>/dev/null | awk '{print $2}' | tr -d ';')"
+
+    log_event "debug" "Verified values: worker_processes=${verified_worker_processes}, worker_connections=${verified_worker_connections}" "false"
+
+    # Check each value
+    if [[ ${verified_worker_processes} -eq ${worker_processes} ]]; then
+      display --indent 8 --text "worker_processes: ${verified_worker_processes}" --result "✓" --color GREEN
+    else
+      display --indent 8 --text "worker_processes: ${verified_worker_processes} (expected: ${worker_processes})" --result "✗" --color RED
+      log_event "error" "Verification failed: worker_processes = ${verified_worker_processes}, expected ${worker_processes}" "false"
+      verification_failed=true
+    fi
+
+    if [[ ${verified_worker_connections} -eq ${worker_connections} ]]; then
+      display --indent 8 --text "worker_connections: ${verified_worker_connections}" --result "✓" --color GREEN
+    else
+      display --indent 8 --text "worker_connections: ${verified_worker_connections} (expected: ${worker_connections})" --result "✗" --color RED
+      log_event "error" "Verification failed: worker_connections = ${verified_worker_connections}, expected ${worker_connections}" "false"
+      verification_failed=true
+    fi
+
+    if [[ "${verified_fastcgi_buffers}" == "${fastcgi_buffers}" ]]; then
+      display --indent 8 --text "fastcgi_buffers: ${verified_fastcgi_buffers}" --result "✓" --color GREEN
+    else
+      display --indent 8 --text "fastcgi_buffers: ${verified_fastcgi_buffers} (expected: ${fastcgi_buffers})" --result "✗" --color RED
+      log_event "error" "Verification failed: fastcgi_buffers = ${verified_fastcgi_buffers}, expected ${fastcgi_buffers}" "false"
+      verification_failed=true
+    fi
+
+    if [[ "${verified_fastcgi_buffer_size}" == "${fastcgi_buffer_size}" ]]; then
+      display --indent 8 --text "fastcgi_buffer_size: ${verified_fastcgi_buffer_size}" --result "✓" --color GREEN
+    else
+      display --indent 8 --text "fastcgi_buffer_size: ${verified_fastcgi_buffer_size} (expected: ${fastcgi_buffer_size})" --result "✗" --color RED
+      log_event "error" "Verification failed: fastcgi_buffer_size = ${verified_fastcgi_buffer_size}, expected ${fastcgi_buffer_size}" "false"
+      verification_failed=true
+    fi
+
     # Log complete summary of changes
+    echo ""
+    display --indent 6 --text "- Optimization Summary" --tcolor GREEN
     log_event "info" "=== Nginx Optimization Summary ===" "false"
     log_event "info" "Container: ${container_name}" "false"
     log_event "info" "Config file: ${nginx_conf_file}" "false"
@@ -641,10 +776,14 @@ function docker_nginx_optimize() {
     log_event "info" "  - worker_connections: ${current_worker_connections} → ${worker_connections}" "false"
     log_event "info" "  - fastcgi_buffers: ${current_fastcgi_buffers} → ${fastcgi_buffers}" "false"
     log_event "info" "  - fastcgi_buffer_size: ${current_fastcgi_buffer_size} → ${fastcgi_buffer_size}" "false"
-    log_event "info" "Nginx optimization completed successfully" "false"
 
-    display --indent 6 --text "- Reloading Nginx" --result "DONE" --color GREEN
-    display --indent 8 --text "All settings applied and Nginx reloaded" --tcolor GREEN
+    if [[ ${verification_failed} == true ]]; then
+      log_event "warning" "Settings verification completed with errors" "false"
+      display --indent 8 --text "Settings applied but verification found discrepancies" --tcolor YELLOW
+    else
+      log_event "info" "Nginx optimization completed and verified successfully" "false"
+      display --indent 8 --text "All settings applied, verified, and Nginx reloaded" --tcolor GREEN
+    fi
   else
     display --indent 6 --text "- Reloading Nginx" --result "FAIL" --color RED
     log_event "error" "Failed to reload Nginx" "false"
@@ -892,19 +1031,93 @@ EOF
     while [[ ${retries} -gt 0 ]]; do
       log_event "debug" "Running: docker compose -f ${compose_file} exec -T mysql mysqladmin ping -h localhost (retry ${retries})" "false"
       if docker compose -f "${compose_file}" exec -T mysql mysqladmin ping -h localhost 2>/dev/null | grep -q "mysqld is alive"; then
+        display --indent 6 --text "- MySQL ready" --result "DONE" --color GREEN
+        log_event "info" "MySQL is ready" "false"
+
+        # Verify settings were applied - read from container
+        echo ""
+        display --indent 6 --text "- Verifying Applied Settings" --tcolor CYAN
+        log_event "info" "Verifying settings were applied correctly" "false"
+        log_event "debug" "Running: docker compose -f ${compose_file} exec -T mysql mysql -e \"SHOW VARIABLES LIKE 'innodb_buffer_pool_size';\"" "false"
+
+        local verified_innodb_buffer_pool_size
+        local verified_innodb_log_file_size
+        local verified_max_connections
+        local verified_tmp_table_size
+        local verification_failed=false
+
+        # Read values from MySQL using SHOW VARIABLES
+        verified_innodb_buffer_pool_size="$(docker compose -f "${compose_file}" exec -T mysql mysql -e "SHOW VARIABLES LIKE 'innodb_buffer_pool_size';" 2>/dev/null | tail -n 1 | awk '{print $2}')"
+        # Convert bytes to MB
+        verified_innodb_buffer_pool_size=$((verified_innodb_buffer_pool_size / 1024 / 1024))
+
+        verified_innodb_log_file_size="$(docker compose -f "${compose_file}" exec -T mysql mysql -e "SHOW VARIABLES LIKE 'innodb_log_file_size';" 2>/dev/null | tail -n 1 | awk '{print $2}')"
+        # Convert bytes to MB
+        verified_innodb_log_file_size=$((verified_innodb_log_file_size / 1024 / 1024))
+
+        verified_max_connections="$(docker compose -f "${compose_file}" exec -T mysql mysql -e "SHOW VARIABLES LIKE 'max_connections';" 2>/dev/null | tail -n 1 | awk '{print $2}')"
+
+        verified_tmp_table_size="$(docker compose -f "${compose_file}" exec -T mysql mysql -e "SHOW VARIABLES LIKE 'tmp_table_size';" 2>/dev/null | tail -n 1 | awk '{print $2}')"
+        # Convert bytes to MB
+        verified_tmp_table_size=$((verified_tmp_table_size / 1024 / 1024))
+
+        log_event "debug" "Verified values from MySQL: innodb_buffer_pool_size=${verified_innodb_buffer_pool_size}M, max_connections=${verified_max_connections}" "false"
+
+        # Check each value (with tolerance for buffer pool size due to MySQL rounding)
+        local buffer_pool_diff=$((verified_innodb_buffer_pool_size - innodb_buffer_pool_size))
+        if [[ ${buffer_pool_diff#-} -le 10 ]]; then  # Allow ±10MB tolerance
+          display --indent 8 --text "innodb_buffer_pool_size: ${verified_innodb_buffer_pool_size}M" --result "✓" --color GREEN
+        else
+          display --indent 8 --text "innodb_buffer_pool_size: ${verified_innodb_buffer_pool_size}M (expected: ${innodb_buffer_pool_size}M)" --result "✗" --color RED
+          log_event "error" "Verification failed: innodb_buffer_pool_size = ${verified_innodb_buffer_pool_size}M, expected ${innodb_buffer_pool_size}M" "false"
+          verification_failed=true
+        fi
+
+        local log_file_diff=$((verified_innodb_log_file_size - innodb_log_file_size))
+        if [[ ${log_file_diff#-} -le 10 ]]; then  # Allow ±10MB tolerance
+          display --indent 8 --text "innodb_log_file_size: ${verified_innodb_log_file_size}M" --result "✓" --color GREEN
+        else
+          display --indent 8 --text "innodb_log_file_size: ${verified_innodb_log_file_size}M (expected: ${innodb_log_file_size}M)" --result "✗" --color RED
+          log_event "error" "Verification failed: innodb_log_file_size = ${verified_innodb_log_file_size}M, expected ${innodb_log_file_size}M" "false"
+          verification_failed=true
+        fi
+
+        if [[ ${verified_max_connections} -eq ${max_connections} ]]; then
+          display --indent 8 --text "max_connections: ${verified_max_connections}" --result "✓" --color GREEN
+        else
+          display --indent 8 --text "max_connections: ${verified_max_connections} (expected: ${max_connections})" --result "✗" --color RED
+          log_event "error" "Verification failed: max_connections = ${verified_max_connections}, expected ${max_connections}" "false"
+          verification_failed=true
+        fi
+
+        local tmp_table_diff=$((verified_tmp_table_size - tmp_table_size))
+        if [[ ${tmp_table_diff#-} -le 5 ]]; then  # Allow ±5MB tolerance
+          display --indent 8 --text "tmp_table_size: ${verified_tmp_table_size}M" --result "✓" --color GREEN
+        else
+          display --indent 8 --text "tmp_table_size: ${verified_tmp_table_size}M (expected: ${tmp_table_size}M)" --result "✗" --color RED
+          log_event "error" "Verification failed: tmp_table_size = ${verified_tmp_table_size}M, expected ${tmp_table_size}M" "false"
+          verification_failed=true
+        fi
+
         # Log complete summary of changes
+        echo ""
+        display --indent 6 --text "- Optimization Summary" --tcolor GREEN
         log_event "info" "=== MySQL Optimization Summary ===" "false"
         log_event "info" "Container: ${container_name}" "false"
         log_event "info" "Config file: ${mysql_conf_file}" "false"
         log_event "info" "Changes applied:" "false"
-        log_event "info" "  - innodb_buffer_pool_size: ${current_innodb_buffer_pool_size}M → ${innodb_buffer_pool_size}M" "false"
-        log_event "info" "  - innodb_log_file_size: ${current_innodb_log_file_size}M → ${innodb_log_file_size}M" "false"
-        log_event "info" "  - max_connections: ${current_max_connections} → ${max_connections}" "false"
-        log_event "info" "  - tmp_table_size: ${current_tmp_table_size}M → ${tmp_table_size}M" "false"
-        log_event "info" "MySQL optimization completed successfully" "false"
+        log_event "info" "  - innodb_buffer_pool_size: ${current_innodb_buffer_pool_size}M → ${innodb_buffer_pool_size}M (verified: ${verified_innodb_buffer_pool_size}M)" "false"
+        log_event "info" "  - innodb_log_file_size: ${current_innodb_log_file_size}M → ${innodb_log_file_size}M (verified: ${verified_innodb_log_file_size}M)" "false"
+        log_event "info" "  - max_connections: ${current_max_connections} → ${max_connections} (verified: ${verified_max_connections})" "false"
+        log_event "info" "  - tmp_table_size: ${current_tmp_table_size}M → ${tmp_table_size}M (verified: ${verified_tmp_table_size}M)" "false"
 
-        display --indent 6 --text "- MySQL ready" --result "DONE" --color GREEN
-        display --indent 8 --text "All settings applied and MySQL restarted" --tcolor GREEN
+        if [[ ${verification_failed} == true ]]; then
+          log_event "warning" "Settings verification completed with errors" "false"
+          display --indent 8 --text "Settings applied but verification found discrepancies" --tcolor YELLOW
+        else
+          log_event "info" "MySQL optimization completed and verified successfully" "false"
+          display --indent 8 --text "All settings applied, verified, and MySQL restarted" --tcolor GREEN
+        fi
         return 0
       fi
       sleep 2
@@ -1043,5 +1256,482 @@ function docker_optimize_ram_usage() {
   log_event "info" "RAM optimization completed" "false"
 
   return 0
+
+}
+
+################################################################################
+# Manage Docker Compose resource limits
+#
+# Arguments:
+#   ${1} = ${project_path}
+#
+# Outputs:
+#   Interactive menu to manage resource limits
+################################################################################
+
+function docker_manage_resource_limits() {
+
+  local project_path="${1}"
+  local compose_file="${project_path}/docker-compose.yml"
+
+  log_section "Docker Resource Limits Manager"
+  log_event "info" "Managing resource limits for project: ${project_path}" "false"
+
+  # Verify docker-compose.yml exists
+  if [[ ! -f "${compose_file}" ]]; then
+    display --indent 6 --text "- Checking docker-compose.yml" --result "NOT FOUND" --color RED
+    log_event "error" "docker-compose.yml not found at ${compose_file}" "false"
+    return 1
+  fi
+
+  display --indent 6 --text "- Checking docker-compose.yml" --result "FOUND" --color GREEN
+  log_event "debug" "Found docker-compose.yml at ${compose_file}" "false"
+
+  # Get server resources
+  echo ""
+  display --indent 6 --text "- Detecting Server Resources" --tcolor CYAN
+
+  local total_ram_mb
+  local total_cpu_cores
+  local available_ram_mb
+
+  total_ram_mb="$(free -m | awk '/^Mem:/{print $2}')"
+  available_ram_mb="$(free -m | awk '/^Mem:/{print $7}')"
+  total_cpu_cores="$(nproc)"
+
+  log_event "debug" "Server resources: RAM=${total_ram_mb}MB (${available_ram_mb}MB available), CPU=${total_cpu_cores} cores" "false"
+
+  display --indent 8 --text "Total RAM: ${total_ram_mb}MB" --tcolor WHITE
+  display --indent 8 --text "Available RAM: ${available_ram_mb}MB" --tcolor WHITE
+  display --indent 8 --text "CPU Cores: ${total_cpu_cores}" --tcolor WHITE
+
+  # Parse services from docker-compose.yml
+  echo ""
+  display --indent 6 --text "- Detecting Services" --tcolor CYAN
+
+  local services
+  services="$(grep -E "^[[:space:]]{2}[a-zA-Z0-9_-]+:" "${compose_file}" | sed 's/://g' | awk '{print $1}')"
+
+  if [[ -z ${services} ]]; then
+    display --indent 6 --text "- Parsing services" --result "FAILED" --color RED
+    log_event "error" "Could not parse services from docker-compose.yml" "false"
+    return 1
+  fi
+
+  log_event "debug" "Found services: ${services}" "false"
+
+  # Show current limits for each service
+  echo ""
+  display --indent 6 --text "- Current Resource Limits" --tcolor CYAN
+
+  local service
+  while IFS= read -r service; do
+    [[ -z ${service} ]] && continue
+
+    display --indent 8 --text "Service: ${service}" --tcolor YELLOW
+
+    # Check for mem_limit
+    local mem_limit
+    mem_limit="$(awk -v service="${service}" '
+      /^[[:space:]]{2}[a-zA-Z0-9_-]+:/ {
+        if ($1 == service":") {
+          in_service=1
+        } else if (in_service && /^[[:space:]]{2}[a-zA-Z0-9_-]+:/) {
+          in_service=0
+        }
+      }
+      in_service && /mem_limit:/ {
+        print $2
+        exit
+      }
+    ' "${compose_file}")"
+
+    if [[ -n ${mem_limit} ]]; then
+      display --indent 10 --text "mem_limit: ${mem_limit}" --tcolor WHITE
+    else
+      display --indent 10 --text "mem_limit: not set" --tcolor GRAY
+    fi
+
+    # Check for cpus
+    local cpus
+    cpus="$(awk -v service="${service}" '
+      /^[[:space:]]{2}[a-zA-Z0-9_-]+:/ {
+        if ($1 == service":") {
+          in_service=1
+        } else if (in_service && /^[[:space:]]{2}[a-zA-Z0-9_-]+:/) {
+          in_service=0
+        }
+      }
+      in_service && /^[[:space:]]*cpus:/ {
+        print $2
+        exit
+      }
+    ' "${compose_file}")"
+
+    if [[ -n ${cpus} ]]; then
+      display --indent 10 --text "cpus: ${cpus}" --tcolor WHITE
+    else
+      display --indent 10 --text "cpus: not set" --tcolor GRAY
+    fi
+
+    # Check for mem_reservation
+    local mem_reservation
+    mem_reservation="$(awk -v service="${service}" '
+      /^[[:space:]]{2}[a-zA-Z0-9_-]+:/ {
+        if ($1 == service":") {
+          in_service=1
+        } else if (in_service && /^[[:space:]]{2}[a-zA-Z0-9_-]+:/) {
+          in_service=0
+        }
+      }
+      in_service && /mem_reservation:/ {
+        print $2
+        exit
+      }
+    ' "${compose_file}")"
+
+    if [[ -n ${mem_reservation} ]]; then
+      display --indent 10 --text "mem_reservation: ${mem_reservation}" --tcolor WHITE
+    fi
+
+  done <<< "${services}"
+
+  # Interactive menu to modify limits
+  echo ""
+  display --indent 6 --text "- Resource Limit Options" --tcolor CYAN
+
+  local service_options=()
+  while IFS= read -r service; do
+    [[ -z ${service} ]] && continue
+    service_options+=("${service}" "Manage ${service} limits")
+  done <<< "${services}"
+
+  service_options+=("SUGGEST" "Auto-suggest optimal limits")
+  service_options+=("BACK" "Return to main menu")
+
+  local chosen_service
+  chosen_service=$(whiptail --title "Resource Limits Manager" --menu "Choose a service to manage or auto-suggest limits:" 20 78 10 "${service_options[@]}" 3>&1 1>&2 2>&3)
+
+  local exitstatus=$?
+  if [[ ${exitstatus} -ne 0 ]]; then
+    log_event "info" "User cancelled resource limits management" "false"
+    return 0
+  fi
+
+  # Handle BACK option
+  if [[ ${chosen_service} == "BACK" ]]; then
+    log_event "info" "User returned to main menu" "false"
+    return 0
+  fi
+
+  # Handle SUGGEST option
+  if [[ ${chosen_service} == "SUGGEST" ]]; then
+    docker_suggest_resource_limits "${project_path}" "${services}" "${total_ram_mb}" "${total_cpu_cores}"
+    return $?
+  fi
+
+  # Manage individual service
+  docker_manage_service_limits "${project_path}" "${chosen_service}" "${total_ram_mb}" "${total_cpu_cores}"
+
+  return $?
+
+}
+
+################################################################################
+# Suggest optimal resource limits for all services
+#
+# Arguments:
+#   ${1} = ${project_path}
+#   ${2} = ${services} (newline-separated list)
+#   ${3} = ${total_ram_mb}
+#   ${4} = ${total_cpu_cores}
+#
+# Outputs:
+#   Suggested limits and option to apply
+################################################################################
+
+function docker_suggest_resource_limits() {
+
+  local project_path="${1}"
+  local services="${2}"
+  local total_ram_mb="${3}"
+  local total_cpu_cores="${4}"
+  local compose_file="${project_path}/docker-compose.yml"
+
+  echo ""
+  display --indent 6 --text "- Generating Optimal Suggestions" --tcolor CYAN
+  log_event "info" "Auto-suggesting resource limits based on server capacity" "false"
+
+  # Count services
+  local service_count
+  service_count="$(echo "${services}" | grep -c .)"
+
+  log_event "debug" "Total services: ${service_count}" "false"
+
+  # Calculate suggested limits (distribute resources)
+  # Reserve 20% of RAM for system
+  local usable_ram_mb=$((total_ram_mb * 80 / 100))
+  local ram_per_service=$((usable_ram_mb / service_count))
+  local cpu_per_service="$(echo "scale=2; ${total_cpu_cores} / ${service_count}" | bc)"
+
+  display --indent 8 --text "Usable RAM: ${usable_ram_mb}MB (80% of total)" --tcolor WHITE
+  display --indent 8 --text "Services: ${service_count}" --tcolor WHITE
+
+  echo ""
+  display --indent 8 --text "Suggested Limits per Service:" --tcolor YELLOW
+  display --indent 10 --text "mem_limit: ${ram_per_service}m" --tcolor WHITE
+  display --indent 10 --text "mem_reservation: $((ram_per_service * 70 / 100))m" --tcolor WHITE
+  display --indent 10 --text "cpus: ${cpu_per_service}" --tcolor WHITE
+
+  # Ask user if they want to apply these suggestions
+  if whiptail --title "Apply Suggestions?" --yesno "Do you want to apply these suggested limits to ALL services?\n\nThis will modify docker-compose.yml" 12 78; then
+
+    echo ""
+    display --indent 6 --text "- Applying Suggested Limits" --tcolor CYAN
+    log_event "info" "User approved suggested limits, applying to all services" "false"
+
+    # Backup docker-compose.yml
+    cp "${compose_file}" "${compose_file}.bak.$(date +%Y%m%d_%H%M%S)"
+    display --indent 8 --text "Backup created" --result "DONE" --color GREEN
+
+    local service
+    while IFS= read -r service; do
+      [[ -z ${service} ]] && continue
+
+      display --indent 8 --text "Applying to ${service}..." --tcolor WHITE
+      docker_apply_service_limits "${compose_file}" "${service}" "${ram_per_service}m" "$((ram_per_service * 70 / 100))m" "${cpu_per_service}"
+
+    done <<< "${services}"
+
+    echo ""
+    display --indent 6 --text "- Resource Limits Applied" --result "DONE" --color GREEN
+    log_event "info" "All suggested limits have been applied successfully" "false"
+
+    # Ask if user wants to restart containers
+    if whiptail --title "Restart Containers?" --yesno "Resource limits have been applied.\n\nDo you want to restart containers for changes to take effect?" 10 78; then
+      log_event "info" "Restarting containers to apply new resource limits" "false"
+      cd "${project_path}" || return 1
+      docker compose down
+      docker compose up -d
+      display --indent 6 --text "- Containers Restarted" --result "DONE" --color GREEN
+    fi
+
+  else
+    log_event "info" "User declined to apply suggested limits" "false"
+  fi
+
+  return 0
+
+}
+
+################################################################################
+# Manage resource limits for individual service
+#
+# Arguments:
+#   ${1} = ${project_path}
+#   ${2} = ${service_name}
+#   ${3} = ${total_ram_mb}
+#   ${4} = ${total_cpu_cores}
+#
+# Outputs:
+#   Interactive form to set limits
+################################################################################
+
+function docker_manage_service_limits() {
+
+  local project_path="${1}"
+  local service_name="${2}"
+  local total_ram_mb="${3}"
+  local total_cpu_cores="${4}"
+  local compose_file="${project_path}/docker-compose.yml"
+
+  log_event "info" "Managing limits for service: ${service_name}" "false"
+
+  # Get current values
+  local current_mem_limit
+  local current_mem_reservation
+  local current_cpus
+
+  current_mem_limit="$(awk -v service="${service_name}" '
+    /^[[:space:]]{2}[a-zA-Z0-9_-]+:/ {
+      if ($1 == service":") {
+        in_service=1
+      } else if (in_service && /^[[:space:]]{2}[a-zA-Z0-9_-]+:/) {
+        in_service=0
+      }
+    }
+    in_service && /mem_limit:/ {
+      print $2
+      exit
+    }
+  ' "${compose_file}")"
+
+  current_mem_reservation="$(awk -v service="${service_name}" '
+    /^[[:space:]]{2}[a-zA-Z0-9_-]+:/ {
+      if ($1 == service":") {
+        in_service=1
+      } else if (in_service && /^[[:space:]]{2}[a-zA-Z0-9_-]+:/) {
+        in_service=0
+      }
+    }
+    in_service && /mem_reservation:/ {
+      print $2
+      exit
+    }
+  ' "${compose_file}")"
+
+  current_cpus="$(awk -v service="${service_name}" '
+    /^[[:space:]]{2}[a-zA-Z0-9_-]+:/ {
+      if ($1 == service":") {
+        in_service=1
+      } else if (in_service && /^[[:space:]]{2}[a-zA-Z0-9_-]+:/) {
+        in_service=0
+      }
+    }
+    in_service && /^[[:space:]]*cpus:/ {
+      print $2
+      exit
+    }
+  ' "${compose_file}")"
+
+  # Prepare form with current values
+  local form_result
+  form_result=$(whiptail --title "Resource Limits for ${service_name}" --form "Set resource limits (leave empty to remove):\n\nServer: ${total_ram_mb}MB RAM, ${total_cpu_cores} CPUs" 16 78 3 \
+    "mem_limit (e.g., 512m):" 1 1 "${current_mem_limit}" 1 30 30 0 \
+    "mem_reservation (e.g., 256m):" 2 1 "${current_mem_reservation}" 2 30 30 0 \
+    "cpus (e.g., 1.5):" 3 1 "${current_cpus}" 3 30 30 0 \
+    3>&1 1>&2 2>&3)
+
+  local exitstatus=$?
+  if [[ ${exitstatus} -ne 0 ]]; then
+    log_event "info" "User cancelled setting limits for ${service_name}" "false"
+    return 0
+  fi
+
+  # Parse form result
+  local new_mem_limit
+  local new_mem_reservation
+  local new_cpus
+
+  new_mem_limit="$(echo "${form_result}" | sed -n 1p)"
+  new_mem_reservation="$(echo "${form_result}" | sed -n 2p)"
+  new_cpus="$(echo "${form_result}" | sed -n 3p)"
+
+  log_event "debug" "User input: mem_limit=${new_mem_limit}, mem_reservation=${new_mem_reservation}, cpus=${new_cpus}" "false"
+
+  # Backup docker-compose.yml
+  cp "${compose_file}" "${compose_file}.bak.$(date +%Y%m%d_%H%M%S)"
+
+  echo ""
+  display --indent 6 --text "- Applying Changes to ${service_name}" --tcolor CYAN
+
+  docker_apply_service_limits "${compose_file}" "${service_name}" "${new_mem_limit}" "${new_mem_reservation}" "${new_cpus}"
+
+  display --indent 6 --text "- Resource Limits Updated" --result "DONE" --color GREEN
+  log_event "info" "Resource limits updated for ${service_name}" "false"
+
+  # Ask if user wants to restart containers
+  if whiptail --title "Restart Containers?" --yesno "Resource limits have been updated.\n\nDo you want to restart containers for changes to take effect?" 10 78; then
+    log_event "info" "Restarting containers to apply new resource limits" "false"
+    cd "${project_path}" || return 1
+    docker compose down
+    docker compose up -d
+    display --indent 6 --text "- Containers Restarted" --result "DONE" --color GREEN
+  fi
+
+  return 0
+
+}
+
+################################################################################
+# Apply resource limits to a service in docker-compose.yml
+#
+# Arguments:
+#   ${1} = ${compose_file}
+#   ${2} = ${service_name}
+#   ${3} = ${mem_limit} (empty to remove)
+#   ${4} = ${mem_reservation} (empty to remove)
+#   ${5} = ${cpus} (empty to remove)
+#
+# Outputs:
+#   Modified docker-compose.yml
+################################################################################
+
+function docker_apply_service_limits() {
+
+  local compose_file="${1}"
+  local service_name="${2}"
+  local mem_limit="${3}"
+  local mem_reservation="${4}"
+  local cpus="${5}"
+
+  log_event "debug" "Applying limits to ${service_name}: mem_limit=${mem_limit}, mem_reservation=${mem_reservation}, cpus=${cpus}" "false"
+
+  # Use Python to safely modify YAML
+  python3 <<PYTHON_SCRIPT
+import yaml
+import sys
+
+compose_file = "${compose_file}"
+service_name = "${service_name}"
+mem_limit = "${mem_limit}".strip()
+mem_reservation = "${mem_reservation}".strip()
+cpus = "${cpus}".strip()
+
+try:
+    with open(compose_file, 'r') as f:
+        compose_data = yaml.safe_load(f)
+
+    if 'services' not in compose_data:
+        print(f"Error: No 'services' section found in {compose_file}", file=sys.stderr)
+        sys.exit(1)
+
+    if service_name not in compose_data['services']:
+        print(f"Error: Service '{service_name}' not found in docker-compose.yml", file=sys.stderr)
+        sys.exit(1)
+
+    service = compose_data['services'][service_name]
+
+    # Apply or remove mem_limit
+    if mem_limit:
+        service['mem_limit'] = mem_limit
+    elif 'mem_limit' in service:
+        del service['mem_limit']
+
+    # Apply or remove mem_reservation
+    if mem_reservation:
+        service['mem_reservation'] = mem_reservation
+    elif 'mem_reservation' in service:
+        del service['mem_reservation']
+
+    # Apply or remove cpus
+    if cpus:
+        # Convert to float for proper YAML formatting
+        try:
+            service['cpus'] = float(cpus)
+        except ValueError:
+            service['cpus'] = cpus
+    elif 'cpus' in service:
+        del service['cpus']
+
+    # Write back to file
+    with open(compose_file, 'w') as f:
+        yaml.dump(compose_data, f, default_flow_style=False, sort_keys=False)
+
+    print(f"Successfully updated {service_name} limits")
+    sys.exit(0)
+
+except Exception as e:
+    print(f"Error modifying docker-compose.yml: {e}", file=sys.stderr)
+    sys.exit(1)
+PYTHON_SCRIPT
+
+  if [[ $? -eq 0 ]]; then
+    log_event "info" "Successfully applied limits to ${service_name}" "false"
+    return 0
+  else
+    log_event "error" "Failed to apply limits to ${service_name}" "false"
+    return 1
+  fi
 
 }

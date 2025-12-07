@@ -97,16 +97,17 @@ function docker_project_menu() {
 
   docker_project_options=(
     "01)" "VIEW CONTAINER STATUS"
-    "02)" "OPTIMIZE PHP-FPM"
-    "03)" "OPTIMIZE NGINX"
-    "04)" "OPTIMIZE MYSQL"
-    "05)" "OPTIMIZE REDIS"
-    "06)" "CLEAN RAM USAGE"
-    "07)" "VIEW CONTAINER LOGS"
-    "08)" "RESTART CONTAINERS"
-    "09)" "STOP CONTAINERS"
-    "10)" "START CONTAINERS"
-    "11)" "EXECUTE COMMAND IN CONTAINER"
+    "02)" "MANAGE RESOURCE LIMITS"
+    "03)" "OPTIMIZE PHP-FPM"
+    "04)" "OPTIMIZE NGINX"
+    "05)" "OPTIMIZE MYSQL"
+    "06)" "OPTIMIZE REDIS"
+    "07)" "CLEAN RAM USAGE"
+    "08)" "VIEW CONTAINER LOGS"
+    "09)" "RESTART CONTAINERS"
+    "10)" "STOP CONTAINERS"
+    "11)" "START CONTAINERS"
+    "12)" "EXECUTE COMMAND IN CONTAINER"
   )
 
   chosen_docker_project_option="$(whiptail --title "DOCKER PROJECT: ${project_name}" --menu "\nManage Docker containers:\n" 20 78 10 "${docker_project_options[@]}" 3>&1 1>&2 2>&3)"
@@ -119,53 +120,58 @@ function docker_project_menu() {
       docker_view_container_status "${project_path}"
     fi
 
-    # OPTIMIZE PHP-FPM
+    # MANAGE RESOURCE LIMITS
     if [[ ${chosen_docker_project_option} == *"02"* ]]; then
+      docker_manage_resource_limits "${project_path}"
+    fi
+
+    # OPTIMIZE PHP-FPM
+    if [[ ${chosen_docker_project_option} == *"03"* ]]; then
       docker_php_fpm_optimize "${project_path}"
     fi
 
     # OPTIMIZE NGINX
-    if [[ ${chosen_docker_project_option} == *"03"* ]]; then
+    if [[ ${chosen_docker_project_option} == *"04"* ]]; then
       docker_nginx_optimize "${project_path}"
     fi
 
     # OPTIMIZE MYSQL
-    if [[ ${chosen_docker_project_option} == *"04"* ]]; then
+    if [[ ${chosen_docker_project_option} == *"05"* ]]; then
       docker_mysql_optimize "${project_path}"
     fi
 
     # OPTIMIZE REDIS
-    if [[ ${chosen_docker_project_option} == *"05"* ]]; then
+    if [[ ${chosen_docker_project_option} == *"06"* ]]; then
       docker_redis_optimize "${project_path}"
     fi
 
     # CLEAN RAM USAGE
-    if [[ ${chosen_docker_project_option} == *"06"* ]]; then
+    if [[ ${chosen_docker_project_option} == *"07"* ]]; then
       docker_optimize_ram_usage "${project_path}"
     fi
 
     # VIEW CONTAINER LOGS
-    if [[ ${chosen_docker_project_option} == *"07"* ]]; then
+    if [[ ${chosen_docker_project_option} == *"08"* ]]; then
       docker_view_logs_menu "${project_path}"
     fi
 
     # RESTART CONTAINERS
-    if [[ ${chosen_docker_project_option} == *"08"* ]]; then
+    if [[ ${chosen_docker_project_option} == *"09"* ]]; then
       docker_restart_containers_menu "${project_path}"
     fi
 
     # STOP CONTAINERS
-    if [[ ${chosen_docker_project_option} == *"09"* ]]; then
+    if [[ ${chosen_docker_project_option} == *"10"* ]]; then
       docker_stop_containers_menu "${project_path}"
     fi
 
     # START CONTAINERS
-    if [[ ${chosen_docker_project_option} == *"10"* ]]; then
+    if [[ ${chosen_docker_project_option} == *"11"* ]]; then
       docker_start_containers_menu "${project_path}"
     fi
 
     # EXECUTE COMMAND IN CONTAINER
-    if [[ ${chosen_docker_project_option} == *"11"* ]]; then
+    if [[ ${chosen_docker_project_option} == *"12"* ]]; then
       docker_exec_command_menu "${project_path}"
     fi
 
