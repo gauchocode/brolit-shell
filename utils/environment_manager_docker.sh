@@ -25,7 +25,7 @@ function environment_manager_docker_menu() {
   local chosen_project
   local project_path
 
-  log_section "Docker Environment Manager"
+  log_subsection "Docker Environment Manager"
 
   # Get list of Docker projects
   docker_projects="$(docker_optimizer_list_projects)"
