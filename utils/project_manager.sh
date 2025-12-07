@@ -296,8 +296,7 @@ function project_manager_menu_new_project_type_new_project() {
     "01)" "NEW PROJECT"
     "02)" "NEW PROJECT FROM BACKUP"
     "03)" "DOCKERIZE PROJECT FROM BACKUP"
-    #"04)" "DE-DOCKERIZE PROJECT FROM BACKUP"
-    #"05)" "NEW PROJECT FROM GIT REPOSITORY"
+    "04)" "NEW PROJECT FROM GIT REPOSITORY (DOCKER)"
   )
 
   chosen_project_creation_type_option="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_creation_type_options[@]}" 3>&1 1>&2 2>&3)"
@@ -387,6 +386,11 @@ function project_manager_menu_new_project_type_new_project() {
     # DOCKERIZE EXISTING PROJECT
     if [[ ${chosen_project_creation_type_option} == *"03"* ]]; then
       project_dockerize_from_backup
+    fi
+
+    # NEW PROJECT FROM GIT REPOSITORY
+    if [[ ${chosen_project_creation_type_option} == *"04"* ]]; then
+      docker_project_install_from_git "${PROJECTS_PATH}" "" "" ""
     fi
 
   fi
