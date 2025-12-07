@@ -93,7 +93,7 @@ function docker_project_menu() {
 
   project_name="$(basename "${project_path}")"
 
-  log_subsection "Docker Project: ${project_name}"
+  display --indent 6 --text "- Managing Docker Project: ${project_name}" --tcolor YELLOW
 
   docker_project_options=(
     "01)" "VIEW CONTAINER STATUS"
