@@ -193,6 +193,8 @@ function cloudflare_waf_configuration_menu() {
   local chosen_waf_option
   local root_domain
 
+  log_subsection "Cloudflare WAF Configuration"
+
   waf_options=(
     "01)" "VIEW ALL WAF SETTINGS"
     "02)" "SECURITY LEVEL"

@@ -926,7 +926,8 @@ function cloudflare_get_bot_fight_mode() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
-        bot_result="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/bot_fight_mode" \
+        # Get bot management configuration
+        bot_result="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/bot_management" \
             -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
             -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
             -H "Content-Type: application/json")"
@@ -934,10 +935,18 @@ function cloudflare_get_bot_fight_mode() {
         if [[ ${bot_result} == *"\"success\":false"* || ${bot_result} == "" ]]; then
             return 1
         else
-            # Extract value from JSON response
+            # Extract fight_mode value from JSON response
             local bot_value
-            bot_value="$(echo "${bot_result}" | grep -Po '(?<="value":")[^"]*' | head -1)"
-            echo "${bot_value}"
+            bot_value="$(echo "${bot_result}" | grep -Po '(?<="fight_mode":)(true|false)' | head -1)"
+
+            # Convert true/false to on/off
+            if [[ ${bot_value} == "true" ]]; then
+                echo "on"
+            elif [[ ${bot_value} == "false" ]]; then
+                echo "off"
+            else
+                echo "off"  # Default to off if unable to parse
+            fi
             return 0
         fi
 
@@ -1141,6 +1150,14 @@ function cloudflare_set_bot_fight_mode() {
     local bot_fight_mode="${2}"
 
     local bot_fight_result
+    local fight_mode_bool
+
+    # Convert on/off to true/false
+    if [[ ${bot_fight_mode} == "on" ]]; then
+        fight_mode_bool="true"
+    else
+        fight_mode_bool="false"
+    fi
 
     zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
 
@@ -1149,15 +1166,26 @@ function cloudflare_set_bot_fight_mode() {
 
         log_event "info" "Setting Bot Fight Mode for: ${root_domain}"
 
-        bot_fight_result="$(curl -s -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/bot_management" \
+        # Try bot_management endpoint first
+        bot_fight_result="$(curl -s -X PUT "https://api.cloudflare.com/client/v4/zones/${zone_id}/bot_management" \
             -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
             -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
             -H "Content-Type: application/json" \
-            --data "{\"fight_mode\":${bot_fight_mode}}")"
+            --data "{\"fight_mode\":${fight_mode_bool}}")"
+
+        if [[ ${bot_fight_result} == *"\"success\":false"* || ${bot_fight_result} == *"\"code\":1003"* ]]; then
+            # If that fails, try the settings endpoint
+            bot_fight_result="$(curl -s -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/bot_fight_mode" \
+                -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+                -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
+                -H "Content-Type: application/json" \
+                --data "{\"value\":\"${bot_fight_mode}\"}")"
+        fi
 
         if [[ ${bot_fight_result} == *"\"success\":false"* || ${bot_fight_result} == "" ]]; then
             log_event "error" "Error trying to set bot fight mode for ${root_domain}. Results:\n ${bot_fight_result}" "false"
             display --indent 6 --text "- Setting Bot Fight Mode" --result "FAIL" --color RED
+            display --indent 8 --text "Check logs for details" --tcolor RED
             return 1
 
         else
@@ -1366,14 +1394,56 @@ function cloudflare_list_custom_rules() {
 
             # Parse and display rules in a readable format
             local rules_count
-            rules_count="$(echo "${rules_result}" | grep -o '"id":' | wc -l)"
+            rules_count="$(echo "${rules_result}" | grep -o '"id":"[^"]*"' | grep -o '"rules"' -A 9999 | grep -o '"id":"[^"]*"' | wc -l)"
 
             display --indent 8 --text "Total rules: ${rules_count}/5" --tcolor YELLOW
+            echo ""
 
-            # Display basic info (you might want to use jq for better parsing)
-            echo "${rules_result}" | grep -o '"description":"[^"]*"' | sed 's/"description":"//g' | sed 's/"//g' | while read -r rule_desc; do
-                display --indent 8 --text "- ${rule_desc}" --tcolor GREEN
-            done
+            # Parse each rule from the JSON response
+            # Split the response by rule entries
+            local temp_file="/tmp/cf_rules_$$.json"
+            echo "${rules_result}" > "${temp_file}"
+
+            # Extract the rules array and process each rule
+            local rule_counter=1
+
+            # Use a more reliable parsing method for each rule field
+            while IFS= read -r rule_id; do
+                # Clean up the rule_id
+                rule_id="${rule_id#*\"id\":\"}"
+                rule_id="${rule_id%%\"*}"
+
+                # Skip if this is the ruleset ID (not a rule ID)
+                if [[ ${rule_counter} -eq 1 ]] && [[ $(echo "${rules_result}" | grep -o "\"id\":\"${rule_id}\"" | head -1) == $(echo "${rules_result}" | grep -o "\"id\":\"[^\"]*\"" | head -1) ]]; then
+                    continue
+                fi
+
+                # Extract description for this rule
+                local rule_desc
+                rule_desc="$(echo "${rules_result}" | grep -A 100 "\"id\":\"${rule_id}\"" | grep -m 1 '"description"' | sed 's/.*"description":"\([^"]*\)".*/\1/')"
+
+                # Extract action for this rule
+                local rule_action
+                rule_action="$(echo "${rules_result}" | grep -A 100 "\"id\":\"${rule_id}\"" | grep -m 1 '"action"' | sed 's/.*"action":"\([^"]*\)".*/\1/')"
+
+                # Extract expression for this rule
+                local rule_expr
+                rule_expr="$(echo "${rules_result}" | grep -A 100 "\"id\":\"${rule_id}\"" | grep -m 1 '"expression"' | sed 's/.*"expression":"\([^"]*\)".*/\1/' | sed 's/\\//g')"
+
+                # Display rule information
+                display --indent 8 --text "Rule #${rule_counter}:" --tcolor YELLOW
+                display --indent 10 --text "Name: ${rule_desc}" --tcolor GREEN
+                display --indent 10 --text "ID: ${rule_id}" --tcolor CYAN
+                display --indent 10 --text "Action: ${rule_action}" --tcolor MAGENTA
+                display --indent 10 --text "Expression: ${rule_expr}" --tcolor WHITE
+                echo ""
+
+                rule_counter=$((rule_counter + 1))
+
+            done < <(echo "${rules_result}" | grep -o '"id":"[^"]*"' | tail -n +2)
+
+            # Clean up temp file
+            rm -f "${temp_file}"
 
             log_event "info" "Custom rules listed for ${root_domain}" "false"
             log_event "debug" "Rules data: ${rules_result}" "false"
