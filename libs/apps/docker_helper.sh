@@ -907,7 +907,6 @@ function docker_project_install() {
     ## Will find the next port available from 81 to 250
     port_available="$(network_next_available_port "81" "350")"
 
-    # TODO: Only for wordpress/laravel/php projects
     # PHP Version
     # Whiptail menu to ask php version to work with
     php_versions="7.4 8.0 8.1 8.2 8.3"
@@ -1119,15 +1118,7 @@ define('WP_REDIS_HOST','redis');\n" "${project_path}/wordpress/wp-config.php"
 
         ;;
 
-        #    laravel)
-        #        # Execute function
-        #        # laravel_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
-        #        # log_event "warning" "Laravel installer should be implemented soon, trying to install like pure php project ..."
-        #        project_installer_php "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
-        #
-        #        ;;
-        #
-    php | laravel)
+    php)
 
         # Create project directory
         mkdir -p "${project_path}"
@@ -1552,18 +1543,9 @@ function docker_detect_project_type_from_git() {
             echo "${project_type}"
             return 0
         fi
-
-        # 3. Laravel detection
-        if grep -q "laravel/framework" "${project_path}/composer.json" 2>/dev/null &&
-           [[ -f "${project_path}/artisan" ]]; then
-            project_type="laravel"
-            log_event "info" "Detected project type: ${project_type}" "false"
-            echo "${project_type}"
-            return 0
-        fi
     fi
 
-    # 4. PHP generic
+    # 3. PHP generic
     if [[ -f "${project_path}/composer.json" ]] ||
        [[ -f "${project_path}/index.php" ]]; then
         project_type="php"
@@ -1572,20 +1554,17 @@ function docker_detect_project_type_from_git() {
         return 0
     fi
 
-    # 5. NodeJS/React detection
+    # 4. React detection
     if [[ -f "${project_path}/package.json" ]]; then
-        # Check if it's React
         if grep -q "\"react\"" "${project_path}/package.json" 2>/dev/null; then
             project_type="react"
-        else
-            project_type="nodejs"
+            log_event "info" "Detected project type: ${project_type}" "false"
+            echo "${project_type}"
+            return 0
         fi
-        log_event "info" "Detected project type: ${project_type}" "false"
-        echo "${project_type}"
-        return 0
     fi
 
-    # 6. HTML static
+    # 5. HTML static
     if find "${project_path}" -maxdepth 1 -name "*.html" -type f | grep -q .; then
         project_type="html"
         log_event "info" "Detected project type: ${project_type}" "false"
@@ -1779,7 +1758,7 @@ function docker_project_install_from_git() {
     # Ask user confirmation
     if ! whiptail --title "Project Type Confirmation" --yesno "Detected project type: ${project_type}\n\nIs this correct?" 10 60; then
         # Let user select type manually
-        local project_types="wordpress laravel php nodejs react html custom-docker"
+        local project_types="wordpress php react html custom-docker"
         project_type="$(whiptail_selection_menu "Project Type" "Choose the project type:" "${project_types}" "${project_type}")"
         [[ $? -eq 1 ]] && rm -rf "${tmp_clone_path}" && return 1
     fi

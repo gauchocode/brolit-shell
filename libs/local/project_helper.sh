@@ -295,7 +295,7 @@ function project_ask_type() {
   local project_types
   local project_type
 
-  project_types="wordpress laravel php react html other"
+  project_types="wordpress php html"
 
   project_type="$(whiptail --title "SELECT PROJECT TYPE" --menu " " 20 78 10 $(for x in ${project_types}; do echo "${x} [D]"; done) --default-item "${suggested_project_type}" 3>&1 1>&2 2>&3)"
 
@@ -2020,7 +2020,7 @@ function project_install() {
   if [[ ! $(command -v nginx) ]]; then
     # Log
     log_event "error" "Nginx is not installed" "false"
-    display --indent 6 --text "- Creating WordPress project" --result "FAIL" --color RED
+    display --indent 6 --text "- Creating ${project_type} project" --result "FAIL" --color RED
     display --indent 8 --text "Nginx is not installed" --tcolor RED
     return 1
   fi
@@ -2044,7 +2044,7 @@ function project_install() {
   project_path="${dir_path}/${project_domain}"
   if [[ -f ${project_path} ]]; then
     # Log
-    display --indent 6 --text "- Creating WordPress project" --result "FAIL" --color RED
+    display --indent 6 --text "- Creating ${project_type} project" --result "FAIL" --color RED
     display --indent 8 --text "Destination folder '${project_path}' already exist"
     log_event "error" "Destination folder '${project_path}' already exist, aborting ..." "false"
     return 1
@@ -2112,27 +2112,9 @@ function project_install() {
 
     ;;
 
-  laravel)
-
-    # Execute function
-    # laravel_project_installer "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
-    # log_event "warning" "Laravel installer should be implemented soon, trying to install like pure php project ..."
-    project_installer_php "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
-    [[ $? -eq 1 ]] && return 1
-
-    ;;
-
   php)
 
     project_installer_php "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
-    [[ $? -eq 1 ]] && return 1
-
-    ;;
-
-  nodejs)
-
-    #display --indent 8 --text "Project Type NodeJS" --tcolor RED
-    project_installer_nodejs "${project_path}" "${project_domain}" "${project_name}" "${project_stage}" "${project_root_domain}"
     [[ $? -eq 1 ]] && return 1
 
     ;;
@@ -2798,45 +2780,10 @@ function project_get_type() {
 
     fi
 
-    # Check for Laravel
-    composer="$(find "${dir_path}" -maxdepth 2 -name "composer.json" -type f)"
-    if [[ -n ${composer} ]]; then
-
-      laravel="$(cat "${composer}" | grep "laravel/framework")"
-
-      if [[ -n ${laravel} ]]; then
-
-        project_type="laravel"
-
-        # Log
-        log_event "debug" "Project type '${project_type}' for ${dir_path}" "false"
-        display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
-
-        # Return
-        echo "${project_type}" && return 0
-
-      fi
-
-    fi
-
     # Check for React by looking for specific react-scripts in package.json
     if [[ -f "${dir_path}/package.json" ]] && grep -q "react-scripts" "${dir_path}/package.json"; then
 
       project_type="react"
-
-      # Log
-      log_event "debug" "Project type '${project_type}' for ${dir_path}" "false"
-      display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
-
-      # Return
-      echo "${project_type}" && return 0
-
-    fi
-
-    # Check for Node.js by looking for server.js or app.js files which are common entry points
-    if [[ -f "${dir_path}/package.json" && (-f "${dir_path}/server.js" || -f "${dir_path}/app.js") ]]; then
-
-      project_type="nodejs"
 
       # Log
       log_event "debug" "Project type '${project_type}' for ${dir_path}" "false"
@@ -2997,6 +2944,24 @@ function project_installer_php() {
 
   log_subsection "PHP Project Install"
 
+  # Check if php is installed
+  if [[ ! $(command -v php) ]]; then
+    # Log
+    display --indent 6 --text "- Installing PHP project" --result "FAIL" --color RED
+    display --indent 8 --text "PHP is not installed, aborting ..."
+    log_event "error" "PHP is not installed, aborting ..." "false"
+    return 1
+  fi
+
+  # Check if mysql is installed
+  if [[ ! $(command -v mysql) ]]; then
+    # Log
+    display --indent 6 --text "- Installing PHP project" --result "FAIL" --color RED
+    display --indent 8 --text "MySQL is not installed, aborting ..."
+    log_event "error" "MySQL is not installed, aborting ..." "false"
+    return 1
+  fi
+
   if [[ ! -d ${project_path} ]]; then
 
     # Create project directory
@@ -3029,106 +2994,6 @@ function project_installer_php() {
 
   # Change ownership
   change_ownership "www-data" "www-data" "${project_path}"
-
-}
-
-################################################################################
-# Install nodejs project
-#
-# Arguments:
-#  ${1} = ${project_path}
-#  ${2} = ${project_domain}
-#  ${3} = ${project_name}
-#  ${4} = ${project_stage}
-#  ${5} = ${project_root_domain}   # Optional
-#
-# Outputs:
-#   0 if ok, 1 on error.
-################################################################################
-
-function project_installer_nodejs() {
-
-  local project_path="${1}"
-  local project_domain="${2}"
-  local project_name="${3}"
-  local project_stage="${4}"
-  local project_root_domain="${5}"
-
-  log_subsection "NodeJS Project Install"
-
-  nodejs_installed="$(package_is_installed "nodejs")"
-
-  if [[ ${nodejs_installed} -eq 1 ]]; then
-
-    nodejs_installer
-
-  fi
-
-  if [[ ${project_root_domain} == '' ]]; then
-
-    possible_root_domain="$(domain_get_root "${project_domain}")"
-    project_root_domain="$(cloudflare_ask_rootdomain "${possible_root_domain}")"
-
-  fi
-
-  if [[ ! -d "${project_path}" ]]; then
-
-    # Create project directory
-    mkdir -p "${project_path}"
-    change_ownership "www-data" "www-data" "${project_path}"
-
-  else
-
-    # Log
-    display --indent 6 --text "- Creating NodeJS project" --result "FAIL" --color RED
-    display --indent 8 --text "Destination folder '${project_path}' already exist"
-    log_event "error" "Destination folder '${project_path}' already exist, aborting ..."
-
-    # Return
-    return 1
-
-  fi
-
-  # DB
-  db_project_name="$(database_name_sanitize "${project_name}")"
-  database_name="${db_project_name}_${project_stage}"
-  database_user="${db_project_name}_user"
-  database_user_passw="$(openssl rand -hex 12)"
-
-  ## Create database and user
-  mysql_database_create "${database_name}"
-  mysql_user_create "${database_user}" "${database_user_passw}" ""
-  mysql_user_grant_privileges "${database_user}" "${database_name}"
-
-  # Create index.html
-  echo "Please configure the project and remove this file." >"${project_path}/index.html"
-
-  # Change ownership
-  change_ownership "www-data" "www-data" "${project_path}"
-
-}
-
-################################################################################
-# Get laravel version from project
-#
-# Arguments:
-#  ${1} = ${project_dir}
-#
-# Outputs:
-#   0 if ok, 1 on error.
-################################################################################
-
-function check_laravel_version() {
-
-  local project_dir="${1}"
-
-  local laravel_version
-
-  # Get laravel version from project
-  laravel_version="$(grep -oP '("laravel/framework":).+[1-9]?' "${project_dir}/composer.json" | grep -oP '[0-9]+\.[0-9]+')"
-
-  # Return
-  echo "${laravel_version}"
 
 }
 
