@@ -449,6 +449,7 @@ function restore_manager_menu() {
   local chosen_restore_options # whiptail var
 
   log_event "info" "Selecting backup restore type ..." "false"
+  log_section "Restore Manager"
 
   restore_options=(
     "01)" "FROM DROPBOX"

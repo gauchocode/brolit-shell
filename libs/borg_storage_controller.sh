@@ -508,7 +508,7 @@ function restore_backup_with_borg() {
     # Create storage box directory if not exists where it will be mounted
     [[ ! -d ${storage_box_directory} ]] && mkdir ${storage_box_directory}
 
-    log_section "Restore Backup"
+    log_subsection "Restore Backup"
     
     # Log diagnostic information
     log_event "debug" "Starting restore backup process" "false"
