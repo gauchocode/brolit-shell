@@ -2031,6 +2031,109 @@ function project_install() {
     [[ $? -eq 1 ]] && return 1
   fi
 
+  # Check project type requirements BEFORE asking for project details
+  case ${project_type} in
+    wordpress)
+      # WordPress requires both PHP and MySQL
+      # Check if php is installed
+      if [[ ! $(command -v php) ]]; then
+        display --indent 6 --text "- Checking PHP installation" --result "FAIL" --color RED
+        display --indent 8 --text "PHP is not installed" --tcolor RED
+        log_event "error" "PHP is not installed for ${project_type} project" "false"
+
+        # Check if docker is available
+        if [[ $(command -v docker) ]]; then
+          display --indent 8 --text "Docker is available on this system" --tcolor GREEN
+          if whiptail --title "PHP Not Found" --yesno "PHP is not installed, but Docker is available.\n\nWould you like to create a Dockerized ${project_type} project instead?" 12 70; then
+            # Call docker installation
+            docker_project_install "${PROJECTS_PATH}" "${project_type}" ""
+            return $?
+          else
+            display --indent 8 --text "Operation cancelled by user" --tcolor YELLOW
+            return 1
+          fi
+        else
+          display --indent 8 --text "Please install PHP or Docker to continue" --tcolor YELLOW
+          return 1
+        fi
+      fi
+
+      # Check if mysql is installed (required for WordPress)
+      if [[ ! $(command -v mysql) ]]; then
+        display --indent 6 --text "- Checking MySQL installation" --result "FAIL" --color RED
+        display --indent 8 --text "MySQL is not installed" --tcolor RED
+        log_event "error" "MySQL is not installed for ${project_type} project" "false"
+
+        # Check if docker is available
+        if [[ $(command -v docker) ]]; then
+          display --indent 8 --text "Docker is available on this system" --tcolor GREEN
+          if whiptail --title "MySQL Not Found" --yesno "MySQL is not installed, but Docker is available.\n\nWould you like to create a Dockerized ${project_type} project instead?" 12 70; then
+            # Call docker installation
+            docker_project_install "${PROJECTS_PATH}" "${project_type}" ""
+            return $?
+          else
+            display --indent 8 --text "Operation cancelled by user" --tcolor YELLOW
+            return 1
+          fi
+        else
+          display --indent 8 --text "Please install MySQL or Docker to continue" --tcolor YELLOW
+          return 1
+        fi
+      fi
+      ;;
+
+    php)
+      # PHP projects require PHP but MySQL is optional
+      # Check if php is installed
+      if [[ ! $(command -v php) ]]; then
+        display --indent 6 --text "- Checking PHP installation" --result "FAIL" --color RED
+        display --indent 8 --text "PHP is not installed" --tcolor RED
+        log_event "error" "PHP is not installed for ${project_type} project" "false"
+
+        # Check if docker is available
+        if [[ $(command -v docker) ]]; then
+          display --indent 8 --text "Docker is available on this system" --tcolor GREEN
+          if whiptail --title "PHP Not Found" --yesno "PHP is not installed, but Docker is available.\n\nWould you like to create a Dockerized ${project_type} project instead?" 12 70; then
+            # Call docker installation
+            docker_project_install "${PROJECTS_PATH}" "${project_type}" ""
+            return $?
+          else
+            display --indent 8 --text "Operation cancelled by user" --tcolor YELLOW
+            return 1
+          fi
+        else
+          display --indent 8 --text "Please install PHP or Docker to continue" --tcolor YELLOW
+          return 1
+        fi
+      fi
+
+      # Check if mysql is installed (optional warning for PHP)
+      if [[ ! $(command -v mysql) ]]; then
+        display --indent 6 --text "- Checking MySQL installation" --result "WARN" --color YELLOW
+        display --indent 8 --text "MySQL is not installed" --tcolor YELLOW
+        display --indent 8 --text "Database creation will be skipped" --tcolor YELLOW
+        log_event "warning" "MySQL is not installed - database creation will be skipped" "false"
+
+        # Ask user if they want to continue without MySQL or use Docker
+        if whiptail --title "MySQL Not Found" --yesno "MySQL is not installed.\n\nYou can:\n- Continue without database (for static PHP sites)\n- Use Docker version (includes MySQL)\n\nContinue without MySQL?" 14 70; then
+          display --indent 8 --text "Continuing without MySQL" --tcolor GREEN
+          # Set flag to skip database creation
+          export SKIP_DATABASE_CREATION="true"
+        else
+          # User chose not to continue, check if docker is available
+          if [[ $(command -v docker) ]]; then
+            if whiptail --title "Use Docker Instead?" --yesno "Would you like to create a Dockerized ${project_type} project instead?\n\n(It will include MySQL)" 10 70; then
+              docker_project_install "${PROJECTS_PATH}" "${project_type}" ""
+              return $?
+            fi
+          fi
+          display --indent 8 --text "Operation cancelled by user" --tcolor YELLOW
+          return 1
+        fi
+      fi
+      ;;
+  esac
+
   # Project Domain
   if [[ -z ${project_domain} ]]; then
     project_domain="$(project_ask_domain "")"
@@ -2085,23 +2188,6 @@ function project_install() {
   case ${project_type} in
 
   wordpress)
-
-    # Check if php is installed
-    if [[ ! $(command -v php) ]]; then
-      # Log
-      display --indent 6 --text "- Installing WordPress project" --result "FAIL" --color RED
-      display --indent 8 --text "PHP is not installed, aborting ..."
-      log_event "error" "PHP is not installed, aborting ..." "false"
-      return 1
-    fi
-    # Check if mysql is installed
-    if [[ ! $(command -v mysql) ]]; then
-      # Log
-      display --indent 6 --text "- Installing WordPress project" --result "FAIL" --color RED
-      display --indent 8 --text "MySQL is not installed, aborting ..."
-      log_event "error" "MySQL is not installed, aborting ..." "false"
-      return 1
-    fi
 
     # Check if wp-cli is installed
     wpcli_install_if_not_installed
@@ -2944,24 +3030,6 @@ function project_installer_php() {
 
   log_subsection "PHP Project Install"
 
-  # Check if php is installed
-  if [[ ! $(command -v php) ]]; then
-    # Log
-    display --indent 6 --text "- Installing PHP project" --result "FAIL" --color RED
-    display --indent 8 --text "PHP is not installed, aborting ..."
-    log_event "error" "PHP is not installed, aborting ..." "false"
-    return 1
-  fi
-
-  # Check if mysql is installed
-  if [[ ! $(command -v mysql) ]]; then
-    # Log
-    display --indent 6 --text "- Installing PHP project" --result "FAIL" --color RED
-    display --indent 8 --text "MySQL is not installed, aborting ..."
-    log_event "error" "MySQL is not installed, aborting ..." "false"
-    return 1
-  fi
-
   if [[ ! -d ${project_path} ]]; then
 
     # Create project directory
@@ -2979,15 +3047,24 @@ function project_installer_php() {
 
   fi
 
-  db_project_name="$(database_name_sanitize "${project_name}")"
-  database_name="${db_project_name}_${project_stage}"
-  database_user="${db_project_name}_user"
-  database_user_passw="$(openssl rand -hex 12)"
+  # Create database and user (only if MySQL is available and not skipped)
+  if [[ "${SKIP_DATABASE_CREATION}" != "true" ]]; then
+    db_project_name="$(database_name_sanitize "${project_name}")"
+    database_name="${db_project_name}_${project_stage}"
+    database_user="${db_project_name}_user"
+    database_user_passw="$(openssl rand -hex 12)"
 
-  # Create database and user
-  mysql_database_create "${database_name}"
-  mysql_user_create "${database_user}" "${database_user_passw}" ""
-  mysql_user_grant_privileges "${database_user}" "${database_name}" ""
+    # Create database and user
+    mysql_database_create "${database_name}"
+    mysql_user_create "${database_user}" "${database_user_passw}" ""
+    mysql_user_grant_privileges "${database_user}" "${database_name}" ""
+
+    log_event "info" "Database ${database_name} created successfully" "false"
+    display --indent 6 --text "- Creating project database" --result "DONE" --color GREEN
+  else
+    log_event "info" "Database creation skipped (MySQL not available)" "false"
+    display --indent 6 --text "- Creating project database" --result "SKIPPED" --color YELLOW
+  fi
 
   # Create index.php
   echo "<?php phpinfo(); ?>" >"${project_path}/index.php"
