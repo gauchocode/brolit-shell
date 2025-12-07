@@ -9,7 +9,8 @@
       "Bash(echo:*)",
       "Bash(./TEST_NOTIFICATION_TYPES.sh:*)",
       "Bash(find:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(command -v yq:*)"
     ],
     "deny": [],
     "ask": []
