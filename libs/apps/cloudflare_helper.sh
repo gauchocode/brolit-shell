@@ -794,6 +794,646 @@ function cloudflare_set_cache_ttl_value() {
 
 ################################################################################
 
+# CLOUDFLARE WAF/SECURITY
+
+################################################################################
+# Set security level for domain
+#
+# Arguments:
+#   ${1} = ${root_domain}
+#   ${2} = ${security_level} - valid values: off, essentially_off, low, medium, high, under_attack
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function cloudflare_set_security_level() {
+
+    local root_domain="${1}"
+    local security_level="${2}"
+
+    local security_result
+
+    zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        log_event "info" "Setting Security Level for: ${root_domain}"
+
+        security_result="$(curl -s -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/security_level" \
+            -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+            -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
+            -H "Content-Type: application/json" \
+            --data "{\"value\":\"${security_level}\"}")"
+
+        if [[ ${security_result} == *"\"success\":false"* || ${security_result} == "" ]]; then
+            log_event "error" "Error trying to set security level for ${root_domain}. Results:\n ${security_result}" "false"
+            display --indent 6 --text "- Setting Security Level" --result "FAIL" --color RED
+            return 1
+
+        else
+            display --indent 6 --text "- Setting Security Level for: ${root_domain}" --result "DONE" --color GREEN
+            display --indent 8 --text "New Security Level: ${security_level}" --tcolor YELLOW
+            log_event "info" "New security level for ${root_domain} is ${security_level}" "false"
+            return 0
+        fi
+
+    else
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
+# Set bot fight mode for domain
+#
+# Arguments:
+#   ${1} = ${root_domain}
+#   ${2} = ${bot_fight_mode} - valid values: on, off
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function cloudflare_set_bot_fight_mode() {
+
+    local root_domain="${1}"
+    local bot_fight_mode="${2}"
+
+    local bot_fight_result
+
+    zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        log_event "info" "Setting Bot Fight Mode for: ${root_domain}"
+
+        bot_fight_result="$(curl -s -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/bot_management" \
+            -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+            -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
+            -H "Content-Type: application/json" \
+            --data "{\"fight_mode\":${bot_fight_mode}}")"
+
+        if [[ ${bot_fight_result} == *"\"success\":false"* || ${bot_fight_result} == "" ]]; then
+            log_event "error" "Error trying to set bot fight mode for ${root_domain}. Results:\n ${bot_fight_result}" "false"
+            display --indent 6 --text "- Setting Bot Fight Mode" --result "FAIL" --color RED
+            return 1
+
+        else
+            display --indent 6 --text "- Setting Bot Fight Mode for: ${root_domain}" --result "DONE" --color GREEN
+            display --indent 8 --text "Bot Fight Mode: ${bot_fight_mode}" --tcolor YELLOW
+            log_event "info" "Bot fight mode for ${root_domain} is ${bot_fight_mode}" "false"
+            return 0
+        fi
+
+    else
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
+# Set browser integrity check for domain
+#
+# Arguments:
+#   ${1} = ${root_domain}
+#   ${2} = ${browser_check} - valid values: on, off
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function cloudflare_set_browser_check() {
+
+    local root_domain="${1}"
+    local browser_check="${2}"
+
+    local browser_check_result
+
+    zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        log_event "info" "Setting Browser Integrity Check for: ${root_domain}"
+
+        browser_check_result="$(curl -s -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/browser_check" \
+            -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+            -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
+            -H "Content-Type: application/json" \
+            --data "{\"value\":\"${browser_check}\"}")"
+
+        if [[ ${browser_check_result} == *"\"success\":false"* || ${browser_check_result} == "" ]]; then
+            log_event "error" "Error trying to set browser check for ${root_domain}. Results:\n ${browser_check_result}" "false"
+            display --indent 6 --text "- Setting Browser Integrity Check" --result "FAIL" --color RED
+            return 1
+
+        else
+            display --indent 6 --text "- Setting Browser Integrity Check for: ${root_domain}" --result "DONE" --color GREEN
+            display --indent 8 --text "Browser Check: ${browser_check}" --tcolor YELLOW
+            log_event "info" "Browser integrity check for ${root_domain} is ${browser_check}" "false"
+            return 0
+        fi
+
+    else
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
+# Set challenge passage time for domain
+#
+# Arguments:
+#   ${1} = ${root_domain}
+#   ${2} = ${challenge_ttl} - valid values: 300, 900, 1800, 2700, 3600, 7200, 10800, 14400, 28800, 43200, 86400
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function cloudflare_set_challenge_ttl() {
+
+    local root_domain="${1}"
+    local challenge_ttl="${2}"
+
+    local challenge_ttl_result
+
+    zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        log_event "info" "Setting Challenge Passage Time for: ${root_domain}"
+
+        challenge_ttl_result="$(curl -s -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/challenge_ttl" \
+            -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+            -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
+            -H "Content-Type: application/json" \
+            --data "{\"value\":${challenge_ttl}}")"
+
+        if [[ ${challenge_ttl_result} == *"\"success\":false"* || ${challenge_ttl_result} == "" ]]; then
+            log_event "error" "Error trying to set challenge ttl for ${root_domain}. Results:\n ${challenge_ttl_result}" "false"
+            display --indent 6 --text "- Setting Challenge Passage Time" --result "FAIL" --color RED
+            return 1
+
+        else
+            display --indent 6 --text "- Setting Challenge Passage Time for: ${root_domain}" --result "DONE" --color GREEN
+            display --indent 8 --text "Challenge TTL: ${challenge_ttl} seconds" --tcolor YELLOW
+            log_event "info" "Challenge passage time for ${root_domain} is ${challenge_ttl}" "false"
+            return 0
+        fi
+
+    else
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
+# Set WAF managed ruleset (Free) for domain
+#
+# Arguments:
+#   ${1} = ${root_domain}
+#   ${2} = ${waf_status} - valid values: on, off
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function cloudflare_set_waf_managed_ruleset() {
+
+    local root_domain="${1}"
+    local waf_status="${2}"
+
+    local waf_result
+
+    zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        log_event "info" "Setting WAF Managed Ruleset for: ${root_domain}"
+
+        waf_result="$(curl -s -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/waf" \
+            -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+            -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
+            -H "Content-Type: application/json" \
+            --data "{\"value\":\"${waf_status}\"}")"
+
+        if [[ ${waf_result} == *"\"success\":false"* || ${waf_result} == "" ]]; then
+            log_event "error" "Error trying to set WAF for ${root_domain}. Results:\n ${waf_result}" "false"
+            display --indent 6 --text "- Setting WAF Managed Ruleset" --result "FAIL" --color RED
+            return 1
+
+        else
+            display --indent 6 --text "- Setting WAF Managed Ruleset for: ${root_domain}" --result "DONE" --color GREEN
+            display --indent 8 --text "WAF Status: ${waf_status}" --tcolor YELLOW
+            log_event "info" "WAF managed ruleset for ${root_domain} is ${waf_status}" "false"
+            return 0
+        fi
+
+    else
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
+# List custom firewall rules for domain
+#
+# Arguments:
+#   ${1} = ${root_domain}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function cloudflare_list_custom_rules() {
+
+    local root_domain="${1}"
+
+    local rules_result
+
+    zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        log_event "info" "Listing Custom Firewall Rules for: ${root_domain}"
+
+        rules_result="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/rulesets/phases/http_request_firewall_custom/entrypoint" \
+            -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+            -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
+            -H "Content-Type: application/json")"
+
+        if [[ ${rules_result} == *"\"success\":false"* || ${rules_result} == "" ]]; then
+            log_event "error" "Error trying to list custom rules for ${root_domain}. Results:\n ${rules_result}" "false"
+            display --indent 6 --text "- Listing Custom Rules" --result "FAIL" --color RED
+            return 1
+
+        else
+            display --indent 6 --text "- Custom Firewall Rules for: ${root_domain}" --result "DONE" --color GREEN
+
+            # Parse and display rules in a readable format
+            local rules_count
+            rules_count="$(echo "${rules_result}" | grep -o '"id":' | wc -l)"
+
+            display --indent 8 --text "Total rules: ${rules_count}/5" --tcolor YELLOW
+
+            # Display basic info (you might want to use jq for better parsing)
+            echo "${rules_result}" | grep -o '"description":"[^"]*"' | sed 's/"description":"//g' | sed 's/"//g' | while read -r rule_desc; do
+                display --indent 8 --text "- ${rule_desc}" --tcolor GREEN
+            done
+
+            log_event "info" "Custom rules listed for ${root_domain}" "false"
+            log_event "debug" "Rules data: ${rules_result}" "false"
+            return 0
+        fi
+
+    else
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
+# Create custom firewall rule for domain
+#
+# Arguments:
+#   ${1} = ${root_domain}
+#   ${2} = ${rule_name}
+#   ${3} = ${rule_expression}
+#   ${4} = ${rule_action} - valid values: block, challenge, js_challenge, managed_challenge, allow, log
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function cloudflare_create_custom_rule() {
+
+    local root_domain="${1}"
+    local rule_name="${2}"
+    local rule_expression="${3}"
+    local rule_action="${4}"
+
+    local create_result
+    local ruleset_id
+
+    zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        log_event "info" "Creating Custom Firewall Rule for: ${root_domain}"
+        log_event "debug" "Rule name: ${rule_name}, Expression: ${rule_expression}, Action: ${rule_action}"
+
+        # First, get the ruleset ID for the zone
+        ruleset_id="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/rulesets/phases/http_request_firewall_custom/entrypoint" \
+            -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+            -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
+            -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1)"
+
+        if [[ -z ${ruleset_id} ]]; then
+            # If no ruleset exists, create one first
+            log_event "debug" "No ruleset found, creating new ruleset"
+
+            create_result="$(curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${zone_id}/rulesets" \
+                -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+                -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
+                -H "Content-Type: application/json" \
+                --data "{\"name\":\"Custom Firewall Rules\",\"description\":\"Custom firewall rules for zone\",\"kind\":\"zone\",\"phase\":\"http_request_firewall_custom\",\"rules\":[{\"description\":\"${rule_name}\",\"expression\":\"${rule_expression}\",\"action\":\"${rule_action}\"}]}")"
+        else
+            # Add rule to existing ruleset
+            log_event "debug" "Adding rule to existing ruleset: ${ruleset_id}"
+
+            create_result="$(curl -s -X PUT "https://api.cloudflare.com/client/v4/zones/${zone_id}/rulesets/${ruleset_id}" \
+                -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+                -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
+                -H "Content-Type: application/json" \
+                --data "{\"rules\":[{\"description\":\"${rule_name}\",\"expression\":\"${rule_expression}\",\"action\":\"${rule_action}\"}]}")"
+        fi
+
+        if [[ ${create_result} == *"\"success\":false"* || ${create_result} == "" ]]; then
+            log_event "error" "Error trying to create custom rule for ${root_domain}. Results:\n ${create_result}" "false"
+            display --indent 6 --text "- Creating Custom Rule" --result "FAIL" --color RED
+            display --indent 8 --text "Check logs for details" --tcolor RED
+            return 1
+
+        else
+            display --indent 6 --text "- Creating Custom Rule for: ${root_domain}" --result "DONE" --color GREEN
+            display --indent 8 --text "Rule: ${rule_name}" --tcolor YELLOW
+            display --indent 8 --text "Action: ${rule_action}" --tcolor YELLOW
+            log_event "info" "Custom rule created for ${root_domain}: ${rule_name}" "false"
+            return 0
+        fi
+
+    else
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
+# Delete custom firewall rule for domain
+#
+# Arguments:
+#   ${1} = ${root_domain}
+#   ${2} = ${rule_id}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function cloudflare_delete_custom_rule() {
+
+    local root_domain="${1}"
+    local rule_id="${2}"
+
+    local delete_result
+    local ruleset_id
+
+    zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        log_event "info" "Deleting Custom Firewall Rule for: ${root_domain}"
+
+        # Get the ruleset ID
+        ruleset_id="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/rulesets/phases/http_request_firewall_custom/entrypoint" \
+            -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+            -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
+            -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1)"
+
+        if [[ -z ${ruleset_id} ]]; then
+            log_event "error" "No ruleset found for ${root_domain}" "false"
+            display --indent 6 --text "- Deleting Custom Rule" --result "FAIL" --color RED
+            display --indent 8 --text "No ruleset found" --tcolor RED
+            return 1
+        fi
+
+        delete_result="$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${zone_id}/rulesets/${ruleset_id}/rules/${rule_id}" \
+            -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+            -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
+            -H "Content-Type: application/json")"
+
+        if [[ ${delete_result} == *"\"success\":false"* || ${delete_result} == "" ]]; then
+            log_event "error" "Error trying to delete custom rule for ${root_domain}. Results:\n ${delete_result}" "false"
+            display --indent 6 --text "- Deleting Custom Rule" --result "FAIL" --color RED
+            return 1
+
+        else
+            display --indent 6 --text "- Deleting Custom Rule for: ${root_domain}" --result "DONE" --color GREEN
+            log_event "info" "Custom rule deleted for ${root_domain}: ${rule_id}" "false"
+            return 0
+        fi
+
+    else
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
+# List IP access rules for domain
+#
+# Arguments:
+#   ${1} = ${root_domain}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function cloudflare_list_ip_access_rules() {
+
+    local root_domain="${1}"
+
+    local rules_result
+
+    zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        log_event "info" "Listing IP Access Rules for: ${root_domain}"
+
+        rules_result="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/firewall/access_rules/rules" \
+            -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+            -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
+            -H "Content-Type: application/json")"
+
+        if [[ ${rules_result} == *"\"success\":false"* || ${rules_result} == "" ]]; then
+            log_event "error" "Error trying to list IP access rules for ${root_domain}. Results:\n ${rules_result}" "false"
+            display --indent 6 --text "- Listing IP Access Rules" --result "FAIL" --color RED
+            return 1
+
+        else
+            display --indent 6 --text "- IP Access Rules for: ${root_domain}" --result "DONE" --color GREEN
+
+            # Parse and display rules
+            local rules_count
+            rules_count="$(echo "${rules_result}" | grep -o '"id":' | wc -l)"
+
+            display --indent 8 --text "Total IP rules: ${rules_count}" --tcolor YELLOW
+
+            # Display rules with their IPs and actions
+            echo "${rules_result}" | grep -o '"configuration":{"target":"[^"]*","value":"[^"]*"},"mode":"[^"]*"' | while read -r rule_line; do
+                local ip_value
+                local mode_value
+                ip_value="$(echo "${rule_line}" | grep -o '"value":"[^"]*"' | sed 's/"value":"//g' | sed 's/"//g')"
+                mode_value="$(echo "${rule_line}" | grep -o '"mode":"[^"]*"' | sed 's/"mode":"//g' | sed 's/"//g')"
+                display --indent 8 --text "- IP: ${ip_value} | Action: ${mode_value}" --tcolor GREEN
+            done
+
+            log_event "info" "IP access rules listed for ${root_domain}" "false"
+            log_event "debug" "Rules data: ${rules_result}" "false"
+            return 0
+        fi
+
+    else
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
+# Add IP access rule for domain
+#
+# Arguments:
+#   ${1} = ${root_domain}
+#   ${2} = ${ip_address}
+#   ${3} = ${action} - valid values: block, challenge, whitelist, js_challenge, managed_challenge
+#   ${4} = ${note} - optional note
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function cloudflare_add_ip_access_rule() {
+
+    local root_domain="${1}"
+    local ip_address="${2}"
+    local action="${3}"
+    local note="${4}"
+
+    local create_result
+
+    zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        log_event "info" "Adding IP Access Rule for: ${root_domain}"
+        log_event "debug" "IP: ${ip_address}, Action: ${action}, Note: ${note}"
+
+        # Build the data payload
+        local data_payload
+        if [[ -n ${note} ]]; then
+            data_payload="{\"mode\":\"${action}\",\"configuration\":{\"target\":\"ip\",\"value\":\"${ip_address}\"},\"notes\":\"${note}\"}"
+        else
+            data_payload="{\"mode\":\"${action}\",\"configuration\":{\"target\":\"ip\",\"value\":\"${ip_address}\"}}"
+        fi
+
+        create_result="$(curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${zone_id}/firewall/access_rules/rules" \
+            -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+            -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
+            -H "Content-Type: application/json" \
+            --data "${data_payload}")"
+
+        if [[ ${create_result} == *"\"success\":false"* || ${create_result} == "" ]]; then
+            log_event "error" "Error trying to add IP access rule for ${root_domain}. Results:\n ${create_result}" "false"
+            display --indent 6 --text "- Adding IP Access Rule" --result "FAIL" --color RED
+            display --indent 8 --text "Check logs for details" --tcolor RED
+            return 1
+
+        else
+            display --indent 6 --text "- Adding IP Access Rule for: ${root_domain}" --result "DONE" --color GREEN
+            display --indent 8 --text "IP: ${ip_address}" --tcolor YELLOW
+            display --indent 8 --text "Action: ${action}" --tcolor YELLOW
+            log_event "info" "IP access rule added for ${root_domain}: ${ip_address} (${action})" "false"
+            return 0
+        fi
+
+    else
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
+# Delete IP access rule for domain
+#
+# Arguments:
+#   ${1} = ${root_domain}
+#   ${2} = ${rule_id}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function cloudflare_delete_ip_access_rule() {
+
+    local root_domain="${1}"
+    local rule_id="${2}"
+
+    local delete_result
+
+    zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        log_event "info" "Deleting IP Access Rule for: ${root_domain}"
+
+        delete_result="$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${zone_id}/firewall/access_rules/rules/${rule_id}" \
+            -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+            -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
+            -H "Content-Type: application/json")"
+
+        if [[ ${delete_result} == *"\"success\":false"* || ${delete_result} == "" ]]; then
+            log_event "error" "Error trying to delete IP access rule for ${root_domain}. Results:\n ${delete_result}" "false"
+            display --indent 6 --text "- Deleting IP Access Rule" --result "FAIL" --color RED
+            return 1
+
+        else
+            display --indent 6 --text "- Deleting IP Access Rule for: ${root_domain}" --result "DONE" --color GREEN
+            log_event "info" "IP access rule deleted for ${root_domain}: ${rule_id}" "false"
+            return 0
+        fi
+
+    else
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
+
 # CLOUDFLARE PRO
 
 ################################################################################
