@@ -8,7 +8,8 @@
       "Bash(/tmp/commons_new.sh)",
       "Bash(echo:*)",
       "Bash(./TEST_NOTIFICATION_TYPES.sh:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

@@ -1309,7 +1309,43 @@ function docker_manage_resource_limits() {
   display --indent 6 --text "- Detecting Services" --tcolor CYAN
 
   local services
-  services="$(grep -E "^[[:space:]]{2}[a-zA-Z0-9_-]+:" "${compose_file}" | sed 's/://g' | awk '{print $1}')"
+  # Extract services only from the 'services:' section, excluding YAML keywords
+  services="$(awk '
+    BEGIN {
+      # Define YAML keywords to exclude
+      keywords["volumes"] = 1
+      keywords["networks"] = 1
+      keywords["configs"] = 1
+      keywords["secrets"] = 1
+      keywords["environment"] = 1
+      keywords["ports"] = 1
+      keywords["labels"] = 1
+      keywords["healthcheck"] = 1
+      keywords["depends_on"] = 1
+      keywords["build"] = 1
+      keywords["image"] = 1
+      keywords["restart"] = 1
+      keywords["command"] = 1
+      keywords["entrypoint"] = 1
+      keywords["working_dir"] = 1
+      keywords["user"] = 1
+      keywords["hostname"] = 1
+      keywords["domainname"] = 1
+      keywords["security_opt"] = 1
+      keywords["container_name"] = 1
+    }
+    /^services:/ { in_services=1; next }
+    /^[a-zA-Z]/ && in_services { in_services=0 }
+    in_services && /^[[:space:]]{4}[a-zA-Z0-9_-]+:/ {
+      service=$1
+      gsub(/:/, "", service)
+      gsub(/^[[:space:]]+/, "", service)
+      # Only print if NOT a keyword
+      if (!(service in keywords)) {
+        print service
+      }
+    }
+  ' "${compose_file}")"
 
   if [[ -z ${services} ]]; then
     display --indent 6 --text "- Parsing services" --result "FAILED" --color RED
@@ -1332,10 +1368,10 @@ function docker_manage_resource_limits() {
     # Check for mem_limit
     local mem_limit
     mem_limit="$(awk -v service="${service}" '
-      /^[[:space:]]{2}[a-zA-Z0-9_-]+:/ {
+      /^[[:space:]]{4}[a-zA-Z0-9_-]+:/ {
         if ($1 == service":") {
           in_service=1
-        } else if (in_service && /^[[:space:]]{2}[a-zA-Z0-9_-]+:/) {
+        } else if (in_service && /^[[:space:]]{4}[a-zA-Z0-9_-]+:/) {
           in_service=0
         }
       }
@@ -1354,10 +1390,10 @@ function docker_manage_resource_limits() {
     # Check for cpus
     local cpus
     cpus="$(awk -v service="${service}" '
-      /^[[:space:]]{2}[a-zA-Z0-9_-]+:/ {
+      /^[[:space:]]{4}[a-zA-Z0-9_-]+:/ {
         if ($1 == service":") {
           in_service=1
-        } else if (in_service && /^[[:space:]]{2}[a-zA-Z0-9_-]+:/) {
+        } else if (in_service && /^[[:space:]]{4}[a-zA-Z0-9_-]+:/) {
           in_service=0
         }
       }
@@ -1376,10 +1412,10 @@ function docker_manage_resource_limits() {
     # Check for mem_reservation
     local mem_reservation
     mem_reservation="$(awk -v service="${service}" '
-      /^[[:space:]]{2}[a-zA-Z0-9_-]+:/ {
+      /^[[:space:]]{4}[a-zA-Z0-9_-]+:/ {
         if ($1 == service":") {
           in_service=1
-        } else if (in_service && /^[[:space:]]{2}[a-zA-Z0-9_-]+:/) {
+        } else if (in_service && /^[[:space:]]{4}[a-zA-Z0-9_-]+:/) {
           in_service=0
         }
       }
@@ -1466,14 +1502,53 @@ function docker_suggest_resource_limits() {
 
   log_event "debug" "Total services: ${service_count}" "false"
 
-  # Calculate suggested limits (distribute resources)
-  # Reserve 20% of RAM for system
-  local usable_ram_mb=$((total_ram_mb * 80 / 100))
+  # Get current RAM usage by Docker containers (excluding this project's containers)
+  echo ""
+  display --indent 6 --text "- Analyzing Current Docker Usage" --tcolor CYAN
+
+  local project_name
+  project_name="$(basename "${project_path}")"
+
+  # Get total RAM used by all running Docker containers
+  local docker_ram_used_mb
+  docker_ram_used_mb="$(docker stats --no-stream --format "{{.MemUsage}}" 2>/dev/null | awk -F'/' '{print $1}' | sed 's/MiB//g; s/GiB/*1024/g; s/KiB\/1024/g' | bc 2>/dev/null | awk '{sum+=$1} END {print int(sum)}')"
+
+  # If no containers running or error, set to 0
+  [[ -z ${docker_ram_used_mb} ]] && docker_ram_used_mb=0
+
+  # Get RAM used by OTHER projects (not this one)
+  local other_containers_ram_mb
+  other_containers_ram_mb="$(docker stats --no-stream --format "{{.Name}} {{.MemUsage}}" 2>/dev/null | grep -v "^${project_name}_" | awk -F'/' '{print $1}' | awk '{print $2}' | sed 's/MiB//g; s/GiB/*1024/g; s/KiB\/1024/g' | bc 2>/dev/null | awk '{sum+=$1} END {print int(sum)}')"
+
+  [[ -z ${other_containers_ram_mb} ]] && other_containers_ram_mb=0
+
+  display --indent 8 --text "Docker RAM in use: ${docker_ram_used_mb}MB" --tcolor WHITE
+  display --indent 8 --text "Other projects RAM: ${other_containers_ram_mb}MB" --tcolor WHITE
+
+  log_event "debug" "Docker RAM usage: total=${docker_ram_used_mb}MB, other_projects=${other_containers_ram_mb}MB" "false"
+
+  # Calculate available resources
+  # Reserve 20% of RAM for system + subtract RAM used by other containers
+  local system_reserved_mb=$((total_ram_mb * 20 / 100))
+  local usable_ram_mb=$((total_ram_mb - system_reserved_mb - other_containers_ram_mb))
+
+  # Ensure we don't get negative values
+  if [[ ${usable_ram_mb} -lt 512 ]]; then
+    display --indent 6 --text "- Insufficient Available RAM" --result "WARNING" --color YELLOW
+    log_event "warning" "Available RAM (${usable_ram_mb}MB) is too low for suggestions" "false"
+    usable_ram_mb=512  # Minimum usable RAM
+  fi
+
   local ram_per_service=$((usable_ram_mb / service_count))
   local cpu_per_service="$(echo "scale=2; ${total_cpu_cores} / ${service_count}" | bc)"
 
-  display --indent 8 --text "Usable RAM: ${usable_ram_mb}MB (80% of total)" --tcolor WHITE
-  display --indent 8 --text "Services: ${service_count}" --tcolor WHITE
+  echo ""
+  display --indent 8 --text "Resource Calculation:" --tcolor CYAN
+  display --indent 10 --text "Total RAM: ${total_ram_mb}MB" --tcolor WHITE
+  display --indent 10 --text "System Reserved (20%): ${system_reserved_mb}MB" --tcolor WHITE
+  display --indent 10 --text "Other Containers: ${other_containers_ram_mb}MB" --tcolor WHITE
+  display --indent 10 --text "Available for this project: ${usable_ram_mb}MB" --tcolor GREEN
+  display --indent 10 --text "Services in this project: ${service_count}" --tcolor WHITE
 
   echo ""
   display --indent 8 --text "Suggested Limits per Service:" --tcolor YELLOW
@@ -1551,10 +1626,10 @@ function docker_manage_service_limits() {
   local current_cpus
 
   current_mem_limit="$(awk -v service="${service_name}" '
-    /^[[:space:]]{2}[a-zA-Z0-9_-]+:/ {
+    /^[[:space:]]{4}[a-zA-Z0-9_-]+:/ {
       if ($1 == service":") {
         in_service=1
-      } else if (in_service && /^[[:space:]]{2}[a-zA-Z0-9_-]+:/) {
+      } else if (in_service && /^[[:space:]]{4}[a-zA-Z0-9_-]+:/) {
         in_service=0
       }
     }
@@ -1565,10 +1640,10 @@ function docker_manage_service_limits() {
   ' "${compose_file}")"
 
   current_mem_reservation="$(awk -v service="${service_name}" '
-    /^[[:space:]]{2}[a-zA-Z0-9_-]+:/ {
+    /^[[:space:]]{4}[a-zA-Z0-9_-]+:/ {
       if ($1 == service":") {
         in_service=1
-      } else if (in_service && /^[[:space:]]{2}[a-zA-Z0-9_-]+:/) {
+      } else if (in_service && /^[[:space:]]{4}[a-zA-Z0-9_-]+:/) {
         in_service=0
       }
     }
@@ -1579,10 +1654,10 @@ function docker_manage_service_limits() {
   ' "${compose_file}")"
 
   current_cpus="$(awk -v service="${service_name}" '
-    /^[[:space:]]{2}[a-zA-Z0-9_-]+:/ {
+    /^[[:space:]]{4}[a-zA-Z0-9_-]+:/ {
       if ($1 == service":") {
         in_service=1
-      } else if (in_service && /^[[:space:]]{2}[a-zA-Z0-9_-]+:/) {
+      } else if (in_service && /^[[:space:]]{4}[a-zA-Z0-9_-]+:/) {
         in_service=0
       }
     }
