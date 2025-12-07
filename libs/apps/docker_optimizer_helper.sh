@@ -1260,6 +1260,51 @@ function docker_optimize_ram_usage() {
 }
 
 ################################################################################
+# Get value from docker-compose.yml for a specific service and key
+#
+# Arguments:
+#   ${1} = ${compose_file}
+#   ${2} = ${service_name}
+#   ${3} = ${key} (e.g., "mem_limit", "cpus", "deploy.resources.limits.memory")
+#
+# Outputs:
+#   The value of the key, or empty string if not found
+################################################################################
+
+function docker_compose_get_value() {
+
+  local compose_file="${1}"
+  local service_name="${2}"
+  local key="${3}"
+
+  local value=""
+
+  # Try yq first (supports nested keys with dot notation)
+  if command -v yq &>/dev/null; then
+    value="$(yq eval ".services.${service_name}.${key} // \"\"" "${compose_file}" 2>/dev/null)"
+    # yq returns "null" for non-existent keys
+    [[ "${value}" == "null" ]] && value=""
+  else
+    # Fallback to AWK for simple keys (top-level only)
+    value="$(awk -v service="${service_name}" -v key="${key}" '
+      /^[[:space:]][[:space:]][[:space:]][[:space:]][a-zA-Z0-9_-]+:/ {
+        if ($1 == service":") {
+          in_service=1
+        } else if (in_service && /^[[:space:]][[:space:]][[:space:]][[:space:]][a-zA-Z0-9_-]+:/) {
+          in_service=0
+        }
+      }
+      in_service && $1 == key":" {
+        print $2
+        exit
+      }
+    ' "${compose_file}")"
+  fi
+
+  echo "${value}"
+}
+
+################################################################################
 # Manage Docker Compose resource limits
 #
 # Arguments:
@@ -1309,43 +1354,54 @@ function docker_manage_resource_limits() {
   display --indent 6 --text "- Detecting Services" --tcolor CYAN
 
   local services
-  # Extract services only from the 'services:' section, excluding YAML keywords
-  services="$(awk '
-    BEGIN {
-      # Define YAML keywords to exclude
-      keywords["volumes"] = 1
-      keywords["networks"] = 1
-      keywords["configs"] = 1
-      keywords["secrets"] = 1
-      keywords["environment"] = 1
-      keywords["ports"] = 1
-      keywords["labels"] = 1
-      keywords["healthcheck"] = 1
-      keywords["depends_on"] = 1
-      keywords["build"] = 1
-      keywords["image"] = 1
-      keywords["restart"] = 1
-      keywords["command"] = 1
-      keywords["entrypoint"] = 1
-      keywords["working_dir"] = 1
-      keywords["user"] = 1
-      keywords["hostname"] = 1
-      keywords["domainname"] = 1
-      keywords["security_opt"] = 1
-      keywords["container_name"] = 1
-    }
-    /^services:/ { in_services=1; next }
-    /^[a-zA-Z]/ && in_services { in_services=0 }
-    in_services && /^[[:space:]]{4}[a-zA-Z0-9_-]+:/ {
-      service=$1
-      gsub(/:/, "", service)
-      gsub(/^[[:space:]]+/, "", service)
-      # Only print if NOT a keyword
-      if (!(service in keywords)) {
-        print service
+
+  # Try to use yq if available (more robust YAML parsing)
+  if command -v yq &>/dev/null; then
+    log_event "debug" "Using yq for YAML parsing" "false"
+    services="$(yq eval '.services | keys | .[]' "${compose_file}" 2>/dev/null)"
+  fi
+
+  # Fallback to AWK if yq is not available or failed
+  if [[ -z ${services} ]]; then
+    log_event "debug" "Using AWK for YAML parsing (yq not available or failed)" "false"
+    # Extract services only from the 'services:' section, excluding YAML keywords
+    services="$(awk '
+      BEGIN {
+        # Define YAML keywords to exclude
+        keywords["volumes"] = 1
+        keywords["networks"] = 1
+        keywords["configs"] = 1
+        keywords["secrets"] = 1
+        keywords["environment"] = 1
+        keywords["ports"] = 1
+        keywords["labels"] = 1
+        keywords["healthcheck"] = 1
+        keywords["depends_on"] = 1
+        keywords["build"] = 1
+        keywords["image"] = 1
+        keywords["restart"] = 1
+        keywords["command"] = 1
+        keywords["entrypoint"] = 1
+        keywords["working_dir"] = 1
+        keywords["user"] = 1
+        keywords["hostname"] = 1
+        keywords["domainname"] = 1
+        keywords["security_opt"] = 1
+        keywords["container_name"] = 1
       }
-    }
-  ' "${compose_file}")"
+      /^services:/ { in_services=1; next }
+      /^[a-zA-Z]/ && in_services && NF > 0 { in_services=0 }
+      in_services && /^[[:space:]][[:space:]][[:space:]][[:space:]][a-zA-Z0-9_-]+:/ {
+        service=$1
+        gsub(/:/, "", service)
+        gsub(/^[[:space:]]+/, "", service)
+        # Only print if NOT a keyword
+        if (!(service in keywords)) {
+          print service
+        }
+      }
+    ' "${compose_file}")"
+  fi
 
   if [[ -z ${services} ]]; then
     display --indent 6 --text "- Parsing services" --result "FAILED" --color RED
@@ -1367,19 +1423,7 @@ function docker_manage_resource_limits() {
 
     # Check for mem_limit
     local mem_limit
-    mem_limit="$(awk -v service="${service}" '
-      /^[[:space:]]{4}[a-zA-Z0-9_-]+:/ {
-        if ($1 == service":") {
-          in_service=1
-        } else if (in_service && /^[[:space:]]{4}[a-zA-Z0-9_-]+:/) {
-          in_service=0
-        }
-      }
-      in_service && /mem_limit:/ {
-        print $2
-        exit
-      }
-    ' "${compose_file}")"
+    mem_limit="$(docker_compose_get_value "${compose_file}" "${service}" "mem_limit")"
 
     if [[ -n ${mem_limit} ]]; then
       display --indent 10 --text "mem_limit: ${mem_limit}" --tcolor WHITE
@@ -1389,19 +1433,7 @@ function docker_manage_resource_limits() {
 
     # Check for cpus
     local cpus
-    cpus="$(awk -v service="${service}" '
-      /^[[:space:]]{4}[a-zA-Z0-9_-]+:/ {
-        if ($1 == service":") {
-          in_service=1
-        } else if (in_service && /^[[:space:]]{4}[a-zA-Z0-9_-]+:/) {
-          in_service=0
-        }
-      }
-      in_service && /^[[:space:]]*cpus:/ {
-        print $2
-        exit
-      }
-    ' "${compose_file}")"
+    cpus="$(docker_compose_get_value "${compose_file}" "${service}" "cpus")"
 
     if [[ -n ${cpus} ]]; then
       display --indent 10 --text "cpus: ${cpus}" --tcolor WHITE
@@ -1411,19 +1443,7 @@ function docker_manage_resource_limits() {
 
     # Check for mem_reservation
     local mem_reservation
-    mem_reservation="$(awk -v service="${service}" '
-      /^[[:space:]]{4}[a-zA-Z0-9_-]+:/ {
-        if ($1 == service":") {
-          in_service=1
-        } else if (in_service && /^[[:space:]]{4}[a-zA-Z0-9_-]+:/) {
-          in_service=0
-        }
-      }
-      in_service && /mem_reservation:/ {
-        print $2
-        exit
-      }
-    ' "${compose_file}")"
+    mem_reservation="$(docker_compose_get_value "${compose_file}" "${service}" "mem_reservation")"
 
     if [[ -n ${mem_reservation} ]]; then
       display --indent 10 --text "mem_reservation: ${mem_reservation}" --tcolor WHITE
@@ -1625,47 +1645,9 @@ function docker_manage_service_limits() {
   local current_mem_reservation
   local current_cpus
 
-  current_mem_limit="$(awk -v service="${service_name}" '
-    /^[[:space:]]{4}[a-zA-Z0-9_-]+:/ {
-      if ($1 == service":") {
-        in_service=1
-      } else if (in_service && /^[[:space:]]{4}[a-zA-Z0-9_-]+:/) {
-        in_service=0
-      }
-    }
-    in_service && /mem_limit:/ {
-      print $2
-      exit
-    }
-  ' "${compose_file}")"
-
-  current_mem_reservation="$(awk -v service="${service_name}" '
-    /^[[:space:]]{4}[a-zA-Z0-9_-]+:/ {
-      if ($1 == service":") {
-        in_service=1
-      } else if (in_service && /^[[:space:]]{4}[a-zA-Z0-9_-]+:/) {
-        in_service=0
-      }
-    }
-    in_service && /mem_reservation:/ {
-      print $2
-      exit
-    }
-  ' "${compose_file}")"
-
-  current_cpus="$(awk -v service="${service_name}" '
-    /^[[:space:]]{4}[a-zA-Z0-9_-]+:/ {
-      if ($1 == service":") {
-        in_service=1
-      } else if (in_service && /^[[:space:]]{4}[a-zA-Z0-9_-]+:/) {
-        in_service=0
-      }
-    }
-    in_service && /^[[:space:]]*cpus:/ {
-      print $2
-      exit
-    }
-  ' "${compose_file}")"
+  current_mem_limit="$(docker_compose_get_value "${compose_file}" "${service_name}" "mem_limit")"
+  current_mem_reservation="$(docker_compose_get_value "${compose_file}" "${service_name}" "mem_reservation")"
+  current_cpus="$(docker_compose_get_value "${compose_file}" "${service_name}" "cpus")"
 
   # Get user input for each limit
   local new_mem_limit
@@ -1775,7 +1757,7 @@ function docker_apply_service_limits() {
   }
 
   # Detect when we enter the target service
-  /^[[:space:]]{4}[a-zA-Z0-9_-]+:/ {
+  /^[[:space:]][[:space:]][[:space:]][[:space:]][a-zA-Z0-9_-]+:/ {
     if ($1 == service":") {
       in_service = 1
       limits_added = 0
