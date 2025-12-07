@@ -797,6 +797,283 @@ function cloudflare_set_cache_ttl_value() {
 # CLOUDFLARE WAF/SECURITY
 
 ################################################################################
+# Get security level for domain
+#
+# Arguments:
+#   ${1} = ${root_domain}
+#
+# Outputs:
+#   Prints the current security level value and returns 0 if ok, 1 on error.
+################################################################################
+
+function cloudflare_get_security_level() {
+
+    local root_domain="${1}"
+
+    local security_result
+
+    zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        security_result="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/security_level" \
+            -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+            -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
+            -H "Content-Type: application/json")"
+
+        if [[ ${security_result} == *"\"success\":false"* || ${security_result} == "" ]]; then
+            return 1
+        else
+            # Extract value from JSON response
+            local security_value
+            security_value="$(echo "${security_result}" | grep -Po '(?<="value":")[^"]*' | head -1)"
+            echo "${security_value}"
+            return 0
+        fi
+
+    else
+        return 1
+    fi
+
+}
+
+################################################################################
+# View all WAF settings for domain
+#
+# Arguments:
+#   ${1} = ${root_domain}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function cloudflare_view_all_waf_settings() {
+
+    local root_domain="${1}"
+
+    display --indent 6 --text "- Retrieving WAF settings for ${root_domain}"
+
+    # Get Security Level
+    local security_level
+    security_level="$(cloudflare_get_security_level "${root_domain}")"
+    if [[ $? -eq 0 ]]; then
+        display --indent 6 --text "Security Level: ${security_level}" --tcolor YELLOW
+    else
+        display --indent 6 --text "Security Level: Error retrieving" --tcolor RED
+    fi
+
+    # Get Bot Fight Mode
+    local bot_fight
+    bot_fight="$(cloudflare_get_bot_fight_mode "${root_domain}")"
+    if [[ $? -eq 0 ]]; then
+        display --indent 6 --text "Bot Fight Mode: ${bot_fight}" --tcolor YELLOW
+    else
+        display --indent 6 --text "Bot Fight Mode: Error retrieving" --tcolor RED
+    fi
+
+    # Get Browser Integrity Check
+    local browser_check
+    browser_check="$(cloudflare_get_browser_check "${root_domain}")"
+    if [[ $? -eq 0 ]]; then
+        display --indent 6 --text "Browser Integrity Check: ${browser_check}" --tcolor YELLOW
+    else
+        display --indent 6 --text "Browser Integrity Check: Error retrieving" --tcolor RED
+    fi
+
+    # Get Challenge TTL
+    local challenge_ttl
+    challenge_ttl="$(cloudflare_get_challenge_ttl "${root_domain}")"
+    if [[ $? -eq 0 ]]; then
+        display --indent 6 --text "Challenge Passage Time: ${challenge_ttl} seconds" --tcolor YELLOW
+    else
+        display --indent 6 --text "Challenge Passage Time: Error retrieving" --tcolor RED
+    fi
+
+    # Get WAF Managed Ruleset
+    local waf_status
+    waf_status="$(cloudflare_get_waf_managed_ruleset "${root_domain}")"
+    if [[ $? -eq 0 ]]; then
+        display --indent 6 --text "WAF Managed Ruleset: ${waf_status}" --tcolor YELLOW
+    else
+        display --indent 6 --text "WAF Managed Ruleset: Error retrieving" --tcolor RED
+    fi
+
+    display --indent 6 --text "- Custom Firewall Rules and IP Access Rules can be viewed from their respective menus" --tcolor WHITE
+
+    return 0
+
+}
+
+################################################################################
+# Get bot fight mode status for domain
+#
+# Arguments:
+#   ${1} = ${root_domain}
+#
+# Outputs:
+#   Bot fight mode value (on/off), 1 on error.
+################################################################################
+
+function cloudflare_get_bot_fight_mode() {
+
+    local root_domain="${1}"
+
+    local bot_result
+
+    zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        bot_result="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/bot_fight_mode" \
+            -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+            -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
+            -H "Content-Type: application/json")"
+
+        if [[ ${bot_result} == *"\"success\":false"* || ${bot_result} == "" ]]; then
+            return 1
+        else
+            # Extract value from JSON response
+            local bot_value
+            bot_value="$(echo "${bot_result}" | grep -Po '(?<="value":")[^"]*' | head -1)"
+            echo "${bot_value}"
+            return 0
+        fi
+
+    else
+        return 1
+    fi
+
+}
+
+################################################################################
+# Get browser integrity check status for domain
+#
+# Arguments:
+#   ${1} = ${root_domain}
+#
+# Outputs:
+#   Browser check value (on/off), 1 on error.
+################################################################################
+
+function cloudflare_get_browser_check() {
+
+    local root_domain="${1}"
+
+    local browser_result
+
+    zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        browser_result="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/browser_check" \
+            -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+            -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
+            -H "Content-Type: application/json")"
+
+        if [[ ${browser_result} == *"\"success\":false"* || ${browser_result} == "" ]]; then
+            return 1
+        else
+            # Extract value from JSON response
+            local browser_value
+            browser_value="$(echo "${browser_result}" | grep -Po '(?<="value":")[^"]*' | head -1)"
+            echo "${browser_value}"
+            return 0
+        fi
+
+    else
+        return 1
+    fi
+
+}
+
+################################################################################
+# Get challenge TTL for domain
+#
+# Arguments:
+#   ${1} = ${root_domain}
+#
+# Outputs:
+#   Challenge TTL value in seconds, 1 on error.
+################################################################################
+
+function cloudflare_get_challenge_ttl() {
+
+    local root_domain="${1}"
+
+    local ttl_result
+
+    zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        ttl_result="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/challenge_ttl" \
+            -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+            -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
+            -H "Content-Type: application/json")"
+
+        if [[ ${ttl_result} == *"\"success\":false"* || ${ttl_result} == "" ]]; then
+            return 1
+        else
+            # Extract value from JSON response
+            local ttl_value
+            ttl_value="$(echo "${ttl_result}" | grep -Po '(?<="value":)[^,}]*' | head -1)"
+            echo "${ttl_value}"
+            return 0
+        fi
+
+    else
+        return 1
+    fi
+
+}
+
+################################################################################
+# Get WAF managed ruleset status for domain
+#
+# Arguments:
+#   ${1} = ${root_domain}
+#
+# Outputs:
+#   WAF status (on/off), 1 on error.
+################################################################################
+
+function cloudflare_get_waf_managed_ruleset() {
+
+    local root_domain="${1}"
+
+    local waf_result
+
+    zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        waf_result="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/waf" \
+            -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+            -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
+            -H "Content-Type: application/json")"
+
+        if [[ ${waf_result} == *"\"success\":false"* || ${waf_result} == "" ]]; then
+            return 1
+        else
+            # Extract value from JSON response
+            local waf_value
+            waf_value="$(echo "${waf_result}" | grep -Po '(?<="value":")[^"]*' | head -1)"
+            echo "${waf_value}"
+            return 0
+        fi
+
+    else
+        return 1
+    fi
+
+}
+
+################################################################################
 # Set security level for domain
 #
 # Arguments:

@@ -194,13 +194,14 @@ function cloudflare_waf_configuration_menu() {
   local root_domain
 
   waf_options=(
-    "01)" "SECURITY LEVEL"
-    "02)" "BOT FIGHT MODE"
-    "03)" "BROWSER INTEGRITY CHECK"
-    "04)" "CHALLENGE PASSAGE TIME"
-    "05)" "WAF MANAGED RULESET (FREE)"
-    "06)" "CUSTOM FIREWALL RULES"
-    "07)" "IP ACCESS RULES"
+    "01)" "VIEW ALL WAF SETTINGS"
+    "02)" "SECURITY LEVEL"
+    "03)" "BOT FIGHT MODE"
+    "04)" "BROWSER INTEGRITY CHECK"
+    "05)" "CHALLENGE PASSAGE TIME"
+    "06)" "WAF MANAGED RULESET (FREE)"
+    "07)" "CUSTOM FIREWALL RULES"
+    "08)" "IP ACCESS RULES"
   )
 
   chosen_waf_option="$(whiptail --title "WAF CONFIGURATION" --menu "Choose an option:" 20 78 10 "${waf_options[@]}" 3>&1 1>&2 2>&3)"
@@ -210,38 +211,19 @@ function cloudflare_waf_configuration_menu() {
 
     if [[ ${chosen_waf_option} == *"01"* ]]; then
 
-      # SECURITY LEVEL
+      # VIEW ALL WAF SETTINGS
       root_domain="$(whiptail_input "Root Domain" "Insert the root domain, example: mydomain.com" "")"
 
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        local security_levels=(
-          "01)" "off - No security checking"
-          "02)" "essentially_off - Minimal security"
-          "03)" "low - Low security"
-          "04)" "medium - Medium security (default)"
-          "05)" "high - High security"
-          "06)" "under_attack - Under attack mode (I'm Under Attack!)"
-        )
-
-        local chosen_security_level
-
-        chosen_security_level="$(whiptail --title "SECURITY LEVEL" --menu "Select the security level:" 20 78 10 "${security_levels[@]}" 3>&1 1>&2 2>&3)"
-
-        if [[ $? -eq 0 ]]; then
-          # Extract the value from the selection
-          local security_value
-          case ${chosen_security_level} in
-            *"01"*) security_value="off" ;;
-            *"02"*) security_value="essentially_off" ;;
-            *"03"*) security_value="low" ;;
-            *"04"*) security_value="medium" ;;
-            *"05"*) security_value="high" ;;
-            *"06"*) security_value="under_attack" ;;
-          esac
-
-          cloudflare_set_security_level "${root_domain}" "${security_value}"
+        # Verify domain exists first
+        if ! cloudflare_domain_exists "${root_domain}"; then
+          display --indent 6 --text "- Verifying domain" --result "FAIL" --color RED
+          display --indent 8 --text "Domain not found in Cloudflare account" --tcolor RED
+        else
+          cloudflare_view_all_waf_settings "${root_domain}"
+          prompt_return_or_finish
         fi
 
       fi
@@ -250,29 +232,53 @@ function cloudflare_waf_configuration_menu() {
 
     if [[ ${chosen_waf_option} == *"02"* ]]; then
 
-      # BOT FIGHT MODE
+      # SECURITY LEVEL
       root_domain="$(whiptail_input "Root Domain" "Insert the root domain, example: mydomain.com" "")"
 
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        local bot_fight_options=(
-          "01)" "on - Enable Bot Fight Mode"
-          "02)" "off - Disable Bot Fight Mode"
-        )
+        # Verify domain exists first
+        if ! cloudflare_domain_exists "${root_domain}"; then
+          display --indent 6 --text "- Verifying domain" --result "FAIL" --color RED
+          display --indent 8 --text "Domain not found in Cloudflare account" --tcolor RED
+        else
 
-        local chosen_bot_fight
+          # Show current value first
+          local current_security_level
+          current_security_level="$(cloudflare_get_security_level "${root_domain}")"
+          if [[ $? -eq 0 ]]; then
+            display --indent 6 --text "- Current Security Level: ${current_security_level}" --tcolor YELLOW
+          fi
 
-        chosen_bot_fight="$(whiptail --title "BOT FIGHT MODE" --menu "Select Bot Fight Mode status:" 20 78 10 "${bot_fight_options[@]}" 3>&1 1>&2 2>&3)"
+          local security_levels=(
+            "01)" "off - No security checking"
+            "02)" "essentially_off - Minimal security"
+            "03)" "low - Low security"
+            "04)" "medium - Medium security (default)"
+            "05)" "high - High security"
+            "06)" "under_attack - Under attack mode (I'm Under Attack!)"
+          )
 
-        if [[ $? -eq 0 ]]; then
-          local bot_fight_value
-          case ${chosen_bot_fight} in
-            *"01"*) bot_fight_value="on" ;;
-            *"02"*) bot_fight_value="off" ;;
-          esac
+          local chosen_security_level
 
-          cloudflare_set_bot_fight_mode "${root_domain}" "${bot_fight_value}"
+          chosen_security_level="$(whiptail --title "SECURITY LEVEL" --menu "Current: ${current_security_level}\n\nSelect new security level:" 20 78 10 "${security_levels[@]}" 3>&1 1>&2 2>&3)"
+
+          if [[ $? -eq 0 ]]; then
+            # Extract the value from the selection
+            local security_value
+            case ${chosen_security_level} in
+              *"01"*) security_value="off" ;;
+              *"02"*) security_value="essentially_off" ;;
+              *"03"*) security_value="low" ;;
+              *"04"*) security_value="medium" ;;
+              *"05"*) security_value="high" ;;
+              *"06"*) security_value="under_attack" ;;
+            esac
+
+            cloudflare_set_security_level "${root_domain}" "${security_value}"
+          fi
+
         fi
 
       fi
@@ -281,29 +287,44 @@ function cloudflare_waf_configuration_menu() {
 
     if [[ ${chosen_waf_option} == *"03"* ]]; then
 
-      # BROWSER INTEGRITY CHECK
+      # BOT FIGHT MODE
       root_domain="$(whiptail_input "Root Domain" "Insert the root domain, example: mydomain.com" "")"
 
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        local browser_check_options=(
-          "01)" "on - Enable Browser Integrity Check"
-          "02)" "off - Disable Browser Integrity Check"
-        )
+        # Verify domain exists first
+        if ! cloudflare_domain_exists "${root_domain}"; then
+          display --indent 6 --text "- Verifying domain" --result "FAIL" --color RED
+          display --indent 8 --text "Domain not found in Cloudflare account" --tcolor RED
+        else
 
-        local chosen_browser_check
+          # Show current value first
+          local current_bot_fight
+          current_bot_fight="$(cloudflare_get_bot_fight_mode "${root_domain}")"
+          if [[ $? -eq 0 ]]; then
+            display --indent 6 --text "- Current Bot Fight Mode: ${current_bot_fight}" --tcolor YELLOW
+          fi
 
-        chosen_browser_check="$(whiptail --title "BROWSER INTEGRITY CHECK" --menu "Select Browser Integrity Check status:" 20 78 10 "${browser_check_options[@]}" 3>&1 1>&2 2>&3)"
+          local bot_fight_options=(
+            "01)" "on - Enable Bot Fight Mode"
+            "02)" "off - Disable Bot Fight Mode"
+          )
 
-        if [[ $? -eq 0 ]]; then
-          local browser_check_value
-          case ${chosen_browser_check} in
-            *"01"*) browser_check_value="on" ;;
-            *"02"*) browser_check_value="off" ;;
-          esac
+          local chosen_bot_fight
 
-          cloudflare_set_browser_check "${root_domain}" "${browser_check_value}"
+          chosen_bot_fight="$(whiptail --title "BOT FIGHT MODE" --menu "Current: ${current_bot_fight}\n\nSelect new status:" 20 78 10 "${bot_fight_options[@]}" 3>&1 1>&2 2>&3)"
+
+          if [[ $? -eq 0 ]]; then
+            local bot_fight_value
+            case ${chosen_bot_fight} in
+              *"01"*) bot_fight_value="on" ;;
+              *"02"*) bot_fight_value="off" ;;
+            esac
+
+            cloudflare_set_bot_fight_mode "${root_domain}" "${bot_fight_value}"
+          fi
+
         fi
 
       fi
@@ -312,47 +333,44 @@ function cloudflare_waf_configuration_menu() {
 
     if [[ ${chosen_waf_option} == *"04"* ]]; then
 
-      # CHALLENGE PASSAGE TIME
+      # BROWSER INTEGRITY CHECK
       root_domain="$(whiptail_input "Root Domain" "Insert the root domain, example: mydomain.com" "")"
 
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        local challenge_ttl_options=(
-          "01)" "300 - 5 minutes"
-          "02)" "900 - 15 minutes"
-          "03)" "1800 - 30 minutes"
-          "04)" "2700 - 45 minutes"
-          "05)" "3600 - 1 hour"
-          "06)" "7200 - 2 hours"
-          "07)" "10800 - 3 hours"
-          "08)" "14400 - 4 hours"
-          "09)" "28800 - 8 hours"
-          "10)" "43200 - 12 hours"
-          "11)" "86400 - 24 hours"
-        )
+        # Verify domain exists first
+        if ! cloudflare_domain_exists "${root_domain}"; then
+          display --indent 6 --text "- Verifying domain" --result "FAIL" --color RED
+          display --indent 8 --text "Domain not found in Cloudflare account" --tcolor RED
+        else
 
-        local chosen_challenge_ttl
+          # Show current value first
+          local current_browser_check
+          current_browser_check="$(cloudflare_get_browser_check "${root_domain}")"
+          if [[ $? -eq 0 ]]; then
+            display --indent 6 --text "- Current Browser Integrity Check: ${current_browser_check}" --tcolor YELLOW
+          fi
 
-        chosen_challenge_ttl="$(whiptail --title "CHALLENGE PASSAGE TIME" --menu "Select how long a challenge is valid:" 20 78 12 "${challenge_ttl_options[@]}" 3>&1 1>&2 2>&3)"
+          local browser_check_options=(
+            "01)" "on - Enable Browser Integrity Check"
+            "02)" "off - Disable Browser Integrity Check"
+          )
 
-        if [[ $? -eq 0 ]]; then
-          local challenge_ttl_value
-          case ${chosen_challenge_ttl} in
-            *"01"*) challenge_ttl_value="300" ;;
-            *"02"*) challenge_ttl_value="900" ;;
-            *"03"*) challenge_ttl_value="1800" ;;
-            *"04"*) challenge_ttl_value="2700" ;;
-            *"05"*) challenge_ttl_value="3600" ;;
-            *"06"*) challenge_ttl_value="7200" ;;
-            *"07"*) challenge_ttl_value="10800" ;;
-            *"08"*) challenge_ttl_value="14400" ;;
-            *"09"*) challenge_ttl_value="28800" ;;
-            *"10"*) challenge_ttl_value="43200" ;;
-            *"11"*) challenge_ttl_value="86400" ;;
-          esac
+          local chosen_browser_check
 
-          cloudflare_set_challenge_ttl "${root_domain}" "${challenge_ttl_value}"
+          chosen_browser_check="$(whiptail --title "BROWSER INTEGRITY CHECK" --menu "Current: ${current_browser_check}\n\nSelect new status:" 20 78 10 "${browser_check_options[@]}" 3>&1 1>&2 2>&3)"
+
+          if [[ $? -eq 0 ]]; then
+            local browser_check_value
+            case ${chosen_browser_check} in
+              *"01"*) browser_check_value="on" ;;
+              *"02"*) browser_check_value="off" ;;
+            esac
+
+            cloudflare_set_browser_check "${root_domain}" "${browser_check_value}"
+          fi
+
         fi
 
       fi
@@ -361,29 +379,62 @@ function cloudflare_waf_configuration_menu() {
 
     if [[ ${chosen_waf_option} == *"05"* ]]; then
 
-      # WAF MANAGED RULESET
+      # CHALLENGE PASSAGE TIME
       root_domain="$(whiptail_input "Root Domain" "Insert the root domain, example: mydomain.com" "")"
 
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        local waf_ruleset_options=(
-          "01)" "on - Enable WAF Free Managed Ruleset"
-          "02)" "off - Disable WAF Free Managed Ruleset"
-        )
+        # Verify domain exists first
+        if ! cloudflare_domain_exists "${root_domain}"; then
+          display --indent 6 --text "- Verifying domain" --result "FAIL" --color RED
+          display --indent 8 --text "Domain not found in Cloudflare account" --tcolor RED
+        else
 
-        local chosen_waf_ruleset
+          # Show current value first
+          local current_challenge_ttl
+          current_challenge_ttl="$(cloudflare_get_challenge_ttl "${root_domain}")"
+          if [[ $? -eq 0 ]]; then
+            display --indent 6 --text "- Current Challenge TTL: ${current_challenge_ttl} seconds" --tcolor YELLOW
+          fi
 
-        chosen_waf_ruleset="$(whiptail --title "WAF MANAGED RULESET" --menu "Select WAF Managed Ruleset status:" 20 78 10 "${waf_ruleset_options[@]}" 3>&1 1>&2 2>&3)"
+          local challenge_ttl_options=(
+            "01)" "300 - 5 minutes"
+            "02)" "900 - 15 minutes"
+            "03)" "1800 - 30 minutes"
+            "04)" "2700 - 45 minutes"
+            "05)" "3600 - 1 hour"
+            "06)" "7200 - 2 hours"
+            "07)" "10800 - 3 hours"
+            "08)" "14400 - 4 hours"
+            "09)" "28800 - 8 hours"
+            "10)" "43200 - 12 hours"
+            "11)" "86400 - 24 hours"
+          )
 
-        if [[ $? -eq 0 ]]; then
-          local waf_ruleset_value
-          case ${chosen_waf_ruleset} in
-            *"01"*) waf_ruleset_value="on" ;;
-            *"02"*) waf_ruleset_value="off" ;;
-          esac
+          local chosen_challenge_ttl
 
-          cloudflare_set_waf_managed_ruleset "${root_domain}" "${waf_ruleset_value}"
+          chosen_challenge_ttl="$(whiptail --title "CHALLENGE PASSAGE TIME" --menu "Current: ${current_challenge_ttl} seconds\n\nSelect new value:" 20 78 12 "${challenge_ttl_options[@]}" 3>&1 1>&2 2>&3)"
+
+          if [[ $? -eq 0 ]]; then
+            local challenge_ttl_value
+            case ${chosen_challenge_ttl} in
+              *"01"*) challenge_ttl_value="300" ;;
+              *"02"*) challenge_ttl_value="900" ;;
+              *"03"*) challenge_ttl_value="1800" ;;
+              *"04"*) challenge_ttl_value="2700" ;;
+              *"05"*) challenge_ttl_value="3600" ;;
+              *"06"*) challenge_ttl_value="7200" ;;
+              *"07"*) challenge_ttl_value="10800" ;;
+              *"08"*) challenge_ttl_value="14400" ;;
+              *"09"*) challenge_ttl_value="28800" ;;
+              *"10"*) challenge_ttl_value="43200" ;;
+              *"11"*) challenge_ttl_value="86400" ;;
+            esac
+
+            cloudflare_set_challenge_ttl "${root_domain}" "${challenge_ttl_value}"
+          fi
+
         fi
 
       fi
@@ -392,12 +443,58 @@ function cloudflare_waf_configuration_menu() {
 
     if [[ ${chosen_waf_option} == *"06"* ]]; then
 
+      # WAF MANAGED RULESET
+      root_domain="$(whiptail_input "Root Domain" "Insert the root domain, example: mydomain.com" "")"
+
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        # Verify domain exists first
+        if ! cloudflare_domain_exists "${root_domain}"; then
+          display --indent 6 --text "- Verifying domain" --result "FAIL" --color RED
+          display --indent 8 --text "Domain not found in Cloudflare account" --tcolor RED
+        else
+
+          # Show current value first
+          local current_waf_status
+          current_waf_status="$(cloudflare_get_waf_managed_ruleset "${root_domain}")"
+          if [[ $? -eq 0 ]]; then
+            display --indent 6 --text "- Current WAF Managed Ruleset: ${current_waf_status}" --tcolor YELLOW
+          fi
+
+          local waf_ruleset_options=(
+            "01)" "on - Enable WAF Free Managed Ruleset"
+            "02)" "off - Disable WAF Free Managed Ruleset"
+          )
+
+          local chosen_waf_ruleset
+
+          chosen_waf_ruleset="$(whiptail --title "WAF MANAGED RULESET" --menu "Current: ${current_waf_status}\n\nSelect new status:" 20 78 10 "${waf_ruleset_options[@]}" 3>&1 1>&2 2>&3)"
+
+          if [[ $? -eq 0 ]]; then
+            local waf_ruleset_value
+            case ${chosen_waf_ruleset} in
+              *"01"*) waf_ruleset_value="on" ;;
+              *"02"*) waf_ruleset_value="off" ;;
+            esac
+
+            cloudflare_set_waf_managed_ruleset "${root_domain}" "${waf_ruleset_value}"
+          fi
+
+        fi
+
+      fi
+
+    fi
+
+    if [[ ${chosen_waf_option} == *"07"* ]]; then
+
       # CUSTOM FIREWALL RULES
       cloudflare_custom_rules_menu
 
     fi
 
-    if [[ ${chosen_waf_option} == *"07"* ]]; then
+    if [[ ${chosen_waf_option} == *"08"* ]]; then
 
       # IP ACCESS RULES
       cloudflare_ip_access_rules_menu
@@ -432,7 +529,16 @@ function cloudflare_custom_rules_menu() {
 
       # LIST CUSTOM RULES
       root_domain="$(whiptail_input "Root Domain" "Insert the root domain, example: mydomain.com" "")"
-      [[ $? -eq 0 ]] && cloudflare_list_custom_rules "${root_domain}"
+
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+        if ! cloudflare_domain_exists "${root_domain}"; then
+          display --indent 6 --text "- Verifying domain" --result "FAIL" --color RED
+          display --indent 8 --text "Domain not found in Cloudflare account" --tcolor RED
+        else
+          cloudflare_list_custom_rules "${root_domain}"
+        fi
+      fi
 
     fi
 
@@ -444,43 +550,51 @@ function cloudflare_custom_rules_menu() {
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        local rule_name
-        local rule_expression
-        local rule_action
+        # Verify domain exists first
+        if ! cloudflare_domain_exists "${root_domain}"; then
+          display --indent 6 --text "- Verifying domain" --result "FAIL" --color RED
+          display --indent 8 --text "Domain not found in Cloudflare account" --tcolor RED
+        else
 
-        rule_name="$(whiptail_input "Rule Name" "Enter a name for this rule:" "")"
-        exitstatus=$?
+          local rule_name
+          local rule_expression
+          local rule_action
 
-        if [[ ${exitstatus} -eq 0 ]]; then
-
-          rule_expression="$(whiptail_input "Rule Expression" "Enter the rule expression (e.g., ip.src eq 1.2.3.4):" "")"
+          rule_name="$(whiptail_input "Rule Name" "Enter a name for this rule:" "")"
           exitstatus=$?
 
           if [[ ${exitstatus} -eq 0 ]]; then
 
-            local action_options=(
-              "01)" "block - Block the request"
-              "02)" "challenge - Legacy CAPTCHA challenge"
-              "03)" "js_challenge - JavaScript challenge"
-              "04)" "managed_challenge - Managed challenge (recommended)"
-              "05)" "allow - Allow the request"
-              "06)" "log - Log only (no action)"
-            )
+            rule_expression="$(whiptail_input "Rule Expression" "Enter the rule expression (e.g., ip.src eq 1.2.3.4):" "")"
+            exitstatus=$?
 
-            local chosen_action
-            chosen_action="$(whiptail --title "RULE ACTION" --menu "Select the action:" 20 78 10 "${action_options[@]}" 3>&1 1>&2 2>&3)"
+            if [[ ${exitstatus} -eq 0 ]]; then
 
-            if [[ $? -eq 0 ]]; then
-              case ${chosen_action} in
-                *"01"*) rule_action="block" ;;
-                *"02"*) rule_action="challenge" ;;
-                *"03"*) rule_action="js_challenge" ;;
-                *"04"*) rule_action="managed_challenge" ;;
-                *"05"*) rule_action="allow" ;;
-                *"06"*) rule_action="log" ;;
-              esac
+              local action_options=(
+                "01)" "block - Block the request"
+                "02)" "challenge - Legacy CAPTCHA challenge"
+                "03)" "js_challenge - JavaScript challenge"
+                "04)" "managed_challenge - Managed challenge (recommended)"
+                "05)" "allow - Allow the request"
+                "06)" "log - Log only (no action)"
+              )
 
-              cloudflare_create_custom_rule "${root_domain}" "${rule_name}" "${rule_expression}" "${rule_action}"
+              local chosen_action
+              chosen_action="$(whiptail --title "RULE ACTION" --menu "Select the action:" 20 78 10 "${action_options[@]}" 3>&1 1>&2 2>&3)"
+
+              if [[ $? -eq 0 ]]; then
+                case ${chosen_action} in
+                  *"01"*) rule_action="block" ;;
+                  *"02"*) rule_action="challenge" ;;
+                  *"03"*) rule_action="js_challenge" ;;
+                  *"04"*) rule_action="managed_challenge" ;;
+                  *"05"*) rule_action="allow" ;;
+                  *"06"*) rule_action="log" ;;
+                esac
+
+                cloudflare_create_custom_rule "${root_domain}" "${rule_name}" "${rule_expression}" "${rule_action}"
+              fi
+
             fi
 
           fi
@@ -499,9 +613,17 @@ function cloudflare_custom_rules_menu() {
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        local rule_id
-        rule_id="$(whiptail_input "Rule ID" "Enter the rule ID to delete:" "")"
-        [[ $? -eq 0 ]] && cloudflare_delete_custom_rule "${root_domain}" "${rule_id}"
+        # Verify domain exists first
+        if ! cloudflare_domain_exists "${root_domain}"; then
+          display --indent 6 --text "- Verifying domain" --result "FAIL" --color RED
+          display --indent 8 --text "Domain not found in Cloudflare account" --tcolor RED
+        else
+
+          local rule_id
+          rule_id="$(whiptail_input "Rule ID" "Enter the rule ID to delete:" "")"
+          [[ $? -eq 0 ]] && cloudflare_delete_custom_rule "${root_domain}" "${rule_id}"
+
+        fi
 
       fi
 
@@ -535,7 +657,16 @@ function cloudflare_ip_access_rules_menu() {
 
       # LIST IP ACCESS RULES
       root_domain="$(whiptail_input "Root Domain" "Insert the root domain, example: mydomain.com" "")"
-      [[ $? -eq 0 ]] && cloudflare_list_ip_access_rules "${root_domain}"
+
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+        if ! cloudflare_domain_exists "${root_domain}"; then
+          display --indent 6 --text "- Verifying domain" --result "FAIL" --color RED
+          display --indent 8 --text "Domain not found in Cloudflare account" --tcolor RED
+        else
+          cloudflare_list_ip_access_rules "${root_domain}"
+        fi
+      fi
 
     fi
 
@@ -547,37 +678,45 @@ function cloudflare_ip_access_rules_menu() {
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        local ip_address
-        local ip_action
-        local ip_note
+        # Verify domain exists first
+        if ! cloudflare_domain_exists "${root_domain}"; then
+          display --indent 6 --text "- Verifying domain" --result "FAIL" --color RED
+          display --indent 8 --text "Domain not found in Cloudflare account" --tcolor RED
+        else
 
-        ip_address="$(whiptail_input "IP Address" "Enter the IP address (e.g., 1.2.3.4):" "")"
-        exitstatus=$?
+          local ip_address
+          local ip_action
+          local ip_note
 
-        if [[ ${exitstatus} -eq 0 ]]; then
+          ip_address="$(whiptail_input "IP Address" "Enter the IP address (e.g., 1.2.3.4):" "")"
+          exitstatus=$?
 
-          local ip_action_options=(
-            "01)" "block - Block the IP"
-            "02)" "challenge - Challenge the IP"
-            "03)" "whitelist - Allow the IP (bypass security)"
-            "04)" "js_challenge - JavaScript challenge"
-            "05)" "managed_challenge - Managed challenge"
-          )
+          if [[ ${exitstatus} -eq 0 ]]; then
 
-          local chosen_ip_action
-          chosen_ip_action="$(whiptail --title "IP ACTION" --menu "Select the action:" 20 78 10 "${ip_action_options[@]}" 3>&1 1>&2 2>&3)"
+            local ip_action_options=(
+              "01)" "block - Block the IP"
+              "02)" "challenge - Challenge the IP"
+              "03)" "whitelist - Allow the IP (bypass security)"
+              "04)" "js_challenge - JavaScript challenge"
+              "05)" "managed_challenge - Managed challenge"
+            )
 
-          if [[ $? -eq 0 ]]; then
-            case ${chosen_ip_action} in
-              *"01"*) ip_action="block" ;;
-              *"02"*) ip_action="challenge" ;;
-              *"03"*) ip_action="whitelist" ;;
-              *"04"*) ip_action="js_challenge" ;;
-              *"05"*) ip_action="managed_challenge" ;;
-            esac
+            local chosen_ip_action
+            chosen_ip_action="$(whiptail --title "IP ACTION" --menu "Select the action:" 20 78 10 "${ip_action_options[@]}" 3>&1 1>&2 2>&3)"
 
-            ip_note="$(whiptail_input "Note (optional)" "Enter a note for this rule:" "")"
-            cloudflare_add_ip_access_rule "${root_domain}" "${ip_address}" "${ip_action}" "${ip_note}"
+            if [[ $? -eq 0 ]]; then
+              case ${chosen_ip_action} in
+                *"01"*) ip_action="block" ;;
+                *"02"*) ip_action="challenge" ;;
+                *"03"*) ip_action="whitelist" ;;
+                *"04"*) ip_action="js_challenge" ;;
+                *"05"*) ip_action="managed_challenge" ;;
+              esac
+
+              ip_note="$(whiptail_input "Note (optional)" "Enter a note for this rule:" "")"
+              cloudflare_add_ip_access_rule "${root_domain}" "${ip_address}" "${ip_action}" "${ip_note}"
+            fi
+
           fi
 
         fi
@@ -594,9 +733,17 @@ function cloudflare_ip_access_rules_menu() {
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        local rule_id
-        rule_id="$(whiptail_input "Rule ID" "Enter the rule ID to delete:" "")"
-        [[ $? -eq 0 ]] && cloudflare_delete_ip_access_rule "${root_domain}" "${rule_id}"
+        # Verify domain exists first
+        if ! cloudflare_domain_exists "${root_domain}"; then
+          display --indent 6 --text "- Verifying domain" --result "FAIL" --color RED
+          display --indent 8 --text "Domain not found in Cloudflare account" --tcolor RED
+        else
+
+          local rule_id
+          rule_id="$(whiptail_input "Rule ID" "Enter the rule ID to delete:" "")"
+          [[ $? -eq 0 ]] && cloudflare_delete_ip_access_rule "${root_domain}" "${rule_id}"
+
+        fi
 
       fi
 
