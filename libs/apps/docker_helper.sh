@@ -1236,3 +1236,775 @@ define('WP_REDIS_HOST','redis');\n" "${project_path}/wordpress/wp-config.php"
     send_notification "${SERVER_NAME}" "New ${project_type} project (docker) installation for '${project_domain}' finished ok!" "success"
 
 }
+
+################################################################################
+# Detect Git provider from URL
+#
+# Arguments:
+#   ${1} = ${git_url}
+#
+# Outputs:
+#   Provider name (github, gitlab, bitbucket, other)
+################################################################################
+
+function git_detect_provider() {
+
+    local git_url="${1}"
+    local provider
+
+    if [[ ${git_url} == *"github.com"* ]]; then
+        provider="github"
+    elif [[ ${git_url} == *"gitlab.com"* ]]; then
+        provider="gitlab"
+    elif [[ ${git_url} == *"bitbucket.org"* ]]; then
+        provider="bitbucket"
+    else
+        provider="other"
+    fi
+
+    echo "${provider}"
+
+}
+
+################################################################################
+# Ask for Git repository URL
+#
+# Arguments:
+#   ${1} = ${suggested_url} - optional
+#
+# Outputs:
+#   Repository URL if ok, 1 on error
+################################################################################
+
+function git_ask_repository_url() {
+
+    local suggested_url="${1}"
+    local git_url
+
+    git_url="$(whiptail --title "Git Repository" --inputbox "Enter the Git repository URL:\n\nExamples:\n- https://github.com/user/repo.git\n- git@github.com:user/repo.git" 15 70 "${suggested_url}" 3>&1 1>&2 2>&3)"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 && -n ${git_url} ]]; then
+
+        # Validate URL format
+        if [[ ! ${git_url} =~ ^(https?://|git@) ]]; then
+            log_event "error" "Invalid Git URL format: ${git_url}" "false"
+            display --indent 6 --text "- Invalid Git URL format" --result "FAIL" --color RED
+            return 1
+        fi
+
+        # Return
+        echo "${git_url}" && return 0
+
+    else
+
+        log_event "info" "Git repository URL not provided" "false"
+        return 1
+
+    fi
+
+}
+
+################################################################################
+# Ask for Git branch
+#
+# Arguments:
+#   ${1} = ${suggested_branch} - optional (default: main)
+#
+# Outputs:
+#   Branch name if ok, 1 on error
+################################################################################
+
+function git_ask_branch() {
+
+    local suggested_branch="${1}"
+    local git_branch
+
+    [[ -z ${suggested_branch} ]] && suggested_branch="main"
+
+    git_branch="$(whiptail --title "Git Branch" --inputbox "Enter the Git branch to clone:" 10 60 "${suggested_branch}" 3>&1 1>&2 2>&3)"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 && -n ${git_branch} ]]; then
+
+        # Return
+        echo "${git_branch}" && return 0
+
+    else
+
+        log_event "info" "Git branch not provided, using default" "false"
+        echo "main" && return 0
+
+    fi
+
+}
+
+################################################################################
+# Test Git credentials
+#
+# Arguments:
+#   ${1} = ${git_url}
+#
+# Outputs:
+#   0 if credentials work, 1 on error
+################################################################################
+
+function git_test_credentials() {
+
+    local git_url="${1}"
+    local test_result
+
+    display --indent 6 --text "- Testing Git credentials ..."
+    log_event "debug" "Testing Git credentials for: ${git_url}" "false"
+
+    # Test git ls-remote (works for both SSH and HTTPS)
+    test_result="$(git ls-remote "${git_url}" HEAD 2>&1)"
+    exitstatus=$?
+
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        clear_previous_lines "1"
+        display --indent 6 --text "- Testing Git credentials" --result "DONE" --color GREEN
+        log_event "info" "Git credentials validated successfully" "false"
+
+        return 0
+
+    else
+
+        clear_previous_lines "1"
+        display --indent 6 --text "- Testing Git credentials" --result "FAIL" --color RED
+        log_event "error" "Git credentials validation failed: ${test_result}" "false"
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
+# Setup Git credentials wizard
+#
+# Arguments:
+#   ${1} = ${git_url}
+#
+# Outputs:
+#   0 if configured successfully, 1 on error
+################################################################################
+
+function git_credentials_setup_wizard() {
+
+    local git_url="${1}"
+    local provider
+    local is_private
+    local auth_method
+    local git_token
+    local git_username
+
+    provider="$(git_detect_provider "${git_url}")"
+
+    # Ask if repository is private
+    if whiptail --title "Git Repository Access" --yesno "Is this a PRIVATE repository that requires authentication?" 10 60; then
+        is_private="yes"
+    else
+        is_private="no"
+        log_event "info" "Public repository, no credentials needed" "false"
+        return 0
+    fi
+
+    # If using SSH, check if key exists
+    if [[ ${git_url} == git@* ]]; then
+
+        if [[ ! -f ~/.ssh/id_rsa && ! -f ~/.ssh/id_ed25519 ]]; then
+
+            whiptail --title "SSH Key Not Found" --msgbox "No SSH key found in ~/.ssh/\n\nPlease generate an SSH key first:\n\nssh-keygen -t ed25519 -C \"your_email@example.com\"\n\nThen add the public key to your Git provider." 15 70
+
+            return 1
+
+        else
+
+            # Show public key
+            local pubkey_file
+            [[ -f ~/.ssh/id_ed25519.pub ]] && pubkey_file=~/.ssh/id_ed25519.pub || pubkey_file=~/.ssh/id_rsa.pub
+            local pubkey
+            pubkey="$(cat "${pubkey_file}")"
+
+            whiptail --title "SSH Public Key" --msgbox "Add this public key to your Git provider:\n\n${pubkey}\n\nGitHub: https://github.com/settings/keys\nGitLab: https://gitlab.com/-/profile/keys" 20 78
+
+            # Test connection
+            if ! git_test_credentials "${git_url}"; then
+                return 1
+            fi
+
+        fi
+
+    else
+
+        # HTTPS - need token
+        local token_instructions
+
+        case ${provider} in
+            github)
+                token_instructions="GitHub Personal Access Token Setup:\n\n1. Go to: https://github.com/settings/tokens\n2. Click 'Generate new token (classic)'\n3. Name: 'BROLIT Server - $(hostname)'\n4. Select scopes: ☑ repo (full control)\n5. Click 'Generate token'\n6. Copy the token (starts with 'ghp_')"
+                ;;
+            gitlab)
+                token_instructions="GitLab Personal Access Token Setup:\n\n1. Go to: https://gitlab.com/-/profile/personal_access_tokens\n2. Token name: 'BROLIT Server - $(hostname)'\n3. Select scopes: ☑ read_repository, ☑ write_repository\n4. Click 'Create personal access token'\n5. Copy the token (starts with 'glpat-')"
+                ;;
+            *)
+                token_instructions="Personal Access Token Setup:\n\n1. Go to your Git provider settings\n2. Generate a new access token\n3. Grant repository read/write permissions\n4. Copy the generated token"
+                ;;
+        esac
+
+        whiptail --title "Authentication Required" --msgbox "${token_instructions}" 18 78
+
+        # Ask for token
+        git_token="$(whiptail --title "Access Token" --passwordbox "Paste your Personal Access Token:" 10 60 3>&1 1>&2 2>&3)"
+
+        exitstatus=$?
+        if [[ ${exitstatus} -ne 0 || -z ${git_token} ]]; then
+            log_event "error" "No token provided" "false"
+            return 1
+        fi
+
+        # Ask for username (for some providers)
+        if [[ ${provider} == "gitlab" ]]; then
+            git_username="$(whiptail --title "Git Username" --inputbox "Enter your GitLab username:" 10 60 3>&1 1>&2 2>&3)"
+        else
+            git_username="git"  # Generic for GitHub and others
+        fi
+
+        # Configure git credential helper
+        display --indent 6 --text "- Configuring Git credentials ..."
+        log_event "debug" "Setting up git credential store" "false"
+
+        git config --global credential.helper store
+
+        # Extract base URL and save credentials
+        local base_url
+        base_url="$(echo "${git_url}" | grep -oP 'https?://[^/]+')"
+
+        # Save credentials to ~/.git-credentials
+        echo "${base_url/https:\/\//https://${git_username}:${git_token}@}" >> ~/.git-credentials
+
+        # Set restrictive permissions
+        chmod 600 ~/.git-credentials
+
+        clear_previous_lines "1"
+        display --indent 6 --text "- Configuring Git credentials" --result "DONE" --color GREEN
+        log_event "info" "Git credentials stored in ~/.git-credentials" "false"
+
+        # Update git_url to include token for this clone
+        git_url="${git_url/https:\/\//https://${git_username}:${git_token}@}"
+        echo "${git_url}"
+
+        # Test credentials
+        if ! git_test_credentials "${git_url}"; then
+            # Remove failed credentials
+            sed -i "\|${base_url}|d" ~/.git-credentials
+            return 1
+        fi
+
+    fi
+
+    return 0
+
+}
+
+################################################################################
+# Detect project type from Git repository
+#
+# Arguments:
+#   ${1} = ${project_path}
+#
+# Outputs:
+#   Project type (wordpress, laravel, php, nodejs, react, html, custom-docker, unknown)
+################################################################################
+
+function docker_detect_project_type_from_git() {
+
+    local project_path="${1}"
+    local project_type
+
+    log_event "debug" "Detecting project type in: ${project_path}" "false"
+
+    # 1. Check if docker-compose.yml already exists
+    if [[ -f "${project_path}/docker-compose.yml" ]] || [[ -f "${project_path}/docker-compose.yaml" ]]; then
+        project_type="custom-docker"
+        log_event "info" "Detected project type: ${project_type} (existing docker-compose)" "false"
+        echo "${project_type}"
+        return 0
+    fi
+
+    # 2. WordPress detection
+    if [[ -f "${project_path}/wp-config.php" ]] ||
+       [[ -d "${project_path}/wp-content" ]] ||
+       [[ -f "${project_path}/wp-config-sample.php" ]]; then
+        project_type="wordpress"
+        log_event "info" "Detected project type: ${project_type}" "false"
+        echo "${project_type}"
+        return 0
+    fi
+
+    # Check composer.json for WordPress
+    if [[ -f "${project_path}/composer.json" ]]; then
+        if grep -q "wordpress" "${project_path}/composer.json" 2>/dev/null; then
+            project_type="wordpress"
+            log_event "info" "Detected project type: ${project_type} (from composer.json)" "false"
+            echo "${project_type}"
+            return 0
+        fi
+
+        # 3. Laravel detection
+        if grep -q "laravel/framework" "${project_path}/composer.json" 2>/dev/null &&
+           [[ -f "${project_path}/artisan" ]]; then
+            project_type="laravel"
+            log_event "info" "Detected project type: ${project_type}" "false"
+            echo "${project_type}"
+            return 0
+        fi
+    fi
+
+    # 4. PHP generic
+    if [[ -f "${project_path}/composer.json" ]] ||
+       [[ -f "${project_path}/index.php" ]]; then
+        project_type="php"
+        log_event "info" "Detected project type: ${project_type}" "false"
+        echo "${project_type}"
+        return 0
+    fi
+
+    # 5. NodeJS/React detection
+    if [[ -f "${project_path}/package.json" ]]; then
+        # Check if it's React
+        if grep -q "\"react\"" "${project_path}/package.json" 2>/dev/null; then
+            project_type="react"
+        else
+            project_type="nodejs"
+        fi
+        log_event "info" "Detected project type: ${project_type}" "false"
+        echo "${project_type}"
+        return 0
+    fi
+
+    # 6. HTML static
+    if find "${project_path}" -maxdepth 1 -name "*.html" -type f | grep -q .; then
+        project_type="html"
+        log_event "info" "Detected project type: ${project_type}" "false"
+        echo "${project_type}"
+        return 0
+    fi
+
+    # Unknown type
+    project_type="unknown"
+    log_event "warning" "Could not detect project type" "false"
+    echo "${project_type}"
+    return 1
+
+}
+
+################################################################################
+# Clone Git repository with credentials
+#
+# Arguments:
+#   ${1} = ${git_url}
+#   ${2} = ${destination_path}
+#   ${3} = ${branch} - optional (default: main)
+#
+# Outputs:
+#   0 if ok, 1 on error
+################################################################################
+
+function git_clone_with_credentials() {
+
+    local git_url="${1}"
+    local destination_path="${2}"
+    local branch="${3}"
+
+    [[ -z ${branch} ]] && branch="main"
+
+    display --indent 6 --text "- Cloning Git repository ..."
+    log_event "debug" "Cloning ${git_url} to ${destination_path}" "false"
+    log_event "debug" "Branch: ${branch}" "false"
+
+    # Try to clone with specified branch
+    git clone --branch "${branch}" "${git_url}" "${destination_path}" >/dev/null 2>&1
+    exitstatus=$?
+
+    # If failed, try with 'master' branch
+    if [[ ${exitstatus} -ne 0 && ${branch} == "main" ]]; then
+        log_event "debug" "Branch 'main' not found, trying 'master'" "false"
+        git clone --branch "master" "${git_url}" "${destination_path}" >/dev/null 2>&1
+        exitstatus=$?
+    fi
+
+    if [[ ${exitstatus} -eq 0 ]]; then
+
+        clear_previous_lines "1"
+        display --indent 6 --text "- Cloning Git repository" --result "DONE" --color GREEN
+        log_event "info" "Repository cloned successfully" "false"
+
+        return 0
+
+    else
+
+        clear_previous_lines "1"
+        display --indent 6 --text "- Cloning Git repository" --result "FAIL" --color RED
+        log_event "error" "Failed to clone repository" "false"
+
+        return 1
+
+    fi
+
+}
+
+################################################################################
+# Install Docker project from Git repository
+#
+# Arguments:
+#   ${1} = ${dir_path}        - optional (default: PROJECTS_PATH)
+#   ${2} = ${git_url}         - optional (will ask if empty)
+#   ${3} = ${project_domain}  - optional (will ask if empty)
+#   ${4} = ${git_branch}      - optional (default: main/master)
+#
+# Outputs:
+#   0 if ok, 1 on error
+################################################################################
+
+function docker_project_install_from_git() {
+
+    local dir_path="${1}"
+    local git_url="${2}"
+    local project_domain="${3}"
+    local git_branch="${4}"
+
+    local tmp_clone_path
+    local project_path
+    local project_type
+    local project_name
+    local project_stage
+    local project_root_domain
+    local project_secondary_subdomain
+    local suggested_state
+    local possible_project_name
+    local git_url_with_credentials
+
+    log_section "Project Installer (from Git Repository)"
+
+    # Check dependencies
+    if ! command -v git &>/dev/null; then
+        log_event "error" "Git is not installed" "false"
+        display --indent 2 --text "- Checking Git installation" --result "FAIL" --color RED
+        return 1
+    fi
+
+    if ! command -v docker &>/dev/null; then
+        log_event "error" "Docker is not installed" "false"
+        display --indent 2 --text "- Checking Docker installation" --result "FAIL" --color RED
+        return 1
+    fi
+
+    # Git Repository URL
+    if [[ -z ${git_url} ]]; then
+        git_url="$(git_ask_repository_url "")"
+        [[ $? -eq 1 ]] && return 1
+    fi
+
+    log_event "info" "Git repository: ${git_url}" "false"
+    display --indent 2 --text "- Git repository" --result "DONE" --color GREEN
+    display --indent 4 --text "${git_url}" --tcolor YELLOW
+
+    # Git Branch
+    if [[ -z ${git_branch} ]]; then
+        git_branch="$(git_ask_branch "main")"
+    fi
+
+    log_event "info" "Git branch: ${git_branch}" "false"
+    display --indent 2 --text "- Git branch: ${git_branch}" --result "DONE" --color GREEN
+
+    # Setup Git credentials
+    log_subsection "Git Credentials Setup"
+    git_url_with_credentials="$(git_credentials_setup_wizard "${git_url}")"
+    if [[ $? -eq 1 ]]; then
+        log_event "error" "Git credentials setup failed" "false"
+        display --indent 2 --text "- Git credentials setup" --result "FAIL" --color RED
+        return 1
+    fi
+
+    # Use credentials-embedded URL if returned
+    [[ -n ${git_url_with_credentials} ]] && git_url="${git_url_with_credentials}"
+
+    # Project Domain
+    if [[ -z ${project_domain} ]]; then
+        project_domain="$(project_ask_domain "")"
+        [[ $? -eq 1 ]] && return 1
+    fi
+
+    log_event "info" "Project domain: ${project_domain}" "false"
+    display --indent 2 --text "- Project domain" --result "DONE" --color GREEN
+    display --indent 4 --text "${project_domain}" --tcolor YELLOW
+
+    # Set paths
+    [[ -z ${dir_path} ]] && dir_path="${PROJECTS_PATH}"
+    project_path="${dir_path}/${project_domain}"
+
+    # Check if project already exists
+    if [[ -d "${project_path}" ]]; then
+        log_event "error" "Project directory already exists: ${project_path}" "false"
+        display --indent 2 --text "- Project directory check" --result "FAIL" --color RED
+        display --indent 4 --text "Directory already exists: ${project_path}" --tcolor RED
+        return 1
+    fi
+
+    # Clone to temporary location first
+    log_subsection "Cloning Repository"
+    tmp_clone_path="${BROLIT_TMP_DIR}/git-clone-$(date +%s)"
+    mkdir -p "${tmp_clone_path}"
+
+    if ! git_clone_with_credentials "${git_url}" "${tmp_clone_path}" "${git_branch}"; then
+        rm -rf "${tmp_clone_path}"
+        return 1
+    fi
+
+    # Detect project type
+    log_subsection "Project Detection"
+    project_type="$(docker_detect_project_type_from_git "${tmp_clone_path}")"
+
+    if [[ ${project_type} == "unknown" ]]; then
+        whiptail --title "Unknown Project Type" --msgbox "Could not automatically detect project type.\n\nPlease ensure your repository contains:\n- docker-compose.yml (for custom Docker projects)\n- wp-content/ or wp-config.php (for WordPress)\n- artisan + composer.json (for Laravel)\n- composer.json or index.php (for PHP)\n- package.json (for NodeJS/React)\n- *.html files (for static HTML)" 18 70
+        rm -rf "${tmp_clone_path}"
+        return 1
+    fi
+
+    display --indent 2 --text "- Detected project type" --result "${project_type}" --color GREEN
+
+    # Ask user confirmation
+    if ! whiptail --title "Project Type Confirmation" --yesno "Detected project type: ${project_type}\n\nIs this correct?" 10 60; then
+        # Let user select type manually
+        local project_types="wordpress laravel php nodejs react html custom-docker"
+        project_type="$(whiptail_selection_menu "Project Type" "Choose the project type:" "${project_types}" "${project_type}")"
+        [[ $? -eq 1 ]] && rm -rf "${tmp_clone_path}" && return 1
+    fi
+
+    # Project root domain
+    project_root_domain="$(domain_get_root "${project_domain}")"
+
+    # Project stage
+    suggested_state="$(domain_get_subdomain_part "${project_domain}")"
+    project_stage="$(project_ask_stage "${suggested_state}")"
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 1 ]]; then
+        log_event "info" "Operation cancelled!" "false"
+        display --indent 2 --text "- Asking project stage" --result SKIPPED --color YELLOW
+        rm -rf "${tmp_clone_path}"
+        return 1
+    fi
+
+    # Project name
+    possible_project_name="$(project_get_name_from_domain "${project_domain}")"
+    project_name="$(project_ask_name "${possible_project_name}")"
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 1 ]]; then
+        log_event "info" "Operation cancelled!" "false"
+        display --indent 2 --text "- Asking project name" --result SKIPPED --color YELLOW
+        rm -rf "${tmp_clone_path}"
+        return 1
+    fi
+
+    # Handle www subdomain
+    [[ "${project_domain}" == "${project_root_domain}" ]] && project_domain="www.${project_domain}" && project_secondary_subdomain="${project_root_domain}"
+
+    # Move cloned repository to final location
+    log_subsection "Setting Up Project"
+    display --indent 2 --text "- Moving repository to final location ..."
+    mv "${tmp_clone_path}" "${project_path}"
+
+    clear_previous_lines "1"
+    display --indent 2 --text "- Moving repository to final location" --result "DONE" --color GREEN
+
+    # Handle project based on type
+    local port_available
+    local php_version
+    local php_versions
+    local project_database
+    local project_database_user
+    local project_database_user_passw
+    local project_database_root_passw
+    local compose_file
+
+    case "${project_type}" in
+
+        custom-docker)
+            # Project already has docker-compose.yml
+            log_event "info" "Using existing docker-compose.yml" "false"
+            display --indent 2 --text "- Using existing docker-compose.yml" --result "INFO" --color CYAN
+
+            # Just need to configure .env if it doesn't exist
+            if [[ ! -f "${project_path}/.env" && -f "${project_path}/.env.example" ]]; then
+                cp "${project_path}/.env.example" "${project_path}/.env"
+                display --indent 2 --text "- Created .env from .env.example" --result "DONE" --color GREEN
+            fi
+
+            # Get port from existing config
+            port_available="$(grep -E '^(WP_PORT|APP_PORT|PHP_PORT|WEBSERVER_PORT|PORT)=' "${project_path}/.env" 2>/dev/null | head -n1 | cut -d'=' -f2)"
+            [[ -z ${port_available} ]] && port_available="$(network_next_available_port "81" "350")"
+
+            # Start the stack
+            compose_file="${project_path}/docker-compose.yml"
+            docker_compose_build "${compose_file}"
+            [[ $? -eq 1 ]] && return 1
+
+            # Set default database variables for config
+            project_database_user_passw=""
+            ;;
+
+        wordpress)
+            # Use existing WordPress Docker installation function
+            # But we need to adapt it for Git-cloned projects
+            log_event "info" "Setting up WordPress Docker project from Git" "false"
+
+            # Copy docker-compose template
+            cp -r "${BROLIT_MAIN_DIR}/config/docker-compose/wordpress/production-stack-proxy/docker-compose.yml" "${project_path}/"
+            cp -r "${BROLIT_MAIN_DIR}/config/docker-compose/wordpress/production-stack-proxy/.env" "${project_path}/.env.docker"
+
+            # Generate configuration
+            port_available="$(network_next_available_port "81" "350")"
+
+            php_versions="7.4 8.0 8.1 8.2 8.3"
+            php_version="$(whiptail_selection_menu "PHP Version" "Choose a PHP version for the Docker container:" "${php_versions}" "8.2")"
+            [[ $? -eq 1 ]] && return 1
+
+            project_database="${project_name}_${project_stage}"
+            project_database_user="${project_name}_user"
+
+            project_database_user_passw="$(openssl rand -hex 5)"
+            project_database_root_passw="$(openssl rand -hex 5)"
+
+            # Update .env.docker
+            sed -i "s|^COMPOSE_PROJECT_NAME=.*$|COMPOSE_PROJECT_NAME=${project_name}_stack|g" "${project_path}/.env.docker"
+            sed -i "s|^PROJECT_NAME=.*$|PROJECT_NAME=${project_name}|g" "${project_path}/.env.docker"
+            sed -i "s|^PROJECT_DOMAIN=.*$|PROJECT_DOMAIN=${project_domain}|g" "${project_path}/.env.docker"
+            sed -i "s|^PHP_VERSION=.*$|PHP_VERSION=${php_version}|g" "${project_path}/.env.docker"
+            sed -i "s|^WP_PORT=.*$|WP_PORT=${port_available}|g" "${project_path}/.env.docker"
+            sed -i "s|^MYSQL_DATABASE=.*$|MYSQL_DATABASE=${project_database}|g" "${project_path}/.env.docker"
+            sed -i "s|^MYSQL_USER=.*$|MYSQL_USER=${project_database_user}|g" "${project_path}/.env.docker"
+            sed -i "s|^MYSQL_PASSWORD=.*$|MYSQL_PASSWORD=${project_database_user_passw}|g" "${project_path}/.env.docker"
+            sed -i "s|^MYSQL_ROOT_PASSWORD=.*$|MYSQL_ROOT_PASSWORD=${project_database_root_passw}|g" "${project_path}/.env.docker"
+
+            # Rename for docker-compose
+            mv "${project_path}/.env.docker" "${project_path}/.env"
+
+            # Build and start
+            local compose_file="${project_path}/docker-compose.yml"
+            docker_compose_build "${compose_file}"
+            [[ $? -eq 1 ]] && return 1
+            ;;
+
+        laravel|php)
+            log_event "info" "Setting up ${project_type} Docker project from Git" "false"
+
+            # Copy PHP docker-compose template if doesn't exist
+            if [[ ! -f "${project_path}/docker-compose.yml" ]]; then
+                cp -r "${BROLIT_MAIN_DIR}/config/docker-compose/php/"* "${project_path}/"
+            fi
+
+            # Similar configuration as WordPress
+            port_available="$(network_next_available_port "81" "350")"
+
+            php_versions="7.4 8.0 8.1 8.2 8.3"
+            php_version="$(whiptail_selection_menu "PHP Version" "Choose a PHP version:" "${php_versions}" "8.2")"
+            [[ $? -eq 1 ]] && return 1
+
+            project_database="${project_name}_${project_stage}"
+            project_database_user="${project_name}_user"
+            project_database_user_passw="$(openssl rand -hex 5)"
+
+            # Configure and start
+            # TODO: Implement PHP/Laravel specific configuration
+            display --indent 2 --text "- ${project_type} Docker setup" --result "TODO" --color YELLOW
+            ;;
+
+        *)
+            log_event "error" "Project type '${project_type}' not yet fully implemented for Git installation" "false"
+            display --indent 2 --text "- Project type not yet supported" --result "FAIL" --color RED
+            return 1
+            ;;
+
+    esac
+
+    # Configure domain (NGINX + Certbot + DNS)
+    log_subsection "Configuring Domain"
+
+    # Detect port from docker-compose
+    local proxy_port
+    if [[ -f "${project_path}/.env" ]]; then
+        proxy_port="$(grep -E '^(WP_PORT|APP_PORT|PHP_PORT|WEBSERVER_PORT|PORT)=' "${project_path}/.env" | head -n1 | cut -d'=' -f2)"
+    fi
+    [[ -z ${proxy_port} ]] && proxy_port="${port_available:-81}"
+
+    # Project domain configuration (webserver+certbot+DNS)
+    local https_enable
+    https_enable="$(project_update_domain_config "${project_domain}" "proxy" "docker-compose" "${proxy_port}")"
+
+    # Post-install tasks for docker
+    project_post_install_tasks "${project_path}" "${project_type}" "docker" "${project_name}" "${project_stage}" "${project_database_user_passw:-}" "" "${project_domain}"
+
+    # Create BROLIT project config
+    log_subsection "Creating Project Configuration"
+
+    # TODO: refactor this
+    # Cert config files
+    local cert_path=""
+    if [[ -d "/etc/letsencrypt/live/${project_domain}" ]]; then
+        cert_path="/etc/letsencrypt/live/${project_domain}"
+    else
+        if [[ -d "/etc/letsencrypt/live/www.${project_domain}" ]]; then
+            cert_path="/etc/letsencrypt/live/www.${project_domain}"
+        fi
+    fi
+
+    local project_database="${project_name}_${project_stage}"
+    local project_database_user="${project_name}_user"
+
+    # Create project config file
+    # Arguments:
+    #  ${1} = ${project_path}
+    #  ${2} = ${project_name}
+    #  ${3} = ${project_stage}
+    #  ${4} = ${project_type}
+    #  ${5} = ${project_db_status}
+    #  ${6} = ${project_db_engine}
+    #  ${7} = ${project_db_name}
+    #  ${8} = ${project_db_host}
+    #  ${9} = ${project_db_user}
+    #  $10 = ${project_db_pass}
+    #  $11 = ${project_prymary_subdomain}
+    #  $12 = ${project_secondary_subdomains}
+    #  $13 = ${project_override_nginx_conf}
+    #  $14 = ${project_use_http2}
+    #  $15 = ${project_certbot_mode}
+    project_update_brolit_config "${project_path}" "${project_name}" "${project_stage}" "${project_type}" "enabled" "mysql" "${project_database}" "localhost" "${project_database_user}" "${project_database_user_passw:-}" "${project_domain}" "${project_secondary_subdomain}" "/etc/nginx/sites-available/${project_domain}" "" "${cert_path}"
+
+    # Save Git information in project config
+    if [[ -f "${project_path}/project-config.json" ]]; then
+        # Add Git metadata
+        local git_remote_url
+        git_remote_url="$(cd "${project_path}" && git remote get-url origin 2>/dev/null)"
+        # TODO: Add git metadata to project-config.json
+        log_event "debug" "Git remote URL: ${git_remote_url}" "false"
+    fi
+
+    # Final messages
+    log_event "info" "New ${project_type} project from Git for '${project_domain}' finished ok." "false"
+    display --indent 2 --text "- ${project_type} project installation" --result "DONE" --color GREEN
+    display --indent 4 --text "Domain: ${project_domain}" --tcolor GREEN
+    display --indent 4 --text "Git repository: ${git_url}" --tcolor CYAN
+    display --indent 4 --text "Branch: ${git_branch}" --tcolor CYAN
+
+    # Send notification
+    send_notification "${SERVER_NAME}" "New ${project_type} project from Git for '${project_domain}' finished ok!" "success"
+
+    # Show useful commands
+    whiptail --title "Installation Complete" --msgbox "Project installed successfully!\n\nUseful commands:\n\nView logs:\n  cd ${project_path} && docker-compose logs -f\n\nUpdate from Git:\n  cd ${project_path} && git pull\n\nRebuild containers:\n  cd ${project_path} && docker-compose down && docker-compose up -d --build\n\nProject URL:\n  https://${project_domain}" 20 78
+
+    return 0
+
+}
