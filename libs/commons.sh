@@ -1803,15 +1803,14 @@ function menu_main_options() {
   runner_options=(
     "01)" "BACKUP OPTIONS"
     "02)" "RESTORE OPTIONS"
-    "03)" "PROJECT CREATION"
-    "04)" "MORE PROJECT UTILS"
-    "05)" "DATABASE MANAGER"
-    "06)" "ENVIRONMENT MANAGER"
-    "07)" "WP-CLI MANAGER"
-    "08)" "CERTBOT MANAGER"
-    "09)" "CLOUDFLARE MANAGER"
-    "10)" "IT UTILS"
-    "11)" "CRON TASKS"
+    "03)" "PROJECT MANAGER"
+    "04)" "DATABASE MANAGER"
+    "05)" "ENVIRONMENT MANAGER"
+    "06)" "WP-CLI MANAGER"
+    "07)" "CERTBOT MANAGER"
+    "08)" "CLOUDFLARE MANAGER"
+    "09)" "IT UTILS"
+    "10)" "CRON TASKS"
   )
 
   chosen_type="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${runner_options[@]}" 3>&1 1>&2 2>&3)"
@@ -1825,14 +1824,11 @@ function menu_main_options() {
     # RESTORE OPTIONS
     [[ ${chosen_type} == *"02"* ]] && restore_manager_menu
 
-    # CREATE NEW PROJECT
-    [[ ${chosen_type} == *"03"* ]] && project_manager_menu_new_project_type_new_project
-
-    # OTHERS PROJECT UTILS
-    [[ ${chosen_type} == *"04"* ]] && project_manager_menu_new_project_type_utils
+    # PROJECT MANAGER
+    [[ ${chosen_type} == *"03"* ]] && project_manager_menu
 
     # DATABASE MANAGER
-    if [[ ${chosen_type} == *"05"* ]]; then
+    if [[ ${chosen_type} == *"04"* ]]; then
       # shellcheck source=${BROLIT_MAIN_DIR}/utils/database_manager.sh
       source "${BROLIT_MAIN_DIR}/utils/database_manager.sh"
 
@@ -1841,14 +1837,14 @@ function menu_main_options() {
     fi
 
     # ENVIRONMENT MANAGER
-    if [[ ${chosen_type} == *"06"* ]]; then
+    if [[ ${chosen_type} == *"05"* ]]; then
       # shellcheck source=${BROLIT_MAIN_DIR}/utils/environment_manager.sh
       source "${BROLIT_MAIN_DIR}/utils/environment_manager.sh"
       environment_manager_menu
     fi
 
     # WP-CLI MANAGER
-    if [[ ${chosen_type} == *"07"* ]]; then
+    if [[ ${chosen_type} == *"06"* ]]; then
       # shellcheck source=${BROLIT_MAIN_DIR}/utils/wpcli_manager.sh
       source "${BROLIT_MAIN_DIR}/utils/wpcli_manager.sh"
 
@@ -1858,7 +1854,7 @@ function menu_main_options() {
     fi
 
     # CERTBOT MANAGER
-    if [[ ${chosen_type} == *"08"* ]]; then
+    if [[ ${chosen_type} == *"07"* ]]; then
 
       if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
 
@@ -1882,7 +1878,7 @@ function menu_main_options() {
     fi
 
     # CLOUDFLARE MANAGER
-    if [[ ${chosen_type} == *"09"* ]]; then
+    if [[ ${chosen_type} == *"08"* ]]; then
 
       if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
 
@@ -1906,10 +1902,10 @@ function menu_main_options() {
     fi
 
     # IT UTILS
-    [[ ${chosen_type} == *"10"* ]] && it_utils_menu
+    [[ ${chosen_type} == *"09"* ]] && it_utils_menu
 
     # CRON SCRIPT TASKS
-    [[ ${chosen_type} == *"11"* ]] && menu_cron_script_tasks
+    [[ ${chosen_type} == *"10"* ]] && menu_cron_script_tasks
 
   else
 

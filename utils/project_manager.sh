@@ -103,7 +103,7 @@ function project_manager_config_loader() {
 }
 
 ################################################################################
-# Project Utils Menu
+# Project Manager Menu
 #
 # Arguments:
 #   none
@@ -112,157 +112,156 @@ function project_manager_config_loader() {
 #   nothing
 ################################################################################
 
-function project_manager_menu_new_project_type_utils() {
+function project_manager_menu() {
 
   local whip_title
   local whip_description
-  local project_utils_options
-  local chosen_project_utils_options
+  local project_manager_options
+  local chosen_project_manager_option
 
-  whip_title="PROJECT UTILS"
+  whip_title="PROJECT MANAGER"
   whip_description=" "
 
-  project_utils_options=(
-    "01)" "RE-GENERATE PROJECT CONFIG"
-    "02)" "RE-GENERATE NGINX SERVER"
-    "03)" "DELETE PROJECT"
-    "04)" "CREATE PROJECT DB  & USER"
+  project_manager_options=(
+    "01)" "PROJECT CREATION"
+    "02)" "RE-GENERATE PROJECT CONFIG"
+    "03)" "RE-GENERATE NGINX SERVER"
+    "04)" "CREATE PROJECT DB & USER"
     "05)" "PUT PROJECT ONLINE"
     "06)" "PUT PROJECT OFFLINE"
-    "07)" "DELETE PROJECT DOCKER"
+    "07)" "DELETE PROJECT"
+    "08)" "DELETE PROJECT DOCKER"
   )
 
-  chosen_project_utils_options="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_utils_options[@]}" 3>&1 1>&2 2>&3)"
+  chosen_project_manager_option="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_manager_options[@]}" 3>&1 1>&2 2>&3)"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    # RE-GENERATE PROJECT CONFIG
-    if [[ ${chosen_project_utils_options} == *"01"* ]]; then
+    # PROJECT CREATION
+    [[ ${chosen_project_manager_option} == *"01"* ]] && project_creation_menu
 
+    # RE-GENERATE PROJECT CONFIG
+    if [[ ${chosen_project_manager_option} == *"02"* ]]; then
       log_section "Project Utils"
       log_subsection "Project config"
 
-      # Folder where sites are hosted: $PROJECTS_PATH
       menu_title="PROJECT TO WORK WITH"
       directory_browser "${menu_title}" "${PROJECTS_PATH}"
 
-      # Directory_broser returns: " $filepath"/"$filename
       if [[ -z "${filepath}" ]]; then
-
         log_event "info" "Operation cancelled!" "false"
-
       else
-
         project_generate_brolit_config "${filepath}/${filename}"
-
       fi
 
+      prompt_return_or_finish
+      project_manager_menu
     fi
 
     # RE-GENERATE NGINX SERVER
-    [[ ${chosen_project_utils_options} == *"02"* ]] && project_create_nginx_server
+    if [[ ${chosen_project_manager_option} == *"03"* ]]; then
+      project_create_nginx_server
+      prompt_return_or_finish
+      project_manager_menu
+    fi
 
-    # DELETE PROJECT
-    [[ ${chosen_project_utils_options} == *"03"* ]] && project_delete "" ""
-
-    # CREATE PROJECT DB  & USER
-    if [[ ${chosen_project_utils_options} == *"04"* ]]; then
-
+    # CREATE PROJECT DB & USER
+    if [[ ${chosen_project_manager_option} == *"04"* ]]; then
       log_section "Project Utils"
       log_subsection "Create Project DB & User"
 
-      # Folder where sites are hosted: $PROJECTS_PATH
       menu_title="PROJECT TO WORK WITH"
       directory_browser "${menu_title}" "${PROJECTS_PATH}"
 
-      # Directory_broser returns: $filepath"/"$filename
       if [[ -z "${filepath}" || "${filepath}" == "" ]]; then
-
         log_event "info" "Operation cancelled!" "false"
-
       else
-
-        # Select database engine
-        #[[ -z ${chosen_database_engine} ]] &&
         chosen_database_engine="$(database_ask_engine)"
-
         project_stage="$(project_ask_stage "")"
-        [[ $? -eq 1 ]] && return 1
+        [[ $? -eq 1 ]] && project_manager_menu && return 1
 
-        # Filename should be the project domain
         project_name="$(project_get_name_from_domain "${filename%/}")"
         project_name="$(database_name_sanitize "${project_name}")"
         project_name="$(project_ask_name "${project_name}")"
 
         exitstatus=$?
         if [[ ${exitstatus} -eq 1 ]]; then
-          # Log
           log_event "info" "Operation cancelled!" "false"
           display --indent 2 --text "- Creating project database" --result SKIPPED --color YELLOW
-
+          project_manager_menu
           return 1
-
         fi
 
         log_event "info" "project_name: ${project_name}" "false"
 
-        # Database
         database_user_passw="$(openssl rand -hex 12)"
-
         mysql_user_db_scope="$(mysql_ask_user_db_scope "localhost")"
 
         mysql_database_create "${project_name}_${project_stage}"
         mysql_user_create "${project_name}_user" "${database_user_passw}" "${mysql_user_db_scope}"
         mysql_user_grant_privileges "${project_name}_user" "${project_name}_${project_stage}" "${mysql_user_db_scope}"
 
-        # TODO: Error check
-        # TODO: Ask to update project config
         project_type="$(project_get_type "${filepath}/${filename}")"
         project_install_type="$(project_get_install_type "${filepath}/${filename}")"
 
         project_set_configured_database "${filepath}/${filename}" "${project_type}" "${project_install_type}" "${project_name}_${project_stage}"
         project_set_configured_database_user "${filepath}/${filename}" "${project_type}" "${project_install_type}" "${project_name}_user"
         project_set_configured_database_userpassw "${filepath}/${filename}" "${project_type}" "${project_install_type}" "${database_user_passw}"
-
       fi
 
+      prompt_return_or_finish
+      project_manager_menu
     fi
 
     # PUT PROJECT ONLINE
-    [[ ${chosen_project_utils_options} == *"05"* ]] && project_change_status "online"
+    if [[ ${chosen_project_manager_option} == *"05"* ]]; then
+      project_change_status "online"
+      prompt_return_or_finish
+      project_manager_menu
+    fi
 
     # PUT PROJECT OFFLINE
-    [[ ${chosen_project_utils_options} == *"06"* ]] && project_change_status "offline"
+    if [[ ${chosen_project_manager_option} == *"06"* ]]; then
+      project_change_status "offline"
+      prompt_return_or_finish
+      project_manager_menu
+    fi
+
+    # DELETE PROJECT
+    if [[ ${chosen_project_manager_option} == *"07"* ]]; then
+      project_delete "" ""
+      prompt_return_or_finish
+      project_manager_menu
+    fi
 
     # DELETE PROJECT DOCKER
-    if [[ ${chosen_project_utils_options} == *"07"* ]]; then
+    if [[ ${chosen_project_manager_option} == *"08"* ]]; then
       log_section "Project Delete"
       log_subsection "Selecting Project to Delete"
-      
-      # List available projects
+
       menu_title="PROJECT TO DELETE"
       directory_browser "${menu_title}" "${PROJECTS_PATH}"
       if [[ -z "${filepath}" || -z "${filename}" ]]; then
         log_event "info" "Operation cancelled!" "false"
         display --indent 6 --text "- Selecting project to delete" --result "SKIPPED" --color YELLOW
+        project_manager_menu
         return 1
       fi
-      
+
       project_domain="${filename%/}"
       log_event "info" "Selected project: ${project_domain}" "false"
-      
-      # Check if project is Docker
+
       if [[ -d "${PROJECTS_PATH}/${project_domain}" && -f "${PROJECTS_PATH}/${project_domain}/docker-compose.yml" ]]; then
         delete_docker_project "${project_domain}"
       else
         log_event "error" "The selected project is not a Docker project." "true"
         display --indent 6 --text "- Project is not Docker" --result "FAIL" --color RED
       fi
+
+      prompt_return_or_finish
+      project_manager_menu
     fi
-    
-    prompt_return_or_finish
-    project_manager_menu_new_project_type_utils
 
   fi
 
@@ -271,7 +270,7 @@ function project_manager_menu_new_project_type_utils() {
 }
 
 ################################################################################
-# New Project Menu
+# Project Creation Menu
 #
 # Arguments:
 #   none
@@ -280,7 +279,7 @@ function project_manager_menu_new_project_type_utils() {
 #   nothing
 ################################################################################
 
-function project_manager_menu_new_project_type_new_project() {
+function project_creation_menu() {
 
   local project_creation_type_options
   local project_type_options
@@ -295,8 +294,8 @@ function project_manager_menu_new_project_type_new_project() {
   project_creation_type_options=(
     "01)" "NEW PROJECT"
     "02)" "NEW PROJECT FROM BACKUP"
-    "03)" "DOCKERIZE PROJECT FROM BACKUP"
-    "04)" "NEW PROJECT FROM GIT REPOSITORY (DOCKER)"
+    "03)" "NEW PROJECT FROM GIT REPOSITORY (DOCKER)"
+    "04)" "DOCKERIZE PROJECT FROM BACKUP"
   )
 
   chosen_project_creation_type_option="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_creation_type_options[@]}" 3>&1 1>&2 2>&3)"
@@ -310,11 +309,8 @@ function project_manager_menu_new_project_type_new_project() {
       project_type_options=(
         "01)" "NEW WORDPRESS PROJECT"
         "02)" "NEW WORDPRESS PROJECT (DOCKER)"
-        "03)" "NEW LARAVEL PROJECT"
-        "04)" "NEW LARAVEL PROJECT (DOCKER) -BETA-"
-        "05)" "NEW PHP PROJECT"
-        "06)" "NEW PHP PROJECT (DOCKER) -BETA-"
-        "07)" "NEW NODEJS PROJECT"
+        "03)" "NEW PHP PROJECT"
+        "04)" "NEW PHP PROJECT (DOCKER) -BETA-"
       )
 
       chosen_project_type_options="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_type_options[@]}" 3>&1 1>&2 2>&3)"
@@ -328,20 +324,11 @@ function project_manager_menu_new_project_type_new_project() {
         # NEW WORDPRESS PROJECT (DOCKER)
         [[ ${chosen_project_type_options} == *"02"* ]] && docker_project_install "${PROJECTS_PATH}" "wordpress" ""
 
-        # NEW LARAVEL PROJECT
-        [[ ${chosen_project_type_options} == *"03"* ]] && project_install "${PROJECTS_PATH}" "laravel" "" "" "" "clean"
-
-        # NEW LARAVEL PROJECT (DOCKER) -BETA-
-        [[ ${chosen_project_type_options} == *"04"* ]] && docker_project_install "${PROJECTS_PATH}" "laravel" ""
-
         # NEW PHP PROJECT
-        [[ ${chosen_project_type_options} == *"05"* ]] && project_install "${PROJECTS_PATH}" "php" "" "" "" "clean"
+        [[ ${chosen_project_type_options} == *"03"* ]] && project_install "${PROJECTS_PATH}" "php" "" "" "" "clean"
 
         # NEW PHP PROJECT (DOCKER) -BETA-
-        [[ ${chosen_project_type_options} == *"06"* ]] && docker_project_install "${PROJECTS_PATH}" "php" ""
-
-        # NEW NODEJS PROJECT
-        [[ ${chosen_project_type_options} == *"07"* ]] && project_install "${PROJECTS_PATH}" "nodejs" "" "" "" "clean"
+        [[ ${chosen_project_type_options} == *"04"* ]] && docker_project_install "${PROJECTS_PATH}" "php" ""
 
       fi
 
@@ -363,7 +350,7 @@ function project_manager_menu_new_project_type_new_project() {
           log_event "error" "Domain is not valid" "false"
 
           prompt_return_or_finish
-          project_manager_menu_new_project_type_new_project
+          project_creation_menu
 
         fi
 
@@ -383,43 +370,19 @@ function project_manager_menu_new_project_type_new_project() {
 
     fi
 
-    # DOCKERIZE EXISTING PROJECT
+    # NEW PROJECT FROM GIT REPOSITORY
     if [[ ${chosen_project_creation_type_option} == *"03"* ]]; then
-      project_dockerize_from_backup
+      docker_project_install_from_git "${PROJECTS_PATH}" "" "" ""
     fi
 
-    # NEW PROJECT FROM GIT REPOSITORY
+    # DOCKERIZE EXISTING PROJECT
     if [[ ${chosen_project_creation_type_option} == *"04"* ]]; then
-      docker_project_install_from_git "${PROJECTS_PATH}" "" "" ""
+      project_dockerize_from_backup
     fi
 
   fi
 
-}
-
-################################################################################
-# Project Manager Menu
-#
-# Arguments:
-#   none
-#
-# Outputs:
-#   nothing
-################################################################################
-
-function project_manager_menu_new_project_type() {
-
-  local project_types
-  local project_type
-
-  # Installation types
-  project_types="Laravel,PHP"
-
-  project_type="$(whiptail --title "NEW PROJECT TYPE" --menu "Choose an Installation Type" 20 78 10 "$(for x in ${project_types}; do echo "$x [X]"; done)" 3>&1 1>&2 2>&3)"
-  exitstatus=$?
-  [[ ${exitstatus} -eq 0 ]] && project_install "${PROJECTS_PATH}" "${project_type}"
-
-  menu_main_options
+  project_manager_menu
 
 }
 
