@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.5
+# Version: 3.4
 #############################################################################
 #
 # Ref: https://certbot.eff.org/docs/using.html
