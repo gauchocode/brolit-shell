@@ -1379,10 +1379,14 @@ function cloudflare_list_custom_rules() {
 
         log_event "info" "Listing Custom Firewall Rules for: ${root_domain}"
 
+        # Get the custom rules ruleset
         rules_result="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/rulesets/phases/http_request_firewall_custom/entrypoint" \
             -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
             -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
             -H "Content-Type: application/json")"
+
+        # Log the raw response for debugging
+        log_event "debug" "Custom rules API response: ${rules_result}" "false"
 
         if [[ ${rules_result} == *"\"success\":false"* || ${rules_result} == "" ]]; then
             log_event "error" "Error trying to list custom rules for ${root_domain}. Results:\n ${rules_result}" "false"
@@ -1392,61 +1396,78 @@ function cloudflare_list_custom_rules() {
         else
             display --indent 6 --text "- Custom Firewall Rules for: ${root_domain}" --result "DONE" --color GREEN
 
-            # Parse and display rules in a readable format
-            local rules_count
-            rules_count="$(echo "${rules_result}" | grep -o '"id":"[^"]*"' | grep -o '"rules"' -A 9999 | grep -o '"id":"[^"]*"' | wc -l)"
-
-            display --indent 8 --text "Total rules: ${rules_count}/5" --tcolor YELLOW
-            echo ""
-
-            # Parse each rule from the JSON response
-            # Split the response by rule entries
+            # Save response to temp file for better parsing
             local temp_file="/tmp/cf_rules_$$.json"
             echo "${rules_result}" > "${temp_file}"
 
-            # Extract the rules array and process each rule
+            # Count rules - look for rules inside the "rules" array
+            local rules_count
+            rules_count="$(grep -o '"description"' "${temp_file}" | wc -l)"
+
+            display --indent 8 --text "Total rules: ${rules_count}/5" --tcolor YELLOW
+
+            # If no rules found, show the raw JSON structure for debugging
+            if [[ ${rules_count} -eq 0 ]]; then
+                display --indent 8 --text "No rules found. Check logs for API response." --tcolor RED
+                log_event "debug" "JSON structure: $(echo "${rules_result}" | grep -o '"result":{[^}]*}' | head -c 500)" "false"
+                rm -f "${temp_file}"
+                return 0
+            fi
+
+            echo ""
+
+            # Extract rules from the JSON
+            # Try to extract each rule by parsing the rules array
             local rule_counter=1
+            local in_rules_array=0
 
-            # Use a more reliable parsing method for each rule field
-            while IFS= read -r rule_id; do
-                # Clean up the rule_id
-                rule_id="${rule_id#*\"id\":\"}"
-                rule_id="${rule_id%%\"*}"
-
-                # Skip if this is the ruleset ID (not a rule ID)
-                if [[ ${rule_counter} -eq 1 ]] && [[ $(echo "${rules_result}" | grep -o "\"id\":\"${rule_id}\"" | head -1) == $(echo "${rules_result}" | grep -o "\"id\":\"[^\"]*\"" | head -1) ]]; then
+            # Split JSON into lines and process
+            while IFS= read -r line; do
+                # Check if we're entering the rules array
+                if [[ ${line} == *'"rules"'* ]]; then
+                    in_rules_array=1
                     continue
                 fi
 
-                # Extract description for this rule
-                local rule_desc
-                rule_desc="$(echo "${rules_result}" | grep -A 100 "\"id\":\"${rule_id}\"" | grep -m 1 '"description"' | sed 's/.*"description":"\([^"]*\)".*/\1/')"
+                # Look for rule entries within the rules array
+                if [[ ${in_rules_array} -eq 1 ]] && [[ ${line} == *'"id"'* ]]; then
+                    # Extract rule ID
+                    local rule_id
+                    rule_id="$(echo "${line}" | grep -o '"id":"[^"]*"' | sed 's/"id":"//g' | sed 's/"//g')"
 
-                # Extract action for this rule
-                local rule_action
-                rule_action="$(echo "${rules_result}" | grep -A 100 "\"id\":\"${rule_id}\"" | grep -m 1 '"action"' | sed 's/.*"action":"\([^"]*\)".*/\1/')"
+                    # Skip empty IDs
+                    [[ -z ${rule_id} ]] && continue
 
-                # Extract expression for this rule
-                local rule_expr
-                rule_expr="$(echo "${rules_result}" | grep -A 100 "\"id\":\"${rule_id}\"" | grep -m 1 '"expression"' | sed 's/.*"expression":"\([^"]*\)".*/\1/' | sed 's/\\//g')"
+                    # Extract description
+                    local rule_desc
+                    rule_desc="$(grep -A 5 "\"id\":\"${rule_id}\"" "${temp_file}" | grep '"description"' | head -1 | sed 's/.*"description":"\([^"]*\)".*/\1/')"
 
-                # Display rule information
-                display --indent 8 --text "Rule #${rule_counter}:" --tcolor YELLOW
-                display --indent 10 --text "Name: ${rule_desc}" --tcolor GREEN
-                display --indent 10 --text "ID: ${rule_id}" --tcolor CYAN
-                display --indent 10 --text "Action: ${rule_action}" --tcolor MAGENTA
-                display --indent 10 --text "Expression: ${rule_expr}" --tcolor WHITE
-                echo ""
+                    # Extract action
+                    local rule_action
+                    rule_action="$(grep -A 10 "\"id\":\"${rule_id}\"" "${temp_file}" | grep '"action"' | head -1 | sed 's/.*"action":"\([^"]*\)".*/\1/')"
 
-                rule_counter=$((rule_counter + 1))
+                    # Extract expression
+                    local rule_expr
+                    rule_expr="$(grep -A 10 "\"id\":\"${rule_id}\"" "${temp_file}" | grep '"expression"' | head -1 | sed 's/.*"expression":"\([^"]*\)".*/\1/' | sed 's/\\//g')"
 
-            done < <(echo "${rules_result}" | grep -o '"id":"[^"]*"' | tail -n +2)
+                    # Only display if we found a description (indicates it's a real rule)
+                    if [[ -n ${rule_desc} ]]; then
+                        display --indent 8 --text "Rule #${rule_counter}:" --tcolor YELLOW
+                        display --indent 10 --text "Name: ${rule_desc}" --tcolor GREEN
+                        display --indent 10 --text "ID: ${rule_id}" --tcolor CYAN
+                        display --indent 10 --text "Action: ${rule_action}" --tcolor MAGENTA
+                        display --indent 10 --text "Expression: ${rule_expr}" --tcolor WHITE
+                        echo ""
+
+                        rule_counter=$((rule_counter + 1))
+                    fi
+                fi
+            done < "${temp_file}"
 
             # Clean up temp file
             rm -f "${temp_file}"
 
             log_event "info" "Custom rules listed for ${root_domain}" "false"
-            log_event "debug" "Rules data: ${rules_result}" "false"
             return 0
         fi
 
