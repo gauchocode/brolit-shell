@@ -1208,7 +1208,7 @@ function restore_backup_from_storage() {
 
     chosen_remote_type_path="${chosen_server}/projects-${chosen_remote_status}/${chosen_remote_type}"
 
-    log_section "Restore Backup"
+    log_subsection "Restore Backup"
 
     # Details of chosen_remote_type_path:
     #   "${chosen_server}/projects-${chosen_status}/${chosen_restore_type}"
