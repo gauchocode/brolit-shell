@@ -1274,7 +1274,7 @@ function docker_manage_resource_limits() {
   local project_path="${1}"
   local compose_file="${project_path}/docker-compose.yml"
 
-  log_section "Docker Resource Limits Manager"
+  log_subsection "Docker Resource Limits Manager"
   log_event "info" "Managing resource limits for project: ${project_path}" "false"
 
   # Verify docker-compose.yml exists
@@ -1288,7 +1288,6 @@ function docker_manage_resource_limits() {
   log_event "debug" "Found docker-compose.yml at ${compose_file}" "false"
 
   # Get server resources
-  echo ""
   display --indent 6 --text "- Detecting Server Resources" --tcolor CYAN
 
   local total_ram_mb
@@ -1407,7 +1406,6 @@ function docker_manage_resource_limits() {
   done <<< "${services}"
 
   service_options+=("SUGGEST" "Auto-suggest optimal limits")
-  service_options+=("BACK" "Return to main menu")
 
   local chosen_service
   chosen_service=$(whiptail --title "Resource Limits Manager" --menu "Choose a service to manage or auto-suggest limits:" 20 78 10 "${service_options[@]}" 3>&1 1>&2 2>&3)
