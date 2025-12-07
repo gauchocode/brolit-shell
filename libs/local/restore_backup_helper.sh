@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.5
+# Version: 3.4
 ################################################################################
 #
 # Backup/Restore Helper: Backup and restore funtions.
@@ -162,7 +162,7 @@ function _verify_backup_integrity() {
 ################################################################################
 
 function _handle_installation_permissions() {
-  
+
     local destination_dir="${1}"
     local project_install_type="${2}"
     local project_type="${3}"
@@ -178,20 +178,25 @@ function _handle_installation_permissions() {
                 app_dir="${destination_dir}/application"
             fi
 
-            # Validate app_dir exists
-            if [[ ! -d "${app_dir}" ]]; then
-                log_event "error" "Application directory not found: ${app_dir}" "false"
-                display --indent 6 --text "- Setting permissions for application directory" --result "FAIL" --color RED
-                display --indent 8 --text "Path does not exist: ${app_dir}" --tcolor RED
-                return 1
-            fi
-
-            display --indent 6 --text "- Setting permissions for application directory"
-            change_ownership "1000" "1000" "${app_dir}"
-            if [[ $? -ne 0 ]]; then
-                log_event "error" "Failed to change ownership to 1000:1000 on ${app_dir}" "false"
-                display --indent 6 --text "- Applying ownership 1000:1000 to ${app_dir}" --result "FAIL" --color RED
-                return 1
+            # Check if the expected app_dir exists
+            if [[ -d "${app_dir}" ]]; then
+                display --indent 6 --text "- Setting permissions for application directory"
+                change_ownership "1000" "1000" "${app_dir}"
+                if [[ $? -ne 0 ]]; then
+                    log_event "error" "Failed to change ownership to 1000:1000 on ${app_dir}" "false"
+                    display --indent 6 --text "- Applying ownership 1000:1000 to ${app_dir}" --result "FAIL" --color RED
+                    return 1
+                fi
+            else
+                # For dockerized projects without standard structure, set permissions on the entire project directory
+                log_event "info" "Standard application directory not found. Setting permissions on entire project directory." "false"
+                display --indent 6 --text "- Setting permissions for Docker project directory"
+                change_ownership "1000" "1000" "${destination_dir}"
+                if [[ $? -ne 0 ]]; then
+                    log_event "warning" "Failed to change ownership to 1000:1000 on ${destination_dir}" "false"
+                    display --indent 6 --text "- Applying ownership 1000:1000 to ${destination_dir}" --result "WARNING" --color YELLOW
+                    # Don't return error - permissions might not be critical for all dockerized projects
+                fi
             fi
             ;;
 
@@ -1797,12 +1802,14 @@ function restore_backup_project_files() {
       app_dir="${project_install_path}/application"
     fi
 
-    # Verificar si el directorio existe antes de cambiar permisos
+    # Check if the expected app_dir exists
     if [[ -d "${app_dir}" ]]; then
-      change_ownership "${WSERVER_USER}" "${WSERVER_GROUP}" "${app_dir}"
+      change_ownership "1000" "1000" "${app_dir}"
     else
-      display --indent 6 --text "- Directory ${app_dir} not found" --result "WARNING" --color YELLOW
-      log_event "warning" "Directory ${app_dir} does not exist. Skipping ownership change." "false"
+      # For dockerized projects without standard structure, set permissions on the entire project directory
+      log_event "info" "Standard application directory not found. Setting permissions on entire project directory." "false"
+      display --indent 6 --text "- Setting permissions for Docker project directory"
+      change_ownership "1000" "1000" "${project_install_path}"
     fi
 
   else
