@@ -1667,28 +1667,48 @@ function docker_manage_service_limits() {
     }
   ' "${compose_file}")"
 
-  # Prepare form with current values
-  local form_result
-  form_result=$(whiptail --title "Resource Limits for ${service_name}" --form "Set resource limits (leave empty to remove):\n\nServer: ${total_ram_mb}MB RAM, ${total_cpu_cores} CPUs" 16 78 3 \
-    "mem_limit (e.g., 512m):" 1 1 "${current_mem_limit}" 1 30 30 0 \
-    "mem_reservation (e.g., 256m):" 2 1 "${current_mem_reservation}" 2 30 30 0 \
-    "cpus (e.g., 1.5):" 3 1 "${current_cpus}" 3 30 30 0 \
-    3>&1 1>&2 2>&3)
-
-  local exitstatus=$?
-  if [[ ${exitstatus} -ne 0 ]]; then
-    log_event "info" "User cancelled setting limits for ${service_name}" "false"
-    return 0
-  fi
-
-  # Parse form result
+  # Get user input for each limit
   local new_mem_limit
   local new_mem_reservation
   local new_cpus
 
-  new_mem_limit="$(echo "${form_result}" | sed -n 1p)"
-  new_mem_reservation="$(echo "${form_result}" | sed -n 2p)"
-  new_cpus="$(echo "${form_result}" | sed -n 3p)"
+  echo ""
+  display --indent 6 --text "- Configuring Limits for ${service_name}" --tcolor CYAN
+  display --indent 8 --text "Server: ${total_ram_mb}MB RAM, ${total_cpu_cores} CPUs" --tcolor WHITE
+
+  if [[ -n ${current_mem_limit} ]]; then
+    display --indent 8 --text "Current mem_limit: ${current_mem_limit}" --tcolor YELLOW
+  fi
+  if [[ -n ${current_mem_reservation} ]]; then
+    display --indent 8 --text "Current mem_reservation: ${current_mem_reservation}" --tcolor YELLOW
+  fi
+  if [[ -n ${current_cpus} ]]; then
+    display --indent 8 --text "Current cpus: ${current_cpus}" --tcolor YELLOW
+  fi
+
+  # Ask for mem_limit
+  new_mem_limit=$(whiptail --title "Set mem_limit for ${service_name}" --inputbox "Enter memory limit (e.g., 512m, 1g) or leave empty to remove:\n\nCurrent: ${current_mem_limit:-not set}" 12 78 "${current_mem_limit}" 3>&1 1>&2 2>&3)
+
+  if [[ $? -ne 0 ]]; then
+    log_event "info" "User cancelled setting limits for ${service_name}" "false"
+    return 0
+  fi
+
+  # Ask for mem_reservation
+  new_mem_reservation=$(whiptail --title "Set mem_reservation for ${service_name}" --inputbox "Enter memory reservation (e.g., 256m, 512m) or leave empty to remove:\n\nCurrent: ${current_mem_reservation:-not set}" 12 78 "${current_mem_reservation}" 3>&1 1>&2 2>&3)
+
+  if [[ $? -ne 0 ]]; then
+    log_event "info" "User cancelled setting limits for ${service_name}" "false"
+    return 0
+  fi
+
+  # Ask for cpus
+  new_cpus=$(whiptail --title "Set CPUs for ${service_name}" --inputbox "Enter CPU limit (e.g., 1.5, 2.0) or leave empty to remove:\n\nCurrent: ${current_cpus:-not set}" 12 78 "${current_cpus}" 3>&1 1>&2 2>&3)
+
+  if [[ $? -ne 0 ]]; then
+    log_event "info" "User cancelled setting limits for ${service_name}" "false"
+    return 0
+  fi
 
   log_event "debug" "User input: mem_limit=${new_mem_limit}, mem_reservation=${new_mem_reservation}, cpus=${new_cpus}" "false"
 
@@ -1740,70 +1760,92 @@ function docker_apply_service_limits() {
 
   log_event "debug" "Applying limits to ${service_name}: mem_limit=${mem_limit}, mem_reservation=${mem_reservation}, cpus=${cpus}" "false"
 
-  # Use Python to safely modify YAML
-  python3 <<PYTHON_SCRIPT
-import yaml
-import sys
+  # Create temporary file
+  local temp_file="${compose_file}.tmp"
 
-compose_file = "${compose_file}"
-service_name = "${service_name}"
-mem_limit = "${mem_limit}".strip()
-mem_reservation = "${mem_reservation}".strip()
-cpus = "${cpus}".strip()
+  # Use AWK to modify YAML (pure bash solution)
+  awk -v service="${service_name}" \
+      -v mem_limit="${mem_limit}" \
+      -v mem_reservation="${mem_reservation}" \
+      -v cpus="${cpus}" '
+  BEGIN {
+    in_service = 0
+    service_indent = "        "  # 8 spaces for service properties
+    limits_added = 0
+  }
 
-try:
-    with open(compose_file, 'r') as f:
-        compose_data = yaml.safe_load(f)
+  # Detect when we enter the target service
+  /^[[:space:]]{4}[a-zA-Z0-9_-]+:/ {
+    if ($1 == service":") {
+      in_service = 1
+      limits_added = 0
+      print
+      next
+    } else if (in_service) {
+      # Exiting the service, add missing limits before next service
+      if (limits_added == 0) {
+        if (mem_limit) print service_indent "mem_limit: " mem_limit
+        if (mem_reservation) print service_indent "mem_reservation: " mem_reservation
+        if (cpus) print service_indent "cpus: " cpus
+        limits_added = 1
+      }
+      in_service = 0
+      print
+      next
+    }
+  }
 
-    if 'services' not in compose_data:
-        print(f"Error: No 'services' section found in {compose_file}", file=sys.stderr)
-        sys.exit(1)
+  # Handle existing limit lines - replace or skip
+  in_service && /^[[:space:]]+mem_limit:/ {
+    if (mem_limit) {
+      print service_indent "mem_limit: " mem_limit
+      limits_added = 1
+    }
+    next
+  }
 
-    if service_name not in compose_data['services']:
-        print(f"Error: Service '{service_name}' not found in docker-compose.yml", file=sys.stderr)
-        sys.exit(1)
+  in_service && /^[[:space:]]+mem_reservation:/ {
+    if (mem_reservation) {
+      print service_indent "mem_reservation: " mem_reservation
+    }
+    next
+  }
 
-    service = compose_data['services'][service_name]
+  in_service && /^[[:space:]]+cpus:/ {
+    if (cpus) {
+      print service_indent "cpus: " cpus
+    }
+    next
+  }
 
-    # Apply or remove mem_limit
-    if mem_limit:
-        service['mem_limit'] = mem_limit
-    elif 'mem_limit' in service:
-        del service['mem_limit']
+  # Print all other lines as-is
+  { print }
 
-    # Apply or remove mem_reservation
-    if mem_reservation:
-        service['mem_reservation'] = mem_reservation
-    elif 'mem_reservation' in service:
-        del service['mem_reservation']
+  # Handle end of file while still in service
+  END {
+    if (in_service && limits_added == 0) {
+      if (mem_limit) print service_indent "mem_limit: " mem_limit
+      if (mem_reservation) print service_indent "mem_reservation: " mem_reservation
+      if (cpus) print service_indent "cpus: " cpus
+    }
+  }
+  ' "${compose_file}" > "${temp_file}"
 
-    # Apply or remove cpus
-    if cpus:
-        # Convert to float for proper YAML formatting
-        try:
-            service['cpus'] = float(cpus)
-        except ValueError:
-            service['cpus'] = cpus
-    elif 'cpus' in service:
-        del service['cpus']
-
-    # Write back to file
-    with open(compose_file, 'w') as f:
-        yaml.dump(compose_data, f, default_flow_style=False, sort_keys=False)
-
-    print(f"Successfully updated {service_name} limits")
-    sys.exit(0)
-
-except Exception as e:
-    print(f"Error modifying docker-compose.yml: {e}", file=sys.stderr)
-    sys.exit(1)
-PYTHON_SCRIPT
-
-  if [[ $? -eq 0 ]]; then
-    log_event "info" "Successfully applied limits to ${service_name}" "false"
-    return 0
+  # Check if AWK succeeded
+  if [[ $? -eq 0 && -f "${temp_file}" ]]; then
+    # Verify the temp file is not empty
+    if [[ -s "${temp_file}" ]]; then
+      mv "${temp_file}" "${compose_file}"
+      log_event "info" "Successfully applied limits to ${service_name}" "false"
+      return 0
+    else
+      log_event "error" "Generated file is empty, aborting" "false"
+      rm -f "${temp_file}"
+      return 1
+    fi
   else
     log_event "error" "Failed to apply limits to ${service_name}" "false"
+    rm -f "${temp_file}"
     return 1
   fi
 
