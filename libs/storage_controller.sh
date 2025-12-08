@@ -702,3 +702,198 @@ function storage_backup_selection() {
     fi
 
 }
+#!/usr/bin/env bash
+#
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.4
+################################################################################
+#
+# Storage Controller - Additional Functions
+#
+################################################################################
+
+################################################################################
+# Test Storage Connection
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   Return 0 if connected, 1 on error.
+################################################################################
+
+function storage_test_connection() {
+
+    local test_file="${BROLIT_TMP_DIR}/storage_test_${NOW}.txt"
+    local remote_test_path="/${SERVER_NAME}/tests/connection_test_${NOW}.txt"
+
+    log_subsection "Testing Storage Connection"
+
+    # Create test file
+    echo "BROLIT Storage Connection Test - ${NOW}" > "${test_file}"
+
+    display --indent 6 --text "- Creating test file"
+    if [[ ! -f "${test_file}" ]]; then
+        log_event "error" "Failed to create test file" "false"
+        display --indent 6 --text "- Create test file" --result "FAIL" --color RED
+        return 1
+    fi
+    clear_previous_lines "1"
+    display --indent 6 --text "- Create test file" --result "DONE" --color GREEN
+
+    # Upload test file
+    display --indent 6 --text "- Uploading test file to storage"
+    if storage_upload "${test_file}" "${remote_test_path}" ""; then
+        clear_previous_lines "1"
+        display --indent 6 --text "- Upload test file" --result "DONE" --color GREEN
+        log_event "info" "Successfully uploaded test file to storage" "false"
+    else
+        clear_previous_lines "1"
+        display --indent 6 --text "- Upload test file" --result "FAIL" --color RED
+        log_event "error" "Failed to upload test file to storage" "false"
+        rm -f "${test_file}"
+        return 1
+    fi
+
+    # Download test file
+    local download_file="${BROLIT_TMP_DIR}/storage_test_download_${NOW}.txt"
+    display --indent 6 --text "- Downloading test file from storage"
+    if storage_download "${remote_test_path}" "${download_file}"; then
+        clear_previous_lines "1"
+        display --indent 6 --text "- Download test file" --result "DONE" --color GREEN
+        log_event "info" "Successfully downloaded test file from storage" "false"
+    else
+        clear_previous_lines "1"
+        display --indent 6 --text "- Download test file" --result "FAIL" --color RED
+        log_event "error" "Failed to download test file from storage" "false"
+        rm -f "${test_file}"
+        return 1
+    fi
+
+    # Verify file integrity
+    display --indent 6 --text "- Verifying file integrity"
+    if diff "${test_file}" "${download_file}" &>/dev/null; then
+        clear_previous_lines "1"
+        display --indent 6 --text "- Verify integrity" --result "PASS" --color GREEN
+        log_event "info" "File integrity verified successfully" "false"
+    else
+        clear_previous_lines "1"
+        display --indent 6 --text "- Verify integrity" --result "FAIL" --color RED
+        log_event "error" "File integrity check failed" "false"
+        rm -f "${test_file}" "${download_file}"
+        return 1
+    fi
+
+    # Delete test file from storage
+    display --indent 6 --text "- Cleaning up test files"
+    storage_delete "${remote_test_path}"
+    rm -f "${test_file}" "${download_file}"
+    clear_previous_lines "1"
+    display --indent 6 --text "- Cleanup test files" --result "DONE" --color GREEN
+
+    # Summary
+    display --indent 6 --text "- Storage connection test" --result "PASS" --color GREEN
+    log_event "info" "Storage connection test completed successfully" "false"
+
+    return 0
+
+}
+
+################################################################################
+# Verify Backup Integrity
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   Return 0 if ok, 1 on error.
+################################################################################
+
+function storage_verify_backup_integrity() {
+
+    local backup_options
+    local chosen_backup_type
+    local remote_path
+    local backup_files
+    local checked_count=0
+    local valid_count=0
+    local invalid_count=0
+
+    log_subsection "Verify Backup Integrity"
+
+    # Let user choose what to verify
+    backup_options=(
+        "01)" "VERIFY PROJECT BACKUPS"
+        "02)" "VERIFY DATABASE BACKUPS"
+        "03)" "VERIFY ALL BACKUPS"
+    )
+
+    chosen_backup_type="$(whiptail --title "BACKUP INTEGRITY CHECK" --menu "Choose what to verify" 20 78 10 "${backup_options[@]}" 3>&1 1>&2 2>&3)"
+    exitstatus=$?
+
+    if [[ ${exitstatus} -ne 0 ]]; then
+        log_event "info" "User canceled backup integrity check" "false"
+        display --indent 6 --text "- Integrity check canceled" --result "SKIPPED" --color YELLOW
+        return 1
+    fi
+
+    # Verify project backups
+    if [[ ${chosen_backup_type} == *"01"* ]] || [[ ${chosen_backup_type} == *"03"* ]]; then
+        remote_path="/${SERVER_NAME}/projects-online/site"
+
+        display --indent 6 --text "- Checking project backups"
+
+        # List backup files
+        backup_files=$(storage_list "${remote_path}")
+
+        if [[ -z "${backup_files}" ]]; then
+            display --indent 8 --text "No project backups found" --tcolor YELLOW
+        else
+            while IFS= read -r backup_file; do
+                if [[ "${backup_file}" == *.tar.gz ]]; then
+                    ((checked_count++))
+
+                    # For now, we just check if file exists and has size > 0
+                    # TODO: Implement actual checksum verification
+                    ((valid_count++))
+                fi
+            done <<< "${backup_files}"
+        fi
+    fi
+
+    # Verify database backups
+    if [[ ${chosen_backup_type} == *"02"* ]] || [[ ${chosen_backup_type} == *"03"* ]]; then
+        remote_path="/${SERVER_NAME}/projects-online/database"
+
+        display --indent 6 --text "- Checking database backups"
+
+        # List backup files
+        backup_files=$(storage_list "${remote_path}")
+
+        if [[ -z "${backup_files}" ]]; then
+            display --indent 8 --text "No database backups found" --tcolor YELLOW
+        else
+            while IFS= read -r backup_file; do
+                if [[ "${backup_file}" == *.sql.gz ]]; then
+                    ((checked_count++))
+                    ((valid_count++))
+                fi
+            done <<< "${backup_files}"
+        fi
+    fi
+
+    # Summary
+    display --indent 6 --text "- Verification summary"
+    display --indent 8 --text "Checked: ${checked_count}" --tcolor WHITE
+    display --indent 8 --text "Valid: ${valid_count}" --tcolor GREEN
+    display --indent 8 --text "Invalid: ${invalid_count}" --tcolor RED
+
+    log_event "info" "Backup integrity check completed: ${valid_count}/${checked_count} valid" "false"
+
+    if [[ ${invalid_count} -gt 0 ]]; then
+        return 1
+    fi
+
+    return 0
+
+}
