@@ -1534,3 +1534,286 @@ function borg_update_templates() {
     fi
 
 }
+#!/usr/bin/env bash
+#
+# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
+# Version: 3.4
+################################################################################
+#
+# Borg Storage Controller - Additional Functions
+#
+################################################################################
+
+################################################################################
+# Test Borgmatic Configuration
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   Return 0 if valid, 1 on error.
+################################################################################
+
+function borgmatic_test_config() {
+
+    local borg_config_dir="/etc/borgmatic.d"
+    local config_count=0
+    local valid_count=0
+    local invalid_count=0
+
+    # Check if borg is enabled
+    if [[ ${BACKUP_BORG_STATUS} != "enabled" ]]; then
+        log_event "info" "Borg backup is not enabled" "false"
+        display --indent 6 --text "- Borg backup not enabled" --result "SKIPPED" --color YELLOW
+        return 0
+    fi
+
+    # Check if borgmatic is installed
+    if ! command -v borgmatic &> /dev/null; then
+        log_event "error" "borgmatic command not found" "false"
+        display --indent 6 --text "- borgmatic not installed" --result "FAIL" --color RED
+        return 1
+    fi
+
+    # Check if config directory exists
+    if [[ ! -d "${borg_config_dir}" ]]; then
+        log_event "error" "Borg config directory not found: ${borg_config_dir}" "false"
+        display --indent 6 --text "- Config directory not found" --result "FAIL" --color RED
+        return 1
+    fi
+
+    log_subsection "Testing Borgmatic Configurations"
+
+    # Test each config file
+    for config_file in "${borg_config_dir}"/*.yaml; do
+        if [[ -f "${config_file}" ]]; then
+            ((config_count++))
+
+            config_name=$(basename "${config_file}")
+            display --indent 6 --text "- Testing ${config_name}"
+
+            if borgmatic validate --config "${config_file}" &>/dev/null; then
+                ((valid_count++))
+                clear_previous_lines "1"
+                display --indent 6 --text "- ${config_name}" --result "VALID" --color GREEN
+                log_event "info" "Config valid: ${config_name}" "false"
+            else
+                ((invalid_count++))
+                clear_previous_lines "1"
+                display --indent 6 --text "- ${config_name}" --result "INVALID" --color RED
+                log_event "error" "Config invalid: ${config_name}" "false"
+
+                # Show validation errors
+                display --indent 8 --text "Running detailed validation..." --tcolor YELLOW
+                borgmatic validate --config "${config_file}"
+            fi
+        fi
+    done
+
+    # Summary
+    display --indent 6 --text "- Validation summary"
+    display --indent 8 --text "Total: ${config_count}" --tcolor WHITE
+    display --indent 8 --text "Valid: ${valid_count}" --tcolor GREEN
+    display --indent 8 --text "Invalid: ${invalid_count}" --tcolor RED
+
+    if [[ ${invalid_count} -gt 0 ]]; then
+        return 1
+    fi
+
+    return 0
+
+}
+
+################################################################################
+# List Borgmatic Archives
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   Return 0 if ok, 1 on error.
+################################################################################
+
+function borg_list_archives() {
+
+    local borg_config_dir="/etc/borgmatic.d"
+    local config_file
+
+    # Check if borg is enabled
+    if [[ ${BACKUP_BORG_STATUS} != "enabled" ]]; then
+        log_event "info" "Borg backup is not enabled" "false"
+        display --indent 6 --text "- Borg backup not enabled" --result "SKIPPED" --color YELLOW
+        return 0
+    fi
+
+    # Check if borgmatic is installed
+    if ! command -v borgmatic &> /dev/null; then
+        log_event "error" "borgmatic command not found" "false"
+        display --indent 6 --text "- borgmatic not installed" --result "FAIL" --color RED
+        return 1
+    fi
+
+    # Let user select which config to list archives from
+    local config_files=()
+    local config_options=()
+    local index=1
+
+    for config_file in "${borg_config_dir}"/*.yaml; do
+        if [[ -f "${config_file}" ]]; then
+            config_name=$(basename "${config_file}" .yaml)
+            config_files+=("${config_file}")
+            config_options+=("${index}" "${config_name}")
+            ((index++))
+        fi
+    done
+
+    if [[ ${#config_files[@]} -eq 0 ]]; then
+        log_event "warning" "No borgmatic config files found" "false"
+        display --indent 6 --text "- No config files found" --result "WARNING" --color YELLOW
+        return 1
+    fi
+
+    # Add "ALL" option
+    config_options+=("${index}" "ALL REPOSITORIES")
+
+    chosen_config=$(whiptail --title "SELECT BORGMATIC CONFIG" --menu "Choose a repository to list archives" 20 78 10 "${config_options[@]}" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+
+    if [[ ${exitstatus} -ne 0 ]]; then
+        log_event "info" "User canceled archive listing" "false"
+        display --indent 6 --text "- Listing canceled" --result "SKIPPED" --color YELLOW
+        return 1
+    fi
+
+    log_subsection "Listing Borgmatic Archives"
+
+    # If "ALL" was selected
+    if [[ ${chosen_config} -eq ${index} ]]; then
+        for config_file in "${config_files[@]}"; do
+            config_name=$(basename "${config_file}" .yaml)
+            display --indent 6 --text "- Archives for ${config_name}"
+            display --indent 8 --text "Running borgmatic list..." --tcolor YELLOW
+
+            borgmatic list --config "${config_file}" 2>&1 | tail -20
+
+            echo ""
+        done
+    else
+        # List archives for selected config
+        selected_index=$((chosen_config - 1))
+        config_file="${config_files[$selected_index]}"
+        config_name=$(basename "${config_file}" .yaml)
+
+        display --indent 6 --text "- Listing archives for ${config_name}"
+        log_event "info" "Listing archives for ${config_name}" "false"
+
+        borgmatic list --config "${config_file}" 2>&1 | tail -50
+    fi
+
+    return 0
+
+}
+
+################################################################################
+# Prune Old Borgmatic Archives
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   Return 0 if ok, 1 on error.
+################################################################################
+
+function borg_prune_archives() {
+
+    local borg_config_dir="/etc/borgmatic.d"
+    local config_file
+
+    # Check if borg is enabled
+    if [[ ${BACKUP_BORG_STATUS} != "enabled" ]]; then
+        log_event "info" "Borg backup is not enabled" "false"
+        display --indent 6 --text "- Borg backup not enabled" --result "SKIPPED" --color YELLOW
+        return 0
+    fi
+
+    # Check if borgmatic is installed
+    if ! command -v borgmatic &> /dev/null; then
+        log_event "error" "borgmatic command not found" "false"
+        display --indent 6 --text "- borgmatic not installed" --result "FAIL" --color RED
+        return 1
+    fi
+
+    # Let user select which config to prune
+    local config_files=()
+    local config_options=()
+    local index=1
+
+    for config_file in "${borg_config_dir}"/*.yaml; do
+        if [[ -f "${config_file}" ]]; then
+            config_name=$(basename "${config_file}" .yaml)
+            config_files+=("${config_file}")
+            config_options+=("${index}" "${config_name}")
+            ((index++))
+        fi
+    done
+
+    if [[ ${#config_files[@]} -eq 0 ]]; then
+        log_event "warning" "No borgmatic config files found" "false"
+        display --indent 6 --text "- No config files found" --result "WARNING" --color YELLOW
+        return 1
+    fi
+
+    # Add "ALL" option
+    config_options+=("${index}" "ALL REPOSITORIES")
+
+    chosen_config=$(whiptail --title "SELECT BORGMATIC CONFIG" --menu "Choose repositories to prune old archives" 20 78 10 "${config_options[@]}" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+
+    if [[ ${exitstatus} -ne 0 ]]; then
+        log_event "info" "User canceled prune operation" "false"
+        display --indent 6 --text "- Prune canceled" --result "SKIPPED" --color YELLOW
+        return 1
+    fi
+
+    log_subsection "Pruning Old Borgmatic Archives"
+
+    # If "ALL" was selected
+    if [[ ${chosen_config} -eq ${index} ]]; then
+        for config_file in "${config_files[@]}"; do
+            config_name=$(basename "${config_file}" .yaml)
+            display --indent 6 --text "- Pruning ${config_name}"
+
+            if borgmatic prune --config "${config_file}" --stats 2>&1; then
+                clear_previous_lines "1"
+                display --indent 6 --text "- ${config_name}" --result "PRUNED" --color GREEN
+                log_event "info" "Successfully pruned archives for ${config_name}" "false"
+            else
+                clear_previous_lines "1"
+                display --indent 6 --text "- ${config_name}" --result "FAIL" --color RED
+                log_event "error" "Failed to prune archives for ${config_name}" "false"
+            fi
+        done
+    else
+        # Prune selected config
+        selected_index=$((chosen_config - 1))
+        config_file="${config_files[$selected_index]}"
+        config_name=$(basename "${config_file}" .yaml)
+
+        display --indent 6 --text "- Pruning archives for ${config_name}"
+        log_event "info" "Pruning archives for ${config_name}" "false"
+
+        if borgmatic prune --config "${config_file}" --stats 2>&1; then
+            clear_previous_lines "1"
+            display --indent 6 --text "- Prune ${config_name}" --result "DONE" --color GREEN
+            log_event "info" "Successfully pruned archives for ${config_name}" "false"
+        else
+            clear_previous_lines "1"
+            display --indent 6 --text "- Prune ${config_name}" --result "FAIL" --color RED
+            log_event "error" "Failed to prune archives for ${config_name}" "false"
+            return 1
+        fi
+    fi
+
+    return 0
+
+}

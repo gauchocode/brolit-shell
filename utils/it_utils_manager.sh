@@ -427,6 +427,11 @@ function menu_backup_tools() {
 
   backup_tools_options=(
     "01)" "REGENERATE BORGMATIC TEMPLATES"
+    "02)" "TEST BORGMATIC CONFIGURATION"
+    "03)" "LIST BORGMATIC ARCHIVES"
+    "04)" "PRUNE OLD BACKUPS"
+    "05)" "TEST STORAGE CONNECTION"
+    "06)" "VERIFY BACKUP INTEGRITY"
   )
 
   chosen_backup_tool_option="$(whiptail --title "BACKUP TOOLS" --menu "Choose an option" 20 78 10 "${backup_tools_options[@]}" 3>&1 1>&2 2>&3)"
@@ -441,12 +446,40 @@ function menu_backup_tools() {
       borg_update_templates
     fi
 
-    # TODO: Add more backup tools options:
-    # - TEST BORGMATIC CONFIGURATION (borgmatic_test_config)
-    # - LIST BORGMATIC ARCHIVES (borg_list_archives)
-    # - TEST STORAGE CONNECTION (storage_test_connection)
-    # - VERIFY BACKUP INTEGRITY (storage_verify_backup_integrity)
-    # - PRUNE OLD BACKUPS (borg_prune_archives)
+    # TEST BORGMATIC CONFIGURATION
+    if [[ ${chosen_backup_tool_option} == *"02"* ]]; then
+      # shellcheck source=${BROLIT_MAIN_DIR}/libs/borg_storage_controller.sh
+      source "${BROLIT_MAIN_DIR}/libs/borg_storage_controller.sh"
+      borgmatic_test_config
+    fi
+
+    # LIST BORGMATIC ARCHIVES
+    if [[ ${chosen_backup_tool_option} == *"03"* ]]; then
+      # shellcheck source=${BROLIT_MAIN_DIR}/libs/borg_storage_controller.sh
+      source "${BROLIT_MAIN_DIR}/libs/borg_storage_controller.sh"
+      borg_list_archives
+    fi
+
+    # PRUNE OLD BACKUPS
+    if [[ ${chosen_backup_tool_option} == *"04"* ]]; then
+      # shellcheck source=${BROLIT_MAIN_DIR}/libs/borg_storage_controller.sh
+      source "${BROLIT_MAIN_DIR}/libs/borg_storage_controller.sh"
+      borg_prune_archives
+    fi
+
+    # TEST STORAGE CONNECTION
+    if [[ ${chosen_backup_tool_option} == *"05"* ]]; then
+      # shellcheck source=${BROLIT_MAIN_DIR}/libs/storage_controller.sh
+      source "${BROLIT_MAIN_DIR}/libs/storage_controller.sh"
+      storage_test_connection
+    fi
+
+    # VERIFY BACKUP INTEGRITY
+    if [[ ${chosen_backup_tool_option} == *"06"* ]]; then
+      # shellcheck source=${BROLIT_MAIN_DIR}/libs/storage_controller.sh
+      source "${BROLIT_MAIN_DIR}/libs/storage_controller.sh"
+      storage_verify_backup_integrity
+    fi
 
     prompt_return_or_finish
     menu_backup_tools

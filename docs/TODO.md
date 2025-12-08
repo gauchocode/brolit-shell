@@ -36,6 +36,7 @@
 
 ### In Progress
 
+- [ ] Core: Better borg & borgmatic support.
 - [ ] Core: Docker support: backup and restore databases.
 - [ ] Core: Flags should receive a json file to deploy or restore a new project.
 - [ ] Core: On project creation/restore need to ask first the project stage, then project domain.
@@ -50,8 +51,6 @@
 
 - [ ] Core: Resolve small "TODOs" comments.
 - [ ] Core: Main menu should not show options that are disabled on .brolit_conf.json
-- [ ] Core: Add borg & borgmatic support.
-- [ ] Brolit-ui: Integration without brolit_lite.sh
 - [ ] Notifications: Email notification after install a new project (with credentials info).
 - [ ] Core: Implementation of brolit_project.json (intall, copy and restore).
 - [ ] Core: Create warning if multiple WP installation found on backup to restore.
@@ -76,7 +75,6 @@
 
 ## For release 3.6
 
-- [ ] Core: Add react-project support.
 - [ ] Core: Extend ufw support.
 - [ ] Core: Extend fail2ban support.
 - [ ] Core: Git deployment support.
@@ -107,17 +105,13 @@
 
 ## For release 4.0
 
-- [ ] Teleport support.
-- [ ] Uptime Kuma support: 
-        https://github.com/louislam/uptime-kuma
+- [ ] Tianji support.
 - [ ] WordPress: WP Network support (nginx config, and wp-cli commands).
-- [ ] Core: Accept command via Telegram: https://github.com/topkecleon/telegram-bot-bash
 - [ ] Nginx: bad bot blocker.
       https://github.com/mitchellkrogza/nginx-ultimate-bad-bot-blocker
 - [ ] Security: Option to auto-install security updates on Ubuntu: 
         https://help.ubuntu.com/lts/serverguide/automatic-updates.html
 - [ ] Woocommerce support: https://github.com/woocommerce/woocommerce/wiki/WC-CLI-Commands
-- [ ] Buddypress support: https://github.com/buddypress/wp-cli-buddypress
 - [ ] IT Utils: Control of mounted partitions or directories.
 - [ ] IT Utils: Better malware detection with https://github.com/rfxn/linux-malware-detect
 - [ ] Addon: Fileover support with hetzner? https://community.hetzner.com/tutorials/failover-script
