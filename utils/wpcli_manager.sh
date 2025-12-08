@@ -407,8 +407,6 @@ function wpcli_main_menu() {
 
     fi
 
-    fi
-
     prompt_return_or_finish
     wpcli_main_menu "${wp_site}" "${project_install_type}"
 
