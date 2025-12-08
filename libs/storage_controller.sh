@@ -753,13 +753,30 @@ function storage_test_connection() {
 
         display --indent 6 --text "- Testing Dropbox storage"
         log_event "info" "Testing Dropbox connection" "false"
+        log_event "debug" "Test file: ${test_file}, Remote path: ${remote_test_path}" "false"
 
         # Upload test file
-        if storage_upload "${test_file}" "${remote_test_path}" "" 2>/dev/null; then
+        local upload_output
+        upload_output=$(storage_upload "${test_file}" "${remote_test_path}" "" 2>&1)
+        local upload_status=$?
+
+        log_event "debug" "Upload command: storage_upload ${test_file} ${remote_test_path}" "false"
+        log_event "debug" "Upload exit code: ${upload_status}" "false"
+        [[ -n "${upload_output}" ]] && log_event "debug" "Upload output: ${upload_output}" "false"
+
+        if [[ ${upload_status} -eq 0 ]]; then
             log_event "info" "Successfully uploaded to Dropbox" "false"
 
             # Download test file
-            if storage_download "${remote_test_path}" "${download_file}" 2>/dev/null; then
+            local download_output
+            download_output=$(storage_download "${remote_test_path}" "${download_file}" 2>&1)
+            local download_status=$?
+
+            log_event "debug" "Download command: storage_download ${remote_test_path} ${download_file}" "false"
+            log_event "debug" "Download exit code: ${download_status}" "false"
+            [[ -n "${download_output}" ]] && log_event "debug" "Download output: ${download_output}" "false"
+
+            if [[ ${download_status} -eq 0 ]]; then
                 log_event "info" "Successfully downloaded from Dropbox" "false"
 
                 # Verify integrity
@@ -814,30 +831,69 @@ function storage_test_connection() {
             display --indent 6 --text "- Borg storage" --result "FAIL" --color RED
             display --indent 8 --text "borgmatic not installed" --tcolor RED
             log_event "error" "borgmatic command not found" "false"
+            log_event "debug" "Borg enabled in config but borgmatic command not available" "false"
             ((storage_failed++))
             overall_result=1
         else
             # Test borg connection using borgmatic info
-            local borg_config_dir="/etc/borgmatic.d"
-            local borg_test_passed=0
-            local borg_test_failed=0
+            # Try multiple possible config directories
+            local borg_config_dir=""
+            local possible_dirs=("/etc/borgmatic.d" "/etc/borgmatic" "${HOME}/.config/borgmatic" "/root/.config/borgmatic")
 
-            if [[ -d "${borg_config_dir}" ]]; then
-                for config_file in "${borg_config_dir}"/*.yaml; do
+            for dir in "${possible_dirs[@]}"; do
+                if [[ -d "${dir}" ]]; then
+                    borg_config_dir="${dir}"
+                    log_event "debug" "Found Borg config directory: ${borg_config_dir}" "false"
+                    break
+                fi
+            done
+
+            if [[ -z "${borg_config_dir}" ]]; then
+                clear_previous_lines "1"
+                display --indent 6 --text "- Borg storage" --result "FAIL" --color RED
+                display --indent 8 --text "Config directory not found" --tcolor RED
+                log_event "error" "Borg config directory not found in any standard location" "false"
+                log_event "debug" "Checked directories: ${possible_dirs[*]}" "false"
+                ((storage_failed++))
+                overall_result=1
+            else
+                local borg_test_passed=0
+                local borg_test_failed=0
+                local config_count=0
+
+                for config_file in "${borg_config_dir}"/*.yaml "${borg_config_dir}"/*.yml; do
                     if [[ -f "${config_file}" ]]; then
-                        config_name=$(basename "${config_file}" .yaml)
+                        ((config_count++))
+                        config_name=$(basename "${config_file}")
 
-                        if borgmatic info --config "${config_file}" &>/dev/null; then
+                        log_event "debug" "Testing Borg config: ${config_file}" "false"
+
+                        local borg_output
+                        borg_output=$(borgmatic info --config "${config_file}" 2>&1)
+                        local borg_status=$?
+
+                        log_event "debug" "Command: borgmatic info --config ${config_file}" "false"
+                        log_event "debug" "Exit code: ${borg_status}" "false"
+
+                        if [[ ${borg_status} -eq 0 ]]; then
                             ((borg_test_passed++))
                             log_event "info" "Borg repository '${config_name}' is accessible" "false"
                         else
                             ((borg_test_failed++))
                             log_event "warning" "Borg repository '${config_name}' is not accessible" "false"
+                            [[ -n "${borg_output}" ]] && log_event "debug" "Borg error output: ${borg_output}" "false"
                         fi
                     fi
                 done
 
-                if [[ ${borg_test_failed} -eq 0 && ${borg_test_passed} -gt 0 ]]; then
+                if [[ ${config_count} -eq 0 ]]; then
+                    clear_previous_lines "1"
+                    display --indent 6 --text "- Borg storage" --result "FAIL" --color RED
+                    display --indent 8 --text "No config files found" --tcolor RED
+                    log_event "error" "No Borg config files found in ${borg_config_dir}" "false"
+                    ((storage_failed++))
+                    overall_result=1
+                elif [[ ${borg_test_failed} -eq 0 && ${borg_test_passed} -gt 0 ]]; then
                     clear_previous_lines "1"
                     display --indent 6 --text "- Borg storage (${borg_test_passed} repos)" --result "PASS" --color GREEN
                     log_event "info" "All ${borg_test_passed} Borg repositories are accessible" "false"
@@ -853,17 +909,10 @@ function storage_test_connection() {
                     clear_previous_lines "1"
                     display --indent 6 --text "- Borg storage" --result "FAIL" --color RED
                     display --indent 8 --text "All repositories inaccessible" --tcolor RED
-                    log_event "error" "All Borg repositories are inaccessible" "false"
+                    log_event "error" "All ${config_count} Borg repositories are inaccessible" "false"
                     ((storage_failed++))
                     overall_result=1
                 fi
-            else
-                clear_previous_lines "1"
-                display --indent 6 --text "- Borg storage" --result "FAIL" --color RED
-                display --indent 8 --text "Config directory not found" --tcolor RED
-                log_event "error" "Borg config directory not found: ${borg_config_dir}" "false"
-                ((storage_failed++))
-                overall_result=1
             fi
         fi
     else
