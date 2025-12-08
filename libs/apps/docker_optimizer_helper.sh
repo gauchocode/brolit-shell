@@ -1260,6 +1260,45 @@ function docker_optimize_ram_usage() {
 }
 
 ################################################################################
+# Normalize memory value to include unit
+#
+# Arguments:
+#   ${1} = ${memory_value} (e.g., "128", "512m", "1g", "1024M")
+#
+# Outputs:
+#   Normalized memory value with unit (e.g., "128mb", "512m", "1g")
+################################################################################
+
+function normalize_memory_value() {
+
+  local value="${1}"
+
+  # Return empty if value is empty
+  [[ -z ${value} ]] && return 0
+
+  # If value already has a unit (m, M, g, G, k, K, b, B), return as-is
+  if [[ ${value} =~ ^[0-9]+[mMgGkKbB]$ ]] || [[ ${value} =~ ^[0-9]+\.[0-9]+[mMgGkKbB]$ ]]; then
+    echo "${value}"
+    return 0
+  fi
+
+  # If value is just a number, assume megabytes and add 'mb'
+  if [[ ${value} =~ ^[0-9]+$ ]]; then
+    echo "${value}mb"
+    return 0
+  fi
+
+  # If value has decimal but no unit, assume megabytes and add 'mb'
+  if [[ ${value} =~ ^[0-9]+\.[0-9]+$ ]]; then
+    echo "${value}mb"
+    return 0
+  fi
+
+  # Return original value if we can't parse it (will be validated later)
+  echo "${value}"
+}
+
+################################################################################
 # Get value from docker-compose.yml for a specific service and key
 #
 # Arguments:
@@ -1669,20 +1708,26 @@ function docker_manage_service_limits() {
   fi
 
   # Ask for mem_limit
-  new_mem_limit=$(whiptail --title "Set mem_limit for ${service_name}" --inputbox "Enter memory limit (e.g., 512m, 1g) or leave empty to remove:\n\nCurrent: ${current_mem_limit:-not set}" 12 78 "${current_mem_limit}" 3>&1 1>&2 2>&3)
+  new_mem_limit=$(whiptail --title "Set mem_limit for ${service_name}" --inputbox "Enter memory limit (number assumes MB, or use unit: 512m, 1g):\n\nExamples: 128 (=128mb), 512m, 1g, 2048mb\nLeave empty to remove\n\nCurrent: ${current_mem_limit:-not set}" 14 78 "${current_mem_limit}" 3>&1 1>&2 2>&3)
 
   if [[ $? -ne 0 ]]; then
     log_event "info" "User cancelled setting limits for ${service_name}" "false"
     return 0
   fi
+
+  # Normalize memory value (add 'mb' if just a number)
+  new_mem_limit="$(normalize_memory_value "${new_mem_limit}")"
 
   # Ask for mem_reservation
-  new_mem_reservation=$(whiptail --title "Set mem_reservation for ${service_name}" --inputbox "Enter memory reservation (e.g., 256m, 512m) or leave empty to remove:\n\nCurrent: ${current_mem_reservation:-not set}" 12 78 "${current_mem_reservation}" 3>&1 1>&2 2>&3)
+  new_mem_reservation=$(whiptail --title "Set mem_reservation for ${service_name}" --inputbox "Enter memory reservation (number assumes MB, or use unit: 256m, 512m):\n\nExamples: 64 (=64mb), 256m, 512mb\nLeave empty to remove\n\nCurrent: ${current_mem_reservation:-not set}" 14 78 "${current_mem_reservation}" 3>&1 1>&2 2>&3)
 
   if [[ $? -ne 0 ]]; then
     log_event "info" "User cancelled setting limits for ${service_name}" "false"
     return 0
   fi
+
+  # Normalize memory value (add 'mb' if just a number)
+  new_mem_reservation="$(normalize_memory_value "${new_mem_reservation}")"
 
   # Ask for cpus
   new_cpus=$(whiptail --title "Set CPUs for ${service_name}" --inputbox "Enter CPU limit (e.g., 1.5, 2.0) or leave empty to remove:\n\nCurrent: ${current_cpus:-not set}" 12 78 "${current_cpus}" 3>&1 1>&2 2>&3)
@@ -1692,7 +1737,26 @@ function docker_manage_service_limits() {
     return 0
   fi
 
-  log_event "debug" "User input: mem_limit=${new_mem_limit}, mem_reservation=${new_mem_reservation}, cpus=${new_cpus}" "false"
+  log_event "debug" "User input (normalized): mem_limit=${new_mem_limit}, mem_reservation=${new_mem_reservation}, cpus=${new_cpus}" "false"
+
+  # Show what will be applied
+  echo ""
+  display --indent 6 --text "- Values to Apply" --tcolor CYAN
+  if [[ -n ${new_mem_limit} ]]; then
+    display --indent 8 --text "mem_limit: ${new_mem_limit}" --tcolor WHITE
+  else
+    display --indent 8 --text "mem_limit: (will be removed)" --tcolor GRAY
+  fi
+  if [[ -n ${new_mem_reservation} ]]; then
+    display --indent 8 --text "mem_reservation: ${new_mem_reservation}" --tcolor WHITE
+  else
+    display --indent 8 --text "mem_reservation: (will be removed)" --tcolor GRAY
+  fi
+  if [[ -n ${new_cpus} ]]; then
+    display --indent 8 --text "cpus: ${new_cpus}" --tcolor WHITE
+  else
+    display --indent 8 --text "cpus: (will be removed)" --tcolor GRAY
+  fi
 
   # Backup docker-compose.yml
   cp "${compose_file}" "${compose_file}.bak.$(date +%Y%m%d_%H%M%S)"
