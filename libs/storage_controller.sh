@@ -726,8 +726,14 @@ function storage_test_connection() {
 
     local test_file="${BROLIT_TMP_DIR}/storage_test_${NOW}.txt"
     local remote_test_path="/${SERVER_NAME}/tests/connection_test_${NOW}.txt"
+    local download_file="${BROLIT_TMP_DIR}/storage_test_download_${NOW}.txt"
 
-    log_subsection "Testing Storage Connection"
+    local storage_tested=0
+    local storage_passed=0
+    local storage_failed=0
+    local overall_result=0
+
+    log_subsection "Testing Backup Storage Connections"
 
     # Create test file
     echo "BROLIT Storage Connection Test - ${NOW}" > "${test_file}"
@@ -741,61 +747,154 @@ function storage_test_connection() {
     clear_previous_lines "1"
     display --indent 6 --text "- Create test file" --result "DONE" --color GREEN
 
-    # Upload test file
-    display --indent 6 --text "- Uploading test file to storage"
-    if storage_upload "${test_file}" "${remote_test_path}" ""; then
-        clear_previous_lines "1"
-        display --indent 6 --text "- Upload test file" --result "DONE" --color GREEN
-        log_event "info" "Successfully uploaded test file to storage" "false"
+    # Test primary storage (Dropbox/S3/FTP)
+    if [[ -n "${BACKUP_SERVER_TYPE}" && "${BACKUP_SERVER_TYPE}" != "disabled" ]]; then
+        ((storage_tested++))
+
+        display --indent 6 --text "- Testing ${BACKUP_SERVER_TYPE} storage"
+        log_event "info" "Testing ${BACKUP_SERVER_TYPE} connection" "false"
+
+        # Upload test file
+        if storage_upload "${test_file}" "${remote_test_path}" "" 2>/dev/null; then
+            log_event "info" "Successfully uploaded to ${BACKUP_SERVER_TYPE}" "false"
+
+            # Download test file
+            if storage_download "${remote_test_path}" "${download_file}" 2>/dev/null; then
+                log_event "info" "Successfully downloaded from ${BACKUP_SERVER_TYPE}" "false"
+
+                # Verify integrity
+                if diff "${test_file}" "${download_file}" &>/dev/null; then
+                    clear_previous_lines "1"
+                    display --indent 6 --text "- ${BACKUP_SERVER_TYPE} storage" --result "PASS" --color GREEN
+                    log_event "info" "${BACKUP_SERVER_TYPE} connection test passed" "false"
+                    ((storage_passed++))
+
+                    # Cleanup
+                    storage_delete "${remote_test_path}" 2>/dev/null
+                    rm -f "${download_file}"
+                else
+                    clear_previous_lines "1"
+                    display --indent 6 --text "- ${BACKUP_SERVER_TYPE} storage" --result "FAIL" --color RED
+                    display --indent 8 --text "File integrity check failed" --tcolor RED
+                    log_event "error" "${BACKUP_SERVER_TYPE}: File integrity check failed" "false"
+                    ((storage_failed++))
+                    overall_result=1
+                fi
+            else
+                clear_previous_lines "1"
+                display --indent 6 --text "- ${BACKUP_SERVER_TYPE} storage" --result "FAIL" --color RED
+                display --indent 8 --text "Download failed" --tcolor RED
+                log_event "error" "${BACKUP_SERVER_TYPE}: Download test failed" "false"
+                ((storage_failed++))
+                overall_result=1
+            fi
+        else
+            clear_previous_lines "1"
+            display --indent 6 --text "- ${BACKUP_SERVER_TYPE} storage" --result "FAIL" --color RED
+            display --indent 8 --text "Upload failed" --tcolor RED
+            log_event "error" "${BACKUP_SERVER_TYPE}: Upload test failed" "false"
+            ((storage_failed++))
+            overall_result=1
+        fi
     else
-        clear_previous_lines "1"
-        display --indent 6 --text "- Upload test file" --result "FAIL" --color RED
-        log_event "error" "Failed to upload test file to storage" "false"
-        rm -f "${test_file}"
-        return 1
+        display --indent 6 --text "- Primary storage (Dropbox/S3/FTP)" --result "DISABLED" --color YELLOW
+        log_event "info" "Primary storage is disabled, skipping test" "false"
     fi
 
-    # Download test file
-    local download_file="${BROLIT_TMP_DIR}/storage_test_download_${NOW}.txt"
-    display --indent 6 --text "- Downloading test file from storage"
-    if storage_download "${remote_test_path}" "${download_file}"; then
-        clear_previous_lines "1"
-        display --indent 6 --text "- Download test file" --result "DONE" --color GREEN
-        log_event "info" "Successfully downloaded test file from storage" "false"
+    # Test Borg storage
+    if [[ "${BACKUP_BORG_STATUS}" == "enabled" ]]; then
+        ((storage_tested++))
+
+        display --indent 6 --text "- Testing Borg backup storage"
+        log_event "info" "Testing Borg connection" "false"
+
+        # Check if borgmatic is installed
+        if ! command -v borgmatic &> /dev/null; then
+            clear_previous_lines "1"
+            display --indent 6 --text "- Borg storage" --result "FAIL" --color RED
+            display --indent 8 --text "borgmatic not installed" --tcolor RED
+            log_event "error" "borgmatic command not found" "false"
+            ((storage_failed++))
+            overall_result=1
+        else
+            # Test borg connection using borgmatic info
+            local borg_config_dir="/etc/borgmatic.d"
+            local borg_test_passed=0
+            local borg_test_failed=0
+
+            if [[ -d "${borg_config_dir}" ]]; then
+                for config_file in "${borg_config_dir}"/*.yaml; do
+                    if [[ -f "${config_file}" ]]; then
+                        config_name=$(basename "${config_file}" .yaml)
+
+                        if borgmatic info --config "${config_file}" &>/dev/null; then
+                            ((borg_test_passed++))
+                            log_event "info" "Borg repository '${config_name}' is accessible" "false"
+                        else
+                            ((borg_test_failed++))
+                            log_event "warning" "Borg repository '${config_name}' is not accessible" "false"
+                        fi
+                    fi
+                done
+
+                if [[ ${borg_test_failed} -eq 0 && ${borg_test_passed} -gt 0 ]]; then
+                    clear_previous_lines "1"
+                    display --indent 6 --text "- Borg storage (${borg_test_passed} repos)" --result "PASS" --color GREEN
+                    log_event "info" "All ${borg_test_passed} Borg repositories are accessible" "false"
+                    ((storage_passed++))
+                elif [[ ${borg_test_passed} -gt 0 ]]; then
+                    clear_previous_lines "1"
+                    display --indent 6 --text "- Borg storage" --result "WARNING" --color YELLOW
+                    display --indent 8 --text "Accessible: ${borg_test_passed}, Failed: ${borg_test_failed}" --tcolor YELLOW
+                    log_event "warning" "Some Borg repositories failed: ${borg_test_passed} OK, ${borg_test_failed} failed" "false"
+                    ((storage_passed++))
+                    overall_result=1
+                else
+                    clear_previous_lines "1"
+                    display --indent 6 --text "- Borg storage" --result "FAIL" --color RED
+                    display --indent 8 --text "All repositories inaccessible" --tcolor RED
+                    log_event "error" "All Borg repositories are inaccessible" "false"
+                    ((storage_failed++))
+                    overall_result=1
+                fi
+            else
+                clear_previous_lines "1"
+                display --indent 6 --text "- Borg storage" --result "FAIL" --color RED
+                display --indent 8 --text "Config directory not found" --tcolor RED
+                log_event "error" "Borg config directory not found: ${borg_config_dir}" "false"
+                ((storage_failed++))
+                overall_result=1
+            fi
+        fi
     else
-        clear_previous_lines "1"
-        display --indent 6 --text "- Download test file" --result "FAIL" --color RED
-        log_event "error" "Failed to download test file from storage" "false"
-        rm -f "${test_file}"
-        return 1
+        display --indent 6 --text "- Borg backup storage" --result "DISABLED" --color YELLOW
+        log_event "info" "Borg backup is disabled, skipping test" "false"
     fi
 
-    # Verify file integrity
-    display --indent 6 --text "- Verifying file integrity"
-    if diff "${test_file}" "${download_file}" &>/dev/null; then
-        clear_previous_lines "1"
-        display --indent 6 --text "- Verify integrity" --result "PASS" --color GREEN
-        log_event "info" "File integrity verified successfully" "false"
-    else
-        clear_previous_lines "1"
-        display --indent 6 --text "- Verify integrity" --result "FAIL" --color RED
-        log_event "error" "File integrity check failed" "false"
-        rm -f "${test_file}" "${download_file}"
-        return 1
-    fi
-
-    # Delete test file from storage
-    display --indent 6 --text "- Cleaning up test files"
-    storage_delete "${remote_test_path}"
+    # Cleanup
     rm -f "${test_file}" "${download_file}"
-    clear_previous_lines "1"
-    display --indent 6 --text "- Cleanup test files" --result "DONE" --color GREEN
 
     # Summary
-    display --indent 6 --text "- Storage connection test" --result "PASS" --color GREEN
-    log_event "info" "Storage connection test completed successfully" "false"
+    echo ""
+    display --indent 6 --text "- Connection Test Summary"
+    display --indent 8 --text "Tested: ${storage_tested}" --tcolor WHITE
+    display --indent 8 --text "Passed: ${storage_passed}" --tcolor GREEN
+    display --indent 8 --text "Failed: ${storage_failed}" --tcolor RED
 
-    return 0
+    if [[ ${storage_tested} -eq 0 ]]; then
+        display --indent 6 --text "- Overall result" --result "WARNING" --color YELLOW
+        display --indent 8 --text "No backup storage configured" --tcolor YELLOW
+        log_event "warning" "No backup storage is configured" "false"
+        return 1
+    elif [[ ${overall_result} -eq 0 ]]; then
+        display --indent 6 --text "- Overall result" --result "PASS" --color GREEN
+        log_event "info" "All backup storage connections passed" "false"
+        return 0
+    else
+        display --indent 6 --text "- Overall result" --result "FAIL" --color RED
+        log_event "error" "Some backup storage connections failed" "false"
+        return 1
+    fi
 
 }
 
