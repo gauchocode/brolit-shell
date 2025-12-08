@@ -130,7 +130,6 @@ function project_manager_menu() {
     "05)" "PUT PROJECT ONLINE"
     "06)" "PUT PROJECT OFFLINE"
     "07)" "DELETE PROJECT"
-    "08)" "DELETE PROJECT DOCKER"
   )
 
   chosen_project_manager_option="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_manager_options[@]}" 3>&1 1>&2 2>&3)"
@@ -228,37 +227,9 @@ function project_manager_menu() {
       project_manager_menu
     fi
 
-    # DELETE PROJECT
+    # DELETE PROJECT (handles both standard and Docker projects)
     if [[ ${chosen_project_manager_option} == *"07"* ]]; then
       project_delete "" ""
-      prompt_return_or_finish
-      project_manager_menu
-    fi
-
-    # DELETE PROJECT DOCKER
-    if [[ ${chosen_project_manager_option} == *"08"* ]]; then
-      log_section "Project Delete"
-      log_subsection "Selecting Project to Delete"
-
-      menu_title="PROJECT TO DELETE"
-      directory_browser "${menu_title}" "${PROJECTS_PATH}"
-      if [[ -z "${filepath}" || -z "${filename}" ]]; then
-        log_event "info" "Operation cancelled!" "false"
-        display --indent 6 --text "- Selecting project to delete" --result "SKIPPED" --color YELLOW
-        project_manager_menu
-        return 1
-      fi
-
-      project_domain="${filename%/}"
-      log_event "info" "Selected project: ${project_domain}" "false"
-
-      if [[ -d "${PROJECTS_PATH}/${project_domain}" && -f "${PROJECTS_PATH}/${project_domain}/docker-compose.yml" ]]; then
-        delete_docker_project "${project_domain}"
-      else
-        log_event "error" "The selected project is not a Docker project." "true"
-        display --indent 6 --text "- Project is not Docker" --result "FAIL" --color RED
-      fi
-
       prompt_return_or_finish
       project_manager_menu
     fi
