@@ -131,30 +131,36 @@ function wpcli_main_menu() {
   local wp_del_themes
 
   wpcli_options=(
-    "01)" "INSTALL PLUGINS"
-    "02)" "LIST INSTALLED PLUGINS"
-    "03)" "DELETE PLUGINS"
-    "04)" "REINSTALL ALL PLUGINS"
-    "05)" "VERIFY WP"
-    "06)" "UPDATE WP"
-    "07)" "REINSTALL WP"
-    "08)" "CLEAN WP DB"
-    "09)" "PROFILE WP"
-    "10)" "CHANGE TABLES PREFIX"
-    "11)" "REPLACE URLs"
-    "12)" "SEOYOAST RE-INDEX"
-    "13)" "DELETE NOT CORE FILES"
-    "14)" "LIST WP USERS"
-    "15)" "CREATE WP USER"
-    "16)" "DELETE WP USER"
-    "17)" "RESET WP USER PASSW"
-    "18)" "SHUFFLE SALTS"
-    "19)" "DELETE SPAM COMMENTS"
+    # WP CORE
+    "01)" "VERIFY WP"
+    "02)" "UPDATE WP"
+    "03)" "REINSTALL WP"
+    "04)" "DELETE NOT CORE FILES"
+    # PLUGINS
+    "05)" "INSTALL PLUGINS"
+    "06)" "LIST INSTALLED PLUGINS"
+    "07)" "DELETE PLUGINS"
+    "08)" "REINSTALL ALL PLUGINS"
+    # USERS
+    "09)" "LIST WP USERS"
+    "10)" "CREATE WP USER"
+    "11)" "DELETE WP USER"
+    "12)" "RESET WP USER PASSW"
+    # DATABASE
+    "13)" "CLEAN WP DB"
+    "14)" "CHANGE TABLES PREFIX"
+    "15)" "DELETE SPAM COMMENTS"
+    "16)" "SCAN DATABASE FOR MALWARE"
+    # MAINTENANCE & OPTIMIZATION
+    "17)" "REPLACE URLs"
+    "18)" "SEOYOAST RE-INDEX"
+    "19)" "SHUFFLE SALTS"
     "20)" "SET MAINTENANCE MODE"
-    "21)" "CREATE APP-PASS"
-    "22)" "LIST APP-PASS"
-    "23)" "DELETE APP-PASS"
-    "24)" "SCAN DATABASE FOR MALWARE"
+    "21)" "PROFILE WP"
+    # SECURITY (APP PASSWORDS)
+    "22)" "CREATE APP-PASS"
+    "23)" "LIST APP-PASS"
+    "24)" "DELETE APP-PASS"
   )
 
   chosen_wpcli_options="$(whiptail --title "WP-CLI HELPER" --menu "Choose an option to run" 20 78 10 "${wpcli_options[@]}" 3>&1 1>&2 2>&3)"
@@ -162,23 +168,8 @@ function wpcli_main_menu() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    # INSTALL PLUGINS
-    [[ ${chosen_wpcli_options} == *"01"* ]] && wpcli_default_plugins_installer "${wp_site}" "${project_install_type}"
-
-    # LIST INSTALLED PLUGINS
-    [[ ${chosen_wpcli_options} == *"02"* ]] && wpcli_plugin_list "${wp_site}" "${project_install_type}" "" ""
-
-    # DELETE THEMES
-    #[[ ${chosen_wpcli_options} == *"02"* ]] && wpcli_delete_themes_menu "${wp_site}" "${project_install_type}"
-
-    # DELETE_PLUGINS
-    [[ ${chosen_wpcli_options} == *"03"* ]] && wpcli_delete_plugins_menu "${wp_site}" "${project_install_type}"
-
-    # RE-INSTALL_PLUGINS
-    [[ ${chosen_wpcli_options} == *"04"* ]] && wpcli_plugin_reinstall "${wp_site}" "${project_install_type}" "all"
-
-    # VERIFY_WP
-    if [[ ${chosen_wpcli_options} == *"05"* ]]; then
+    # WP CORE - VERIFY WP
+    if [[ ${chosen_wpcli_options} == *"01"* ]]; then
 
       log_subsection "WP Verify"
 
@@ -187,11 +178,11 @@ function wpcli_main_menu() {
 
     fi
 
-    # UPDATE_WP
-    [[ ${chosen_wpcli_options} == *"06"* ]] && wpcli_core_update "${wp_site}" "${project_install_type}"
+    # WP CORE - UPDATE WP
+    [[ ${chosen_wpcli_options} == *"02"* ]] && wpcli_core_update "${wp_site}" "${project_install_type}"
 
-    # REINSTALL_WP
-    if [[ ${chosen_wpcli_options} == *"07"* ]]; then
+    # WP CORE - REINSTALL WP
+    if [[ ${chosen_wpcli_options} == *"03"* ]]; then
 
       log_subsection "WP Core Re-install"
 
@@ -201,33 +192,8 @@ function wpcli_main_menu() {
 
     fi
 
-    # CLEAN_DB
-    [[ ${chosen_wpcli_options} == *"08"* ]] && wpcli_clean_database "${wp_site}" "${project_install_type}"
-
-    # PROFILE_WP
-    [[ ${chosen_wpcli_options} == *"09"* ]] && wpcli_profiler_menu "${wp_site}" "${project_install_type}"
-
-    # CHANGE_TABLES_PREFIX
-    if [[ ${chosen_wpcli_options} == *"10"* ]]; then
-
-      log_subsection "WP Change Tables Prefix"
-
-      # Generate WP tables PREFIX
-      TABLES_PREFIX="$(cat /dev/urandom | tr -dc 'a-z' | fold -w 3 | head -n 1)"
-
-      # Change WP tables PREFIX
-      wpcli_db_change_tables_prefix "${wp_site}" "${project_install_type}" "${TABLES_PREFIX}"
-
-    fi
-
-    # REPLACE_URLs
-    [[ ${chosen_wpcli_options} == *"11"* ]] && wp_ask_url_search_and_replace "${wp_site}" "${project_install_type}"
-
-    # SEOYOAST_REINDEX
-    [[ ${chosen_wpcli_options} == *"12"* ]] && wpcli_seoyoast_reindex "${wp_site}" "${project_install_type}"
-
-    # DELETE_NOT_CORE_FILES
-    if [[ ${chosen_wpcli_options} == *"13"* ]]; then
+    # WP CORE - DELETE NOT CORE FILES
+    if [[ ${chosen_wpcli_options} == *"04"* ]]; then
 
       log_subsection "WP Delete not-core files"
 
@@ -244,8 +210,20 @@ function wpcli_main_menu() {
 
     fi
 
-    # LIST WP USERS
-    if [[ ${chosen_wpcli_options} == *"14"* ]]; then
+    # PLUGINS - INSTALL PLUGINS
+    [[ ${chosen_wpcli_options} == *"05"* ]] && wpcli_default_plugins_installer "${wp_site}" "${project_install_type}"
+
+    # PLUGINS - LIST INSTALLED PLUGINS
+    [[ ${chosen_wpcli_options} == *"06"* ]] && wpcli_plugin_list "${wp_site}" "${project_install_type}" "" ""
+
+    # PLUGINS - DELETE PLUGINS
+    [[ ${chosen_wpcli_options} == *"07"* ]] && wpcli_delete_plugins_menu "${wp_site}" "${project_install_type}"
+
+    # PLUGINS - REINSTALL ALL PLUGINS
+    [[ ${chosen_wpcli_options} == *"08"* ]] && wpcli_plugin_reinstall "${wp_site}" "${project_install_type}" "all"
+
+    # USERS - LIST WP USERS
+    if [[ ${chosen_wpcli_options} == *"09"* ]]; then
 
       log_subsection "WP List Users"
 
@@ -258,8 +236,8 @@ function wpcli_main_menu() {
 
     fi
 
-    # CREATE WP USER
-    if [[ ${chosen_wpcli_options} == *"15"* ]]; then
+    # USERS - CREATE WP USER
+    if [[ ${chosen_wpcli_options} == *"10"* ]]; then
 
       log_subsection "WP Create User"
 
@@ -279,8 +257,8 @@ function wpcli_main_menu() {
 
     fi
 
-    # DELETE WP USER
-    if [[ ${chosen_wpcli_options} == *"16"* ]]; then
+    # USERS - DELETE WP USER
+    if [[ ${chosen_wpcli_options} == *"11"* ]]; then
 
       log_subsection "WP Delete User"
 
@@ -296,8 +274,8 @@ function wpcli_main_menu() {
 
     fi
 
-    # RESET WP USER PASSW
-    if [[ ${chosen_wpcli_options} == *"17"* ]]; then
+    # USERS - RESET WP USER PASSW
+    if [[ ${chosen_wpcli_options} == *"12"* ]]; then
 
       log_subsection "WP Reset User Pass"
 
@@ -313,17 +291,24 @@ function wpcli_main_menu() {
 
     fi
 
-    # SHUFLE SALTS
-    if [[ ${chosen_wpcli_options} == *"18"* ]]; then
+    # DATABASE - CLEAN WP DB
+    [[ ${chosen_wpcli_options} == *"13"* ]] && wpcli_clean_database "${wp_site}" "${project_install_type}"
 
-      log_subsection "WP Shuffle Salts"
+    # DATABASE - CHANGE TABLES PREFIX
+    if [[ ${chosen_wpcli_options} == *"14"* ]]; then
 
-      wpcli_shuffle_salts "${wp_site}" "${project_install_type}"
+      log_subsection "WP Change Tables Prefix"
+
+      # Generate WP tables PREFIX
+      TABLES_PREFIX="$(cat /dev/urandom | tr -dc 'a-z' | fold -w 3 | head -n 1)"
+
+      # Change WP tables PREFIX
+      wpcli_db_change_tables_prefix "${wp_site}" "${project_install_type}" "${TABLES_PREFIX}"
 
     fi
 
-    # DELETE SPAM COMMENTS
-    if [[ ${chosen_wpcli_options} == *"19"* ]]; then
+    # DATABASE - DELETE SPAM COMMENTS
+    if [[ ${chosen_wpcli_options} == *"15"* ]]; then
 
       log_subsection "WP Delete Spam Comments"
 
@@ -332,6 +317,31 @@ function wpcli_main_menu() {
 
     fi
 
+    # DATABASE - SCAN DATABASE FOR MALWARE
+    if [[ ${chosen_wpcli_options} == *"16"* ]]; then
+
+      log_subsection "WP Scan Database for Malware"
+
+      wpcli_wordpress_malware_scan "${wp_site}" "${project_install_type}"
+
+    fi
+
+    # MAINTENANCE - REPLACE URLs
+    [[ ${chosen_wpcli_options} == *"17"* ]] && wp_ask_url_search_and_replace "${wp_site}" "${project_install_type}"
+
+    # MAINTENANCE - SEOYOAST REINDEX
+    [[ ${chosen_wpcli_options} == *"18"* ]] && wpcli_seoyoast_reindex "${wp_site}" "${project_install_type}"
+
+    # MAINTENANCE - SHUFFLE SALTS
+    if [[ ${chosen_wpcli_options} == *"19"* ]]; then
+
+      log_subsection "WP Shuffle Salts"
+
+      wpcli_shuffle_salts "${wp_site}" "${project_install_type}"
+
+    fi
+
+    # MAINTENANCE - SET MAINTENANCE MODE
     if [[ ${chosen_wpcli_options} == *"20"* ]]; then
 
       choosen_mode="$(whiptail --title "WORDPRESS MAINTENANCE MODE" --inputbox "Set new maintenance mode ('activate', 'deactivate')" 10 60 "" 3>&1 1>&2 2>&3)"
@@ -340,8 +350,11 @@ function wpcli_main_menu() {
 
     fi
 
-    # CREATE APP-PASS
-    if [[ ${chosen_wpcli_options} == *"21"* ]]; then
+    # MAINTENANCE - PROFILE WP
+    [[ ${chosen_wpcli_options} == *"21"* ]] && wpcli_profiler_menu "${wp_site}" "${project_install_type}"
+
+    # SECURITY - CREATE APP-PASS
+    if [[ ${chosen_wpcli_options} == *"22"* ]]; then
 
       log_subsection "WP Create Application Password"
 
@@ -361,8 +374,8 @@ function wpcli_main_menu() {
 
     fi
 
-    # LIST APP-PASS
-    if [[ ${chosen_wpcli_options} == *"22"* ]]; then
+    # SECURITY - LIST APP-PASS
+    if [[ ${chosen_wpcli_options} == *"23"* ]]; then
 
       log_subsection "WP List Application Passwords"
 
@@ -375,8 +388,8 @@ function wpcli_main_menu() {
 
     fi
 
-    # DELETE APP-PASS
-    if [[ ${chosen_wpcli_options} == *"23"* ]]; then
+    # SECURITY - DELETE APP-PASS
+    if [[ ${chosen_wpcli_options} == *"24"* ]]; then
 
       log_subsection "WP Delete Application Password"
 
@@ -393,13 +406,6 @@ function wpcli_main_menu() {
       fi
 
     fi
-
-    # SCAN DATABASE FOR MALWARE
-    if [[ ${chosen_wpcli_options} == *"24"* ]]; then
-
-      log_subsection "WP Scan Database for Malware"
-
-      wpcli_wordpress_malware_scan "${wp_site}" "${project_install_type}"
 
     fi
 
