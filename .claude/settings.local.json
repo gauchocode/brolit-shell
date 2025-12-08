@@ -10,7 +10,9 @@
       "Bash(./TEST_NOTIFICATION_TYPES.sh:*)",
       "Bash(find:*)",
       "Bash(cat:*)",
-      "Bash(command -v yq:*)"
+      "Bash(command -v yq:*)",
+      "Bash(command -v:*)",
+      "Bash(borgmatic:*)"
     ],
     "deny": [],
     "ask": []
