@@ -2611,11 +2611,33 @@ function project_delete() {
   [[ -z ${project_type} ]] && project_type="$(project_ask_type)"
   [[ -z ${project_install_type} ]] && project_install_type="default"
 
-  if [[ -n ${project_db_engine} && ${project_install_type} == "default" ]]; then
-    # Delete Database
-    project_delete_database "${project_db_name}" "${project_db_user}" "${project_db_engine}" "${project_install_type}"
+  # Delete Database (both for Docker and standard installations)
+  if [[ -n ${project_db_engine} && -n ${project_db_name} ]]; then
+    if [[ ${project_install_type} == "docker"* ]]; then
+      # For Docker projects, get container name and handle database deletion
+      if [[ -f "${PROJECTS_PATH}/${project_domain}/.env" ]]; then
+        export $(grep -v '^#' "${PROJECTS_PATH}/${project_domain}/.env" | xargs)
+        container_name="${PROJECT_NAME}_mysql"
+
+        # Moving deleted project database backups to offline directory
+        storage_create_dir "/${SERVER_NAME}/projects-offline"
+        storage_create_dir "/${SERVER_NAME}/projects-offline/database"
+        storage_move "/${SERVER_NAME}/projects-online/database/${project_db_name}" "/${SERVER_NAME}/projects-offline/database"
+
+        # Delete database from Docker container
+        database_drop "${project_db_name}" "${project_db_engine}" "${container_name}"
+
+        # Send notification
+        send_notification "${SERVER_NAME}" "Project database '${project_db_name}' deleted!" "info"
+      else
+        log_event "warning" ".env file not found for Docker project. Skipping database deletion." "false"
+      fi
+    else
+      # For standard installations
+      project_delete_database "${project_db_name}" "${project_db_user}" "${project_db_engine}" "${project_install_type}"
+    fi
   else
-    log_event "warning" "Can not determine database engine." "false"
+    log_event "warning" "Can not determine database engine or database name. Skipping database deletion." "false"
   fi
 
   # TODO: backup project config file, maybe inside /site ?
@@ -2636,6 +2658,9 @@ function project_delete() {
 ################################################################################
 # Delete Docker Project (files, database, config, certs)
 #
+# @deprecated This function is deprecated. Use project_delete() instead, which
+#             now handles both standard and Docker projects automatically.
+#
 # Arguments:
 #  ${1} = ${project_domain}
 #
@@ -2647,109 +2672,11 @@ function delete_docker_project() {
 
   local project_domain="${1}"
 
-  # Make database backup
-  backup_docker_project "${project_domain}" "all"
+  log_event "warning" "delete_docker_project() is deprecated. Use project_delete() instead." "false"
 
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
-
-    # Extrae los datos del .env del proyecto
-    if [[ -f "${PROJECTS_PATH}/${project_domain}/.env" ]]; then
-      export $(grep -v '^#' "${PROJECTS_PATH}/${project_domain}/.env" | xargs)
-      db_name="${MYSQL_DATABASE}"
-      container_name="${PROJECT_NAME}_mysql"
-      db_engine="mysql"
-    else
-      echo "Error: .env file not found in ${PROJECTS_PATH}/${project_domain}/."
-      return 1
-    fi
-
-    # Moving deleted project backups to another directory
-    storage_create_dir "/${SERVER_NAME}/projects-offline"
-    storage_create_dir "/${SERVER_NAME}/projects-offline/database"
-    storage_move "/${SERVER_NAME}/projects-online/database/${db_name}" "/${SERVER_NAME}/projects-offline/database"
-
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
-
-      # Delete project database
-      database_drop "${db_name}" "${db_engine}" "${container_name}"
-
-      # Send notification
-      send_notification "${SERVER_NAME}" "Project database'${db_name}' deleted!" "info"
-
-    fi
-
-  else
-
-    # TODO: better error handling
-    log_event "error" "${backup_project_database_output}" "false"
-
-  fi
-
-  # Delete Files
-  project_delete_files "${project_domain}"
-  if [[ $? -eq 1 ]]; then
-
-    # Log
-    display --indent 6 --text "- Deleting project files" --result "FAIL" --color RED
-    display --indent 8 --text "Please read the log file for more information:" --tcolor YELLOW
-    display --indent 8 --text "${BROLIT_LOG_FILE}" --tcolor YELLOW
-    log_event "error" "Project files deletion failed." "false"
-
-    return 1
-  
-  fi
-
-  # Delete nginx configuration file
-  nginx_server_delete "${project_domain}"
-
-  # Delete certificates
-  certbot_certificate_delete "${project_domain}"
-
-    if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
-
-      project_root_domain="$(domain_get_root "${project_domain}")"
-      project_actual_ip="$(cloudflare_get_record_details "${project_root_domain}" "${project_domain}" "content")"
-
-      if [[ ${project_actual_ip} == "${SERVER_IP}" ]]; then
-
-        if [[ ${delete_cf_entry} != "true" ]]; then
-
-          # Cloudflare Manager
-          project_domain="$(whiptail --title "CLOUDFLARE MANAGER" --inputbox "Do you want to delete the Cloudflare entries for the followings subdomains?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)"
-          exitstatus=$?
-          if [[ ${exitstatus} -eq 0 ]]; then
-
-            # Delete Cloudflare entries
-            cloudflare_delete_record "${project_root_domain}" "${project_domain}" "A"
-
-          else
-
-            # Log
-            log_event "info" "Cloudflare entries not deleted. Skipped by user." "false"
-            display --indent 6 --text "- Deleting Cloudflare entries" --result "SKIPPED" --color YELLOW
-
-          fi
-
-        else
-
-          # Delete Cloudflare entries
-          project_root_domain="$(domain_get_root "${project_domain}")"
-          cloudflare_delete_record "${project_root_domain}" "${project_domain}" "A"
-
-        fi
-
-      else
-
-        # Log
-        log_event "info" "Cloudflare entries not deleted. The Cloudflare entry's IP address differs from the server's IP address." "false"
-        display --indent 6 --text "- Deleting Cloudflare entries" --result "SKIPPED" --color YELLOW
-        display --indent 8 --text "The Cloudflare entry's IP address differs from the server's IP address." --tcolor YELLOW
-
-      fi
-
-    fi
+  # Redirect to unified project_delete function
+  project_delete "${project_domain}" ""
+  return $?
 
 }
 
