@@ -2674,7 +2674,7 @@ function wpcli_user_delete() {
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Log success
-        clear_previous_lines "1"
+        #clear_previous_lines "1"
         display --indent 6 --text "- User ${wp_user} deleted" --result "DONE" --color GREEN
         log_event "info" "User ${wp_user} deleted from site ${wp_site}" "false"
 
@@ -2683,7 +2683,7 @@ function wpcli_user_delete() {
     else
 
         # Log failure
-        clear_previous_lines "1"
+        #clear_previous_lines "1"
         display --indent 6 --text "- User ${wp_user} deleted" --result "FAIL" --color RED
         log_event "error" "Failed to delete user ${wp_user} from site ${wp_site}" "false"
 
