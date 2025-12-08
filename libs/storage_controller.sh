@@ -747,26 +747,26 @@ function storage_test_connection() {
     clear_previous_lines "1"
     display --indent 6 --text "- Create test file" --result "DONE" --color GREEN
 
-    # Test primary storage (Dropbox/S3/FTP)
-    if [[ -n "${BACKUP_SERVER_TYPE}" && "${BACKUP_SERVER_TYPE}" != "disabled" ]]; then
+    # Test Dropbox storage
+    if [[ "${BACKUP_DROPBOX_STATUS}" == "enabled" ]]; then
         ((storage_tested++))
 
-        display --indent 6 --text "- Testing ${BACKUP_SERVER_TYPE} storage"
-        log_event "info" "Testing ${BACKUP_SERVER_TYPE} connection" "false"
+        display --indent 6 --text "- Testing Dropbox storage"
+        log_event "info" "Testing Dropbox connection" "false"
 
         # Upload test file
         if storage_upload "${test_file}" "${remote_test_path}" "" 2>/dev/null; then
-            log_event "info" "Successfully uploaded to ${BACKUP_SERVER_TYPE}" "false"
+            log_event "info" "Successfully uploaded to Dropbox" "false"
 
             # Download test file
             if storage_download "${remote_test_path}" "${download_file}" 2>/dev/null; then
-                log_event "info" "Successfully downloaded from ${BACKUP_SERVER_TYPE}" "false"
+                log_event "info" "Successfully downloaded from Dropbox" "false"
 
                 # Verify integrity
                 if diff "${test_file}" "${download_file}" &>/dev/null; then
                     clear_previous_lines "1"
-                    display --indent 6 --text "- ${BACKUP_SERVER_TYPE} storage" --result "PASS" --color GREEN
-                    log_event "info" "${BACKUP_SERVER_TYPE} connection test passed" "false"
+                    display --indent 6 --text "- Dropbox storage" --result "PASS" --color GREEN
+                    log_event "info" "Dropbox connection test passed" "false"
                     ((storage_passed++))
 
                     # Cleanup
@@ -774,31 +774,31 @@ function storage_test_connection() {
                     rm -f "${download_file}"
                 else
                     clear_previous_lines "1"
-                    display --indent 6 --text "- ${BACKUP_SERVER_TYPE} storage" --result "FAIL" --color RED
+                    display --indent 6 --text "- Dropbox storage" --result "FAIL" --color RED
                     display --indent 8 --text "File integrity check failed" --tcolor RED
-                    log_event "error" "${BACKUP_SERVER_TYPE}: File integrity check failed" "false"
+                    log_event "error" "Dropbox: File integrity check failed" "false"
                     ((storage_failed++))
                     overall_result=1
                 fi
             else
                 clear_previous_lines "1"
-                display --indent 6 --text "- ${BACKUP_SERVER_TYPE} storage" --result "FAIL" --color RED
+                display --indent 6 --text "- Dropbox storage" --result "FAIL" --color RED
                 display --indent 8 --text "Download failed" --tcolor RED
-                log_event "error" "${BACKUP_SERVER_TYPE}: Download test failed" "false"
+                log_event "error" "Dropbox: Download test failed" "false"
                 ((storage_failed++))
                 overall_result=1
             fi
         else
             clear_previous_lines "1"
-            display --indent 6 --text "- ${BACKUP_SERVER_TYPE} storage" --result "FAIL" --color RED
+            display --indent 6 --text "- Dropbox storage" --result "FAIL" --color RED
             display --indent 8 --text "Upload failed" --tcolor RED
-            log_event "error" "${BACKUP_SERVER_TYPE}: Upload test failed" "false"
+            log_event "error" "Dropbox: Upload test failed" "false"
             ((storage_failed++))
             overall_result=1
         fi
     else
-        display --indent 6 --text "- Primary storage (Dropbox/S3/FTP)" --result "DISABLED" --color YELLOW
-        log_event "info" "Primary storage is disabled, skipping test" "false"
+        display --indent 6 --text "- Dropbox storage" --result "DISABLED" --color YELLOW
+        log_event "info" "Dropbox storage is disabled, skipping test" "false"
     fi
 
     # Test Borg storage
@@ -875,7 +875,6 @@ function storage_test_connection() {
     rm -f "${test_file}" "${download_file}"
 
     # Summary
-    echo ""
     display --indent 6 --text "- Connection Test Summary"
     display --indent 8 --text "Tested: ${storage_tested}" --tcolor WHITE
     display --indent 8 --text "Passed: ${storage_passed}" --tcolor GREEN
