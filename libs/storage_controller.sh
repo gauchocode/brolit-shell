@@ -841,9 +841,11 @@ function storage_test_connection() {
             if [[ -z "${borg_config_dir}" ]]; then
                 clear_previous_lines "1"
                 display --indent 6 --text "- Borg storage" --result "FAIL" --color RED
-                display --indent 8 --text "Config directory not found" --tcolor RED
+                display --indent 8 --text "No config directory found" --tcolor RED
+                display --indent 8 --text "Use 'REGENERATE BORGMATIC TEMPLATES' to create configs" --tcolor YELLOW
                 log_event "error" "Borg config directory not found in any standard location" "false"
                 log_event "debug" "Checked directories: ${possible_dirs[*]}" "false"
+                log_event "info" "To setup Borg, use 'REGENERATE BORGMATIC TEMPLATES' option from Backup Tools menu" "false"
                 ((storage_failed++))
                 overall_result=1
             else
