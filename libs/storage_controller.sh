@@ -751,64 +751,53 @@ function storage_test_connection() {
     if [[ "${BACKUP_DROPBOX_STATUS}" == "enabled" ]]; then
         ((storage_tested++))
 
-        display --indent 6 --text "- Testing Dropbox storage"
         log_event "info" "Testing Dropbox connection" "false"
         log_event "debug" "Test file: ${test_file}, Remote path: ${remote_test_path}" "false"
 
-        # Upload test file
-        local upload_output
-        upload_output=$(storage_upload "${test_file}" "${remote_test_path}" "" 2>&1)
-        local upload_status=$?
+        # Source dropbox uploader helper if not already loaded
+        if ! type -t dropbox_upload &>/dev/null; then
+            # shellcheck source=${BROLIT_MAIN_DIR}/libs/apps/dropbox_uploader_helper.sh
+            source "${BROLIT_MAIN_DIR}/libs/apps/dropbox_uploader_helper.sh"
+        fi
 
-        log_event "debug" "Upload command: storage_upload ${test_file} ${remote_test_path}" "false"
-        log_event "debug" "Upload exit code: ${upload_status}" "false"
-        [[ -n "${upload_output}" ]] && log_event "debug" "Upload output: ${upload_output}" "false"
-
-        if [[ ${upload_status} -eq 0 ]]; then
+        # Upload test file - Note: dropbox_upload shows its own display messages
+        if dropbox_upload "${test_file}" "${remote_test_path}"; then
             log_event "info" "Successfully uploaded to Dropbox" "false"
 
-            # Download test file
-            local download_output
-            download_output=$(storage_download "${remote_test_path}" "${download_file}" 2>&1)
-            local download_status=$?
+            # Download test file to a temp directory
+            local download_dir
+            download_dir="$(dirname "${download_file}")"
 
-            log_event "debug" "Download command: storage_download ${remote_test_path} ${download_file}" "false"
-            log_event "debug" "Download exit code: ${download_status}" "false"
-            [[ -n "${download_output}" ]] && log_event "debug" "Download output: ${download_output}" "false"
-
-            if [[ ${download_status} -eq 0 ]]; then
+            # Note: dropbox_download shows its own display messages
+            if dropbox_download "${remote_test_path}" "${download_dir}"; then
                 log_event "info" "Successfully downloaded from Dropbox" "false"
 
                 # Verify integrity
                 if diff "${test_file}" "${download_file}" &>/dev/null; then
-                    clear_previous_lines "1"
-                    display --indent 6 --text "- Dropbox storage" --result "PASS" --color GREEN
+                    display --indent 6 --text "- Dropbox storage connection test" --result "PASS" --color GREEN
                     log_event "info" "Dropbox connection test passed" "false"
                     ((storage_passed++))
 
                     # Cleanup
-                    storage_delete "${remote_test_path}" 2>/dev/null
+                    dropbox_delete "${remote_test_path}" "force"
                     rm -f "${download_file}"
                 else
-                    clear_previous_lines "1"
-                    display --indent 6 --text "- Dropbox storage" --result "FAIL" --color RED
+                    display --indent 6 --text "- Dropbox storage connection test" --result "FAIL" --color RED
                     display --indent 8 --text "File integrity check failed" --tcolor RED
                     log_event "error" "Dropbox: File integrity check failed" "false"
                     ((storage_failed++))
                     overall_result=1
                 fi
             else
-                clear_previous_lines "1"
-                display --indent 6 --text "- Dropbox storage" --result "FAIL" --color RED
-                display --indent 8 --text "Download failed" --tcolor RED
+                display --indent 6 --text "- Dropbox storage connection test" --result "FAIL" --color RED
+                display --indent 8 --text "Download test failed" --tcolor RED
                 log_event "error" "Dropbox: Download test failed" "false"
                 ((storage_failed++))
                 overall_result=1
             fi
         else
-            clear_previous_lines "1"
-            display --indent 6 --text "- Dropbox storage" --result "FAIL" --color RED
-            display --indent 8 --text "Upload failed" --tcolor RED
+            display --indent 6 --text "- Dropbox storage connection test" --result "FAIL" --color RED
+            display --indent 8 --text "Upload test failed" --tcolor RED
             log_event "error" "Dropbox: Upload test failed" "false"
             ((storage_failed++))
             overall_result=1
@@ -968,6 +957,12 @@ function storage_verify_backup_integrity() {
 
     log_subsection "Verify Backup Integrity"
 
+    # Source dropbox uploader helper if not already loaded
+    if ! type -t dropbox_list_directory &>/dev/null; then
+        # shellcheck source=${BROLIT_MAIN_DIR}/libs/apps/dropbox_uploader_helper.sh
+        source "${BROLIT_MAIN_DIR}/libs/apps/dropbox_uploader_helper.sh"
+    fi
+
     # Let user choose what to verify
     backup_options=(
         "01)" "VERIFY PROJECT BACKUPS"
@@ -990,8 +985,8 @@ function storage_verify_backup_integrity() {
 
         display --indent 6 --text "- Checking project backups"
 
-        # List backup files
-        backup_files=$(storage_list "${remote_path}")
+        # List backup files from Dropbox
+        backup_files=$(dropbox_list_directory "${remote_path}")
 
         if [[ -z "${backup_files}" ]]; then
             display --indent 8 --text "No project backups found" --tcolor YELLOW
@@ -1014,8 +1009,8 @@ function storage_verify_backup_integrity() {
 
         display --indent 6 --text "- Checking database backups"
 
-        # List backup files
-        backup_files=$(storage_list "${remote_path}")
+        # List backup files from Dropbox
+        backup_files=$(dropbox_list_directory "${remote_path}")
 
         if [[ -z "${backup_files}" ]]; then
             display --indent 8 --text "No database backups found" --tcolor YELLOW
