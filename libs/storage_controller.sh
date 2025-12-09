@@ -726,7 +726,8 @@ function storage_test_connection() {
 
     local test_file="${BROLIT_TMP_DIR}/storage_test_${NOW}.txt"
     local remote_test_path="/${SERVER_NAME}/tests/connection_test_${NOW}.txt"
-    local download_file="${BROLIT_TMP_DIR}/storage_test_download_${NOW}.txt"
+    # The downloaded file will be named based on the remote filename
+    local download_file="${BROLIT_TMP_DIR}/connection_test_${NOW}.txt"
 
     local storage_tested=0
     local storage_passed=0
