@@ -101,10 +101,8 @@ function host_optimizations_menu() {
     "02)" "OPTIMIZE NGINX"
     "03)" "OPTIMIZE MYSQL"
     "04)" "OPTIMIZE RAM USAGE"
-    "05)" "OPTIMIZE IMAGES"
-    "06)" "OPTIMIZE PDFS"
-    "07)" "DELETE OLD LOGS"
-    "08)" "REMOVE OLD PACKAGES"
+    "05)" "DELETE OLD LOGS"
+    "06)" "REMOVE OLD PACKAGES"
   )
 
   chosen_host_opt_option="$(whiptail --title "HOST OPTIMIZATIONS" --menu "\nSelect optimization:\n" 20 78 10 "${host_opt_options[@]}" 3>&1 1>&2 2>&3)"
@@ -145,23 +143,13 @@ function host_optimizations_menu() {
       optimize_ram_usage
     fi
 
-    # OPTIMIZE IMAGES
-    if [[ ${chosen_host_opt_option} == *"05"* ]]; then
-      optimize_images_complete
-    fi
-
-    # OPTIMIZE PDFS
-    if [[ ${chosen_host_opt_option} == *"06"* ]]; then
-      optimize_pdfs
-    fi
-
     # DELETE OLD LOGS
-    if [[ ${chosen_host_opt_option} == *"07"* ]]; then
+    if [[ ${chosen_host_opt_option} == *"05"* ]]; then
       delete_old_logs
     fi
 
     # REMOVE OLD PACKAGES
-    if [[ ${chosen_host_opt_option} == *"08"* ]]; then
+    if [[ ${chosen_host_opt_option} == *"06"* ]]; then
       packages_remove_old
     fi
 

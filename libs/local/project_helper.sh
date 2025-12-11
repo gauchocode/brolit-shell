@@ -295,7 +295,7 @@ function project_ask_type() {
   local project_types
   local project_type
 
-  project_types="wordpress php html"
+  project_types="wordpress php html other"
 
   project_type="$(whiptail --title "SELECT PROJECT TYPE" --menu " " 20 78 10 $(for x in ${project_types}; do echo "${x} [D]"; done) --default-item "${suggested_project_type}" 3>&1 1>&2 2>&3)"
 
@@ -333,7 +333,7 @@ function project_ask_install_type() {
   local project_install_types
   local project_install_type
 
-  project_install_types="default docker proxy"
+  project_install_types="default docker"
 
   project_install_type="$(whiptail --title "SELECT PROJECT INSTALL TYPE" --menu " " 20 78 10 $(for x in ${project_install_types}; do echo "${x} [D]"; done) --default-item "${suggested_project_install_type}" 3>&1 1>&2 2>&3)"
 
@@ -2911,8 +2911,8 @@ function project_create_nginx_server() {
     project_type="$(project_ask_type "${suggested_project_type}")"
     project_install_type="$(project_ask_install_type "${suggested_project_install_type}")"
 
-    # Unify docker and proxy as they are the same
-    if [[ ${project_install_type} == "docker" || ${project_install_type} == "proxy" ]]; then
+    # Docker projects need to be configured as proxy
+    if [[ ${project_install_type} == "docker" ]]; then
       project_install_type="proxy"
 
       # Try to extract port from .env file
@@ -3036,7 +3036,7 @@ function project_update_domain_config() {
     return 1
   fi
 
-  # Set project type for proxy/docker installations
+  # Set project type for dockerized installations (internally stored as "proxy")
   [[ ${project_install_type} == "proxy" || ${project_install_type} == "docker"* ]] && project_type="proxy"
 
   # Working with root domain or www?
