@@ -107,6 +107,26 @@ function optimize_images_complete() {
   log_subsection "Image Optimization"
   log_event "info" "Starting image optimization process for WordPress projects" "false"
 
+  # Ensure required commands are available
+  if [[ -z "${FIND}" ]]; then
+    FIND="$(command -v find)"
+  fi
+  if [[ -z "${MOGRIFY}" ]]; then
+    MOGRIFY="$(command -v mogrify)"
+  fi
+  if [[ -z "${JPEGOPTIM}" ]]; then
+    JPEGOPTIM="$(command -v jpegoptim)"
+  fi
+  if [[ -z "${OPTIPNG}" ]]; then
+    OPTIPNG="$(command -v optipng)"
+  fi
+
+  # Validate required tools
+  if [[ -z "${FIND}" ]]; then
+    log_event "error" "find command not found. Cannot proceed with image optimization." "false"
+    return 1
+  fi
+
   # Debug: Check if PROJECTS_PATH is set
   if [[ -z "${PROJECTS_PATH}" ]]; then
     log_event "error" "PROJECTS_PATH is not set. Cannot proceed with image optimization." "false"
@@ -378,6 +398,23 @@ function optimize_pdfs() {
 
   last_run=$(_check_last_optimization_date)
   log_subsection "PDF Optimizer"
+
+  # Ensure required commands are available
+  if [[ -z "${FIND}" ]]; then
+    FIND="$(command -v find)"
+  fi
+
+  # Validate required tools
+  if [[ -z "${FIND}" ]]; then
+    log_event "error" "find command not found. Cannot proceed with PDF optimization." "false"
+    return 1
+  fi
+
+  # Check if ghostscript is available
+  if ! command -v gs &> /dev/null; then
+    log_event "error" "ghostscript (gs) not found. Cannot proceed with PDF optimization." "false"
+    return 1
+  fi
 
   # Debug: Check if PROJECTS_PATH is set
   if [[ -z "${PROJECTS_PATH}" ]]; then
