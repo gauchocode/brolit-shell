@@ -127,6 +127,54 @@ function optimize_images_complete() {
     return 1
   fi
 
+  # Check for missing optimization tools and offer to install them
+  local missing_tools=()
+  local missing_packages=()
+
+  if [[ -z "${MOGRIFY}" ]]; then
+    missing_tools+=("mogrify (ImageMagick)")
+    missing_packages+=("imagemagick")
+  fi
+  if [[ -z "${JPEGOPTIM}" ]]; then
+    missing_tools+=("jpegoptim")
+    missing_packages+=("jpegoptim")
+  fi
+  if [[ -z "${OPTIPNG}" ]]; then
+    missing_tools+=("optipng")
+    missing_packages+=("optipng")
+  fi
+
+  # If tools are missing, ask user if they want to install them
+  if [[ ${#missing_tools[@]} -gt 0 ]]; then
+    log_event "warning" "The following image optimization tools are not installed:" "false"
+    for tool in "${missing_tools[@]}"; do
+      log_event "warning" "  - ${tool}" "false"
+    done
+
+    # Ask user if they want to install missing packages
+    if whiptail --title "Missing Tools" --yesno "Some image optimization tools are missing:\n\n${missing_tools[*]}\n\nDo you want to install them now?" 15 70 3>&1 1>&2 2>&3; then
+      log_event "info" "Installing missing packages: ${missing_packages[*]}" "false"
+
+      # Update package list
+      apt-get update -qq
+
+      # Install missing packages
+      for package in "${missing_packages[@]}"; do
+        log_event "info" "Installing ${package}..." "false"
+        apt-get install -y -qq "${package}"
+      done
+
+      # Re-check for tools
+      MOGRIFY="$(command -v mogrify)"
+      JPEGOPTIM="$(command -v jpegoptim)"
+      OPTIPNG="$(command -v optipng)"
+
+      log_event "info" "Tool installation completed" "false"
+    else
+      log_event "warning" "Proceeding without installing missing tools. Some optimizations will be skipped." "false"
+    fi
+  fi
+
   # Debug: Check if PROJECTS_PATH is set
   if [[ -z "${PROJECTS_PATH}" ]]; then
     log_event "error" "PROJECTS_PATH is not set. Cannot proceed with image optimization." "false"
@@ -289,24 +337,55 @@ function optimize_image_size() {
 
   local last_run
 
+  # Ensure commands are available
+  if [[ -z "${FIND}" ]]; then
+    FIND="$(command -v find)"
+  fi
+  if [[ -z "${MOGRIFY}" ]]; then
+    MOGRIFY="$(command -v mogrify)"
+  fi
+
+  # Check if mogrify is available
+  if [[ -z "${MOGRIFY}" ]]; then
+    log_event "warning" "mogrify (ImageMagick) not found. Skipping image resizing." "false"
+    return 0
+  fi
+
   log_subsection "Image Resizer"
 
+  # Count images first
+  local image_count
+  if [[ "${last_run}" == "never" ]]; then
+    image_count=$(${FIND} "${path}" -type f -name "*.${file_extension}" 2>/dev/null | wc -l)
+  else
+    image_count=$(${FIND} "${path}" -mtime -7 -type f -name "*.${file_extension}" 2>/dev/null | wc -l)
+  fi
+
+  log_event "info" "Found ${image_count} ${file_extension} image(s) to resize" "false"
+
+  if [[ ${image_count} -eq 0 ]]; then
+    log_event "info" "No ${file_extension} images found to resize" "false"
+    return 0
+  fi
+
   # Run ImageMagick mogrify
-  log_event "info" "Running mogrify to optimize image sizes ..." "false"
+  log_event "info" "Running mogrify to optimize image sizes (max: ${img_max_width}x${img_max_height})..." "false"
 
   last_run=$(_check_last_optimization_date)
 
   if [[ "${last_run}" == "never" ]]; then
 
-  log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${MOGRIFY} -resize ${img_max_width}x${img_max_height}\> {} \;" "false"
-  ${FIND} "${path}" -type f -name "*.${file_extension}" -exec "${MOGRIFY}" -resize "${img_max_width}"x"${img_max_height}"\> {} \;
+  log_event "debug" "Executing: ${FIND} ${path} -type f -name *.${file_extension} -exec ${MOGRIFY} -resize ${img_max_width}x${img_max_height}\> {} \;" "false"
+  ${FIND} "${path}" -type f -name "*.${file_extension}" -exec "${MOGRIFY}" -resize "${img_max_width}"x"${img_max_height}"\> {} \; 2>/dev/null
 
   else
 
-  log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${MOGRIFY} -resize ${img_max_width}x${img_max_height}\> {} \;" "false"
-  ${FIND} "${path}" -mtime -7 -type f -name "*.${file_extension}" -exec "${MOGRIFY}" -resize "${img_max_width}"x"${img_max_height}"\> {} \;
+  log_event "debug" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${MOGRIFY} -resize ${img_max_width}x${img_max_height}\> {} \;" "false"
+  ${FIND} "${path}" -mtime -7 -type f -name "*.${file_extension}" -exec "${MOGRIFY}" -resize "${img_max_width}"x"${img_max_height}"\> {} \; 2>/dev/null
 
   fi
+
+  log_event "info" "Image resizing completed for ${file_extension} files" "false"
 
   # Next time will run the find command with -mtime -7 parameter
   _update_last_optimization_date
@@ -333,41 +412,98 @@ function optimize_images() {
 
   local last_run
 
+  # Ensure commands are available
+  if [[ -z "${FIND}" ]]; then
+    FIND="$(command -v find)"
+  fi
+  if [[ -z "${JPEGOPTIM}" ]]; then
+    JPEGOPTIM="$(command -v jpegoptim)"
+  fi
+  if [[ -z "${OPTIPNG}" ]]; then
+    OPTIPNG="$(command -v optipng)"
+  fi
+
   log_subsection "Image Optimizer"
 
   last_run="$(_check_last_optimization_date)"
 
   if [[ ${file_extension} == "jpg" ]]; then
 
+    # Check if jpegoptim is available
+    if [[ -z "${JPEGOPTIM}" ]]; then
+      log_event "warning" "jpegoptim not found. Skipping JPG optimization." "false"
+      return 0
+    fi
+
+    # Count JPG images first
+    local image_count
+    if [[ "${last_run}" == "never" ]]; then
+      image_count=$(${FIND} "${path}" -type f -regex ".*\.\(jpg\|jpeg\)" 2>/dev/null | wc -l)
+    else
+      image_count=$(${FIND} "${path}" -mtime -7 -type f -regex ".*\.\(jpg\|jpeg\)" 2>/dev/null | wc -l)
+    fi
+
+    log_event "info" "Found ${image_count} JPG/JPEG image(s) to compress" "false"
+
+    if [[ ${image_count} -eq 0 ]]; then
+      log_event "info" "No JPG/JPEG images found to optimize" "false"
+      return 0
+    fi
+
     # Run jpegoptim
-    log_event "info" "Running jpegoptim to optimize images"
+    log_event "info" "Running jpegoptim to compress images (quality: ${img_compress}%)..." "false"
   if [[ "${last_run}" == "never" ]]; then
 
-    log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -regex .*\.\(jpg\|jpeg\) -exec ${JPEGOPTIM} --max=${img_compress} --strip-all --all-progressive {} \;" "false"
-    ${FIND} "${path}" -type f -regex ".*\.\(jpg\|jpeg\)" -exec "${JPEGOPTIM}" --max="${img_compress}" --strip-all --all-progressive {} \;
+    log_event "debug" "Executing: ${FIND} ${path} -type f -regex .*\.\(jpg\|jpeg\) -exec ${JPEGOPTIM} --max=${img_compress} --strip-all --all-progressive {} \;" "false"
+    ${FIND} "${path}" -type f -regex ".*\.\(jpg\|jpeg\)" -exec "${JPEGOPTIM}" --max="${img_compress}" --strip-all --all-progressive {} \; 2>/dev/null
 
   else
 
-    log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -regex .*\.\(jpg\|jpeg\) -exec ${JPEGOPTIM} --max=${img_compress} --strip-all --all-progressive {} \;" "false"
-    ${FIND} "${path}" -mtime -7 -type f -regex ".*\.\(jpg\|jpeg\)" -exec "${JPEGOPTIM}" --max="${img_compress}" --strip-all --all-progressive {} \;
+    log_event "debug" "Executing: ${FIND} ${path} -mtime -7 -type f -regex .*\.\(jpg\|jpeg\) -exec ${JPEGOPTIM} --max=${img_compress} --strip-all --all-progressive {} \;" "false"
+    ${FIND} "${path}" -mtime -7 -type f -regex ".*\.\(jpg\|jpeg\)" -exec "${JPEGOPTIM}" --max="${img_compress}" --strip-all --all-progressive {} \; 2>/dev/null
 
   fi
+
+    log_event "info" "JPG compression completed" "false"
 
   elif [[ ${file_extension} == "png" ]]; then
 
+    # Check if optipng is available
+    if [[ -z "${OPTIPNG}" ]]; then
+      log_event "warning" "optipng not found. Skipping PNG optimization." "false"
+      return 0
+    fi
+
+    # Count PNG images first
+    local image_count
+    if [[ "${last_run}" == "never" ]]; then
+      image_count=$(${FIND} "${path}" -type f -name "*.${file_extension}" 2>/dev/null | wc -l)
+    else
+      image_count=$(${FIND} "${path}" -mtime -7 -type f -name "*.${file_extension}" 2>/dev/null | wc -l)
+    fi
+
+    log_event "info" "Found ${image_count} PNG image(s) to optimize" "false"
+
+    if [[ ${image_count} -eq 0 ]]; then
+      log_event "info" "No PNG images found to optimize" "false"
+      return 0
+    fi
+
     # Run optipng
-    log_event "info" "Running optipng to optimize images ..."
+    log_event "info" "Running optipng to compress images..." "false"
   if [[ "${last_run}" == "never" ]]; then
 
-    log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${OPTIPNG} -strip-all {} \;" "false"
-    ${FIND} "${path}" -type f -name "*.${file_extension}" -exec "${OPTIPNG}" -o7 -strip all {} \;
+    log_event "debug" "Executing: ${FIND} ${path} -type f -name *.${file_extension} -exec ${OPTIPNG} -o7 -strip all {} \;" "false"
+    ${FIND} "${path}" -type f -name "*.${file_extension}" -exec "${OPTIPNG}" -o7 -strip all {} \; 2>/dev/null
 
   else
 
-    log_event "info" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${OPTIPNG} -strip-all {} \;" "false"
-    ${FIND} "${path}" -mtime -7 -type f -name "*.${file_extension}" -exec "${OPTIPNG}" -o7 -strip all {} \;
+    log_event "debug" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${OPTIPNG} -o7 -strip all {} \;" "false"
+    ${FIND} "${path}" -mtime -7 -type f -name "*.${file_extension}" -exec "${OPTIPNG}" -o7 -strip all {} \; 2>/dev/null
 
   fi
+
+    log_event "info" "PNG optimization completed" "false"
 
   else
 
@@ -412,8 +548,29 @@ function optimize_pdfs() {
 
   # Check if ghostscript is available
   if ! command -v gs &> /dev/null; then
-    log_event "error" "ghostscript (gs) not found. Cannot proceed with PDF optimization." "false"
-    return 1
+    log_event "warning" "ghostscript (gs) is not installed - required for PDF optimization." "false"
+
+    # Ask user if they want to install ghostscript
+    if whiptail --title "Missing Tool" --yesno "Ghostscript is required for PDF optimization but is not installed.\n\nDo you want to install it now?" 12 70 3>&1 1>&2 2>&3; then
+      log_event "info" "Installing ghostscript..." "false"
+
+      # Update package list
+      apt-get update -qq
+
+      # Install ghostscript
+      apt-get install -y -qq ghostscript
+
+      # Verify installation
+      if ! command -v gs &> /dev/null; then
+        log_event "error" "Failed to install ghostscript. Cannot proceed with PDF optimization." "false"
+        return 1
+      fi
+
+      log_event "info" "Ghostscript installed successfully" "false"
+    else
+      log_event "warning" "Ghostscript installation declined. Cannot proceed with PDF optimization." "false"
+      return 1
+    fi
   fi
 
   # Debug: Check if PROJECTS_PATH is set
