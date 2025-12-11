@@ -1,0 +1,45 @@
+server {
+
+    listen 80;
+
+    server_name domain.com;
+
+    root /var/www/domain.com;
+
+    index index.php index.html index.htm;
+
+    # Log
+    error_log   /var/log/nginx/domain.com-error.log;
+
+    # Handle requests
+    location / {
+            try_files $uri $uri/ /index.php?q=$uri&$args;
+    }
+
+    # Handle .php
+    location ~ \.php$ {
+            include snippets/fastcgi-php.conf;
+            fastcgi_pass unix:/run/php/phpPHP_V-fpm.sock;
+    }
+
+    ### INC
+    #include /var/www/domain.com/nginx.conf;
+
+    ### PERF
+    #gzip_static on;
+
+    ### SEC
+    #include /etc/nginx/globals/security.conf;
+
+    server_tokens off;
+
+    #### SECURITY HEADERS
+    add_header X-Frame-Options SAMEORIGIN;
+    add_header Strict-Transport-Security "max-age=31536000";
+    add_header X-Content-Type-Options nosniff;
+    add_header X-XSS-Protection "1; mode=block";
+    add_header Referrer-Policy "same-origin";
+    add_header Permissions-Policy "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()";
+    #add_header Content-Security-Policy "default-src 'none'; script-src 'self' 'unsafe-inline' static.cloudflareinsights.com ajax.cloudflare.com; connect-src 'self' cloudflareinsights.com; img-src 'self'; style-src 'self';";
+
+}

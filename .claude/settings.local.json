@@ -12,7 +12,8 @@
       "Bash(cat:*)",
       "Bash(command -v yq:*)",
       "Bash(command -v:*)",
-      "Bash(borgmatic:*)"
+      "Bash(borgmatic:*)",
+      "Bash(nginx -t:*)"
     ],
     "deny": [],
     "ask": []
