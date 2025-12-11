@@ -130,6 +130,8 @@ function project_manager_menu() {
     "05)" "PUT PROJECT ONLINE"
     "06)" "PUT PROJECT OFFLINE"
     "07)" "DELETE PROJECT"
+    "08)" "OPTIMIZE PROJECT IMAGES"
+    "09)" "OPTIMIZE PROJECT PDFS"
   )
 
   chosen_project_manager_option="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_manager_options[@]}" 3>&1 1>&2 2>&3)"
@@ -230,6 +232,146 @@ function project_manager_menu() {
     # DELETE PROJECT (handles both standard and Docker projects)
     if [[ ${chosen_project_manager_option} == *"07"* ]]; then
       project_delete "" ""
+      prompt_return_or_finish
+      project_manager_menu
+    fi
+
+    # OPTIMIZE PROJECT IMAGES
+    if [[ ${chosen_project_manager_option} == *"08"* ]]; then
+      log_section "Project Utils"
+
+      # Ask if user wants to optimize all projects or select specific one
+      local image_opt_scope
+      image_opt_scope="$(whiptail --title "IMAGE OPTIMIZATION SCOPE" --menu "\nSelect optimization scope:\n" 20 78 10 \
+        "01)" "Optimize all WordPress projects" \
+        "02)" "Select specific project" \
+        3>&1 1>&2 2>&3)"
+
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        if [[ ${image_opt_scope} == *"01"* ]]; then
+          # Optimize all projects
+          optimize_images_complete
+        elif [[ ${image_opt_scope} == *"02"* ]]; then
+          # Build list of WordPress projects
+          local wordpress_projects=()
+
+          for project_path in "${PROJECTS_PATH}"/*/; do
+            [[ ! -d "${project_path}" ]] && continue
+
+            local project_name
+            project_name="$(basename "${project_path}")"
+
+            # Check install type
+            local project_install_type
+            project_install_type="$(project_get_install_type "${project_path}")"
+
+            # Check if WordPress
+            local is_wordpress=false
+            if [[ ${project_install_type} == "docker"* ]]; then
+              local docker_data_dir
+              docker_data_dir="$(project_get_configured_docker_data_dir "${project_path}")"
+              [[ -f "${docker_data_dir}/wp-config.php" ]] && is_wordpress=true
+            else
+              [[ -f "${project_path}wp-config.php" ]] && is_wordpress=true
+            fi
+
+            [[ ${is_wordpress} == true ]] && wordpress_projects+=("${project_name}")
+          done
+
+          if [[ ${#wordpress_projects[@]} -gt 0 ]]; then
+            local chosen_project
+            # Build menu items
+            local menu_items=()
+            for x in "${wordpress_projects[@]}"; do
+              menu_items+=("${x}" "[WP]")
+            done
+            chosen_project="$(whiptail --title "Project Selection" --menu "Select the project you want to work with:" 20 78 10 "${menu_items[@]}" 3>&1 1>&2 2>&3)"
+
+            exitstatus=$?
+            if [[ ${exitstatus} -eq 0 && -n ${chosen_project} ]]; then
+              # Get full path
+              local project_path="${PROJECTS_PATH}/${chosen_project}"
+              optimize_images_complete "${project_path}"
+            fi
+          else
+            display --indent 6 --text "- No WordPress projects found" --result "FAIL" --color RED
+          fi
+        fi
+
+      fi
+
+      prompt_return_or_finish
+      project_manager_menu
+    fi
+
+    # OPTIMIZE PROJECT PDFS
+    if [[ ${chosen_project_manager_option} == *"09"* ]]; then
+      log_section "Project Utils"
+
+      # Ask if user wants to optimize all projects or select specific one
+      local pdf_opt_scope
+      pdf_opt_scope="$(whiptail --title "PDF OPTIMIZATION SCOPE" --menu "\nSelect optimization scope:\n" 20 78 10 \
+        "01)" "Optimize all WordPress projects" \
+        "02)" "Select specific project" \
+        3>&1 1>&2 2>&3)"
+
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        if [[ ${pdf_opt_scope} == *"01"* ]]; then
+          # Optimize all projects
+          optimize_pdfs
+        elif [[ ${pdf_opt_scope} == *"02"* ]]; then
+          # Build list of WordPress projects
+          local wordpress_projects=()
+
+          for project_path in "${PROJECTS_PATH}"/*/; do
+            [[ ! -d "${project_path}" ]] && continue
+
+            local project_name
+            project_name="$(basename "${project_path}")"
+
+            # Check install type
+            local project_install_type
+            project_install_type="$(project_get_install_type "${project_path}")"
+
+            # Check if WordPress
+            local is_wordpress=false
+            if [[ ${project_install_type} == "docker"* ]]; then
+              local docker_data_dir
+              docker_data_dir="$(project_get_configured_docker_data_dir "${project_path}")"
+              [[ -f "${docker_data_dir}/wp-config.php" ]] && is_wordpress=true
+            else
+              [[ -f "${project_path}wp-config.php" ]] && is_wordpress=true
+            fi
+
+            [[ ${is_wordpress} == true ]] && wordpress_projects+=("${project_name}")
+          done
+
+          if [[ ${#wordpress_projects[@]} -gt 0 ]]; then
+            local chosen_project
+            # Build menu items
+            local menu_items=()
+            for x in "${wordpress_projects[@]}"; do
+              menu_items+=("${x}" "[WP]")
+            done
+            chosen_project="$(whiptail --title "Project Selection" --menu "Select the project you want to work with:" 20 78 10 "${menu_items[@]}" 3>&1 1>&2 2>&3)"
+
+            exitstatus=$?
+            if [[ ${exitstatus} -eq 0 && -n ${chosen_project} ]]; then
+              # Get full path
+              local project_path="${PROJECTS_PATH}/${chosen_project}"
+              optimize_pdfs "${project_path}"
+            fi
+          else
+            display --indent 6 --text "- No WordPress projects found" --result "FAIL" --color RED
+          fi
+        fi
+
+      fi
+
       prompt_return_or_finish
       project_manager_menu
     fi

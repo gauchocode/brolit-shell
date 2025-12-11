@@ -53,10 +53,48 @@ function _update_last_optimization_date() {
 }
 
 ################################################################################
+# Private: Get the correct uploads path for a WordPress project
+#
+# Arguments:
+#   ${1} = ${project_path} - Base project path
+#   ${2} = ${project_install_type} - Installation type (default or docker-compose)
+#
+# Outputs:
+#   The uploads directory path
+################################################################################
+
+function _get_wordpress_uploads_path() {
+
+  local project_path="${1}"
+  local project_install_type="${2}"
+
+  local uploads_path
+
+  # For Docker projects, get the correct data directory
+  if [[ ${project_install_type} == "docker"* ]]; then
+    local docker_data_dir
+    docker_data_dir="$(project_get_configured_docker_data_dir "${project_path}")"
+
+    if [[ -n "${docker_data_dir}" ]]; then
+      uploads_path="${docker_data_dir}/wp-content/uploads"
+    else
+      log_event "warning" "Could not determine Docker data directory for ${project_path}" "false"
+      uploads_path="${project_path}/wp-content/uploads"
+    fi
+  else
+    # Default installation
+    uploads_path="${project_path}/wp-content/uploads"
+  fi
+
+  echo "${uploads_path}"
+
+}
+
+################################################################################
 # Execute some image optimization tasks
 #
 # Arguments:
-#   none
+#   ${1} = ${project_path} (optional) - Specific project path to optimize
 #
 # Outputs:
 #   nothing
@@ -64,31 +102,122 @@ function _update_last_optimization_date() {
 
 function optimize_images_complete() {
 
+  local specific_project="${1}"
+
   log_subsection "Image Optimization"
   log_event "info" "Starting image optimization process for WordPress projects" "false"
-  
-  # Process only WordPress projects
-  for project_path in "${PROJECTS_PATH}"/*/; do
-  
-    if [[ -f "${project_path}wp-config.php" ]]; then
-    
-      log_event "info" "Found WordPress project at ${project_path}" "false"
 
-      local uploads_path="${project_path}wp-content/uploads"
-      
-      # Verify uploads directory exists
-      if [[ -d "${uploads_path}" ]]; then
-        log_event "info" "Processing uploads directory: ${uploads_path}" "false"
-        # Optimize images only in uploads directory
-        optimize_image_size "${uploads_path}" "jpg" "1920" "1080"
-        optimize_images "${uploads_path}" "jpg" "80"
-        optimize_images "${uploads_path}" "png" ""
-      fi
+  # Debug: Check if PROJECTS_PATH is set
+  if [[ -z "${PROJECTS_PATH}" ]]; then
+    log_event "error" "PROJECTS_PATH is not set. Cannot proceed with image optimization." "false"
+    return 1
+  fi
 
+  log_event "info" "PROJECTS_PATH is set to: ${PROJECTS_PATH}" "false"
+
+  # Check if PROJECTS_PATH exists
+  if [[ ! -d "${PROJECTS_PATH}" ]]; then
+    log_event "error" "PROJECTS_PATH directory does not exist: ${PROJECTS_PATH}" "false"
+    return 1
+  fi
+
+  # Count WordPress projects
+  local wp_projects_count=0
+
+  # If a specific project was provided, process only that one
+  if [[ -n "${specific_project}" ]]; then
+
+    log_event "info" "Processing specific project: ${specific_project}" "false"
+
+    # Determine install type
+    local project_install_type
+    project_install_type="$(project_get_install_type "${specific_project}")"
+
+    log_event "info" "Project install type: ${project_install_type}" "false"
+
+    # Get correct uploads path
+    local uploads_path
+    uploads_path="$(_get_wordpress_uploads_path "${specific_project}" "${project_install_type}")"
+
+    # Verify uploads directory exists
+    if [[ -d "${uploads_path}" ]]; then
+      ((wp_projects_count++))
+      log_event "info" "Processing uploads directory: ${uploads_path}" "false"
+      # Optimize images only in uploads directory
+      optimize_image_size "${uploads_path}" "jpg" "1920" "1080"
+      optimize_images "${uploads_path}" "jpg" "80"
+      optimize_images "${uploads_path}" "png" ""
+    else
+      log_event "warning" "Uploads directory not found: ${uploads_path}" "false"
     fi
 
-  done
-  
+  else
+
+    # Process all WordPress projects
+    log_event "info" "Processing all WordPress projects in ${PROJECTS_PATH}" "false"
+
+    for project_path in "${PROJECTS_PATH}"/*/; do
+      # Skip if the glob didn't match anything (bash returns the pattern itself)
+      [[ ! -d "${project_path}" ]] && continue
+
+      log_event "debug" "Checking directory: ${project_path}" "false"
+
+      # Determine install type
+      local project_install_type
+      project_install_type="$(project_get_install_type "${project_path}")"
+
+      # Check for WordPress based on install type
+      local is_wordpress=false
+
+      if [[ ${project_install_type} == "docker"* ]]; then
+        # For Docker, check in the data directory
+        local docker_data_dir
+        docker_data_dir="$(project_get_configured_docker_data_dir "${project_path}")"
+
+        if [[ -f "${docker_data_dir}/wp-config.php" ]]; then
+          is_wordpress=true
+        fi
+      else
+        # For default installations
+        if [[ -f "${project_path}wp-config.php" ]]; then
+          is_wordpress=true
+        fi
+      fi
+
+      if [[ ${is_wordpress} == true ]]; then
+
+        ((wp_projects_count++))
+        log_event "info" "Found WordPress project at ${project_path} (type: ${project_install_type})" "false"
+
+        # Get correct uploads path
+        local uploads_path
+        uploads_path="$(_get_wordpress_uploads_path "${project_path}" "${project_install_type}")"
+
+        # Verify uploads directory exists
+        if [[ -d "${uploads_path}" ]]; then
+          log_event "info" "Processing uploads directory: ${uploads_path}" "false"
+          # Optimize images only in uploads directory
+          optimize_image_size "${uploads_path}" "jpg" "1920" "1080"
+          optimize_images "${uploads_path}" "jpg" "80"
+          optimize_images "${uploads_path}" "png" ""
+        else
+          log_event "warning" "Uploads directory not found: ${uploads_path}" "false"
+        fi
+
+      else
+        log_event "debug" "Not a WordPress project: ${project_path}" "false"
+      fi
+
+    done
+
+  fi
+
+  if [[ ${wp_projects_count} -eq 0 ]]; then
+    log_event "warning" "No WordPress projects found" "false"
+  else
+    log_event "info" "Processed ${wp_projects_count} WordPress project(s)" "false"
+  fi
+
   log_event "info" "Image optimization process completed" "false"
 
 }
@@ -235,56 +364,164 @@ function optimize_images() {
 # Optimize pdfs
 #
 # Arguments:
-#  none
+#  ${1} = ${project_path} (optional) - Specific project path to optimize
 #
 # Outputs:
 #   nothing
 ################################################################################
 
 function optimize_pdfs() {
+  local specific_project="${1}"
   local last_run
   local pdf_files=()
+  local wp_projects_count=0
 
   last_run=$(_check_last_optimization_date)
   log_subsection "PDF Optimizer"
 
-  # Find PDF files in WordPress uploads directories
-  while IFS= read -r -d $'\0' project_path; do
-    if [[ -f "${project_path}wp-config.php" ]]; then
-      local uploads_path="${project_path}wp-content/uploads"
-      
-      if [[ -d "${uploads_path}" ]]; then
-        while IFS= read -r -d $'\0' pdf_file; do
-          pdf_files+=("$pdf_file")
-        done < <(${FIND} "${uploads_path}" -type f -name "*.pdf" -print0)
-      fi
-    fi
-  done < <(${FIND} "${PROJECTS_PATH}" -maxdepth 1 -type d -print0)
+  # Debug: Check if PROJECTS_PATH is set
+  if [[ -z "${PROJECTS_PATH}" ]]; then
+    log_event "error" "PROJECTS_PATH is not set. Cannot proceed with PDF optimization." "false"
+    return 1
+  fi
 
-  if [[ ${#pdf_files[@]} -gt 0 ]]; then
-  for pdf_file in "${pdf_files[@]}"; do
-    local compressed_file="${pdf_file}.compressed"
-      
-    # Optimize PDF
-    gs -sDEVICE=pdfwrite \
-       -dCompatibilityLevel=1.4 \
-       -dPDFSETTINGS=/screen \
-       -dNOPAUSE \
-       -dBATCH \
-       -sOutputFile="${compressed_file}" \
-       "${pdf_file}" >/dev/null 2>&1
-      
-    # Replace original if successful
-    if [[ -s "${compressed_file}" ]] && [[ $(wc -c < "${compressed_file}") -lt $(wc -c < "${pdf_file}") ]]; then
-      mv "${compressed_file}" "${pdf_file}"
+  log_event "info" "PROJECTS_PATH is set to: ${PROJECTS_PATH}" "false"
+
+  # Check if PROJECTS_PATH exists
+  if [[ ! -d "${PROJECTS_PATH}" ]]; then
+    log_event "error" "PROJECTS_PATH directory does not exist: ${PROJECTS_PATH}" "false"
+    return 1
+  fi
+
+  # If a specific project was provided, process only that one
+  if [[ -n "${specific_project}" ]]; then
+
+    log_event "info" "Processing specific project: ${specific_project}" "false"
+
+    # Determine install type
+    local project_install_type
+    project_install_type="$(project_get_install_type "${specific_project}")"
+
+    log_event "info" "Project install type: ${project_install_type}" "false"
+
+    # Get correct uploads path
+    local uploads_path
+    uploads_path="$(_get_wordpress_uploads_path "${specific_project}" "${project_install_type}")"
+
+    # Verify uploads directory exists and find PDFs
+    if [[ -d "${uploads_path}" ]]; then
+      ((wp_projects_count++))
+      log_event "info" "Searching for PDFs in: ${uploads_path}" "false"
+
+      while IFS= read -r -d $'\0' pdf_file; do
+        pdf_files+=("$pdf_file")
+      done < <(${FIND} "${uploads_path}" -type f -name "*.pdf" -print0)
     else
-      rm -f "${compressed_file}"
+      log_event "warning" "Uploads directory not found: ${uploads_path}" "false"
     fi
-  done
+
+  else
+
+    # Process all WordPress projects
+    log_event "info" "Processing all WordPress projects in ${PROJECTS_PATH}" "false"
+
+    for project_path in "${PROJECTS_PATH}"/*/; do
+      # Skip if the glob didn't match anything
+      [[ ! -d "${project_path}" ]] && continue
+
+      log_event "debug" "Checking directory: ${project_path}" "false"
+
+      # Determine install type
+      local project_install_type
+      project_install_type="$(project_get_install_type "${project_path}")"
+
+      # Check for WordPress based on install type
+      local is_wordpress=false
+
+      if [[ ${project_install_type} == "docker"* ]]; then
+        # For Docker, check in the data directory
+        local docker_data_dir
+        docker_data_dir="$(project_get_configured_docker_data_dir "${project_path}")"
+
+        if [[ -f "${docker_data_dir}/wp-config.php" ]]; then
+          is_wordpress=true
+        fi
+      else
+        # For default installations
+        if [[ -f "${project_path}wp-config.php" ]]; then
+          is_wordpress=true
+        fi
+      fi
+
+      if [[ ${is_wordpress} == true ]]; then
+
+        ((wp_projects_count++))
+        log_event "info" "Found WordPress project at ${project_path} (type: ${project_install_type})" "false"
+
+        # Get correct uploads path
+        local uploads_path
+        uploads_path="$(_get_wordpress_uploads_path "${project_path}" "${project_install_type}")"
+
+        # Verify uploads directory exists and find PDFs
+        if [[ -d "${uploads_path}" ]]; then
+          log_event "info" "Searching for PDFs in: ${uploads_path}" "false"
+
+          while IFS= read -r -d $'\0' pdf_file; do
+            pdf_files+=("$pdf_file")
+          done < <(${FIND} "${uploads_path}" -type f -name "*.pdf" -print0)
+        else
+          log_event "warning" "Uploads directory not found: ${uploads_path}" "false"
+        fi
+
+      else
+        log_event "debug" "Not a WordPress project: ${project_path}" "false"
+      fi
+
+    done
+
+  fi
+
+  # Optimize found PDFs
+  if [[ ${#pdf_files[@]} -gt 0 ]]; then
+    log_event "info" "Found ${#pdf_files[@]} PDF file(s) to optimize" "false"
+
+    for pdf_file in "${pdf_files[@]}"; do
+      local compressed_file="${pdf_file}.compressed"
+
+      log_event "info" "Optimizing: ${pdf_file}" "false"
+
+      # Optimize PDF
+      gs -sDEVICE=pdfwrite \
+         -dCompatibilityLevel=1.4 \
+         -dPDFSETTINGS=/screen \
+         -dNOPAUSE \
+         -dBATCH \
+         -sOutputFile="${compressed_file}" \
+         "${pdf_file}" >/dev/null 2>&1
+
+      # Replace original if successful
+      if [[ -s "${compressed_file}" ]] && [[ $(wc -c < "${compressed_file}") -lt $(wc -c < "${pdf_file}") ]]; then
+        log_event "info" "PDF optimized successfully: ${pdf_file}" "false"
+        mv "${compressed_file}" "${pdf_file}"
+      else
+        log_event "warning" "PDF optimization did not reduce size, keeping original: ${pdf_file}" "false"
+        rm -f "${compressed_file}"
+      fi
+    done
+  else
+    log_event "warning" "No PDF files found to optimize" "false"
+  fi
+
+  if [[ ${wp_projects_count} -eq 0 ]]; then
+    log_event "warning" "No WordPress projects found" "false"
+  else
+    log_event "info" "Processed ${wp_projects_count} WordPress project(s)" "false"
   fi
 
   # Next time will run the find command with -mtime -7 parameter
   _update_last_optimization_date
+
+  log_event "info" "PDF optimization process completed" "false"
 }
 
 ################################################################################

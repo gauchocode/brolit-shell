@@ -1793,7 +1793,7 @@ function restore_backup_project_files() {
     return 1
   fi
 
-  # Determine app directory based on project type
+  # Determine app directory for dockerized projects (stored as "proxy")
   if [[ ${project_install_type} == "docker"* || ${project_install_type} == "proxy" ]]; then
 
     if [[ ${project_type} == "wordpress" ]]; then
