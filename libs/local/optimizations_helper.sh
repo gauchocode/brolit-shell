@@ -155,13 +155,12 @@ function optimize_images_complete() {
     if whiptail --title "Missing Tools" --yesno "Some image optimization tools are missing:\n\n${missing_tools[*]}\n\nDo you want to install them now?" 15 70 3>&1 1>&2 2>&3; then
       log_event "info" "Installing missing packages: ${missing_packages[*]}" "false"
 
-      # Update package list
-      apt-get update -qq
+      # Update package list first
+      package_update
 
-      # Install missing packages
+      # Install missing packages using package helper
       for package in "${missing_packages[@]}"; do
-        log_event "info" "Installing ${package}..." "false"
-        apt-get install -y -qq "${package}"
+        package_install_if_not "${package}"
       done
 
       # Re-check for tools
@@ -555,10 +554,10 @@ function optimize_pdfs() {
       log_event "info" "Installing ghostscript..." "false"
 
       # Update package list
-      apt-get update -qq
+      package_update
 
-      # Install ghostscript
-      apt-get install -y -qq ghostscript
+      # Install ghostscript using package helper
+      package_install_if_not "ghostscript"
 
       # Verify installation
       if ! command -v gs &> /dev/null; then

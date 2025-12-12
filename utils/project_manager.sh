@@ -240,6 +240,24 @@ function project_manager_menu() {
     if [[ ${chosen_project_manager_option} == *"08"* ]]; then
       log_section "Project Utils"
 
+      # Ask time filter preference
+      local time_filter_option
+      time_filter_option="$(whiptail --title "IMAGE OPTIMIZATION TIME FILTER" --menu "\nSelect which images to optimize:\n" 20 78 10 \
+        "01)" "All images (regardless of modification date)" \
+        "02)" "Only images modified in the last 7 days" \
+        3>&1 1>&2 2>&3)"
+
+      exitstatus=$?
+      if [[ ${exitstatus} -ne 0 ]]; then
+        prompt_return_or_finish
+        project_manager_menu
+        return
+      fi
+
+      # Determine time filter
+      local time_filter="all"
+      [[ ${time_filter_option} == *"02"* ]] && time_filter="7"
+
       # Ask if user wants to optimize all projects or select specific one
       local image_opt_scope
       image_opt_scope="$(whiptail --title "IMAGE OPTIMIZATION SCOPE" --menu "\nSelect optimization scope:\n" 20 78 10 \
@@ -252,7 +270,7 @@ function project_manager_menu() {
 
         if [[ ${image_opt_scope} == *"01"* ]]; then
           # Optimize all projects
-          optimize_images_complete
+          optimize_images_complete "" "${time_filter}"
         elif [[ ${image_opt_scope} == *"02"* ]]; then
           # Build list of WordPress projects
           local wordpress_projects=()
@@ -293,7 +311,7 @@ function project_manager_menu() {
             if [[ ${exitstatus} -eq 0 && -n ${chosen_project} ]]; then
               # Get full path
               local project_path="${PROJECTS_PATH}/${chosen_project}"
-              optimize_images_complete "${project_path}"
+              optimize_images_complete "${project_path}" "${time_filter}"
             fi
           else
             display --indent 6 --text "- No WordPress projects found" --result "FAIL" --color RED
@@ -310,6 +328,24 @@ function project_manager_menu() {
     if [[ ${chosen_project_manager_option} == *"09"* ]]; then
       log_section "Project Utils"
 
+      # Ask time filter preference
+      local time_filter_option
+      time_filter_option="$(whiptail --title "PDF OPTIMIZATION TIME FILTER" --menu "\nSelect which PDFs to optimize:\n" 20 78 10 \
+        "01)" "All PDFs (regardless of modification date)" \
+        "02)" "Only PDFs modified in the last 7 days" \
+        3>&1 1>&2 2>&3)"
+
+      exitstatus=$?
+      if [[ ${exitstatus} -ne 0 ]]; then
+        prompt_return_or_finish
+        project_manager_menu
+        return
+      fi
+
+      # Determine time filter
+      local time_filter="all"
+      [[ ${time_filter_option} == *"02"* ]] && time_filter="7"
+
       # Ask if user wants to optimize all projects or select specific one
       local pdf_opt_scope
       pdf_opt_scope="$(whiptail --title "PDF OPTIMIZATION SCOPE" --menu "\nSelect optimization scope:\n" 20 78 10 \
@@ -322,7 +358,7 @@ function project_manager_menu() {
 
         if [[ ${pdf_opt_scope} == *"01"* ]]; then
           # Optimize all projects
-          optimize_pdfs
+          optimize_pdfs "" "${time_filter}"
         elif [[ ${pdf_opt_scope} == *"02"* ]]; then
           # Build list of WordPress projects
           local wordpress_projects=()
@@ -363,7 +399,7 @@ function project_manager_menu() {
             if [[ ${exitstatus} -eq 0 && -n ${chosen_project} ]]; then
               # Get full path
               local project_path="${PROJECTS_PATH}/${chosen_project}"
-              optimize_pdfs "${project_path}"
+              optimize_pdfs "${project_path}" "${time_filter}"
             fi
           else
             display --indent 6 --text "- No WordPress projects found" --result "FAIL" --color RED
