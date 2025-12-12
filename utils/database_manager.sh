@@ -204,7 +204,6 @@ function database_manager_menu() {
     log_event "error" "Check: Docker containers running? Host MySQL/Postgres enabled/installed?" "true"
     whiptail --title "DATABASE MANAGER ERROR" --msgbox "No database engine detected.\n\n- Verify Docker containers (mysql/postgres names).\n- Or enable/install host MySQL/MariaDB/PostgreSQL.\n\nCheck logs for details." 12 70
     prompt_return_or_finish
-    database_manager_menu  # Recurse to retry
     return 1
   fi
 
