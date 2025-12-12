@@ -95,6 +95,7 @@ function _get_wordpress_uploads_path() {
 #
 # Arguments:
 #   ${1} = ${project_path} (optional) - Specific project path to optimize
+#   ${2} = ${time_filter} (optional) - Time filter: "all" or number of days (e.g., "7")
 #
 # Outputs:
 #   nothing
@@ -103,9 +104,16 @@ function _get_wordpress_uploads_path() {
 function optimize_images_complete() {
 
   local specific_project="${1}"
+  local time_filter="${2:-all}"  # Default to "all" if not specified
 
   log_subsection "Image Optimization"
   log_event "info" "Starting image optimization process for WordPress projects" "false"
+
+  if [[ "${time_filter}" == "all" ]]; then
+    log_event "info" "Processing all images (regardless of modification date)" "false"
+  else
+    log_event "info" "Processing only images modified in the last ${time_filter} days" "false"
+  fi
 
   # Ensure required commands are available
   if [[ -z "${FIND}" ]]; then
@@ -211,9 +219,9 @@ function optimize_images_complete() {
       ((wp_projects_count++))
       log_event "info" "Processing uploads directory: ${uploads_path}" "false"
       # Optimize images only in uploads directory
-      optimize_image_size "${uploads_path}" "jpg" "1920" "1080"
-      optimize_images "${uploads_path}" "jpg" "80"
-      optimize_images "${uploads_path}" "png" ""
+      optimize_image_size "${uploads_path}" "jpg" "1920" "1080" "${time_filter}"
+      optimize_images "${uploads_path}" "jpg" "80" "${time_filter}"
+      optimize_images "${uploads_path}" "png" "" "${time_filter}"
     else
       log_event "warning" "Uploads directory not found: ${uploads_path}" "false"
     fi
@@ -264,9 +272,9 @@ function optimize_images_complete() {
         if [[ -d "${uploads_path}" ]]; then
           log_event "info" "Processing uploads directory: ${uploads_path}" "false"
           # Optimize images only in uploads directory
-          optimize_image_size "${uploads_path}" "jpg" "1920" "1080"
-          optimize_images "${uploads_path}" "jpg" "80"
-          optimize_images "${uploads_path}" "png" ""
+          optimize_image_size "${uploads_path}" "jpg" "1920" "1080" "${time_filter}"
+          optimize_images "${uploads_path}" "jpg" "80" "${time_filter}"
+          optimize_images "${uploads_path}" "png" "" "${time_filter}"
         else
           log_event "warning" "Uploads directory not found: ${uploads_path}" "false"
         fi
@@ -322,6 +330,7 @@ function optimize_ram_usage() {
 #  ${2} = ${file_extension}
 #  ${3} = ${img_max_width}
 #  ${4} = ${img_max_height}
+#  ${5} = ${time_filter} (optional) - "all" or number of days
 #
 # Outputs:
 #   nothing
@@ -333,8 +342,7 @@ function optimize_image_size() {
   local file_extension="${2}"
   local img_max_width="${3}"
   local img_max_height="${4}"
-
-  local last_run
+  local time_filter="${5:-all}"  # Default to "all" if not specified
 
   # Ensure commands are available
   if [[ -z "${FIND}" ]]; then
@@ -354,10 +362,10 @@ function optimize_image_size() {
 
   # Count images first
   local image_count
-  if [[ "${last_run}" == "never" ]]; then
+  if [[ "${time_filter}" == "all" ]]; then
     image_count=$(${FIND} "${path}" -type f -name "*.${file_extension}" 2>/dev/null | wc -l)
   else
-    image_count=$(${FIND} "${path}" -mtime -7 -type f -name "*.${file_extension}" 2>/dev/null | wc -l)
+    image_count=$(${FIND} "${path}" -mtime -"${time_filter}" -type f -name "*.${file_extension}" 2>/dev/null | wc -l)
   fi
 
   log_event "info" "Found ${image_count} ${file_extension} image(s) to resize" "false"
@@ -370,24 +378,19 @@ function optimize_image_size() {
   # Run ImageMagick mogrify
   log_event "info" "Running mogrify to optimize image sizes (max: ${img_max_width}x${img_max_height})..." "false"
 
-  last_run=$(_check_last_optimization_date)
+  if [[ "${time_filter}" == "all" ]]; then
 
-  if [[ "${last_run}" == "never" ]]; then
-
-  log_event "debug" "Executing: ${FIND} ${path} -type f -name *.${file_extension} -exec ${MOGRIFY} -resize ${img_max_width}x${img_max_height}\> {} \;" "false"
-  ${FIND} "${path}" -type f -name "*.${file_extension}" -exec "${MOGRIFY}" -resize "${img_max_width}"x"${img_max_height}"\> {} \; 2>/dev/null
+    log_event "debug" "Executing: ${FIND} ${path} -type f -name *.${file_extension} -exec ${MOGRIFY} -resize ${img_max_width}x${img_max_height}\> {} \;" "false"
+    ${FIND} "${path}" -type f -name "*.${file_extension}" -exec "${MOGRIFY}" -resize "${img_max_width}"x"${img_max_height}"\> {} \; 2>/dev/null
 
   else
 
-  log_event "debug" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${MOGRIFY} -resize ${img_max_width}x${img_max_height}\> {} \;" "false"
-  ${FIND} "${path}" -mtime -7 -type f -name "*.${file_extension}" -exec "${MOGRIFY}" -resize "${img_max_width}"x"${img_max_height}"\> {} \; 2>/dev/null
+    log_event "debug" "Executing: ${FIND} ${path} -mtime -${time_filter} -type f -name *.${file_extension} -exec ${MOGRIFY} -resize ${img_max_width}x${img_max_height}\> {} \;" "false"
+    ${FIND} "${path}" -mtime -"${time_filter}" -type f -name "*.${file_extension}" -exec "${MOGRIFY}" -resize "${img_max_width}"x"${img_max_height}"\> {} \; 2>/dev/null
 
   fi
 
   log_event "info" "Image resizing completed for ${file_extension} files" "false"
-
-  # Next time will run the find command with -mtime -7 parameter
-  _update_last_optimization_date
 
 }
 
@@ -398,6 +401,7 @@ function optimize_image_size() {
 #  ${1} = ${path}
 #  ${2} = ${file_extension}
 #  ${3} = ${img_compress}
+#  ${4} = ${time_filter} (optional) - "all" or number of days
 #
 # Outputs:
 #   nothing
@@ -408,8 +412,7 @@ function optimize_images() {
   local path="${1}"
   local file_extension="${2}"
   local img_compress="${3}"
-
-  local last_run
+  local time_filter="${4:-all}"  # Default to "all" if not specified
 
   # Ensure commands are available
   if [[ -z "${FIND}" ]]; then
@@ -424,8 +427,6 @@ function optimize_images() {
 
   log_subsection "Image Optimizer"
 
-  last_run="$(_check_last_optimization_date)"
-
   if [[ ${file_extension} == "jpg" ]]; then
 
     # Check if jpegoptim is available
@@ -436,10 +437,10 @@ function optimize_images() {
 
     # Count JPG images first
     local image_count
-    if [[ "${last_run}" == "never" ]]; then
+    if [[ "${time_filter}" == "all" ]]; then
       image_count=$(${FIND} "${path}" -type f -regex ".*\.\(jpg\|jpeg\)" 2>/dev/null | wc -l)
     else
-      image_count=$(${FIND} "${path}" -mtime -7 -type f -regex ".*\.\(jpg\|jpeg\)" 2>/dev/null | wc -l)
+      image_count=$(${FIND} "${path}" -mtime -"${time_filter}" -type f -regex ".*\.\(jpg\|jpeg\)" 2>/dev/null | wc -l)
     fi
 
     log_event "info" "Found ${image_count} JPG/JPEG image(s) to compress" "false"
@@ -451,17 +452,17 @@ function optimize_images() {
 
     # Run jpegoptim
     log_event "info" "Running jpegoptim to compress images (quality: ${img_compress}%)..." "false"
-  if [[ "${last_run}" == "never" ]]; then
+    if [[ "${time_filter}" == "all" ]]; then
 
-    log_event "debug" "Executing: ${FIND} ${path} -type f -regex .*\.\(jpg\|jpeg\) -exec ${JPEGOPTIM} --max=${img_compress} --strip-all --all-progressive {} \;" "false"
-    ${FIND} "${path}" -type f -regex ".*\.\(jpg\|jpeg\)" -exec "${JPEGOPTIM}" --max="${img_compress}" --strip-all --all-progressive {} \; 2>/dev/null
+      log_event "debug" "Executing: ${FIND} ${path} -type f -regex .*\.\(jpg\|jpeg\) -exec ${JPEGOPTIM} --max=${img_compress} --strip-all --all-progressive {} \;" "false"
+      ${FIND} "${path}" -type f -regex ".*\.\(jpg\|jpeg\)" -exec "${JPEGOPTIM}" --max="${img_compress}" --strip-all --all-progressive {} \; 2>/dev/null
 
-  else
+    else
 
-    log_event "debug" "Executing: ${FIND} ${path} -mtime -7 -type f -regex .*\.\(jpg\|jpeg\) -exec ${JPEGOPTIM} --max=${img_compress} --strip-all --all-progressive {} \;" "false"
-    ${FIND} "${path}" -mtime -7 -type f -regex ".*\.\(jpg\|jpeg\)" -exec "${JPEGOPTIM}" --max="${img_compress}" --strip-all --all-progressive {} \; 2>/dev/null
+      log_event "debug" "Executing: ${FIND} ${path} -mtime -${time_filter} -type f -regex .*\.\(jpg\|jpeg\) -exec ${JPEGOPTIM} --max=${img_compress} --strip-all --all-progressive {} \;" "false"
+      ${FIND} "${path}" -mtime -"${time_filter}" -type f -regex ".*\.\(jpg\|jpeg\)" -exec "${JPEGOPTIM}" --max="${img_compress}" --strip-all --all-progressive {} \; 2>/dev/null
 
-  fi
+    fi
 
     log_event "info" "JPG compression completed" "false"
 
@@ -475,10 +476,10 @@ function optimize_images() {
 
     # Count PNG images first
     local image_count
-    if [[ "${last_run}" == "never" ]]; then
+    if [[ "${time_filter}" == "all" ]]; then
       image_count=$(${FIND} "${path}" -type f -name "*.${file_extension}" 2>/dev/null | wc -l)
     else
-      image_count=$(${FIND} "${path}" -mtime -7 -type f -name "*.${file_extension}" 2>/dev/null | wc -l)
+      image_count=$(${FIND} "${path}" -mtime -"${time_filter}" -type f -name "*.${file_extension}" 2>/dev/null | wc -l)
     fi
 
     log_event "info" "Found ${image_count} PNG image(s) to optimize" "false"
@@ -490,17 +491,17 @@ function optimize_images() {
 
     # Run optipng
     log_event "info" "Running optipng to compress images..." "false"
-  if [[ "${last_run}" == "never" ]]; then
+    if [[ "${time_filter}" == "all" ]]; then
 
     log_event "debug" "Executing: ${FIND} ${path} -type f -name *.${file_extension} -exec ${OPTIPNG} -o7 -strip all {} \;" "false"
     ${FIND} "${path}" -type f -name "*.${file_extension}" -exec "${OPTIPNG}" -o7 -strip all {} \; 2>/dev/null
 
-  else
+    else
 
-    log_event "debug" "Executing: ${FIND} ${path} -mtime -7 -type f -name *.${file_extension} -exec ${OPTIPNG} -o7 -strip all {} \;" "false"
-    ${FIND} "${path}" -mtime -7 -type f -name "*.${file_extension}" -exec "${OPTIPNG}" -o7 -strip all {} \; 2>/dev/null
+      log_event "debug" "Executing: ${FIND} ${path} -mtime -${time_filter} -type f -name *.${file_extension} -exec ${OPTIPNG} -o7 -strip all {} \;" "false"
+      ${FIND} "${path}" -mtime -"${time_filter}" -type f -name "*.${file_extension}" -exec "${OPTIPNG}" -o7 -strip all {} \; 2>/dev/null
 
-  fi
+    fi
 
     log_event "info" "PNG optimization completed" "false"
 
@@ -510,9 +511,6 @@ function optimize_images() {
 
   fi
 
-  # Next time will run the find command with -mtime -7 parameter
-  _update_last_optimization_date
-
 }
 
 ################################################################################
@@ -520,6 +518,7 @@ function optimize_images() {
 #
 # Arguments:
 #  ${1} = ${project_path} (optional) - Specific project path to optimize
+#  ${2} = ${time_filter} (optional) - "all" or number of days
 #
 # Outputs:
 #   nothing
@@ -527,12 +526,17 @@ function optimize_images() {
 
 function optimize_pdfs() {
   local specific_project="${1}"
-  local last_run
+  local time_filter="${2:-all}"  # Default to "all" if not specified
   local pdf_files=()
   local wp_projects_count=0
 
-  last_run=$(_check_last_optimization_date)
   log_subsection "PDF Optimizer"
+
+  if [[ "${time_filter}" == "all" ]]; then
+    log_event "info" "Processing all PDFs (regardless of modification date)" "false"
+  else
+    log_event "info" "Processing only PDFs modified in the last ${time_filter} days" "false"
+  fi
 
   # Ensure required commands are available
   if [[ -z "${FIND}" ]]; then
@@ -606,9 +610,15 @@ function optimize_pdfs() {
       ((wp_projects_count++))
       log_event "info" "Searching for PDFs in: ${uploads_path}" "false"
 
-      while IFS= read -r -d $'\0' pdf_file; do
-        pdf_files+=("$pdf_file")
-      done < <(${FIND} "${uploads_path}" -type f -name "*.pdf" -print0)
+      if [[ "${time_filter}" == "all" ]]; then
+        while IFS= read -r -d $'\0' pdf_file; do
+          pdf_files+=("$pdf_file")
+        done < <(${FIND} "${uploads_path}" -type f -name "*.pdf" -print0)
+      else
+        while IFS= read -r -d $'\0' pdf_file; do
+          pdf_files+=("$pdf_file")
+        done < <(${FIND} "${uploads_path}" -mtime -"${time_filter}" -type f -name "*.pdf" -print0)
+      fi
     else
       log_event "warning" "Uploads directory not found: ${uploads_path}" "false"
     fi
@@ -659,9 +669,15 @@ function optimize_pdfs() {
         if [[ -d "${uploads_path}" ]]; then
           log_event "info" "Searching for PDFs in: ${uploads_path}" "false"
 
-          while IFS= read -r -d $'\0' pdf_file; do
-            pdf_files+=("$pdf_file")
-          done < <(${FIND} "${uploads_path}" -type f -name "*.pdf" -print0)
+          if [[ "${time_filter}" == "all" ]]; then
+            while IFS= read -r -d $'\0' pdf_file; do
+              pdf_files+=("$pdf_file")
+            done < <(${FIND} "${uploads_path}" -type f -name "*.pdf" -print0)
+          else
+            while IFS= read -r -d $'\0' pdf_file; do
+              pdf_files+=("$pdf_file")
+            done < <(${FIND} "${uploads_path}" -mtime -"${time_filter}" -type f -name "*.pdf" -print0)
+          fi
         else
           log_event "warning" "Uploads directory not found: ${uploads_path}" "false"
         fi
@@ -710,9 +726,6 @@ function optimize_pdfs() {
   else
     log_event "info" "Processed ${wp_projects_count} WordPress project(s)" "false"
   fi
-
-  # Next time will run the find command with -mtime -7 parameter
-  _update_last_optimization_date
 
   log_event "info" "PDF optimization process completed" "false"
 }
