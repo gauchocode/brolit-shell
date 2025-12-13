@@ -768,7 +768,8 @@ function wpcli_delete_malicious_posts_menu() {
       if [[ -n ${author_name} ]]; then
         # Get the user ID for the selected username
         if [[ ${install_type} == "docker"* ]]; then
-          author_id=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp user get "${author_name}" --field=ID 2>/dev/null)
+          local project_path=$(dirname "${wp_site}")
+          author_id=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp user get "${author_name}" --field=ID 2>/dev/null)
         else
           author_id=$(wp user get "${author_name}" --path="${wp_site}" --field=ID 2>/dev/null)
         fi
@@ -877,14 +878,18 @@ function wpcli_select_user() {
   local user_options=()
   local selected_user
   local wpcli_result
+  local project_path
 
   log_event "info" "Getting WordPress user list from: ${wp_site}" "false"
 
   # Get list of users with their roles
   if [[ ${install_type} == "docker"* ]]; then
-    log_event "debug" "Running: docker compose -f ${wp_site}/docker-compose.yml run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp user list" "false"
+    # For Docker installations, docker-compose.yml is in the parent directory
+    project_path=$(dirname "${wp_site}")
 
-    users_list=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp user list --fields=user_login,display_name,user_email,roles --format=csv 2>&1)
+    log_event "debug" "Running: docker compose -f ${project_path}/docker-compose.yml run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp user list" "false"
+
+    users_list=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp user list --fields=user_login,display_name,user_email,roles --format=csv 2>&1)
     wpcli_result=$?
 
     if [[ ${wpcli_result} -ne 0 ]]; then
@@ -969,13 +974,15 @@ function wpcli_delete_posts_by_author() {
 
   local post_count
   local wpcli_result
+  local project_path
 
   log_event "info" "Searching ${post_type} by author: ${author_name}" "false"
   display --indent 6 --text "- Searching ${post_type} by author: ${author_name}"
 
   # Count posts first
   if [[ ${install_type} == "docker"* ]]; then
-    post_count=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --author="${author_name}" --post_type="${post_type}" --format=count --quiet 2>/dev/null)
+    project_path=$(dirname "${wp_site}")
+    post_count=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --author="${author_name}" --post_type="${post_type}" --format=count --quiet 2>/dev/null)
   else
     post_count=$(wp post list --path="${wp_site}" --author="${author_name}" --post_type="${post_type}" --format=count --quiet 2>/dev/null)
   fi
@@ -996,9 +1003,9 @@ function wpcli_delete_posts_by_author() {
     # Delete posts
     if [[ ${install_type} == "docker"* ]]; then
       # First get the post IDs
-      post_ids=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --author="${author_name}" --post_type="${post_type}" --format=ids --quiet 2>&1)
+      post_ids=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --author="${author_name}" --post_type="${post_type}" --format=ids --quiet 2>&1)
       # Then delete them
-      wpcli_result=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post delete "${post_ids}" --force --quiet 2>&1)
+      wpcli_result=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post delete "${post_ids}" --force --quiet 2>&1)
     else
       post_ids=$(wp post list --path="${wp_site}" --author="${author_name}" --post_type="${post_type}" --format=ids --quiet)
       wpcli_result=$(wp post delete "${post_ids}" --force --path="${wp_site}" --quiet 2>&1)
@@ -1043,13 +1050,15 @@ function wpcli_delete_posts_by_author_id() {
 
   local post_count
   local wpcli_result
+  local project_path
 
   log_event "info" "Searching ${post_type} by author ID: ${author_id}" "false"
   display --indent 6 --text "- Searching ${post_type} by author ID: ${author_id}"
 
   # Count posts first
   if [[ ${install_type} == "docker"* ]]; then
-    post_count=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --author="${author_id}" --post_type="${post_type}" --format=count --quiet 2>/dev/null)
+    project_path=$(dirname "${wp_site}")
+    post_count=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --author="${author_id}" --post_type="${post_type}" --format=count --quiet 2>/dev/null)
   else
     post_count=$(wp post list --path="${wp_site}" --author="${author_id}" --post_type="${post_type}" --format=count --quiet 2>/dev/null)
   fi
@@ -1070,9 +1079,9 @@ function wpcli_delete_posts_by_author_id() {
     # Delete posts
     if [[ ${install_type} == "docker"* ]]; then
       # First get the post IDs
-      post_ids=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --author="${author_id}" --post_type="${post_type}" --format=ids --quiet 2>&1)
+      post_ids=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --author="${author_id}" --post_type="${post_type}" --format=ids --quiet 2>&1)
       # Then delete them
-      wpcli_result=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post delete "${post_ids}" --force --quiet 2>&1)
+      wpcli_result=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post delete "${post_ids}" --force --quiet 2>&1)
     else
       post_ids=$(wp post list --path="${wp_site}" --author="${author_id}" --post_type="${post_type}" --format=ids --quiet)
       wpcli_result=$(wp post delete "${post_ids}" --force --path="${wp_site}" --quiet 2>&1)
@@ -1119,13 +1128,15 @@ function wpcli_delete_posts_by_date_range() {
 
   local post_count
   local wpcli_result
+  local project_path
 
   log_event "info" "Searching ${post_type} between ${start_date} and ${end_date}" "false"
   display --indent 6 --text "- Searching ${post_type} from ${start_date} to ${end_date}"
 
   # Count posts first
   if [[ ${install_type} == "docker"* ]]; then
-    post_count=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --post_type="${post_type}" --post_status=any --after="${start_date}" --before="${end_date}" --format=count --quiet 2>/dev/null)
+    project_path=$(dirname "${wp_site}")
+    post_count=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --post_type="${post_type}" --post_status=any --after="${start_date}" --before="${end_date}" --format=count --quiet 2>/dev/null)
   else
     post_count=$(wp post list --path="${wp_site}" --post_type="${post_type}" --post_status=any --after="${start_date}" --before="${end_date}" --format=count --quiet 2>/dev/null)
   fi
@@ -1146,9 +1157,9 @@ function wpcli_delete_posts_by_date_range() {
     # Delete posts
     if [[ ${install_type} == "docker"* ]]; then
       # First get the post IDs
-      post_ids=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --post_type="${post_type}" --post_status=any --after="${start_date}" --before="${end_date}" --format=ids --quiet 2>&1)
+      post_ids=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --post_type="${post_type}" --post_status=any --after="${start_date}" --before="${end_date}" --format=ids --quiet 2>&1)
       # Then delete them
-      wpcli_result=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post delete "${post_ids}" --force --quiet 2>&1)
+      wpcli_result=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post delete "${post_ids}" --force --quiet 2>&1)
     else
       post_ids=$(wp post list --path="${wp_site}" --post_type="${post_type}" --post_status=any --after="${start_date}" --before="${end_date}" --format=ids --quiet)
       wpcli_result=$(wp post delete "${post_ids}" --force --path="${wp_site}" --quiet 2>&1)
@@ -1193,13 +1204,15 @@ function wpcli_delete_posts_by_keyword() {
 
   local post_count
   local wpcli_result
+  local project_path
 
   log_event "info" "Searching ${post_type} with keyword: ${keyword}" "false"
   display --indent 6 --text "- Searching ${post_type} with keyword: '${keyword}'"
 
   # Count posts first
   if [[ ${install_type} == "docker"* ]]; then
-    post_count=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --post_type="${post_type}" --s="${keyword}" --format=count --quiet 2>/dev/null)
+    project_path=$(dirname "${wp_site}")
+    post_count=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --post_type="${post_type}" --s="${keyword}" --format=count --quiet 2>/dev/null)
   else
     post_count=$(wp post list --path="${wp_site}" --post_type="${post_type}" --s="${keyword}" --format=count --quiet 2>/dev/null)
   fi
@@ -1220,9 +1233,9 @@ function wpcli_delete_posts_by_keyword() {
     # Delete posts
     if [[ ${install_type} == "docker"* ]]; then
       # First get the post IDs
-      post_ids=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --post_type="${post_type}" --s="${keyword}" --format=ids --quiet 2>&1)
+      post_ids=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --post_type="${post_type}" --s="${keyword}" --format=ids --quiet 2>&1)
       # Then delete them
-      wpcli_result=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post delete "${post_ids}" --force --quiet 2>&1)
+      wpcli_result=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post delete "${post_ids}" --force --quiet 2>&1)
     else
       post_ids=$(wp post list --path="${wp_site}" --post_type="${post_type}" --s="${keyword}" --format=ids --quiet)
       wpcli_result=$(wp post delete "${post_ids}" --force --path="${wp_site}" --quiet 2>&1)
@@ -1267,13 +1280,15 @@ function wpcli_delete_posts_by_status() {
 
   local post_count
   local wpcli_result
+  local project_path
 
   log_event "info" "Searching ${post_type} with status: ${post_status}" "false"
   display --indent 6 --text "- Searching ${post_type} with status: ${post_status}"
 
   # Count posts first
   if [[ ${install_type} == "docker"* ]]; then
-    post_count=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --post_type="${post_type}" --post_status="${post_status}" --format=count --quiet 2>/dev/null)
+    project_path=$(dirname "${wp_site}")
+    post_count=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --post_type="${post_type}" --post_status="${post_status}" --format=count --quiet 2>/dev/null)
   else
     post_count=$(wp post list --path="${wp_site}" --post_type="${post_type}" --post_status="${post_status}" --format=count --quiet 2>/dev/null)
   fi
@@ -1294,9 +1309,9 @@ function wpcli_delete_posts_by_status() {
     # Delete posts
     if [[ ${install_type} == "docker"* ]]; then
       # First get the post IDs
-      post_ids=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --post_type="${post_type}" --post_status="${post_status}" --format=ids --quiet 2>&1)
+      post_ids=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --post_type="${post_type}" --post_status="${post_status}" --format=ids --quiet 2>&1)
       # Then delete them
-      wpcli_result=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post delete "${post_ids}" --force --quiet 2>&1)
+      wpcli_result=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post delete "${post_ids}" --force --quiet 2>&1)
     else
       post_ids=$(wp post list --path="${wp_site}" --post_type="${post_type}" --post_status="${post_status}" --format=ids --quiet)
       wpcli_result=$(wp post delete "${post_ids}" --force --path="${wp_site}" --quiet 2>&1)
