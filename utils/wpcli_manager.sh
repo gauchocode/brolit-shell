@@ -876,16 +876,33 @@ function wpcli_select_user() {
   local users_list
   local user_options=()
   local selected_user
+  local wpcli_result
+
+  log_event "info" "Getting WordPress user list from: ${wp_site}" "false"
 
   # Get list of users with their roles
   if [[ ${install_type} == "docker"* ]]; then
-    users_list=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp user list --fields=user_login,display_name,user_email,roles --format=csv 2>/dev/null)
+    log_event "debug" "Running: docker compose -f ${wp_site}/docker-compose.yml run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp user list" "false"
+
+    users_list=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp user list --fields=user_login,display_name,user_email,roles --format=csv 2>&1)
+    wpcli_result=$?
+
+    if [[ ${wpcli_result} -ne 0 ]]; then
+      log_event "error" "WP-CLI command failed with exit code ${wpcli_result}: ${users_list}" "false"
+    fi
   else
-    users_list=$(wp user list --path="${wp_site}" --fields=user_login,display_name,user_email,roles --format=csv 2>/dev/null)
+    log_event "debug" "Running: wp user list --path=${wp_site}" "false"
+
+    users_list=$(wp user list --path="${wp_site}" --fields=user_login,display_name,user_email,roles --format=csv 2>&1)
+    wpcli_result=$?
+
+    if [[ ${wpcli_result} -ne 0 ]]; then
+      log_event "error" "WP-CLI command failed with exit code ${wpcli_result}: ${users_list}" "false"
+    fi
   fi
 
   # Check if we got users
-  if [[ -z ${users_list} ]]; then
+  if [[ -z ${users_list} || ${wpcli_result} -ne 0 ]]; then
     display --indent 6 --text "- Getting user list" --result "FAIL" --color RED
     log_event "error" "Failed to get user list from WordPress" "false"
     return 1
