@@ -135,7 +135,7 @@ function wpcli_main_menu() {
     "01)" "VERIFY WP"
     "02)" "UPDATE WP"
     "03)" "REINSTALL WP"
-    "04)" "DELETE NOT CORE FILES"
+    "04)" "CLEAN & REINSTALL WP CORE"
     # PLUGINS
     "05)" "INSTALL PLUGINS"
     "06)" "LIST INSTALLED PLUGINS"
@@ -162,7 +162,7 @@ function wpcli_main_menu() {
     "23)" "LIST APP-PASS"
     "24)" "DELETE APP-PASS"
     # POSTS CLEANUP
-    "25)" "DELETE POSTS (spam/compromised accounts)"
+    "25)" "DELETE POSTS"
   )
 
   chosen_wpcli_options="$(whiptail --title "WP-CLI HELPER" --menu "Choose an option to run" 20 78 10 "${wpcli_options[@]}" 3>&1 1>&2 2>&3)"
@@ -194,19 +194,19 @@ function wpcli_main_menu() {
 
     fi
 
-    # WP CORE - DELETE NOT CORE FILES
+    # WP CORE - CLEAN & REINSTALL WP CORE
     if [[ ${chosen_wpcli_options} == *"04"* ]]; then
 
-      log_subsection "WP Delete not-core files"
+      log_subsection "Clean & Reinstall WP Core"
 
-      echo -e "${B_RED} > This script will delete all non-core wordpress files (except wp-content). Do you want to continue? [y/n]${ENDCOLOR}"
+      echo -e "${B_RED} > This script will delete all non-core WordPress files (except wp-content) and reinstall WordPress core. Do you want to continue? [y/n]${ENDCOLOR}"
       read -r answer
 
       if [[ ${answer} == "y" ]]; then
 
         clear_previous_lines "2"
 
-        wpcli_delete_not_core_files "${wp_site}" "${project_install_type}"
+        wpcli_clean_and_reinstall_core "${wp_site}" "${project_install_type}"
 
       fi
 
@@ -1038,6 +1038,9 @@ function wpcli_delete_posts_by_author() {
       fi
 
       # Get and delete one batch
+      echo -ne "\r$(tput el)"  # Clear line
+      echo -ne "        Batch ${batch_num}: Processing (${deleted_total}/${post_count} deleted so far)..."
+
       if [[ ${install_type} == "docker"* ]]; then
         log_event "debug" "Batch ${batch_num}: Running: docker compose -f ${project_path}/docker-compose.yml run -T --rm -u 33 -e HOME=/tmp wordpress-cli bash -c \"wp post delete \\\$(wp post list --author=${author_id} --post_type=${post_type} --posts_per_page=${batch_size} --format=ids --quiet) --force\"" "false"
 
@@ -1054,6 +1057,8 @@ function wpcli_delete_posts_by_author() {
 
         log_event "debug" "Batch ${batch_num}: Exit status: ${exitstatus}, Result: ${wpcli_result}" "false"
       fi
+
+      echo -ne "\r$(tput el)"  # Clear the processing line
 
       if [[ ${exitstatus} -eq 0 ]]; then
         # Count how many were actually deleted (from "Deleted post X" messages)
@@ -1168,6 +1173,9 @@ function wpcli_delete_posts_by_author_id() {
 
     while [[ ${remaining} -gt 0 ]]; do
       # Get and delete one batch
+      echo -ne "\r$(tput el)"  # Clear line
+      echo -ne "        Batch ${batch_num}: Processing (${deleted_total}/${post_count} deleted so far)..."
+
       if [[ ${install_type} == "docker"* ]]; then
         wpcli_result=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli bash -c "wp post delete \$(wp post list --author=${author_id} --post_type=${post_type} --posts_per_page=${batch_size} --format=ids --quiet) --force" 2>&1 | grep -v "^Container" | tail -1)
         exitstatus=$?
@@ -1175,6 +1183,8 @@ function wpcli_delete_posts_by_author_id() {
         wpcli_result=$(bash -c "wp post delete \$(wp post list --path=\"${wp_site}\" --author=${author_id} --post_type=${post_type} --posts_per_page=${batch_size} --format=ids --quiet) --force --path=\"${wp_site}\"" 2>&1)
         exitstatus=$?
       fi
+
+      echo -ne "\r$(tput el)"  # Clear the processing line
 
       if [[ ${exitstatus} -eq 0 ]]; then
         batch_deleted=$(echo "${wpcli_result}" | grep -c "Deleted post" 2>/dev/null || echo "0")
@@ -1293,6 +1303,9 @@ function wpcli_delete_posts_by_date_range() {
 
     while [[ ${remaining} -gt 0 ]]; do
       # Get and delete one batch
+      echo -ne "\r$(tput el)"  # Clear line
+      echo -ne "        Batch ${batch_num}: Processing (${deleted_total}/${post_count} deleted so far)..."
+
       if [[ ${install_type} == "docker"* ]]; then
         wpcli_result=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli bash -c "wp post delete \$(wp post list --post_type=${post_type} --post_status=any --after='${start_date}' --before='${end_date}' --posts_per_page=${batch_size} --format=ids --quiet) --force" 2>&1 | grep -v "^Container" | tail -1)
         exitstatus=$?
@@ -1300,6 +1313,8 @@ function wpcli_delete_posts_by_date_range() {
         wpcli_result=$(bash -c "wp post delete \$(wp post list --path=\"${wp_site}\" --post_type=${post_type} --post_status=any --after='${start_date}' --before='${end_date}' --posts_per_page=${batch_size} --format=ids --quiet) --force --path=\"${wp_site}\"" 2>&1)
         exitstatus=$?
       fi
+
+      echo -ne "\r$(tput el)"  # Clear the processing line
 
       if [[ ${exitstatus} -eq 0 ]]; then
         batch_deleted=$(echo "${wpcli_result}" | grep -c "Deleted post" 2>/dev/null || echo "0")
@@ -1416,6 +1431,9 @@ function wpcli_delete_posts_by_keyword() {
 
     while [[ ${remaining} -gt 0 ]]; do
       # Get and delete one batch
+      echo -ne "\r$(tput el)"  # Clear line
+      echo -ne "        Batch ${batch_num}: Processing (${deleted_total}/${post_count} deleted so far)..."
+
       if [[ ${install_type} == "docker"* ]]; then
         wpcli_result=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli bash -c "wp post delete \$(wp post list --post_type=${post_type} --s='${keyword}' --posts_per_page=${batch_size} --format=ids --quiet) --force" 2>&1 | grep -v "^Container" | tail -1)
         exitstatus=$?
@@ -1423,6 +1441,8 @@ function wpcli_delete_posts_by_keyword() {
         wpcli_result=$(bash -c "wp post delete \$(wp post list --path=\"${wp_site}\" --post_type=${post_type} --s='${keyword}' --posts_per_page=${batch_size} --format=ids --quiet) --force --path=\"${wp_site}\"" 2>&1)
         exitstatus=$?
       fi
+
+      echo -ne "\r$(tput el)"  # Clear the processing line
 
       if [[ ${exitstatus} -eq 0 ]]; then
         batch_deleted=$(echo "${wpcli_result}" | grep -c "Deleted post" 2>/dev/null || echo "0")
@@ -1539,6 +1559,9 @@ function wpcli_delete_posts_by_status() {
 
     while [[ ${remaining} -gt 0 ]]; do
       # Get and delete one batch
+      echo -ne "\r$(tput el)"  # Clear line
+      echo -ne "        Batch ${batch_num}: Processing (${deleted_total}/${post_count} deleted so far)..."
+
       if [[ ${install_type} == "docker"* ]]; then
         wpcli_result=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli bash -c "wp post delete \$(wp post list --post_type=${post_type} --post_status=${post_status} --posts_per_page=${batch_size} --format=ids --quiet) --force" 2>&1 | grep -v "^Container" | tail -1)
         exitstatus=$?
@@ -1546,6 +1569,8 @@ function wpcli_delete_posts_by_status() {
         wpcli_result=$(bash -c "wp post delete \$(wp post list --path=\"${wp_site}\" --post_type=${post_type} --post_status=${post_status} --posts_per_page=${batch_size} --format=ids --quiet) --force --path=\"${wp_site}\"" 2>&1)
         exitstatus=$?
       fi
+
+      echo -ne "\r$(tput el)"  # Clear the processing line
 
       if [[ ${exitstatus} -eq 0 ]]; then
         batch_deleted=$(echo "${wpcli_result}" | grep -c "Deleted post" 2>/dev/null || echo "0")
