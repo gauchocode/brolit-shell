@@ -1811,6 +1811,68 @@ function wpcli_delete_not_core_files() {
 }
 
 ################################################################################
+# Clean non-core files and reinstall WordPress core
+#
+# Arguments:
+#   ${1} = ${wp_site}
+#   ${2} = ${install_type}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function wpcli_clean_and_reinstall_core() {
+
+    local wp_site="${1}"
+    local install_type="${2}"
+
+    local wp_version
+    local delete_result
+
+    # Step 1: Get current WordPress version
+    display --indent 6 --text "- Getting current WordPress version"
+    wp_version="$(wpcli_get_wpcore_version "${wp_site}" "${install_type}")"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -ne 0 || -z ${wp_version} ]]; then
+        log_event "error" "Failed to get WordPress version" "false"
+        display --indent 6 --text "- Getting WordPress version" --result "FAIL" --color RED
+        return 1
+    fi
+
+    log_event "info" "Current WordPress version: ${wp_version}" "false"
+
+    # Step 2: Delete non-core files
+    wpcli_delete_not_core_files "${wp_site}" "${install_type}"
+    delete_result=$?
+
+    # Step 3: Reinstall WordPress core with the same version
+    if [[ ${delete_result} -eq 0 ]]; then
+        echo ""
+        log_event "info" "Re-installing WordPress core version ${wp_version}" "false"
+
+        wpcli_core_reinstall "${wp_site}" "${install_type}" "${wp_version}"
+        exitstatus=$?
+
+        if [[ ${exitstatus} -eq 0 ]]; then
+            echo ""
+            log_event "success" "WordPress core cleaned and reinstalled successfully" "false"
+            display --indent 6 --text "- Clean & Reinstall WordPress Core" --result "DONE" --color GREEN
+            display --indent 8 --text "WordPress ${wp_version} reinstalled successfully" --tcolor GREEN
+            return 0
+        else
+            log_event "error" "Failed to reinstall WordPress core" "false"
+            display --indent 6 --text "- Reinstalling WordPress Core" --result "FAIL" --color RED
+            return 1
+        fi
+    else
+        log_event "warning" "Skipping WordPress reinstall due to deletion errors" "false"
+        return 1
+    fi
+
+}
+
+################################################################################
 # Get maintenance mode status
 #
 # Arguments:
