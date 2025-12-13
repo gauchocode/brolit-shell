@@ -889,7 +889,7 @@ function wpcli_select_user() {
 
     log_event "debug" "Running: docker compose -f ${project_path}/docker-compose.yml run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp user list" "false"
 
-    users_list=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp user list --fields=user_login,display_name,user_email,roles --format=csv 2>&1)
+    users_list=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp user list --fields=user_login,display_name,user_email,roles --format=csv 2>&1 | grep -v "^Container")
     wpcli_result=$?
 
     if [[ ${wpcli_result} -ne 0 ]]; then
@@ -982,10 +982,13 @@ function wpcli_delete_posts_by_author() {
   # Count posts first
   if [[ ${install_type} == "docker"* ]]; then
     project_path=$(dirname "${wp_site}")
-    post_count=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --author="${author_name}" --post_type="${post_type}" --format=count --quiet 2>/dev/null)
+    log_event "debug" "Running: docker compose -f ${project_path}/docker-compose.yml run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --author=${author_name} --post_type=${post_type} --format=count" "false"
+    post_count=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --author="${author_name}" --post_type="${post_type}" --format=count --quiet 2>&1 | grep -v "^Container" | tail -1)
   else
     post_count=$(wp post list --path="${wp_site}" --author="${author_name}" --post_type="${post_type}" --format=count --quiet 2>/dev/null)
   fi
+
+  log_event "debug" "Post count result: '${post_count}'" "false"
 
   if [[ -z ${post_count} || ${post_count} -eq 0 ]]; then
     display --indent 8 --text "No ${post_type} found for author: ${author_name}" --tcolor YELLOW
