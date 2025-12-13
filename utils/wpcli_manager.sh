@@ -1020,24 +1020,78 @@ function wpcli_delete_posts_by_author() {
 
     log_event "warning" "Deleting ${post_count} ${post_type} by author: ${author_name}" "false"
 
-    # Delete posts using author ID
-    if [[ ${install_type} == "docker"* ]]; then
-      # First get the post IDs
-      post_ids=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --author="${author_id}" --post_type="${post_type}" --format=ids --quiet 2>/dev/null | tail -1)
-      # Then delete them
-      wpcli_result=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post delete "${post_ids}" --force --quiet 2>/dev/null)
-    else
-      post_ids=$(wp post list --path="${wp_site}" --author="${author_id}" --post_type="${post_type}" --format=ids --quiet)
-      wpcli_result=$(wp post delete "${post_ids}" --force --path="${wp_site}" --quiet 2>&1)
-    fi
+    # Delete posts in batches to show progress and avoid command line limits
+    local batch_size=100
+    local deleted_total=0
+    local batch_num=1
+    local remaining=${post_count}
 
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
-      display --indent 6 --text "- Deleting ${post_type} by author '${author_name}'" --result "DONE" --color GREEN
-      log_event "success" "Deleted ${post_count} ${post_type} by author: ${author_name}" "false"
+    echo ""
+    display --indent 6 --text "- Deleting posts in batches of ${batch_size}..." --tcolor YELLOW
+    echo ""
+
+    while [[ ${remaining} -gt 0 ]]; do
+      # Calculate how many to delete in this batch
+      local batch_count=$batch_size
+      if [[ ${remaining} -lt ${batch_size} ]]; then
+        batch_count=${remaining}
+      fi
+
+      # Get and delete one batch
+      if [[ ${install_type} == "docker"* ]]; then
+        log_event "debug" "Batch ${batch_num}: Getting up to ${batch_size} post IDs for deletion" "false"
+
+        # Get IDs for this batch and delete them
+        wpcli_result=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli bash -c "wp post delete \$(wp post list --author=${author_id} --post_type=${post_type} --posts_per_page=${batch_size} --format=ids --quiet) --force" 2>&1 | grep -v "^Container" | tail -1)
+        exitstatus=$?
+      else
+        wpcli_result=$(bash -c "wp post delete \$(wp post list --path=\"${wp_site}\" --author=${author_id} --post_type=${post_type} --posts_per_page=${batch_size} --format=ids --quiet) --force --path=\"${wp_site}\"" 2>&1)
+        exitstatus=$?
+      fi
+
+      if [[ ${exitstatus} -eq 0 ]]; then
+        # Count how many were actually deleted (from "Deleted post X" messages)
+        batch_deleted=$(echo "${wpcli_result}" | grep -c "Deleted post" 2>/dev/null || echo "0")
+
+        if [[ ${batch_deleted} -eq 0 ]]; then
+          # If no "Deleted post" messages, assume all in batch were deleted
+          batch_deleted=${batch_count}
+        fi
+
+        deleted_total=$((deleted_total + batch_deleted))
+        remaining=$((post_count - deleted_total))
+
+        # Show progress
+        display --indent 8 --text "Batch ${batch_num}: Deleted ${batch_deleted} posts (Total: ${deleted_total}/${post_count}, Remaining: ${remaining})" --tcolor GREEN
+        log_event "info" "Batch ${batch_num}: Deleted ${batch_deleted} posts (${deleted_total}/${post_count})" "false"
+
+        batch_num=$((batch_num + 1))
+
+        # If no posts were deleted, we're done (prevents infinite loop)
+        if [[ ${batch_deleted} -eq 0 ]]; then
+          break
+        fi
+      else
+        display --indent 8 --text "Batch ${batch_num}: FAILED" --tcolor RED
+        log_event "error" "Batch ${batch_num} failed: ${wpcli_result}" "false"
+        remaining=0  # Stop on error
+        break
+      fi
+
+      # Small delay between batches to avoid overwhelming the database
+      sleep 0.5
+    done
+
+    echo ""
+    if [[ ${deleted_total} -eq ${post_count} ]]; then
+      display --indent 6 --text "- Successfully deleted all ${deleted_total} ${post_type}" --result "DONE" --color GREEN
+      log_event "success" "Deleted ${deleted_total} ${post_type} by author: ${author_name}" "false"
+    elif [[ ${deleted_total} -gt 0 ]]; then
+      display --indent 6 --text "- Partially deleted ${deleted_total}/${post_count} ${post_type}" --result "WARNING" --color YELLOW
+      log_event "warning" "Partially deleted ${deleted_total}/${post_count} ${post_type} by author: ${author_name}" "false"
     else
-      display --indent 6 --text "- Deleting ${post_type} by author '${author_name}'" --result "FAIL" --color RED
-      log_event "error" "Failed to delete ${post_type}: ${wpcli_result}" "false"
+      display --indent 6 --text "- Failed to delete ${post_type}" --result "FAIL" --color RED
+      log_event "error" "Failed to delete ${post_type} by author: ${author_name}" "false"
       return 1
     fi
 
@@ -1096,24 +1150,71 @@ function wpcli_delete_posts_by_author_id() {
 
     log_event "warning" "Deleting ${post_count} ${post_type} by author ID: ${author_id}" "false"
 
-    # Delete posts
-    if [[ ${install_type} == "docker"* ]]; then
-      # First get the post IDs
-      post_ids=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --author="${author_id}" --post_type="${post_type}" --format=ids --quiet 2>&1)
-      # Then delete them
-      wpcli_result=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post delete "${post_ids}" --force --quiet 2>&1)
-    else
-      post_ids=$(wp post list --path="${wp_site}" --author="${author_id}" --post_type="${post_type}" --format=ids --quiet)
-      wpcli_result=$(wp post delete "${post_ids}" --force --path="${wp_site}" --quiet 2>&1)
-    fi
+    # Delete posts in batches to show progress and avoid command line limits
+    local batch_size=100
+    local deleted_total=0
+    local batch_num=1
+    local remaining=${post_count}
 
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
-      display --indent 6 --text "- Deleting ${post_type} by author ID '${author_id}'" --result "DONE" --color GREEN
-      log_event "success" "Deleted ${post_count} ${post_type} by author ID: ${author_id}" "false"
+    echo ""
+    display --indent 6 --text "- Deleting posts in batches of ${batch_size}..." --tcolor YELLOW
+    echo ""
+
+    while [[ ${remaining} -gt 0 ]]; do
+      # Get and delete one batch
+      if [[ ${install_type} == "docker"* ]]; then
+        wpcli_result=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli bash -c "wp post delete \$(wp post list --author=${author_id} --post_type=${post_type} --posts_per_page=${batch_size} --format=ids --quiet) --force" 2>&1 | grep -v "^Container" | tail -1)
+        exitstatus=$?
+      else
+        wpcli_result=$(bash -c "wp post delete \$(wp post list --path=\"${wp_site}\" --author=${author_id} --post_type=${post_type} --posts_per_page=${batch_size} --format=ids --quiet) --force --path=\"${wp_site}\"" 2>&1)
+        exitstatus=$?
+      fi
+
+      if [[ ${exitstatus} -eq 0 ]]; then
+        batch_deleted=$(echo "${wpcli_result}" | grep -c "Deleted post" 2>/dev/null || echo "0")
+
+        if [[ ${batch_deleted} -eq 0 ]]; then
+          # If no "Deleted post" messages, assume batch_size was deleted (or remaining if less)
+          if [[ ${remaining} -lt ${batch_size} ]]; then
+            batch_deleted=${remaining}
+          else
+            batch_deleted=${batch_size}
+          fi
+        fi
+
+        deleted_total=$((deleted_total + batch_deleted))
+        remaining=$((post_count - deleted_total))
+
+        # Show progress
+        display --indent 8 --text "Batch ${batch_num}: Deleted ${batch_deleted} posts (Total: ${deleted_total}/${post_count}, Remaining: ${remaining})" --tcolor GREEN
+        log_event "info" "Batch ${batch_num}: Deleted ${batch_deleted} posts (${deleted_total}/${post_count})" "false"
+
+        batch_num=$((batch_num + 1))
+
+        # If no posts were deleted in this batch, we're done
+        if [[ ${batch_deleted} -eq 0 ]]; then
+          break
+        fi
+      else
+        display --indent 8 --text "Batch ${batch_num}: FAILED" --tcolor RED
+        log_event "error" "Batch ${batch_num} failed: ${wpcli_result}" "false"
+        remaining=0
+        break
+      fi
+
+      sleep 0.5
+    done
+
+    echo ""
+    if [[ ${deleted_total} -eq ${post_count} ]]; then
+      display --indent 6 --text "- Successfully deleted all ${deleted_total} ${post_type}" --result "DONE" --color GREEN
+      log_event "success" "Deleted ${deleted_total} ${post_type} by author ID: ${author_id}" "false"
+    elif [[ ${deleted_total} -gt 0 ]]; then
+      display --indent 6 --text "- Partially deleted ${deleted_total}/${post_count} ${post_type}" --result "WARNING" --color YELLOW
+      log_event "warning" "Partially deleted ${deleted_total}/${post_count} ${post_type} by author ID: ${author_id}" "false"
     else
-      display --indent 6 --text "- Deleting ${post_type} by author ID '${author_id}'" --result "FAIL" --color RED
-      log_event "error" "Failed to delete ${post_type}: ${wpcli_result}" "false"
+      display --indent 6 --text "- Failed to delete ${post_type}" --result "FAIL" --color RED
+      log_event "error" "Failed to delete ${post_type} by author ID: ${author_id}" "false"
       return 1
     fi
 
@@ -1174,24 +1275,71 @@ function wpcli_delete_posts_by_date_range() {
 
     log_event "warning" "Deleting ${post_count} ${post_type} from ${start_date} to ${end_date}" "false"
 
-    # Delete posts
-    if [[ ${install_type} == "docker"* ]]; then
-      # First get the post IDs
-      post_ids=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --post_type="${post_type}" --post_status=any --after="${start_date}" --before="${end_date}" --format=ids --quiet 2>&1)
-      # Then delete them
-      wpcli_result=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post delete "${post_ids}" --force --quiet 2>&1)
-    else
-      post_ids=$(wp post list --path="${wp_site}" --post_type="${post_type}" --post_status=any --after="${start_date}" --before="${end_date}" --format=ids --quiet)
-      wpcli_result=$(wp post delete "${post_ids}" --force --path="${wp_site}" --quiet 2>&1)
-    fi
+    # Delete posts in batches to show progress and avoid command line limits
+    local batch_size=100
+    local deleted_total=0
+    local batch_num=1
+    local remaining=${post_count}
 
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
-      display --indent 6 --text "- Deleting ${post_type} by date range" --result "DONE" --color GREEN
-      log_event "success" "Deleted ${post_count} ${post_type} from ${start_date} to ${end_date}" "false"
+    echo ""
+    display --indent 6 --text "- Deleting posts in batches of ${batch_size}..." --tcolor YELLOW
+    echo ""
+
+    while [[ ${remaining} -gt 0 ]]; do
+      # Get and delete one batch
+      if [[ ${install_type} == "docker"* ]]; then
+        wpcli_result=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli bash -c "wp post delete \$(wp post list --post_type=${post_type} --post_status=any --after='${start_date}' --before='${end_date}' --posts_per_page=${batch_size} --format=ids --quiet) --force" 2>&1 | grep -v "^Container" | tail -1)
+        exitstatus=$?
+      else
+        wpcli_result=$(bash -c "wp post delete \$(wp post list --path=\"${wp_site}\" --post_type=${post_type} --post_status=any --after='${start_date}' --before='${end_date}' --posts_per_page=${batch_size} --format=ids --quiet) --force --path=\"${wp_site}\"" 2>&1)
+        exitstatus=$?
+      fi
+
+      if [[ ${exitstatus} -eq 0 ]]; then
+        batch_deleted=$(echo "${wpcli_result}" | grep -c "Deleted post" 2>/dev/null || echo "0")
+
+        if [[ ${batch_deleted} -eq 0 ]]; then
+          # If no "Deleted post" messages, assume batch_size was deleted (or remaining if less)
+          if [[ ${remaining} -lt ${batch_size} ]]; then
+            batch_deleted=${remaining}
+          else
+            batch_deleted=${batch_size}
+          fi
+        fi
+
+        deleted_total=$((deleted_total + batch_deleted))
+        remaining=$((post_count - deleted_total))
+
+        # Show progress
+        display --indent 8 --text "Batch ${batch_num}: Deleted ${batch_deleted} posts (Total: ${deleted_total}/${post_count}, Remaining: ${remaining})" --tcolor GREEN
+        log_event "info" "Batch ${batch_num}: Deleted ${batch_deleted} posts (${deleted_total}/${post_count})" "false"
+
+        batch_num=$((batch_num + 1))
+
+        # If no posts were deleted in this batch, we're done
+        if [[ ${batch_deleted} -eq 0 ]]; then
+          break
+        fi
+      else
+        display --indent 8 --text "Batch ${batch_num}: FAILED" --tcolor RED
+        log_event "error" "Batch ${batch_num} failed: ${wpcli_result}" "false"
+        remaining=0
+        break
+      fi
+
+      sleep 0.5
+    done
+
+    echo ""
+    if [[ ${deleted_total} -eq ${post_count} ]]; then
+      display --indent 6 --text "- Successfully deleted all ${deleted_total} ${post_type}" --result "DONE" --color GREEN
+      log_event "success" "Deleted ${deleted_total} ${post_type} from ${start_date} to ${end_date}" "false"
+    elif [[ ${deleted_total} -gt 0 ]]; then
+      display --indent 6 --text "- Partially deleted ${deleted_total}/${post_count} ${post_type}" --result "WARNING" --color YELLOW
+      log_event "warning" "Partially deleted ${deleted_total}/${post_count} ${post_type} from ${start_date} to ${end_date}" "false"
     else
-      display --indent 6 --text "- Deleting ${post_type} by date range" --result "FAIL" --color RED
-      log_event "error" "Failed to delete ${post_type}: ${wpcli_result}" "false"
+      display --indent 6 --text "- Failed to delete ${post_type}" --result "FAIL" --color RED
+      log_event "error" "Failed to delete ${post_type} from ${start_date} to ${end_date}" "false"
       return 1
     fi
 
@@ -1250,24 +1398,71 @@ function wpcli_delete_posts_by_keyword() {
 
     log_event "warning" "Deleting ${post_count} ${post_type} with keyword: ${keyword}" "false"
 
-    # Delete posts
-    if [[ ${install_type} == "docker"* ]]; then
-      # First get the post IDs
-      post_ids=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --post_type="${post_type}" --s="${keyword}" --format=ids --quiet 2>&1)
-      # Then delete them
-      wpcli_result=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post delete "${post_ids}" --force --quiet 2>&1)
-    else
-      post_ids=$(wp post list --path="${wp_site}" --post_type="${post_type}" --s="${keyword}" --format=ids --quiet)
-      wpcli_result=$(wp post delete "${post_ids}" --force --path="${wp_site}" --quiet 2>&1)
-    fi
+    # Delete posts in batches to show progress and avoid command line limits
+    local batch_size=100
+    local deleted_total=0
+    local batch_num=1
+    local remaining=${post_count}
 
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
-      display --indent 6 --text "- Deleting ${post_type} with keyword '${keyword}'" --result "DONE" --color GREEN
-      log_event "success" "Deleted ${post_count} ${post_type} with keyword: ${keyword}" "false"
+    echo ""
+    display --indent 6 --text "- Deleting posts in batches of ${batch_size}..." --tcolor YELLOW
+    echo ""
+
+    while [[ ${remaining} -gt 0 ]]; do
+      # Get and delete one batch
+      if [[ ${install_type} == "docker"* ]]; then
+        wpcli_result=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli bash -c "wp post delete \$(wp post list --post_type=${post_type} --s='${keyword}' --posts_per_page=${batch_size} --format=ids --quiet) --force" 2>&1 | grep -v "^Container" | tail -1)
+        exitstatus=$?
+      else
+        wpcli_result=$(bash -c "wp post delete \$(wp post list --path=\"${wp_site}\" --post_type=${post_type} --s='${keyword}' --posts_per_page=${batch_size} --format=ids --quiet) --force --path=\"${wp_site}\"" 2>&1)
+        exitstatus=$?
+      fi
+
+      if [[ ${exitstatus} -eq 0 ]]; then
+        batch_deleted=$(echo "${wpcli_result}" | grep -c "Deleted post" 2>/dev/null || echo "0")
+
+        if [[ ${batch_deleted} -eq 0 ]]; then
+          # If no "Deleted post" messages, assume batch_size was deleted (or remaining if less)
+          if [[ ${remaining} -lt ${batch_size} ]]; then
+            batch_deleted=${remaining}
+          else
+            batch_deleted=${batch_size}
+          fi
+        fi
+
+        deleted_total=$((deleted_total + batch_deleted))
+        remaining=$((post_count - deleted_total))
+
+        # Show progress
+        display --indent 8 --text "Batch ${batch_num}: Deleted ${batch_deleted} posts (Total: ${deleted_total}/${post_count}, Remaining: ${remaining})" --tcolor GREEN
+        log_event "info" "Batch ${batch_num}: Deleted ${batch_deleted} posts (${deleted_total}/${post_count})" "false"
+
+        batch_num=$((batch_num + 1))
+
+        # If no posts were deleted in this batch, we're done
+        if [[ ${batch_deleted} -eq 0 ]]; then
+          break
+        fi
+      else
+        display --indent 8 --text "Batch ${batch_num}: FAILED" --tcolor RED
+        log_event "error" "Batch ${batch_num} failed: ${wpcli_result}" "false"
+        remaining=0
+        break
+      fi
+
+      sleep 0.5
+    done
+
+    echo ""
+    if [[ ${deleted_total} -eq ${post_count} ]]; then
+      display --indent 6 --text "- Successfully deleted all ${deleted_total} ${post_type}" --result "DONE" --color GREEN
+      log_event "success" "Deleted ${deleted_total} ${post_type} with keyword: ${keyword}" "false"
+    elif [[ ${deleted_total} -gt 0 ]]; then
+      display --indent 6 --text "- Partially deleted ${deleted_total}/${post_count} ${post_type}" --result "WARNING" --color YELLOW
+      log_event "warning" "Partially deleted ${deleted_total}/${post_count} ${post_type} with keyword: ${keyword}" "false"
     else
-      display --indent 6 --text "- Deleting ${post_type} with keyword '${keyword}'" --result "FAIL" --color RED
-      log_event "error" "Failed to delete ${post_type}: ${wpcli_result}" "false"
+      display --indent 6 --text "- Failed to delete ${post_type}" --result "FAIL" --color RED
+      log_event "error" "Failed to delete ${post_type} with keyword: ${keyword}" "false"
       return 1
     fi
 
@@ -1326,24 +1521,71 @@ function wpcli_delete_posts_by_status() {
 
     log_event "warning" "Deleting ${post_count} ${post_type} with status: ${post_status}" "false"
 
-    # Delete posts
-    if [[ ${install_type} == "docker"* ]]; then
-      # First get the post IDs
-      post_ids=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --post_type="${post_type}" --post_status="${post_status}" --format=ids --quiet 2>&1)
-      # Then delete them
-      wpcli_result=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post delete "${post_ids}" --force --quiet 2>&1)
-    else
-      post_ids=$(wp post list --path="${wp_site}" --post_type="${post_type}" --post_status="${post_status}" --format=ids --quiet)
-      wpcli_result=$(wp post delete "${post_ids}" --force --path="${wp_site}" --quiet 2>&1)
-    fi
+    # Delete posts in batches to show progress and avoid command line limits
+    local batch_size=100
+    local deleted_total=0
+    local batch_num=1
+    local remaining=${post_count}
 
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
-      display --indent 6 --text "- Deleting ${post_type} with status '${post_status}'" --result "DONE" --color GREEN
-      log_event "success" "Deleted ${post_count} ${post_type} with status: ${post_status}" "false"
+    echo ""
+    display --indent 6 --text "- Deleting posts in batches of ${batch_size}..." --tcolor YELLOW
+    echo ""
+
+    while [[ ${remaining} -gt 0 ]]; do
+      # Get and delete one batch
+      if [[ ${install_type} == "docker"* ]]; then
+        wpcli_result=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli bash -c "wp post delete \$(wp post list --post_type=${post_type} --post_status=${post_status} --posts_per_page=${batch_size} --format=ids --quiet) --force" 2>&1 | grep -v "^Container" | tail -1)
+        exitstatus=$?
+      else
+        wpcli_result=$(bash -c "wp post delete \$(wp post list --path=\"${wp_site}\" --post_type=${post_type} --post_status=${post_status} --posts_per_page=${batch_size} --format=ids --quiet) --force --path=\"${wp_site}\"" 2>&1)
+        exitstatus=$?
+      fi
+
+      if [[ ${exitstatus} -eq 0 ]]; then
+        batch_deleted=$(echo "${wpcli_result}" | grep -c "Deleted post" 2>/dev/null || echo "0")
+
+        if [[ ${batch_deleted} -eq 0 ]]; then
+          # If no "Deleted post" messages, assume batch_size was deleted (or remaining if less)
+          if [[ ${remaining} -lt ${batch_size} ]]; then
+            batch_deleted=${remaining}
+          else
+            batch_deleted=${batch_size}
+          fi
+        fi
+
+        deleted_total=$((deleted_total + batch_deleted))
+        remaining=$((post_count - deleted_total))
+
+        # Show progress
+        display --indent 8 --text "Batch ${batch_num}: Deleted ${batch_deleted} posts (Total: ${deleted_total}/${post_count}, Remaining: ${remaining})" --tcolor GREEN
+        log_event "info" "Batch ${batch_num}: Deleted ${batch_deleted} posts (${deleted_total}/${post_count})" "false"
+
+        batch_num=$((batch_num + 1))
+
+        # If no posts were deleted in this batch, we're done
+        if [[ ${batch_deleted} -eq 0 ]]; then
+          break
+        fi
+      else
+        display --indent 8 --text "Batch ${batch_num}: FAILED" --tcolor RED
+        log_event "error" "Batch ${batch_num} failed: ${wpcli_result}" "false"
+        remaining=0
+        break
+      fi
+
+      sleep 0.5
+    done
+
+    echo ""
+    if [[ ${deleted_total} -eq ${post_count} ]]; then
+      display --indent 6 --text "- Successfully deleted all ${deleted_total} ${post_type}" --result "DONE" --color GREEN
+      log_event "success" "Deleted ${deleted_total} ${post_type} with status: ${post_status}" "false"
+    elif [[ ${deleted_total} -gt 0 ]]; then
+      display --indent 6 --text "- Partially deleted ${deleted_total}/${post_count} ${post_type}" --result "WARNING" --color YELLOW
+      log_event "warning" "Partially deleted ${deleted_total}/${post_count} ${post_type} with status: ${post_status}" "false"
     else
-      display --indent 6 --text "- Deleting ${post_type} with status '${post_status}'" --result "FAIL" --color RED
-      log_event "error" "Failed to delete ${post_type}: ${wpcli_result}" "false"
+      display --indent 6 --text "- Failed to delete ${post_type}" --result "FAIL" --color RED
+      log_event "error" "Failed to delete ${post_type} with status: ${post_status}" "false"
       return 1
     fi
 
