@@ -1039,14 +1039,20 @@ function wpcli_delete_posts_by_author() {
 
       # Get and delete one batch
       if [[ ${install_type} == "docker"* ]]; then
-        log_event "debug" "Batch ${batch_num}: Getting up to ${batch_size} post IDs for deletion" "false"
+        log_event "debug" "Batch ${batch_num}: Running: docker compose -f ${project_path}/docker-compose.yml run -T --rm -u 33 -e HOME=/tmp wordpress-cli bash -c \"wp post delete \\\$(wp post list --author=${author_id} --post_type=${post_type} --posts_per_page=${batch_size} --format=ids --quiet) --force\"" "false"
 
         # Get IDs for this batch and delete them
         wpcli_result=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli bash -c "wp post delete \$(wp post list --author=${author_id} --post_type=${post_type} --posts_per_page=${batch_size} --format=ids --quiet) --force" 2>&1 | grep -v "^Container" | tail -1)
         exitstatus=$?
+
+        log_event "debug" "Batch ${batch_num}: Exit status: ${exitstatus}, Result: ${wpcli_result}" "false"
       else
+        log_event "debug" "Batch ${batch_num}: Running: wp post delete \\\$(wp post list --path=\"${wp_site}\" --author=${author_id} --post_type=${post_type} --posts_per_page=${batch_size} --format=ids --quiet) --force --path=\"${wp_site}\"" "false"
+
         wpcli_result=$(bash -c "wp post delete \$(wp post list --path=\"${wp_site}\" --author=${author_id} --post_type=${post_type} --posts_per_page=${batch_size} --format=ids --quiet) --force --path=\"${wp_site}\"" 2>&1)
         exitstatus=$?
+
+        log_event "debug" "Batch ${batch_num}: Exit status: ${exitstatus}, Result: ${wpcli_result}" "false"
       fi
 
       if [[ ${exitstatus} -eq 0 ]]; then
