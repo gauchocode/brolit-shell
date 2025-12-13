@@ -2772,26 +2772,41 @@ function project_get_type() {
   local project_type
   local wp_path
   local laravel
+  local search_paths
 
   # TODO: if brolit_conf exists, should check this file and get project type
 
   # Ensure the directory exists
   if [[ -n ${dir_path} && -d ${dir_path} ]]; then
 
-    # Check for WordPress
-    wp_path="$(wp_config_path "${dir_path}")"
-    if [[ -n ${wp_path} ]]; then
-
-      project_type="wordpress"
-
-      # Log
-      log_event "debug" "Project type '${project_type}' for ${dir_path}" "false"
-      display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
-
-      # Return
-      echo "${project_type}" && return 0
-
+    # For Docker projects with Brolit standard structure, check subdirectories
+    if [[ -f "${dir_path}/docker-compose.yml" ]] || [[ -f "${dir_path}/docker-compose.yaml" ]]; then
+      # Check both root and standard subdirectories (wordpress/, application/)
+      search_paths=("${dir_path}" "${dir_path}/wordpress" "${dir_path}/application")
+      log_event "debug" "Docker project detected, searching in multiple paths" "false"
+    else
+      # For non-Docker projects, only check root directory
+      search_paths=("${dir_path}")
     fi
+
+    # Check for WordPress in all search paths
+    for search_path in "${search_paths[@]}"; do
+      if [[ -d "${search_path}" ]]; then
+        wp_path="$(wp_config_path "${search_path}")"
+        if [[ -n ${wp_path} ]]; then
+
+          project_type="wordpress"
+
+          # Log
+          log_event "debug" "Project type '${project_type}' found in ${search_path}" "false"
+          display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
+
+          # Return
+          echo "${project_type}" && return 0
+
+        fi
+      fi
+    done
 
     # Check for React by looking for specific react-scripts in package.json
     if [[ -f "${dir_path}/package.json" ]] && grep -q "react-scripts" "${dir_path}/package.json"; then
@@ -2821,33 +2836,37 @@ function project_get_type() {
 
     fi
 
-    # Check for simple PHP
-    if [[ $(find "${dir_path}" -maxdepth 1 -type f -name "*.php" | wc -l) -gt 0 ]]; then
+    # Check for simple PHP in all search paths
+    for search_path in "${search_paths[@]}"; do
+      if [[ -d "${search_path}" ]] && [[ $(find "${search_path}" -maxdepth 1 -type f -name "*.php" | wc -l) -gt 0 ]]; then
 
-      project_type="php"
+        project_type="php"
 
-      # Log
-      log_event "debug" "Project type '${project_type}' for ${dir_path}" "false"
-      display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
+        # Log
+        log_event "debug" "Project type '${project_type}' found in ${search_path}" "false"
+        display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
 
-      # Return
-      echo "${project_type}" && return 0
+        # Return
+        echo "${project_type}" && return 0
 
-    fi
+      fi
+    done
 
-    # Check for simple HTML
-    if [[ $(find "${dir_path}" -maxdepth 1 -type f -name "*.html" | wc -l) -gt 0 && $(find "${dir_path}" -maxdepth 1 -type f \( -name "*.php" -o -name "*.py" \) | wc -l) -eq 0 ]]; then
+    # Check for simple HTML in all search paths
+    for search_path in "${search_paths[@]}"; do
+      if [[ -d "${search_path}" ]] && [[ $(find "${search_path}" -maxdepth 1 -type f -name "*.html" | wc -l) -gt 0 ]] && [[ $(find "${search_path}" -maxdepth 1 -type f \( -name "*.php" -o -name "*.py" \) | wc -l) -eq 0 ]]; then
 
-      project_type="html"
+        project_type="html"
 
-      # Log
-      log_event "debug" "Project type '${project_type}' for ${dir_path}" "false"
-      display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
+        # Log
+        log_event "debug" "Project type '${project_type}' found in ${search_path}" "false"
+        display --indent 8 --text "Project type: ${project_type}" --tcolor MAGENTA
 
-      # Return
-      echo "${project_type}" && return 0
+        # Return
+        echo "${project_type}" && return 0
 
-    fi
+      fi
+    done
 
     # Unknown
     log_event "debug" "Project type 'unknown' for ${dir_path}" "false"

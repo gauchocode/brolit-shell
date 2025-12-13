@@ -322,11 +322,19 @@ function restore_project_files() {
     # 5. Get project type and installation type
     local project_type
     local project_install_type
+    local project_port=""
+
     project_type="$(project_get_type "${project_tmp_dir}")"
     project_install_type="$(project_get_install_type "${project_tmp_dir}")"
-    
+
     if [[ -z "${project_type}" || -z "${project_install_type}" ]]; then
         log_event "warning" "Could not determine project type or installation type" "false"
+    fi
+
+    # Extract port for Docker projects
+    if [[ "${project_install_type}" == "docker"* ]]; then
+        project_port="$(project_get_port_from_env "${project_tmp_dir}")"
+        log_event "debug" "Extracted port from .env: ${project_port}" "false"
     fi
 
     # 6. Restore files to destination
@@ -361,6 +369,9 @@ function restore_project_files() {
     fi
 
     log_event "info" "Project files restored successfully for ${project_domain_new}" "false"
+
+    # Return project information as array: type, install_type, port
+    echo "${project_type} ${project_install_type} ${project_port}"
     return 0
 }
 
@@ -481,6 +492,7 @@ function _configure_restored_project() {
     local project_stage="${5}"
     local db_pass="${6}"
     local project_domain="${7}"
+    local project_port="${8}"  # Port for Docker/proxy projects (empty for default)
     local project_install_path="${PROJECTS_PATH}/${project_domain_new}"
 
     # Project domain configuration (webserver+certbot+DNS)
@@ -594,8 +606,8 @@ function restore_project_backup() {
             project_db_status="enabled"
         fi
     else
-        # Handle non-Docker projects
-        project_port="default"
+        # Handle non-Docker projects (no port needed for default installations)
+        project_port=""
         
         # Create nginx.conf if it doesn't exist
         touch "${project_install_path}/nginx.conf"
@@ -623,7 +635,7 @@ function restore_project_backup() {
     fi
 
     # Configure the restored project
-    if ! _configure_restored_project "${project_domain_new}" "${project_type}" "${project_install_type}" "${project_name}" "${project_stage}" "${db_pass}" "${project_domain}"; then
+    if ! _configure_restored_project "${project_domain_new}" "${project_type}" "${project_install_type}" "${project_name}" "${project_stage}" "${db_pass}" "${project_domain}" "${project_port}"; then
         return 1
     fi
 
