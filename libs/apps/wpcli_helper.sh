@@ -543,7 +543,6 @@ function wpcli_core_reinstall() {
 
     local wpcli_result
     local wpcli_cmd
-    local wp_version
 
     # Check project_install_type
     [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
@@ -553,8 +552,10 @@ function wpcli_core_reinstall() {
 
     if [[ -n ${wp_site} ]]; then
 
-        # Get wp version
-        wp_version="$(wpcli_get_wpcore_version "${wp_site}" "${install_type}")"
+        # Get wp version if not provided
+        if [[ -z ${wp_version} ]]; then
+            wp_version="$(wpcli_get_wpcore_version "${wp_site}" "${install_type}")"
+        fi
 
         # Log
         log_event "debug" "Running: ${wpcli_cmd} core download --version=${wp_version} --skip-content --force" "false"
@@ -1828,10 +1829,15 @@ function wpcli_clean_and_reinstall_core() {
 
     local wp_version
     local delete_result
+    local wpcli_cmd
 
-    # Step 1: Get current WordPress version
-    display --indent 6 --text "- Getting current WordPress version"
-    wp_version="$(wpcli_get_wpcore_version "${wp_site}" "${install_type}")"
+    # Check project_install_type
+    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site} --no-color"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose --progress=quiet -f ${wp_site}/../docker-compose.yml run -T -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
+
+    # Step 1: Get current WordPress version (quietly, without display)
+    log_event "debug" "Getting WordPress version" "false"
+    wp_version="$(${wpcli_cmd} core version 2>/dev/null)"
 
     exitstatus=$?
     if [[ ${exitstatus} -ne 0 || -z ${wp_version} ]]; then
@@ -1840,7 +1846,11 @@ function wpcli_clean_and_reinstall_core() {
         return 1
     fi
 
+    # Clean the version string
+    wp_version="${wp_version//$'\r'/}"
+
     log_event "info" "Current WordPress version: ${wp_version}" "false"
+    display --indent 6 --text "- Detected WordPress version: ${wp_version}" --tcolor CYAN
 
     # Step 2: Delete non-core files
     wpcli_delete_not_core_files "${wp_site}" "${install_type}"
@@ -1848,7 +1858,6 @@ function wpcli_clean_and_reinstall_core() {
 
     # Step 3: Reinstall WordPress core with the same version
     if [[ ${delete_result} -eq 0 ]]; then
-        echo ""
         log_event "info" "Re-installing WordPress core version ${wp_version}" "false"
 
         wpcli_core_reinstall "${wp_site}" "${install_type}" "${wp_version}"
@@ -1857,8 +1866,7 @@ function wpcli_clean_and_reinstall_core() {
         if [[ ${exitstatus} -eq 0 ]]; then
             echo ""
             log_event "success" "WordPress core cleaned and reinstalled successfully" "false"
-            display --indent 6 --text "- Clean & Reinstall WordPress Core" --result "DONE" --color GREEN
-            display --indent 8 --text "WordPress ${wp_version} reinstalled successfully" --tcolor GREEN
+            display --indent 6 --text "- Clean & Reinstall completed" --result "DONE" --color GREEN
             return 0
         else
             log_event "error" "Failed to reinstall WordPress core" "false"
