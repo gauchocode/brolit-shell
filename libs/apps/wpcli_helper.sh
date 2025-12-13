@@ -1238,10 +1238,40 @@ function wpcli_plugin_reinstall() {
         local fail_count=0
         local plugins_array
 
-        plugin_list_output=$(eval "${wpcli_cmd}" plugin list --field=name 2>/dev/null)
+        log_event "debug" "Getting plugin list: ${wpcli_cmd} plugin list --field=name" "false"
+        display --indent 6 --text "- Getting plugin list"
+
+        plugin_list_output=$(eval "${wpcli_cmd}" plugin list --field=name 2>&1)
+        exitstatus=$?
+
+        if [[ ${exitstatus} -ne 0 ]]; then
+            clear_previous_lines "1"
+            display --indent 6 --text "- Getting plugin list" --result "FAIL" --color RED
+            log_event "error" "Failed to get plugin list: ${plugin_list_output}" "false"
+            return 1
+        fi
 
         # Store plugins in array to avoid stdin conflicts
         mapfile -t plugins_array <<< "${plugin_list_output}"
+
+        # Count non-empty plugins
+        local plugin_count=0
+        for plugin in "${plugins_array[@]}"; do
+            [[ -n ${plugin} ]] && ((plugin_count++))
+        done
+
+        clear_previous_lines "1"
+        display --indent 6 --text "- Getting plugin list" --result "DONE" --color GREEN
+        display --indent 8 --text "Found ${plugin_count} plugins to reinstall" --tcolor CYAN
+        log_event "info" "Found ${plugin_count} plugins to reinstall" "false"
+
+        if [[ ${plugin_count} -eq 0 ]]; then
+            display --indent 8 --text "No plugins found to reinstall" --tcolor YELLOW
+            log_event "info" "Re-install summary: 0 successful, 0 failed" "false"
+            return 0
+        fi
+
+        echo ""
 
         # Loop through each plugin and reinstall individually
         for plugin in "${plugins_array[@]}"; do
