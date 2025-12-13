@@ -161,6 +161,8 @@ function wpcli_main_menu() {
     "22)" "CREATE APP-PASS"
     "23)" "LIST APP-PASS"
     "24)" "DELETE APP-PASS"
+    # POSTS CLEANUP
+    "25)" "DELETE POSTS (spam/compromised accounts)"
   )
 
   chosen_wpcli_options="$(whiptail --title "WP-CLI HELPER" --menu "Choose an option to run" 20 78 10 "${wpcli_options[@]}" 3>&1 1>&2 2>&3)"
@@ -405,6 +407,11 @@ function wpcli_main_menu() {
 
       fi
 
+    fi
+
+    # MALWARE CLEANUP - DELETE MALICIOUS POSTS
+    if [[ ${chosen_wpcli_options} == *"25"* ]]; then
+      wpcli_delete_malicious_posts_menu "${wp_site}" "${project_install_type}"
     fi
 
     prompt_return_or_finish
@@ -695,3 +702,682 @@ function wpcli_tasks_handler() {
   esac
 
 }
+
+################################################################################
+# Delete posts menu (for cleanup of spam, compromised accounts, etc.)
+#
+# Arguments:
+#  ${1} = ${wp_site}
+#  ${2} = ${install_type}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function wpcli_delete_malicious_posts_menu() {
+
+  local wp_site="${1}"
+  local install_type="${2}"
+
+  local cleanup_options
+  local chosen_cleanup_option
+
+  log_subsection "Delete Posts"
+
+  cleanup_options=(
+    "01)" "DELETE POSTS BY AUTHOR (username)"
+    "02)" "DELETE POSTS BY AUTHOR ID"
+    "03)" "DELETE POSTS BY DATE RANGE"
+    "04)" "DELETE POSTS BY KEYWORD IN TITLE"
+    "05)" "DELETE POSTS BY STATUS (draft/pending/spam)"
+    "06)" "LIST RECENT POSTS (last 30 days)"
+    "07)" "LIST POSTS BY AUTHOR"
+  )
+
+  chosen_cleanup_option="$(whiptail --title "DELETE POSTS" --menu "Choose filtering method:" 20 78 10 "${cleanup_options[@]}" 3>&1 1>&2 2>&3)"
+
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    # DELETE POSTS BY AUTHOR USERNAME
+    if [[ ${chosen_cleanup_option} == *"01"* ]]; then
+      local author_name
+      local post_type
+
+      # Let user select from list of available users
+      author_name="$(wpcli_select_user "${wp_site}" "${install_type}")"
+
+      if [[ -n ${author_name} ]]; then
+        post_type="$(whiptail_selection_menu "POST TYPE" "Select post type to delete:" "post page any")"
+
+        if [[ -n ${post_type} ]]; then
+          wpcli_delete_posts_by_author "${wp_site}" "${install_type}" "${author_name}" "${post_type}"
+        fi
+      fi
+    fi
+
+    # DELETE POSTS BY AUTHOR ID
+    if [[ ${chosen_cleanup_option} == *"02"* ]]; then
+      local author_name
+      local author_id
+      local post_type
+
+      # Let user select from list of available users
+      author_name="$(wpcli_select_user "${wp_site}" "${install_type}")"
+
+      if [[ -n ${author_name} ]]; then
+        # Get the user ID for the selected username
+        if [[ ${install_type} == "docker"* ]]; then
+          author_id=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp user get "${author_name}" --field=ID 2>/dev/null)
+        else
+          author_id=$(wp user get "${author_name}" --path="${wp_site}" --field=ID 2>/dev/null)
+        fi
+
+        if [[ -n ${author_id} ]]; then
+          post_type="$(whiptail_selection_menu "POST TYPE" "Select post type to delete:" "post page any")"
+
+          if [[ -n ${post_type} ]]; then
+            wpcli_delete_posts_by_author_id "${wp_site}" "${install_type}" "${author_id}" "${post_type}"
+          fi
+        fi
+      fi
+    fi
+
+    # DELETE POSTS BY DATE RANGE
+    if [[ ${chosen_cleanup_option} == *"03"* ]]; then
+      local start_date
+      local end_date
+      local post_type
+
+      start_date="$(whiptail_input "START DATE" "Enter start date (YYYY-MM-DD):" "$(date -d '30 days ago' +%Y-%m-%d)")"
+
+      if [[ -n ${start_date} ]]; then
+        end_date="$(whiptail_input "END DATE" "Enter end date (YYYY-MM-DD):" "$(date +%Y-%m-%d)")"
+
+        if [[ -n ${end_date} ]]; then
+          post_type="$(whiptail_selection_menu "POST TYPE" "Select post type to delete:" "post page any")"
+
+          if [[ -n ${post_type} ]]; then
+            wpcli_delete_posts_by_date_range "${wp_site}" "${install_type}" "${start_date}" "${end_date}" "${post_type}"
+          fi
+        fi
+      fi
+    fi
+
+    # DELETE POSTS BY KEYWORD IN TITLE
+    if [[ ${chosen_cleanup_option} == *"04"* ]]; then
+      local keyword
+      local post_type
+
+      keyword="$(whiptail_input "KEYWORD" "Enter keyword to search in post titles:" "")"
+
+      if [[ -n ${keyword} ]]; then
+        post_type="$(whiptail_selection_menu "POST TYPE" "Select post type to delete:" "post page any")"
+
+        if [[ -n ${post_type} ]]; then
+          wpcli_delete_posts_by_keyword "${wp_site}" "${install_type}" "${keyword}" "${post_type}"
+        fi
+      fi
+    fi
+
+    # DELETE POSTS BY STATUS
+    if [[ ${chosen_cleanup_option} == *"05"* ]]; then
+      local post_status
+      local post_type
+
+      post_status="$(whiptail_selection_menu "POST STATUS" "Select post status to delete:" "draft pending spam auto-draft")"
+
+      if [[ -n ${post_status} ]]; then
+        post_type="$(whiptail_selection_menu "POST TYPE" "Select post type to delete:" "post page any")"
+
+        if [[ -n ${post_type} ]]; then
+          wpcli_delete_posts_by_status "${wp_site}" "${install_type}" "${post_status}" "${post_type}"
+        fi
+      fi
+    fi
+
+    # LIST RECENT POSTS
+    if [[ ${chosen_cleanup_option} == *"06"* ]]; then
+      wpcli_list_recent_posts "${wp_site}" "${install_type}" "30"
+    fi
+
+    # LIST POSTS BY AUTHOR
+    if [[ ${chosen_cleanup_option} == *"07"* ]]; then
+      local author_name
+
+      # Let user select from list of available users
+      author_name="$(wpcli_select_user "${wp_site}" "${install_type}")"
+
+      if [[ -n ${author_name} ]]; then
+        wpcli_list_posts_by_author "${wp_site}" "${install_type}" "${author_name}"
+      fi
+    fi
+
+  fi
+
+}
+
+################################################################################
+# Get list of WordPress users and let user select one
+#
+# Arguments:
+#  ${1} = ${wp_site}
+#  ${2} = ${install_type}
+#
+# Outputs:
+#   Selected username (or empty if cancelled)
+################################################################################
+
+function wpcli_select_user() {
+
+  local wp_site="${1}"
+  local install_type="${2}"
+
+  local users_list
+  local user_options=()
+  local selected_user
+
+  # Get list of users with their roles
+  if [[ ${install_type} == "docker"* ]]; then
+    users_list=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp user list --fields=user_login,display_name,user_email,roles --format=csv 2>/dev/null)
+  else
+    users_list=$(wp user list --path="${wp_site}" --fields=user_login,display_name,user_email,roles --format=csv 2>/dev/null)
+  fi
+
+  # Check if we got users
+  if [[ -z ${users_list} ]]; then
+    display --indent 6 --text "- Getting user list" --result "FAIL" --color RED
+    log_event "error" "Failed to get user list from WordPress" "false"
+    return 1
+  fi
+
+  # Parse CSV and create menu options (skip header line)
+  local line_num=0
+  while IFS=',' read -r user_login display_name user_email roles; do
+    line_num=$((line_num + 1))
+    # Skip header
+    if [[ ${line_num} -eq 1 ]]; then
+      continue
+    fi
+
+    # Remove quotes from fields
+    user_login="${user_login//\"/}"
+    display_name="${display_name//\"/}"
+    user_email="${user_email//\"/}"
+    roles="${roles//\"/}"
+
+    # Add to options array
+    user_options+=("${user_login}" "${display_name} (${user_email}) [${roles}]")
+  done <<< "${users_list}"
+
+  # Check if we have any users
+  if [[ ${#user_options[@]} -eq 0 ]]; then
+    display --indent 6 --text "- Getting user list" --result "EMPTY" --color YELLOW
+    log_event "warning" "No users found in WordPress" "false"
+    return 1
+  fi
+
+  # Show selection menu
+  selected_user="$(whiptail --title "SELECT USER" --menu "Choose a user:" 20 78 10 "${user_options[@]}" 3>&1 1>&2 2>&3)"
+
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 && -n ${selected_user} ]]; then
+    echo "${selected_user}"
+    return 0
+  else
+    return 1
+  fi
+
+}
+
+################################################################################
+# Delete posts by author username
+#
+# Arguments:
+#  ${1} = ${wp_site}
+#  ${2} = ${install_type}
+#  ${3} = ${author_name}
+#  ${4} = ${post_type} (post, page, any)
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function wpcli_delete_posts_by_author() {
+
+  local wp_site="${1}"
+  local install_type="${2}"
+  local author_name="${3}"
+  local post_type="${4}"
+
+  local post_count
+  local wpcli_result
+
+  log_event "info" "Searching ${post_type} by author: ${author_name}" "false"
+  display --indent 6 --text "- Searching ${post_type} by author: ${author_name}"
+
+  # Count posts first
+  if [[ ${install_type} == "docker"* ]]; then
+    post_count=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --author="${author_name}" --post_type="${post_type}" --format=count --quiet 2>/dev/null)
+  else
+    post_count=$(wp post list --path="${wp_site}" --author="${author_name}" --post_type="${post_type}" --format=count --quiet 2>/dev/null)
+  fi
+
+  if [[ -z ${post_count} || ${post_count} -eq 0 ]]; then
+    display --indent 8 --text "No ${post_type} found for author: ${author_name}" --tcolor YELLOW
+    log_event "info" "No ${post_type} found for author: ${author_name}" "false"
+    return 0
+  fi
+
+  display --indent 8 --text "Found ${post_count} ${post_type} by '${author_name}'" --tcolor RED
+
+  # Show confirmation
+  if whiptail --title "CONFIRM DELETION" --yesno "Found ${post_count} ${post_type} by author '${author_name}'.\n\nAre you sure you want to DELETE ALL these ${post_type}?\n\nThis action CANNOT be undone!" 14 70; then
+
+    log_event "warning" "Deleting ${post_count} ${post_type} by author: ${author_name}" "false"
+
+    # Delete posts
+    if [[ ${install_type} == "docker"* ]]; then
+      # First get the post IDs
+      post_ids=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --author="${author_name}" --post_type="${post_type}" --format=ids --quiet 2>&1)
+      # Then delete them
+      wpcli_result=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post delete "${post_ids}" --force --quiet 2>&1)
+    else
+      post_ids=$(wp post list --path="${wp_site}" --author="${author_name}" --post_type="${post_type}" --format=ids --quiet)
+      wpcli_result=$(wp post delete "${post_ids}" --force --path="${wp_site}" --quiet 2>&1)
+    fi
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+      display --indent 6 --text "- Deleting ${post_type} by author '${author_name}'" --result "DONE" --color GREEN
+      log_event "success" "Deleted ${post_count} ${post_type} by author: ${author_name}" "false"
+    else
+      display --indent 6 --text "- Deleting ${post_type} by author '${author_name}'" --result "FAIL" --color RED
+      log_event "error" "Failed to delete ${post_type}: ${wpcli_result}" "false"
+      return 1
+    fi
+
+  else
+    display --indent 8 --text "Operation cancelled by user" --tcolor YELLOW
+    log_event "info" "Post deletion cancelled by user" "false"
+  fi
+
+}
+
+################################################################################
+# Delete posts by author ID
+#
+# Arguments:
+#  ${1} = ${wp_site}
+#  ${2} = ${install_type}
+#  ${3} = ${author_id}
+#  ${4} = ${post_type} (post, page, any)
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function wpcli_delete_posts_by_author_id() {
+
+  local wp_site="${1}"
+  local install_type="${2}"
+  local author_id="${3}"
+  local post_type="${4}"
+
+  local post_count
+  local wpcli_result
+
+  log_event "info" "Searching ${post_type} by author ID: ${author_id}" "false"
+  display --indent 6 --text "- Searching ${post_type} by author ID: ${author_id}"
+
+  # Count posts first
+  if [[ ${install_type} == "docker"* ]]; then
+    post_count=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --author="${author_id}" --post_type="${post_type}" --format=count --quiet 2>/dev/null)
+  else
+    post_count=$(wp post list --path="${wp_site}" --author="${author_id}" --post_type="${post_type}" --format=count --quiet 2>/dev/null)
+  fi
+
+  if [[ -z ${post_count} || ${post_count} -eq 0 ]]; then
+    display --indent 8 --text "No ${post_type} found for author ID: ${author_id}" --tcolor YELLOW
+    log_event "info" "No ${post_type} found for author ID: ${author_id}" "false"
+    return 0
+  fi
+
+  display --indent 8 --text "Found ${post_count} ${post_type} by author ID '${author_id}'" --tcolor RED
+
+  # Show confirmation
+  if whiptail --title "CONFIRM DELETION" --yesno "Found ${post_count} ${post_type} by author ID '${author_id}'.\n\nAre you sure you want to DELETE ALL these ${post_type}?\n\nThis action CANNOT be undone!" 14 70; then
+
+    log_event "warning" "Deleting ${post_count} ${post_type} by author ID: ${author_id}" "false"
+
+    # Delete posts
+    if [[ ${install_type} == "docker"* ]]; then
+      # First get the post IDs
+      post_ids=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --author="${author_id}" --post_type="${post_type}" --format=ids --quiet 2>&1)
+      # Then delete them
+      wpcli_result=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post delete "${post_ids}" --force --quiet 2>&1)
+    else
+      post_ids=$(wp post list --path="${wp_site}" --author="${author_id}" --post_type="${post_type}" --format=ids --quiet)
+      wpcli_result=$(wp post delete "${post_ids}" --force --path="${wp_site}" --quiet 2>&1)
+    fi
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+      display --indent 6 --text "- Deleting ${post_type} by author ID '${author_id}'" --result "DONE" --color GREEN
+      log_event "success" "Deleted ${post_count} ${post_type} by author ID: ${author_id}" "false"
+    else
+      display --indent 6 --text "- Deleting ${post_type} by author ID '${author_id}'" --result "FAIL" --color RED
+      log_event "error" "Failed to delete ${post_type}: ${wpcli_result}" "false"
+      return 1
+    fi
+
+  else
+    display --indent 8 --text "Operation cancelled by user" --tcolor YELLOW
+    log_event "info" "Post deletion cancelled by user" "false"
+  fi
+
+}
+
+################################################################################
+# Delete posts by date range
+#
+# Arguments:
+#  ${1} = ${wp_site}
+#  ${2} = ${install_type}
+#  ${3} = ${start_date} (YYYY-MM-DD)
+#  ${4} = ${end_date} (YYYY-MM-DD)
+#  ${5} = ${post_type} (post, page, any)
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function wpcli_delete_posts_by_date_range() {
+
+  local wp_site="${1}"
+  local install_type="${2}"
+  local start_date="${3}"
+  local end_date="${4}"
+  local post_type="${5}"
+
+  local post_count
+  local wpcli_result
+
+  log_event "info" "Searching ${post_type} between ${start_date} and ${end_date}" "false"
+  display --indent 6 --text "- Searching ${post_type} from ${start_date} to ${end_date}"
+
+  # Count posts first
+  if [[ ${install_type} == "docker"* ]]; then
+    post_count=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --post_type="${post_type}" --post_status=any --after="${start_date}" --before="${end_date}" --format=count --quiet 2>/dev/null)
+  else
+    post_count=$(wp post list --path="${wp_site}" --post_type="${post_type}" --post_status=any --after="${start_date}" --before="${end_date}" --format=count --quiet 2>/dev/null)
+  fi
+
+  if [[ -z ${post_count} || ${post_count} -eq 0 ]]; then
+    display --indent 8 --text "No ${post_type} found in this date range" --tcolor YELLOW
+    log_event "info" "No ${post_type} found between ${start_date} and ${end_date}" "false"
+    return 0
+  fi
+
+  display --indent 8 --text "Found ${post_count} ${post_type} in date range" --tcolor RED
+
+  # Show confirmation
+  if whiptail --title "CONFIRM DELETION" --yesno "Found ${post_count} ${post_type} between ${start_date} and ${end_date}.\n\nAre you sure you want to DELETE ALL these ${post_type}?\n\nThis action CANNOT be undone!" 14 70; then
+
+    log_event "warning" "Deleting ${post_count} ${post_type} from ${start_date} to ${end_date}" "false"
+
+    # Delete posts
+    if [[ ${install_type} == "docker"* ]]; then
+      # First get the post IDs
+      post_ids=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --post_type="${post_type}" --post_status=any --after="${start_date}" --before="${end_date}" --format=ids --quiet 2>&1)
+      # Then delete them
+      wpcli_result=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post delete "${post_ids}" --force --quiet 2>&1)
+    else
+      post_ids=$(wp post list --path="${wp_site}" --post_type="${post_type}" --post_status=any --after="${start_date}" --before="${end_date}" --format=ids --quiet)
+      wpcli_result=$(wp post delete "${post_ids}" --force --path="${wp_site}" --quiet 2>&1)
+    fi
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+      display --indent 6 --text "- Deleting ${post_type} by date range" --result "DONE" --color GREEN
+      log_event "success" "Deleted ${post_count} ${post_type} from ${start_date} to ${end_date}" "false"
+    else
+      display --indent 6 --text "- Deleting ${post_type} by date range" --result "FAIL" --color RED
+      log_event "error" "Failed to delete ${post_type}: ${wpcli_result}" "false"
+      return 1
+    fi
+
+  else
+    display --indent 8 --text "Operation cancelled by user" --tcolor YELLOW
+    log_event "info" "Post deletion cancelled by user" "false"
+  fi
+
+}
+
+################################################################################
+# Delete posts by keyword in title
+#
+# Arguments:
+#  ${1} = ${wp_site}
+#  ${2} = ${install_type}
+#  ${3} = ${keyword}
+#  ${4} = ${post_type} (post, page, any)
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function wpcli_delete_posts_by_keyword() {
+
+  local wp_site="${1}"
+  local install_type="${2}"
+  local keyword="${3}"
+  local post_type="${4}"
+
+  local post_count
+  local wpcli_result
+
+  log_event "info" "Searching ${post_type} with keyword: ${keyword}" "false"
+  display --indent 6 --text "- Searching ${post_type} with keyword: '${keyword}'"
+
+  # Count posts first
+  if [[ ${install_type} == "docker"* ]]; then
+    post_count=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --post_type="${post_type}" --s="${keyword}" --format=count --quiet 2>/dev/null)
+  else
+    post_count=$(wp post list --path="${wp_site}" --post_type="${post_type}" --s="${keyword}" --format=count --quiet 2>/dev/null)
+  fi
+
+  if [[ -z ${post_count} || ${post_count} -eq 0 ]]; then
+    display --indent 8 --text "No ${post_type} found with keyword: ${keyword}" --tcolor YELLOW
+    log_event "info" "No ${post_type} found with keyword: ${keyword}" "false"
+    return 0
+  fi
+
+  display --indent 8 --text "Found ${post_count} ${post_type} with keyword '${keyword}'" --tcolor RED
+
+  # Show confirmation
+  if whiptail --title "CONFIRM DELETION" --yesno "Found ${post_count} ${post_type} containing '${keyword}'.\n\nAre you sure you want to DELETE ALL these ${post_type}?\n\nThis action CANNOT be undone!" 14 70; then
+
+    log_event "warning" "Deleting ${post_count} ${post_type} with keyword: ${keyword}" "false"
+
+    # Delete posts
+    if [[ ${install_type} == "docker"* ]]; then
+      # First get the post IDs
+      post_ids=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --post_type="${post_type}" --s="${keyword}" --format=ids --quiet 2>&1)
+      # Then delete them
+      wpcli_result=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post delete "${post_ids}" --force --quiet 2>&1)
+    else
+      post_ids=$(wp post list --path="${wp_site}" --post_type="${post_type}" --s="${keyword}" --format=ids --quiet)
+      wpcli_result=$(wp post delete "${post_ids}" --force --path="${wp_site}" --quiet 2>&1)
+    fi
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+      display --indent 6 --text "- Deleting ${post_type} with keyword '${keyword}'" --result "DONE" --color GREEN
+      log_event "success" "Deleted ${post_count} ${post_type} with keyword: ${keyword}" "false"
+    else
+      display --indent 6 --text "- Deleting ${post_type} with keyword '${keyword}'" --result "FAIL" --color RED
+      log_event "error" "Failed to delete ${post_type}: ${wpcli_result}" "false"
+      return 1
+    fi
+
+  else
+    display --indent 8 --text "Operation cancelled by user" --tcolor YELLOW
+    log_event "info" "Post deletion cancelled by user" "false"
+  fi
+
+}
+
+################################################################################
+# Delete posts by status
+#
+# Arguments:
+#  ${1} = ${wp_site}
+#  ${2} = ${install_type}
+#  ${3} = ${post_status}
+#  ${4} = ${post_type} (post, page, any)
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function wpcli_delete_posts_by_status() {
+
+  local wp_site="${1}"
+  local install_type="${2}"
+  local post_status="${3}"
+  local post_type="${4}"
+
+  local post_count
+  local wpcli_result
+
+  log_event "info" "Searching ${post_type} with status: ${post_status}" "false"
+  display --indent 6 --text "- Searching ${post_type} with status: ${post_status}"
+
+  # Count posts first
+  if [[ ${install_type} == "docker"* ]]; then
+    post_count=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --post_type="${post_type}" --post_status="${post_status}" --format=count --quiet 2>/dev/null)
+  else
+    post_count=$(wp post list --path="${wp_site}" --post_type="${post_type}" --post_status="${post_status}" --format=count --quiet 2>/dev/null)
+  fi
+
+  if [[ -z ${post_count} || ${post_count} -eq 0 ]]; then
+    display --indent 8 --text "No ${post_type} found with status: ${post_status}" --tcolor YELLOW
+    log_event "info" "No ${post_type} found with status: ${post_status}" "false"
+    return 0
+  fi
+
+  display --indent 8 --text "Found ${post_count} ${post_type} with status '${post_status}'" --tcolor RED
+
+  # Show confirmation
+  if whiptail --title "CONFIRM DELETION" --yesno "Found ${post_count} ${post_type} with status '${post_status}'.\n\nAre you sure you want to DELETE ALL these ${post_type}?\n\nThis action CANNOT be undone!" 14 70; then
+
+    log_event "warning" "Deleting ${post_count} ${post_type} with status: ${post_status}" "false"
+
+    # Delete posts
+    if [[ ${install_type} == "docker"* ]]; then
+      # First get the post IDs
+      post_ids=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --post_type="${post_type}" --post_status="${post_status}" --format=ids --quiet 2>&1)
+      # Then delete them
+      wpcli_result=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post delete "${post_ids}" --force --quiet 2>&1)
+    else
+      post_ids=$(wp post list --path="${wp_site}" --post_type="${post_type}" --post_status="${post_status}" --format=ids --quiet)
+      wpcli_result=$(wp post delete "${post_ids}" --force --path="${wp_site}" --quiet 2>&1)
+    fi
+
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+      display --indent 6 --text "- Deleting ${post_type} with status '${post_status}'" --result "DONE" --color GREEN
+      log_event "success" "Deleted ${post_count} ${post_type} with status: ${post_status}" "false"
+    else
+      display --indent 6 --text "- Deleting ${post_type} with status '${post_status}'" --result "FAIL" --color RED
+      log_event "error" "Failed to delete ${post_type}: ${wpcli_result}" "false"
+      return 1
+    fi
+
+  else
+    display --indent 8 --text "Operation cancelled by user" --tcolor YELLOW
+    log_event "info" "Post deletion cancelled by user" "false"
+  fi
+
+}
+
+################################################################################
+# List recent posts
+#
+# Arguments:
+#  ${1} = ${wp_site}
+#  ${2} = ${install_type}
+#  ${3} = ${days} (number of days to look back)
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function wpcli_list_recent_posts() {
+
+  local wp_site="${1}"
+  local install_type="${2}"
+  local days="${3}"
+
+  local start_date
+  local wpcli_result
+
+  start_date=$(date -d "${days} days ago" +%Y-%m-%d)
+
+  log_event "info" "Listing posts from last ${days} days (since ${start_date})" "false"
+  display --indent 6 --text "- Listing posts from last ${days} days"
+
+  # List posts
+  if [[ ${install_type} == "docker"* ]]; then
+    wpcli_result=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --after="${start_date}" --format=table --fields=ID,post_date,post_author,post_title,post_status 2>&1)
+  else
+    wpcli_result=$(wp post list --path="${wp_site}" --after="${start_date}" --format=table --fields=ID,post_date,post_author,post_title,post_status 2>&1)
+  fi
+
+  echo ""
+  echo "${wpcli_result}"
+  echo ""
+
+  log_event "info" "Listed recent posts" "false"
+
+}
+
+################################################################################
+# List posts by author
+#
+# Arguments:
+#  ${1} = ${wp_site}
+#  ${2} = ${install_type}
+#  ${3} = ${author_name}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function wpcli_list_posts_by_author() {
+
+  local wp_site="${1}"
+  local install_type="${2}"
+  local author_name="${3}"
+
+  local wpcli_result
+
+  log_event "info" "Listing posts by author: ${author_name}" "false"
+  display --indent 6 --text "- Listing posts by author: ${author_name}"
+
+  # List posts
+  if [[ ${install_type} == "docker"* ]]; then
+    wpcli_result=$(docker compose -f "${wp_site}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp post list --author="${author_name}" --format=table --fields=ID,post_date,post_title,post_status 2>&1)
+  else
+    wpcli_result=$(wp post list --path="${wp_site}" --author="${author_name}" --format=table --fields=ID,post_date,post_title,post_status 2>&1)
+  fi
+
+  echo ""
+  echo "${wpcli_result}"
+  echo ""
+
+  log_event "info" "Listed posts by author: ${author_name}" "false"
+
+}
+
