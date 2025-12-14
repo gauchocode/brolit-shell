@@ -11,6 +11,135 @@
 ################################################################################
 
 ################################################################################
+# Get certbot account email
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  ${email} if ok, empty string on error.
+################################################################################
+
+function certbot_get_account_email() {
+
+  local account_email
+  local accounts_dir="/etc/letsencrypt/accounts"
+
+  # Check if certbot is installed and has accounts
+  if [[ ! -d "${accounts_dir}" ]]; then
+    log_event "debug" "Certbot accounts directory not found" "false"
+    echo ""
+    return 1
+  fi
+
+  # Try to get email from account registration
+  # The accounts directory structure is: /etc/letsencrypt/accounts/[server]/directory/[account_id]/
+  account_email="$(find "${accounts_dir}" -name "regr.json" -type f -print0 -quit | xargs -0 cat 2>/dev/null | grep -oP '"mailto:\K[^"]+' | head -1)"
+
+  if [[ -n "${account_email}" ]]; then
+    log_event "debug" "Found certbot account email: ${account_email}" "false"
+    echo "${account_email}"
+    return 0
+  else
+    log_event "debug" "Could not find certbot account email" "false"
+    echo ""
+    return 1
+  fi
+
+}
+
+################################################################################
+# Update certbot account email
+#
+# Arguments:
+#  ${1} = ${new_email}
+#
+# Outputs:
+#  0 if ok, 1 on error.
+################################################################################
+
+function certbot_update_account_email() {
+
+  local new_email="${1}"
+  local certbot_result
+
+  log_event "info" "Updating certbot account email to: ${new_email}" "false"
+  display --indent 6 --text "- Updating certbot account email" --result "WORKING" --color YELLOW
+
+  # Update certbot account email
+  certbot update_account --email "${new_email}" --no-eff-email --non-interactive --quiet
+
+  certbot_result=$?
+  if [[ ${certbot_result} -eq 0 ]]; then
+
+    clear_previous_lines "1"
+    log_event "success" "Certbot account email updated to: ${new_email}" "false"
+    display --indent 6 --text "- Updating certbot account email" --result "DONE" --color GREEN
+
+    return 0
+
+  else
+
+    clear_previous_lines "1"
+    log_event "error" "Failed to update certbot account email" "false"
+    display --indent 6 --text "- Updating certbot account email" --result "FAIL" --color RED
+
+    return 1
+
+  fi
+
+}
+
+################################################################################
+# Check and update certbot email if needed
+#
+# Arguments:
+#  ${1} = ${configured_email}
+#
+# Outputs:
+#  0 if ok, 1 on error.
+################################################################################
+
+function certbot_check_and_update_email() {
+
+  local configured_email="${1}"
+  local current_email
+
+  # Get current certbot account email
+  current_email="$(certbot_get_account_email)"
+
+  # If we couldn't get current email, certbot is probably not configured yet
+  if [[ -z "${current_email}" ]]; then
+    log_event "debug" "No certbot account found, skipping email verification" "false"
+    return 0
+  fi
+
+  # Check if configured email is empty
+  if [[ -z "${configured_email}" ]]; then
+    log_event "warning" "No email configured in .brolit_conf.json for certbot" "false"
+    return 0
+  fi
+
+  # Compare emails
+  if [[ "${current_email}" != "${configured_email}" ]]; then
+
+    log_event "info" "Certbot email mismatch detected. Current: ${current_email}, Configured: ${configured_email}" "false"
+
+    # Update certbot account email
+    certbot_update_account_email "${configured_email}"
+
+    return $?
+
+  else
+
+    log_event "debug" "Certbot account email is already up to date: ${current_email}" "false"
+    return 0
+
+  fi
+
+}
+
+################################################################################
 # Install certificate with certbot
 #
 # Arguments:
