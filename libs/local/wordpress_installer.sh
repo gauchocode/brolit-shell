@@ -272,7 +272,7 @@ function wordpress_project_copy() {
         # Wait 2 seconds for DNS update
         sleep 2
         # Let's Encrypt
-        certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_domain},${project_root_domain}"
+        certbot_certificate_install_auto "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_domain},${project_root_domain}"
         [[ $? -eq 0 ]] && nginx_server_add_http2_support "${project_domain}"
 
       else
@@ -309,7 +309,7 @@ function wordpress_project_copy() {
             # Wait 2 seconds for DNS update
             sleep 2
             # Install certificate and add http2 support
-            certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${cert_project_domain}"
+            certbot_certificate_install_auto "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${cert_project_domain}"
             [[ $? -eq 0 ]] && nginx_server_add_http2_support "${project_domain}"
           else
             # Log

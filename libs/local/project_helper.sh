@@ -3093,7 +3093,7 @@ function project_update_domain_config() {
       display --indent 6 --text "- Waiting for DNS propagation" --result "DONE" --color GREEN
 
       # Install certificate (attempt regardless of Cloudflare status)
-      if certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_root_domain},www.${project_root_domain}"; then
+      if certbot_certificate_install_auto "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_root_domain},www.${project_root_domain}"; then
         # Enable HTTP/2 only if not already enabled
         if ! grep -q "listen.*http2" "/etc/nginx/sites-available/${project_domain}"; then
           nginx_server_add_http2_support "${project_domain}"
@@ -3132,7 +3132,7 @@ function project_update_domain_config() {
       display --indent 6 --text "- Waiting for DNS propagation" --result "DONE" --color GREEN
 
       # Install certificate (attempt regardless of Cloudflare status)
-      if certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_domain}"; then
+      if certbot_certificate_install_auto "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_domain}"; then
         # Enable HTTP/2 only if not already enabled
         if ! grep -q "listen.*http2" "/etc/nginx/sites-available/${project_domain}"; then
           nginx_server_add_http2_support "${project_domain}"
