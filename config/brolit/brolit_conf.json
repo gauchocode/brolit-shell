@@ -326,7 +326,7 @@
                 "status": "disabled"
             }
         ],
-        "borg": [
+        "dtop": [
             {
                 "status": "disabled"
             }
@@ -353,6 +353,11 @@
                         "port": "9001"
                     }
                 ]
+            }
+        ],
+        "borg": [
+            {
+                "status": "disabled"
             }
         ],
         "netdata": [

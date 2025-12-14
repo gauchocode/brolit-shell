@@ -376,21 +376,22 @@ function optimize_image_size() {
   fi
 
   # Run ImageMagick mogrify
-  log_event "info" "Running mogrify to optimize image sizes (max: ${img_max_width}x${img_max_height})..." "false"
+  log_event "info" "Running mogrify to resize ${image_count} ${file_extension} images (max: ${img_max_width}x${img_max_height})..." "false"
+  log_event "info" "This may take a while depending on the number and size of images..." "false"
 
   if [[ "${time_filter}" == "all" ]]; then
 
     log_event "debug" "Executing: ${FIND} ${path} -type f -name *.${file_extension} -exec ${MOGRIFY} -resize ${img_max_width}x${img_max_height}\> {} \;" "false"
-    ${FIND} "${path}" -type f -name "*.${file_extension}" -exec "${MOGRIFY}" -resize "${img_max_width}"x"${img_max_height}"\> {} \; 2>/dev/null
+    ${FIND} "${path}" -type f -name "*.${file_extension}" -exec "${MOGRIFY}" -resize "${img_max_width}"x"${img_max_height}"\> {} \;
 
   else
 
     log_event "debug" "Executing: ${FIND} ${path} -mtime -${time_filter} -type f -name *.${file_extension} -exec ${MOGRIFY} -resize ${img_max_width}x${img_max_height}\> {} \;" "false"
-    ${FIND} "${path}" -mtime -"${time_filter}" -type f -name "*.${file_extension}" -exec "${MOGRIFY}" -resize "${img_max_width}"x"${img_max_height}"\> {} \; 2>/dev/null
+    ${FIND} "${path}" -mtime -"${time_filter}" -type f -name "*.${file_extension}" -exec "${MOGRIFY}" -resize "${img_max_width}"x"${img_max_height}"\> {} \;
 
   fi
 
-  log_event "info" "Image resizing completed for ${file_extension} files" "false"
+  log_event "info" "Image resizing completed successfully for ${image_count} ${file_extension} files" "false"
 
 }
 
@@ -451,20 +452,22 @@ function optimize_images() {
     fi
 
     # Run jpegoptim
-    log_event "info" "Running jpegoptim to compress images (quality: ${img_compress}%)..." "false"
+    log_event "info" "Running jpegoptim to compress ${image_count} JPG/JPEG images (quality: ${img_compress}%)..." "false"
+    log_event "info" "This may take a while depending on the number and size of images..." "false"
+
     if [[ "${time_filter}" == "all" ]]; then
 
-      log_event "debug" "Executing: ${FIND} ${path} -type f -regex .*\.\(jpg\|jpeg\) -exec ${JPEGOPTIM} --max=${img_compress} --strip-all --all-progressive {} \;" "false"
-      ${FIND} "${path}" -type f -regex ".*\.\(jpg\|jpeg\)" -exec "${JPEGOPTIM}" --max="${img_compress}" --strip-all --all-progressive {} \; 2>/dev/null
+      log_event "debug" "Executing: ${FIND} ${path} -type f -regex .*\.\(jpg\|jpeg\) -exec ${JPEGOPTIM} --quiet --max=${img_compress} --strip-all --all-progressive {} \;" "false"
+      ${FIND} "${path}" -type f -regex ".*\.\(jpg\|jpeg\)" -exec "${JPEGOPTIM}" --quiet --max="${img_compress}" --strip-all --all-progressive {} \;
 
     else
 
-      log_event "debug" "Executing: ${FIND} ${path} -mtime -${time_filter} -type f -regex .*\.\(jpg\|jpeg\) -exec ${JPEGOPTIM} --max=${img_compress} --strip-all --all-progressive {} \;" "false"
-      ${FIND} "${path}" -mtime -"${time_filter}" -type f -regex ".*\.\(jpg\|jpeg\)" -exec "${JPEGOPTIM}" --max="${img_compress}" --strip-all --all-progressive {} \; 2>/dev/null
+      log_event "debug" "Executing: ${FIND} ${path} -mtime -${time_filter} -type f -regex .*\.\(jpg\|jpeg\) -exec ${JPEGOPTIM} --quiet --max=${img_compress} --strip-all --all-progressive {} \;" "false"
+      ${FIND} "${path}" -mtime -"${time_filter}" -type f -regex ".*\.\(jpg\|jpeg\)" -exec "${JPEGOPTIM}" --quiet --max="${img_compress}" --strip-all --all-progressive {} \;
 
     fi
 
-    log_event "info" "JPG compression completed" "false"
+    log_event "info" "JPG compression completed successfully" "false"
 
   elif [[ ${file_extension} == "png" ]]; then
 
@@ -490,20 +493,22 @@ function optimize_images() {
     fi
 
     # Run optipng
-    log_event "info" "Running optipng to compress images..." "false"
+    log_event "info" "Running optipng to compress ${image_count} PNG images..." "false"
+    log_event "info" "This may take a while depending on the number and size of images..." "false"
+
     if [[ "${time_filter}" == "all" ]]; then
 
-    log_event "debug" "Executing: ${FIND} ${path} -type f -name *.${file_extension} -exec ${OPTIPNG} -o7 -strip all {} \;" "false"
-    ${FIND} "${path}" -type f -name "*.${file_extension}" -exec "${OPTIPNG}" -o7 -strip all {} \; 2>/dev/null
+      log_event "debug" "Executing: ${FIND} ${path} -type f -name *.${file_extension} -exec ${OPTIPNG} -quiet -o7 -strip all {} \;" "false"
+      ${FIND} "${path}" -type f -name "*.${file_extension}" -exec "${OPTIPNG}" -quiet -o7 -strip all {} \;
 
     else
 
-      log_event "debug" "Executing: ${FIND} ${path} -mtime -${time_filter} -type f -name *.${file_extension} -exec ${OPTIPNG} -o7 -strip all {} \;" "false"
-      ${FIND} "${path}" -mtime -"${time_filter}" -type f -name "*.${file_extension}" -exec "${OPTIPNG}" -o7 -strip all {} \; 2>/dev/null
+      log_event "debug" "Executing: ${FIND} ${path} -mtime -${time_filter} -type f -name *.${file_extension} -exec ${OPTIPNG} -quiet -o7 -strip all {} \;" "false"
+      ${FIND} "${path}" -mtime -"${time_filter}" -type f -name "*.${file_extension}" -exec "${OPTIPNG}" -quiet -o7 -strip all {} \;
 
     fi
 
-    log_event "info" "PNG optimization completed" "false"
+    log_event "info" "PNG optimization completed successfully" "false"
 
   else
 
