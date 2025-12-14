@@ -622,6 +622,7 @@ function certbot_certonly_cloudflare() {
     if [[ ${certbot_result} -eq 0 ]]; then
 
       # Log
+      clear_previous_lines "1"
       log_event "info" "Certificate installation for ${domains} ok" "false"
       display --indent 6 --text "- Certificate installation" --result "DONE" --color GREEN
 
