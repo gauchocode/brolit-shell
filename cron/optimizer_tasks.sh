@@ -28,7 +28,8 @@ if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
 fi
 
 # Running scripts
-optimize_images_complete
+# optimize_images_complete with defaults: all images, 80% quality, 1920x1080 max
+optimize_images_complete "" "all" "80" "1920" "1080"
 
 optimize_pdfs
 

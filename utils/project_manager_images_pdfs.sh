@@ -98,11 +98,56 @@ function _project_manager_optimize_images() {
   local time_filter="all"
   [[ ${time_filter_option} == *"02"* ]] && time_filter="7"
 
-  # Step 4: Execute optimization
+  # Step 4: Ask JPG quality preference
+  local jpg_quality_option
+  jpg_quality_option="$(whiptail --title "JPG QUALITY SETTINGS" --menu "\nSelect JPG compression quality:\n" 20 78 10 \
+    "01)" "High quality (90%) - Larger files, better quality" \
+    "02)" "Good quality (80%) - Balanced (recommended)" \
+    "03)" "Medium quality (70%) - Smaller files" \
+    "04)" "Low quality (60%) - Much smaller files" \
+    3>&1 1>&2 2>&3)"
+
+  exitstatus=$?
+  if [[ ${exitstatus} -ne 0 ]]; then
+    return 1
+  fi
+
+  # Determine JPG quality
+  local jpg_quality="80"
+  [[ ${jpg_quality_option} == *"01"* ]] && jpg_quality="90"
+  [[ ${jpg_quality_option} == *"02"* ]] && jpg_quality="80"
+  [[ ${jpg_quality_option} == *"03"* ]] && jpg_quality="70"
+  [[ ${jpg_quality_option} == *"04"* ]] && jpg_quality="60"
+
+  # Step 5: Ask maximum image size
+  local max_size_option
+  max_size_option="$(whiptail --title "IMAGE RESIZE SETTINGS" --menu "\nSelect maximum image dimensions:\n" 20 78 10 \
+    "01)" "Full HD - 1920x1080 (recommended for web)" \
+    "02)" "2K - 2560x1440 (higher quality)" \
+    "03)" "4K - 3840x2160 (maximum quality)" \
+    "04)" "HD - 1280x720 (smaller files)" \
+    "05)" "No resizing - Keep original dimensions" \
+    3>&1 1>&2 2>&3)"
+
+  exitstatus=$?
+  if [[ ${exitstatus} -ne 0 ]]; then
+    return 1
+  fi
+
+  # Determine max dimensions
+  local max_width="1920"
+  local max_height="1080"
+  [[ ${max_size_option} == *"01"* ]] && max_width="1920" && max_height="1080"
+  [[ ${max_size_option} == *"02"* ]] && max_width="2560" && max_height="1440"
+  [[ ${max_size_option} == *"03"* ]] && max_width="3840" && max_height="2160"
+  [[ ${max_size_option} == *"04"* ]] && max_width="1280" && max_height="720"
+  [[ ${max_size_option} == *"05"* ]] && max_width="0" && max_height="0"
+
+  # Step 6: Execute optimization
   if [[ -n "${selected_project}" ]]; then
-    optimize_images_complete "${selected_project}" "${time_filter}"
+    optimize_images_complete "${selected_project}" "${time_filter}" "${jpg_quality}" "${max_width}" "${max_height}"
   else
-    optimize_images_complete "" "${time_filter}"
+    optimize_images_complete "" "${time_filter}" "${jpg_quality}" "${max_width}" "${max_height}"
   fi
 
   return 0

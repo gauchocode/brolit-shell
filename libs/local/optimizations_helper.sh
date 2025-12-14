@@ -96,6 +96,9 @@ function _get_wordpress_uploads_path() {
 # Arguments:
 #   ${1} = ${project_path} (optional) - Specific project path to optimize
 #   ${2} = ${time_filter} (optional) - Time filter: "all" or number of days (e.g., "7")
+#   ${3} = ${jpg_quality} (optional) - JPG quality (1-100), default: 80
+#   ${4} = ${max_width} (optional) - Max image width, default: 1920 (0 = no resize)
+#   ${5} = ${max_height} (optional) - Max image height, default: 1080 (0 = no resize)
 #
 # Outputs:
 #   nothing
@@ -105,6 +108,9 @@ function optimize_images_complete() {
 
   local specific_project="${1}"
   local time_filter="${2:-all}"  # Default to "all" if not specified
+  local jpg_quality="${3:-80}"   # Default to 80 if not specified
+  local max_width="${4:-1920}"   # Default to 1920 if not specified
+  local max_height="${5:-1080}"  # Default to 1080 if not specified
 
   log_subsection "Image Optimization"
   log_event "info" "Starting image optimization process for WordPress projects" "false"
@@ -114,6 +120,8 @@ function optimize_images_complete() {
   else
     log_event "info" "Processing only images modified in the last ${time_filter} days" "false"
   fi
+
+  log_event "info" "Settings: JPG quality=${jpg_quality}%, Max size=${max_width}x${max_height}" "false"
 
   # Ensure required commands are available
   if [[ -z "${FIND}" ]]; then
@@ -219,8 +227,12 @@ function optimize_images_complete() {
       ((wp_projects_count++))
       log_event "info" "Processing uploads directory: ${uploads_path}" "false"
       # Optimize images only in uploads directory
-      optimize_image_size "${uploads_path}" "jpg" "1920" "1080" "${time_filter}"
-      optimize_images "${uploads_path}" "jpg" "80" "${time_filter}"
+      if [[ ${max_width} -gt 0 && ${max_height} -gt 0 ]]; then
+        optimize_image_size "${uploads_path}" "jpg" "${max_width}" "${max_height}" "${time_filter}"
+      else
+        log_event "info" "Skipping image resizing (user selected no resizing)" "false"
+      fi
+      optimize_images "${uploads_path}" "jpg" "${jpg_quality}" "${time_filter}"
       optimize_images "${uploads_path}" "png" "" "${time_filter}"
     else
       log_event "warning" "Uploads directory not found: ${uploads_path}" "false"
@@ -272,8 +284,12 @@ function optimize_images_complete() {
         if [[ -d "${uploads_path}" ]]; then
           log_event "info" "Processing uploads directory: ${uploads_path}" "false"
           # Optimize images only in uploads directory
-          optimize_image_size "${uploads_path}" "jpg" "1920" "1080" "${time_filter}"
-          optimize_images "${uploads_path}" "jpg" "80" "${time_filter}"
+          if [[ ${max_width} -gt 0 && ${max_height} -gt 0 ]]; then
+            optimize_image_size "${uploads_path}" "jpg" "${max_width}" "${max_height}" "${time_filter}"
+          else
+            log_event "info" "Skipping image resizing (user selected no resizing)" "false"
+          fi
+          optimize_images "${uploads_path}" "jpg" "${jpg_quality}" "${time_filter}"
           optimize_images "${uploads_path}" "png" "" "${time_filter}"
         else
           log_event "warning" "Uploads directory not found: ${uploads_path}" "false"
