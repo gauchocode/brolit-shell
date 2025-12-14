@@ -21,6 +21,9 @@ function certbot_manager_menu() {
   local certbot_options
   local chosen_cb_options
 
+  # Check and update certbot email if needed
+  certbot_check_and_update_email "${NOTIFICATION_EMAIL_EMAIL_TO}"
+
   certbot_options=(
     "01)" "INSTALL CERTIFICATE"
     "02)" "EXPAND CERTIFICATE"
