@@ -593,12 +593,9 @@ function certbot_certonly_cloudflare() {
   local email="${1}"
   local domains="${2}"
 
-  log_event "debug" "Running: certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf -m ${email} -d ${domains} --preferred-challenges dns-01" "false"
+  log_event "debug" "Running: certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf --non-interactive --agree-tos -m ${email} -d ${domains} --preferred-challenges dns-01" "false"
 
-  certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf -m "${email}" -d "${domains}" --preferred-challenges dns-01
-
-  # Maybe add a non interactive mode?
-  # certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf --non-interactive --agree-tos --redirect -m ${EMAIL} -d ${DOMAINS} --preferred-challenges dns-01
+  certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf --non-interactive --agree-tos -m "${email}" -d "${domains}" --preferred-challenges dns-01
 
   certbot_result=$?
   if [[ ${certbot_result} -eq 0 ]]; then
