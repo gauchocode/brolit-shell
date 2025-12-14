@@ -481,36 +481,56 @@ function certbot_helper_installer_menu() {
       # INSTALL_WITH_CLOUDFLARE
       log_subsection "Certificate Installation with Certbot Cloudflare"
 
-      certbot_certonly_cloudflare "${email}" "${domains}"
+      # Step 1: Install certificate with nginx (creates cert + configures nginx)
+      log_event "info" "Step 1: Installing certificate with nginx to configure nginx files" "false"
+      display --indent 6 --text "- Installing certificate with nginx" --tcolor CYAN
 
+      certbot_certificate_install "${email}" "${domains}"
       exitstatus=$?
+
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        # Loop through a comma-separated shell variable
-        # Not messing with IFS, not calling external command
-        # Ref: https://stackoverflow.com/questions/27702452/loop-through-a-comma-separated-shell-variable
-        for domain in ${domains//,/ }; do
+        # Step 2: Regenerate certificate using Cloudflare (keeps nginx config from step 1)
+        log_event "info" "Step 2: Regenerating certificate with Cloudflare DNS" "false"
+        display --indent 6 --text "- Regenerating certificate with Cloudflare" --tcolor CYAN
 
-          root_domain=$(domain_get_root "${domain}")
+        certbot_certonly_cloudflare "${email}" "${domains}"
 
-          # Enable cf proxy on record
-          [[ $? -eq 0 ]] && cloudflare_update_record "${root_domain}" "${domain}" "A" "true" "${SERVER_IP}"
-          [[ $? -eq 1 ]] && cloudflare_update_record "${root_domain}" "${domain}" "CNAME" "true" "${root_domain}"
-          [[ $? -eq 1 ]] && error=true
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
 
-        done
+          # Loop through a comma-separated shell variable
+          # Not messing with IFS, not calling external command
+          # Ref: https://stackoverflow.com/questions/27702452/loop-through-a-comma-separated-shell-variable
+          for domain in ${domains//,/ }; do
 
-        # Changing SSL Mode flor Cloudflare record
-        [[ ${error} != true ]] && cloudflare_set_ssl_mode "${root_domain}" "full"
+            root_domain=$(domain_get_root "${domain}")
+
+            # Enable cf proxy on record
+            [[ $? -eq 0 ]] && cloudflare_update_record "${root_domain}" "${domain}" "A" "true" "${SERVER_IP}"
+            [[ $? -eq 1 ]] && cloudflare_update_record "${root_domain}" "${domain}" "CNAME" "true" "${root_domain}"
+            [[ $? -eq 1 ]] && error=true
+
+          done
+
+          # Changing SSL Mode flor Cloudflare record
+          [[ ${error} != true ]] && cloudflare_set_ssl_mode "${root_domain}" "full"
+
+        else
+
+          cb_warning_text+="\n Now you need to follow the next steps: \n"
+          cb_warning_text+="1- Login to your Cloudflare account and select the domain we want to work. \n"
+          cb_warning_text+="2- Go to de 'DNS' option panel and Turn ON the proxy Cloudflare setting over the domain/s \n"
+          cb_warning_text+="3- Go to 'SSL/TLS' option panel and change the SSL setting from 'Flexible' to 'Full'. \n"
+
+          whiptail_message "CERTBOT MANAGER" "${cb_warning_text}"
+
+        fi
 
       else
 
-        cb_warning_text+="\n Now you need to follow the next steps: \n"
-        cb_warning_text+="1- Login to your Cloudflare account and select the domain we want to work. \n"
-        cb_warning_text+="2- Go to de 'DNS' option panel and Turn ON the proxy Cloudflare setting over the domain/s \n"
-        cb_warning_text+="3- Go to 'SSL/TLS' option panel and change the SSL setting from 'Flexible' to 'Full'. \n"
-
-        whiptail_message "CERTBOT MANAGER" "${cb_warning_text}"
+        log_event "error" "Failed to install certificate with nginx, skipping Cloudflare regeneration" "false"
+        display --indent 6 --text "- Certificate installation with nginx" --result "FAIL" --color RED
 
       fi
 
