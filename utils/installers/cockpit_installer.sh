@@ -70,7 +70,7 @@ function cockpit_installer() {
                     # Wait 2 seconds for DNS update
                     sleep 2
                     # Let's Encrypt
-                    certbot_certificate_install "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${PACKAGES_COCKPIT_CONFIG_SUBDOMAIN}"
+                    certbot_certificate_install_auto "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${PACKAGES_COCKPIT_CONFIG_SUBDOMAIN}"
                 fi
 
             fi
