@@ -546,9 +546,9 @@ function wpcli_core_reinstall() {
 
     # Check project_install_type
     [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
-    ## -u 33 -e HOME=/tmp to avoid permission denied error: https://github.com/docker-library/wordpress/issues/417
+    ## --allow-root to avoid permission denied error during core reinstall
     ## --no-color added to avoid unwanted wp-cli output
-    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose --progress=quiet -f ${wp_site}/../docker-compose.yml run -T -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose --progress=quiet -f ${wp_site}/../docker-compose.yml run -T --rm wordpress-cli wp --allow-root --no-color"
 
     if [[ -n ${wp_site} ]]; then
 
@@ -570,6 +570,26 @@ function wpcli_core_reinstall() {
             clear_previous_lines "1"
             log_event "info" "WordPress re-installed" "false"
             display --indent 6 --text "- WordPress re-install for ${wp_site}" --result "DONE" --color GREEN
+
+            # Fix permissions after reinstall (especially important for Docker)
+            if [[ ${install_type} == "docker"* ]]; then
+                log_event "debug" "Fixing permissions after WordPress reinstall" "false"
+
+                # Apply www-data ownership (compatible with Docker)
+                chown -R www-data:www-data "${wp_site}" 2>/dev/null
+                local chown_status=$?
+
+                # If www-data doesn't exist, fall back to 1000:1000
+                if [[ ${chown_status} -ne 0 ]]; then
+                    chown -R 1000:1000 "${wp_site}" 2>/dev/null
+                fi
+
+                # Set proper permissions: 755 for directories, 644 for files
+                find "${wp_site}" -type d -exec chmod 755 {} \; 2>/dev/null
+                find "${wp_site}" -type f -exec chmod 644 {} \; 2>/dev/null
+
+                log_event "debug" "Permissions fixed for ${wp_site}" "false"
+            fi
 
             return 0
 
