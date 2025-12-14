@@ -546,9 +546,9 @@ function wpcli_core_reinstall() {
 
     # Check project_install_type
     [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
-    ## --allow-root to avoid permission denied error during core reinstall
+    ## Run as root (-u root) with --allow-root to avoid permission denied error during core reinstall
     ## --no-color added to avoid unwanted wp-cli output
-    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose --progress=quiet -f ${wp_site}/../docker-compose.yml run -T --rm wordpress-cli wp --allow-root --no-color"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose --progress=quiet -f ${wp_site}/../docker-compose.yml run -T -u root --rm wordpress-cli wp --allow-root --no-color"
 
     if [[ -n ${wp_site} ]]; then
 
