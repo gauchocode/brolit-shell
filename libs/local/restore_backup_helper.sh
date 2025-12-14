@@ -573,9 +573,28 @@ function restore_project_backup() {
 
     log_event "debug" "project_type=${project_type}" "false"
     log_event "debug" "project_install_type=${project_install_type}" "false"
+    log_event "debug" "project_port=${project_port}" "false"
 
     # Handle Docker projects
     if [[ "${project_install_type}" == "docker"* ]]; then
+        # For Docker projects, port is mandatory - ask user if not detected
+        if [[ -z "${project_port}" ]]; then
+            log_event "warning" "Could not detect port from .env file, asking user" "false"
+            display --indent 6 --text "- Port detection" --result "WARNING" --color YELLOW
+            display --indent 8 --text "Could not auto-detect port from .env" --tcolor YELLOW
+
+            # Ask user for port with a suggested default
+            project_port="$(project_ask_port "80")"
+            if [[ $? -ne 0 || -z "${project_port}" ]]; then
+                _handle_restore_error 8 "Port is required for Docker projects"
+                return 1
+            fi
+
+            log_event "info" "User provided port: ${project_port}" "false"
+            display --indent 6 --text "- Using port ${project_port}" --result "DONE" --color GREEN
+        else
+            log_event "info" "Detected port from .env: ${project_port}" "false"
+        fi
         # Get database information
         db_name="$(project_get_configured_database "${project_install_path}" "${project_type}" "${project_install_type}")"
         
@@ -632,6 +651,12 @@ function restore_project_backup() {
             restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${BROLIT_TMP_DIR}/${db_to_restore}"
             project_db_status="enabled"
         fi
+    fi
+
+    # Final validation: for Docker projects, ensure port is set
+    if [[ "${project_install_type}" == "docker"* && -z "${project_port}" ]]; then
+        _handle_restore_error 9 "Port is required for Docker/proxy projects but was not provided"
+        return 1
     fi
 
     # Configure the restored project
