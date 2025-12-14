@@ -275,6 +275,16 @@ function server_app_setup() {
 
         ;;
 
+    "dtop")
+
+        if [[ ${PACKAGES_DTOP_STATUS} == "enabled" ]]; then
+            dtop_installer
+        else
+            dtop_purge
+        fi
+
+        ;;
+
     *)
         log_event "warning" "App ${app_setup} is not supported yet" "true"
         ;;

@@ -1634,7 +1634,52 @@ function _brolit_configuration_load_zabbix() {
 
 }
 
+################################################################################
+# Private: load dtop configuration
+#
+# Arguments:
+#   ${1} = ${server_config_file}
+#
+# Outputs:
+#   nothing
+################################################################################
 
+function _brolit_configuration_load_dtop() {
+
+    local server_config_file="${1}"
+
+    local dtop_installed
+
+    # Globals
+    declare -g DTOP
+    declare -g PACKAGES_DTOP_STATUS
+
+    PACKAGES_DTOP_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.dtop[].status")"
+
+    # Check if dtop is installed
+    if command -v dtop >/dev/null 2>&1; then
+        DTOP="$(command -v dtop)"
+        dtop_installed=0
+    else
+        DTOP=""
+        dtop_installed=1
+    fi
+
+    if [[ ${PACKAGES_DTOP_STATUS} == "enabled" ]]; then
+
+        # Checking if dtop is not installed
+        [[ ${dtop_installed} -eq 1 ]] && pkg_config_changes_detected "dtop" "true"
+
+    else
+
+        # Checking if dtop is installed
+        [[ ${dtop_installed} -eq 0 ]] && pkg_config_changes_detected "dtop" "true"
+
+    fi
+
+    export DTOP PACKAGES_DTOP_STATUS
+
+}
 
 ################################################################################
 # Private: load docker configuration
@@ -2276,6 +2321,9 @@ function brolit_configuration_load() {
 
     ### zabbix
     _brolit_configuration_load_zabbix "${server_config_file}"
+
+    ### dtop
+    _brolit_configuration_load_dtop "${server_config_file}"
 
     ### portainer
     _brolit_configuration_load_portainer "${server_config_file}"
