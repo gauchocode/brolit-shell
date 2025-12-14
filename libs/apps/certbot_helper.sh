@@ -538,14 +538,9 @@ function certbot_certificate_install_auto() {
   local email="${1}"
   local domains="${2}"
 
-  local cloudflare_status
+  log_event "debug" "Cloudflare status: ${SUPPORT_CLOUDFLARE_STATUS}" "false"
 
-  # Get Cloudflare status from brolit_conf.json
-  cloudflare_status=$(json_read_field "${BROLIT_CONFIG_FILE}" "DNS.cloudflare.[0].status")
-
-  log_event "debug" "Cloudflare status in config: ${cloudflare_status}" "false"
-
-  if [[ ${cloudflare_status} == "enabled" ]]; then
+  if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
     # Cloudflare is enabled, ask user which method to use
     log_event "info" "Cloudflare is enabled, asking user for installation method" "false"
     certbot_helper_installer_menu "${email}" "${domains}"
