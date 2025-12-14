@@ -368,29 +368,31 @@ function optimize_image_size() {
     image_count=$(${FIND} "${path}" -mtime -"${time_filter}" -type f -name "*.${file_extension}" 2>/dev/null | wc -l)
   fi
 
+  display --indent 6 --text "- Found ${image_count} ${file_extension} image(s) to resize"
   log_event "info" "Found ${image_count} ${file_extension} image(s) to resize" "false"
 
   if [[ ${image_count} -eq 0 ]]; then
-    log_event "info" "No ${file_extension} images found to resize" "false"
+    display --indent 6 --text "- No ${file_extension} images to resize" --result "SKIP" --color YELLOW
     return 0
   fi
 
   # Run ImageMagick mogrify
+  display --indent 6 --text "- Resizing ${image_count} images (max: ${img_max_width}x${img_max_height})" --result "PROCESSING" --color YELLOW
   log_event "info" "Running mogrify to resize ${image_count} ${file_extension} images (max: ${img_max_width}x${img_max_height})..." "false"
-  log_event "info" "This may take a while depending on the number and size of images..." "false"
 
   if [[ "${time_filter}" == "all" ]]; then
 
     log_event "debug" "Executing: ${FIND} ${path} -type f -name *.${file_extension} -exec ${MOGRIFY} -resize ${img_max_width}x${img_max_height}\> {} \;" "false"
-    ${FIND} "${path}" -type f -name "*.${file_extension}" -exec "${MOGRIFY}" -resize "${img_max_width}"x"${img_max_height}"\> {} \;
+    ${FIND} "${path}" -type f -name "*.${file_extension}" -exec "${MOGRIFY}" -resize "${img_max_width}"x"${img_max_height}"\> {} \; 2>&1 | grep -v "width or height exceeds limit" || true
 
   else
 
     log_event "debug" "Executing: ${FIND} ${path} -mtime -${time_filter} -type f -name *.${file_extension} -exec ${MOGRIFY} -resize ${img_max_width}x${img_max_height}\> {} \;" "false"
-    ${FIND} "${path}" -mtime -"${time_filter}" -type f -name "*.${file_extension}" -exec "${MOGRIFY}" -resize "${img_max_width}"x"${img_max_height}"\> {} \;
+    ${FIND} "${path}" -mtime -"${time_filter}" -type f -name "*.${file_extension}" -exec "${MOGRIFY}" -resize "${img_max_width}"x"${img_max_height}"\> {} \; 2>&1 | grep -v "width or height exceeds limit" || true
 
   fi
 
+  display --indent 6 --text "- Image resizing completed (${image_count} files)" --result "DONE" --color GREEN
   log_event "info" "Image resizing completed successfully for ${image_count} ${file_extension} files" "false"
 
 }
@@ -444,16 +446,17 @@ function optimize_images() {
       image_count=$(${FIND} "${path}" -mtime -"${time_filter}" -type f -regex ".*\.\(jpg\|jpeg\)" 2>/dev/null | wc -l)
     fi
 
+    display --indent 6 --text "- Found ${image_count} JPG/JPEG image(s) to compress"
     log_event "info" "Found ${image_count} JPG/JPEG image(s) to compress" "false"
 
     if [[ ${image_count} -eq 0 ]]; then
-      log_event "info" "No JPG/JPEG images found to optimize" "false"
+      display --indent 6 --text "- No JPG/JPEG images to compress" --result "SKIP" --color YELLOW
       return 0
     fi
 
     # Run jpegoptim
+    display --indent 6 --text "- Compressing ${image_count} JPG/JPEG images (quality: ${img_compress}%)" --result "PROCESSING" --color YELLOW
     log_event "info" "Running jpegoptim to compress ${image_count} JPG/JPEG images (quality: ${img_compress}%)..." "false"
-    log_event "info" "This may take a while depending on the number and size of images..." "false"
 
     if [[ "${time_filter}" == "all" ]]; then
 
@@ -467,6 +470,7 @@ function optimize_images() {
 
     fi
 
+    display --indent 6 --text "- JPG compression completed (${image_count} files)" --result "DONE" --color GREEN
     log_event "info" "JPG compression completed successfully" "false"
 
   elif [[ ${file_extension} == "png" ]]; then
@@ -485,16 +489,17 @@ function optimize_images() {
       image_count=$(${FIND} "${path}" -mtime -"${time_filter}" -type f -name "*.${file_extension}" 2>/dev/null | wc -l)
     fi
 
+    display --indent 6 --text "- Found ${image_count} PNG image(s) to optimize"
     log_event "info" "Found ${image_count} PNG image(s) to optimize" "false"
 
     if [[ ${image_count} -eq 0 ]]; then
-      log_event "info" "No PNG images found to optimize" "false"
+      display --indent 6 --text "- No PNG images to optimize" --result "SKIP" --color YELLOW
       return 0
     fi
 
     # Run optipng
+    display --indent 6 --text "- Compressing ${image_count} PNG images (level: 7)" --result "PROCESSING" --color YELLOW
     log_event "info" "Running optipng to compress ${image_count} PNG images..." "false"
-    log_event "info" "This may take a while depending on the number and size of images..." "false"
 
     if [[ "${time_filter}" == "all" ]]; then
 
@@ -508,6 +513,7 @@ function optimize_images() {
 
     fi
 
+    display --indent 6 --text "- PNG compression completed (${image_count} files)" --result "DONE" --color GREEN
     log_event "info" "PNG optimization completed successfully" "false"
 
   else

@@ -2719,7 +2719,7 @@ function wpcli_user_reset_passw() {
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Log success
-        clear_previous_lines "1"
+        #clear_previous_lines "1"
         display --indent 6 --text "- Password reset for ${wp_user}" --result "DONE" --color GREEN
         display --indent 8 --text "New password ${wp_user_pass}"
         log_event "error" "New password for user ${user} on site ${wp_site}" "false"
@@ -2729,7 +2729,7 @@ function wpcli_user_reset_passw() {
     else
 
         # Log failure
-        clear_previous_lines "1"
+        #clear_previous_lines "1"
         display --indent 6 --text "- Password reset for ${wp_user}" --result "FAIL" --color RED
         log_event "error" "Trying to reset password for user ${user} on site ${wp_site}" "false"
 
