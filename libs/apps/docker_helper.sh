@@ -152,18 +152,23 @@ function docker_compose_build() {
     display --indent 6 --text "- Pulling docker stack ..."
     log_event "debug" "Running: docker compose -f ${compose_file} pull" "false"
 
-    # Execute docker compose command
-    docker compose -f "${compose_file}" pull >/dev/null 2>&1
-    [[ $? -eq 1 ]] && display --indent 6 --text "- Pulling docker stack ..." --result "FAIL" --color RED && return 1
+    # Execute docker compose command and capture output
+    pull_output=$(docker compose -f "${compose_file}" pull 2>&1)
+    pull_status=$?
+
+    if [[ ${pull_status} -ne 0 ]]; then
+        display --indent 6 --text "- Pulling docker stack ..." --result "FAIL" --color RED
+        log_event "error" "Docker pull failed: ${pull_output}" "false"
+        return 1
+    fi
 
     # Log
     clear_previous_lines "2"
     spinner_start "- Building docker stack ..."
     log_event "debug" "Running: docker compose -f ${compose_file} up --detach --build" "false"
 
-    # Execute docker compose command
-    docker compose -f "${compose_file}" up --detach --build >/dev/null 2>&1
-    
+    # Execute docker compose command and capture output
+    build_output=$(docker compose -f "${compose_file}" up --detach --build 2>&1)
     exitstatus=$?
     spinner_stop "${exitstatus}"
 
@@ -181,7 +186,7 @@ function docker_compose_build() {
         # Log
         clear_previous_lines "1"
         display --indent 6 --text "- Building docker stack" --result "FAIL" --color RED
-        log_event "error" "Docker stack restore failed" "false"
+        log_event "error" "Docker stack restore failed: ${build_output}" "false"
 
         return 1
 
