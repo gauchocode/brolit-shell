@@ -1859,25 +1859,16 @@ function wpcli_clean_and_reinstall_core() {
 
     local wp_version
     local delete_result
-    local wpcli_cmd
 
-    # Check project_install_type
-    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site} --no-color"
-    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose --progress=quiet -f ${wp_site}/../docker-compose.yml run -T -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
-
-    # Step 1: Get current WordPress version (quietly, without display)
-    log_event "debug" "Getting WordPress version" "false"
-    wp_version="$(${wpcli_cmd} core version 2>/dev/null)"
-
+    # Step 1: Get current WordPress version using dedicated function
+    wp_version="$(wpcli_get_wpcore_version "${wp_site}" "${install_type}")"
     exitstatus=$?
+
     if [[ ${exitstatus} -ne 0 || -z ${wp_version} ]]; then
         log_event "error" "Failed to get WordPress version" "false"
         display --indent 6 --text "- Getting WordPress version" --result "FAIL" --color RED
         return 1
     fi
-
-    # Clean the version string
-    wp_version="${wp_version//$'\r'/}"
 
     log_event "info" "Current WordPress version: ${wp_version}" "false"
     display --indent 6 --text "- Detected WordPress version: ${wp_version}" --tcolor CYAN

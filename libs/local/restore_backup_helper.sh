@@ -181,21 +181,45 @@ function _handle_installation_permissions() {
             # Check if the expected app_dir exists
             if [[ -d "${app_dir}" ]]; then
                 display --indent 6 --text "- Setting permissions for application directory"
-                change_ownership "1000" "1000" "${app_dir}"
-                if [[ $? -ne 0 ]]; then
-                    log_event "error" "Failed to change ownership to 1000:1000 on ${app_dir}" "false"
-                    display --indent 6 --text "- Applying ownership 1000:1000 to ${app_dir}" --result "FAIL" --color RED
-                    return 1
+
+                # Apply permissions recursively with proper ownership
+                # Use www-data for compatibility with both host and container
+                log_event "debug" "Applying www-data:www-data permissions to ${app_dir}" "false"
+                chown -R www-data:www-data "${app_dir}" 2>/dev/null
+                local chown_status=$?
+
+                # If www-data doesn't exist, fall back to 1000:1000 (common Docker UID)
+                if [[ ${chown_status} -ne 0 ]]; then
+                    log_event "debug" "www-data user not found, using 1000:1000 instead" "false"
+                    change_ownership "1000" "1000" "${app_dir}"
+                    if [[ $? -ne 0 ]]; then
+                        log_event "error" "Failed to change ownership on ${app_dir}" "false"
+                        display --indent 6 --text "- Applying ownership to ${app_dir}" --result "FAIL" --color RED
+                        return 1
+                    fi
                 fi
+
+                # Ensure proper permissions for WordPress directories
+                if [[ "${project_type}" == "wordpress" ]]; then
+                    log_event "debug" "Setting WordPress directory permissions" "false"
+                    find "${app_dir}" -type d -exec chmod 755 {} \; 2>/dev/null
+                    find "${app_dir}" -type f -exec chmod 644 {} \; 2>/dev/null
+                fi
+
+                display --indent 6 --text "- Permissions applied to ${app_dir}" --result "DONE" --color GREEN
             else
                 # For dockerized projects without standard structure, set permissions on the entire project directory
                 log_event "info" "Standard application directory not found. Setting permissions on entire project directory." "false"
                 display --indent 6 --text "- Setting permissions for Docker project directory"
-                change_ownership "1000" "1000" "${destination_dir}"
+
+                chown -R www-data:www-data "${destination_dir}" 2>/dev/null
                 if [[ $? -ne 0 ]]; then
-                    log_event "warning" "Failed to change ownership to 1000:1000 on ${destination_dir}" "false"
-                    display --indent 6 --text "- Applying ownership 1000:1000 to ${destination_dir}" --result "WARNING" --color YELLOW
-                    # Don't return error - permissions might not be critical for all dockerized projects
+                    change_ownership "1000" "1000" "${destination_dir}"
+                    if [[ $? -ne 0 ]]; then
+                        log_event "warning" "Failed to change ownership on ${destination_dir}" "false"
+                        display --indent 6 --text "- Applying ownership to ${destination_dir}" --result "WARNING" --color YELLOW
+                        # Don't return error - permissions might not be critical for all dockerized projects
+                    fi
                 fi
             fi
             ;;
@@ -595,15 +619,17 @@ function restore_project_backup() {
         else
             log_event "info" "Detected port from .env: ${project_port}" "false"
         fi
+
+        # Setup Docker configuration (build and start containers)
+        # This is required for ALL Docker projects, not just those with databases
+        docker_setup_configuration "${project_name}" "${project_install_path}" "${project_domain_new}"
+
         # Get database information
         db_name="$(project_get_configured_database "${project_install_path}" "${project_type}" "${project_install_type}")"
-        
+
         # Restore database if configured
         if [[ -n "${db_name}" && "${db_name}" != "no-database" ]]; then
-            # Setup Docker configuration
-            docker_setup_configuration "${project_name}" "${project_install_path}" "${project_domain_new}"
-            
-            # Read .env file
+            # Read .env file for database credentials
             if [[ -f "${project_install_path}/.env" ]]; then
                 export $(grep -v '^#' "${project_install_path}/.env" | xargs)
                 container_name="${PROJECT_NAME}_mysql"
@@ -614,15 +640,18 @@ function restore_project_backup() {
                 _handle_restore_error 6 "Docker .env file not found"
                 return 1
             fi
-            
-            # Verify container is running
+
+            # Verify database container is running
             docker ps | grep "${container_name}" > /dev/null
             if [[ $? -ne 0 ]]; then
                 _handle_restore_error 7 "Docker container ${container_name} is not running"
                 return 1
             fi
-            
+
             project_db_status="enabled"
+        else
+            log_event "info" "No database configured for this Docker project" "false"
+            project_db_status="disabled"
         fi
     else
         # Handle non-Docker projects (no port needed for default installations)
