@@ -375,20 +375,16 @@ function project_get_port_from_env() {
     return 0
   fi
 
-  # Try to extract port from common environment variables
-  # Common patterns: PORT=3000, APP_PORT=3000, SERVER_PORT=3000, HTTP_PORT=3000, etc.
-  port="$(grep -E '^[A-Z_]*PORT=' "${env_file}" | grep -v '^#' | head -n 1 | cut -d '=' -f 2 | tr -d ' "')"
-
-  # If no port found with the simple pattern, try to extract from specific known variables
-  if [[ -z "${port}" ]]; then
-    # Try NODE_PORT, APP_PORT, SERVER_PORT, HTTP_PORT, WEBSERVER_PORT, WP_PORT
-    for var_name in "PORT" "APP_PORT" "SERVER_PORT" "HTTP_PORT" "NODE_PORT" "WEBSERVER_PORT" "WP_PORT"; do
-      port="$(grep -E "^${var_name}=" "${env_file}" | grep -v '^#' | head -n 1 | cut -d '=' -f 2 | tr -d ' "')"
-      if [[ -n "${port}" ]]; then
-        break
-      fi
-    done
-  fi
+  # Try to extract port from environment variables in priority order
+  # Priority: WP_PORT (WordPress), APP_PORT (generic app), PORT (standard), then others
+  # Exclude admin/utility ports like PHPMYADMIN_PORT, SSH_HOST_PORT, etc.
+  for var_name in "WP_PORT" "APP_PORT" "PORT" "SERVER_PORT" "HTTP_PORT" "NODE_PORT" "WEBSERVER_PORT"; do
+    port="$(grep -E "^${var_name}=" "${env_file}" | grep -v '^#' | head -n 1 | cut -d '=' -f 2 | tr -d ' "')"
+    if [[ -n "${port}" ]]; then
+      log_event "debug" "Found port ${port} from ${var_name} in ${env_file}" "false"
+      break
+    fi
+  done
 
   # Validate port is a number
   if [[ "${port}" =~ ^[0-9]+$ ]]; then
@@ -3066,12 +3062,17 @@ function project_update_domain_config() {
 
     # Cloudflare
     if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
-      ## Set records
-      cloudflare_set_record "${project_root_domain}" "${project_root_domain}" "A" "false" "${SERVER_IP}"
+      ## Set records based on nginx root_domain configuration
+      ## Nginx redirects: root_domain.com -> www.root_domain.com
+      ## So Cloudflare must point: www -> server IP (A), root -> www (CNAME)
+
+      # Main domain (www) points to server IP
+      cloudflare_set_record "${project_root_domain}" "www.${project_root_domain}" "A" "false" "${SERVER_IP}"
       exitstatus=$?
       [[ ${exitstatus} -ne 0 ]] && cloudflare_exitstatus=${exitstatus}
-      
-      cloudflare_set_record "${project_root_domain}" "www.${project_root_domain}" "CNAME" "false" "${project_root_domain}"
+
+      # Root domain points to www (follows nginx redirect)
+      cloudflare_set_record "${project_root_domain}" "${project_root_domain}" "CNAME" "false" "www.${project_root_domain}"
       exitstatus=$?
       [[ ${exitstatus} -ne 0 ]] && cloudflare_exitstatus=${exitstatus}
     fi
