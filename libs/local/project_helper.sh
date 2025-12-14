@@ -3066,12 +3066,14 @@ function project_update_domain_config() {
       ## Nginx redirects: root_domain.com -> www.root_domain.com
       ## So Cloudflare must point: www -> server IP (A), root -> www (CNAME)
 
-      # Main domain (www) points to server IP
+      # For www subdomain: ensure no conflicting CNAME exists, then set A record
+      cloudflare_delete_record "${project_root_domain}" "www.${project_root_domain}" "CNAME" 2>/dev/null || true
       cloudflare_set_record "${project_root_domain}" "www.${project_root_domain}" "A" "false" "${SERVER_IP}"
       exitstatus=$?
       [[ ${exitstatus} -ne 0 ]] && cloudflare_exitstatus=${exitstatus}
 
-      # Root domain points to www (follows nginx redirect)
+      # For root domain: ensure no conflicting A record exists, then set CNAME
+      cloudflare_delete_record "${project_root_domain}" "${project_root_domain}" "A" 2>/dev/null || true
       cloudflare_set_record "${project_root_domain}" "${project_root_domain}" "CNAME" "false" "www.${project_root_domain}"
       exitstatus=$?
       [[ ${exitstatus} -ne 0 ]] && cloudflare_exitstatus=${exitstatus}
