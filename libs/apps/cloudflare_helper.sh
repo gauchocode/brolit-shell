@@ -421,13 +421,13 @@ function cloudflare_get_record_details() {
     if [[ ${exitstatus} -eq 0 && -n ${record_id} ]]; then
 
         # DNS Record Details
-        record="$(curl -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
+        record="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
             -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
             -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
-            -H "Content-Type: application/json")"
+            -H "Content-Type: application/json" 2>&1)"
 
-        # Remove Cloudflare API garbage output
-        clear_previous_lines "4"
+        # Remove Cloudflare API garbage output (curl progress bars, etc)
+        clear_previous_lines "6"
 
         if [[ ${record} == *"\"success\":false"* || ${record} == "" ]]; then
             # Log
