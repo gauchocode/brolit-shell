@@ -548,6 +548,7 @@ function certbot_helper_installer_menu() {
 # Arguments:
 #  ${1} = ${email}
 #  ${2} = ${domains}
+#  ${3} = ${non_interactive} - (true/false) Optional parameter for non-interactive mode
 #
 # Outputs:
 #  0 if ok, 1 on error.
@@ -557,13 +558,48 @@ function certbot_certificate_install_auto() {
 
   local email="${1}"
   local domains="${2}"
+  local non_interactive="${3:-false}"  # Optional parameter for non-interactive mode
 
   log_event "debug" "Cloudflare status: ${SUPPORT_CLOUDFLARE_STATUS}" "false"
 
   if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
-    # Cloudflare is enabled, ask user which method to use
-    log_event "info" "Cloudflare is enabled, asking user for installation method" "false"
-    certbot_helper_installer_menu "${email}" "${domains}"
+    if [[ "${non_interactive}" == "true" ]]; then
+      # Non-interactive mode: use Cloudflare method directly without menu
+      log_event "info" "Non-interactive mode: using Cloudflare method automatically" "false"
+      log_subsection "Certificate Installation with Certbot Cloudflare"
+
+      # Step 1: Install certificate with nginx
+      log_event "info" "Step 1: Installing certificate with nginx to configure nginx files" "false"
+      display --indent 6 --text "- Installing certificate with nginx" --tcolor CYAN
+
+      certbot_certificate_install "${email}" "${domains}"
+      exitstatus=$?
+
+      if [[ ${exitstatus} -eq 0 ]]; then
+        # Step 2: Regenerate certificate using Cloudflare
+        log_event "info" "Step 2: Regenerating certificate with Cloudflare DNS" "false"
+        display --indent 6 --text "- Regenerating certificate with Cloudflare" --tcolor CYAN
+
+        certbot_certonly_cloudflare "${email}" "${domains}"
+        exitstatus=$?
+
+        if [[ ${exitstatus} -eq 0 ]]; then
+          # Enable Cloudflare proxy on records
+          for domain in ${domains//,/ }; do
+            root_domain=$(domain_get_root "${domain}")
+            [[ $? -eq 0 ]] && cloudflare_update_record "${root_domain}" "${domain}" "A" "true" "${SERVER_IP}"
+            [[ $? -eq 1 ]] && cloudflare_update_record "${root_domain}" "${domain}" "CNAME" "true" "${root_domain}"
+          done
+
+          # Set SSL mode to full
+          cloudflare_set_ssl_mode "${root_domain}" "full"
+        fi
+      fi
+    else
+      # Interactive mode: ask user which method to use
+      log_event "info" "Cloudflare is enabled, asking user for installation method" "false"
+      certbot_helper_installer_menu "${email}" "${domains}"
+    fi
   else
     # Cloudflare is disabled, use nginx directly
     log_event "info" "Cloudflare is disabled, using nginx method" "false"

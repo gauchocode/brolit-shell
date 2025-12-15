@@ -504,6 +504,7 @@ function _restore_project_database() {
 #   ${5} = project_stage - Project stage
 #   ${6} = db_pass - Database password
 #   ${7} = project_domain - Original domain
+#   ${8} = project_port - Port for Docker/proxy projects (empty for default)
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -517,13 +518,14 @@ function _configure_restored_project() {
     local db_pass="${6}"
     local project_domain="${7}"
     local project_port="${8}"  # Port for Docker/proxy projects (empty for default)
+    
     local project_install_path="${PROJECTS_PATH}/${project_domain_new}"
 
     # Project domain configuration (webserver+certbot+DNS)
     local https_enable="$(project_update_domain_config "${project_domain_new}" "${project_type}" "${project_install_type}" "${project_port}")"
 
-    # Post-restore/install tasks
-    project_post_install_tasks "${project_install_path}" "${project_type}" "${project_install_type}" "${project_name}" "${project_stage}" "${db_pass}" "${project_domain}" "${project_domain_new}"
+    # Post-restore/install tasks with 'restore' mode to preserve original configuration
+    project_post_install_tasks "${project_install_path}" "${project_type}" "${project_install_type}" "${project_name}" "${project_stage}" "${db_pass}" "${project_domain}" "${project_domain_new}" "restore"
 
     # Create/update brolit_project_conf.json file with project info
     project_update_brolit_config "${project_install_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db_status}" "${db_engine}" "${project_name}_${project_stage}" "localhost" "${db_user}" "${db_pass}" "${project_domain_new}" "" "" "" ""
@@ -2080,6 +2082,17 @@ function docker_setup_configuration() {
 
     # Update PROJECT_DOMAIN only
     sed -ie "s|^PROJECT_DOMAIN=.*$|PROJECT_DOMAIN=${project_domain_new}|g" "${project_install_path}/.env" && rm -f "${project_install_path}/.enve"
+
+    # Ensure APP_USER_ID and APP_GROUP_ID are set (required for wordpress-cli container)
+    if ! grep -q "^APP_USER_ID=" "${project_install_path}/.env"; then
+      log_event "debug" "Adding APP_USER_ID=1000 to .env" "false"
+      echo "APP_USER_ID=1000" >> "${project_install_path}/.env"
+    fi
+
+    if ! grep -q "^APP_GROUP_ID=" "${project_install_path}/.env"; then
+      log_event "debug" "Adding APP_GROUP_ID=1000 to .env" "false"
+      echo "APP_GROUP_ID=1000" >> "${project_install_path}/.env"
+    fi
 
     # Rebuild docker image with existing configuration
     if ! docker_compose_build "${project_install_path}/docker-compose.yml"; then

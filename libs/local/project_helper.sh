@@ -3093,7 +3093,8 @@ function project_update_domain_config() {
       display --indent 6 --text "- Waiting for DNS propagation" --result "DONE" --color GREEN
 
       # Install certificate (attempt regardless of Cloudflare status)
-      if certbot_certificate_install_auto "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_root_domain},www.${project_root_domain}"; then
+      # Use non-interactive mode (true) to avoid prompts during automated restoration
+      if certbot_certificate_install_auto "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_root_domain},www.${project_root_domain}" "true"; then
         # Enable HTTP/2 only if not already enabled
         if ! grep -q "listen.*http2" "/etc/nginx/sites-available/${project_domain}"; then
           nginx_server_add_http2_support "${project_domain}"
@@ -3132,7 +3133,8 @@ function project_update_domain_config() {
       display --indent 6 --text "- Waiting for DNS propagation" --result "DONE" --color GREEN
 
       # Install certificate (attempt regardless of Cloudflare status)
-      if certbot_certificate_install_auto "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_domain}"; then
+      # Use non-interactive mode (true) to avoid prompts during automated restoration
+      if certbot_certificate_install_auto "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_domain}" "true"; then
         # Enable HTTP/2 only if not already enabled
         if ! grep -q "listen.*http2" "/etc/nginx/sites-available/${project_domain}"; then
           nginx_server_add_http2_support "${project_domain}"
@@ -3177,11 +3179,11 @@ function project_post_install_tasks() {
   local project_db_pass="${6}"
   local old_project_domain="${7}" # TODO: can change it for url? https://domain.com or http://domain.com
   local new_project_domain="${8}"
-  #local project_port="${9}"
-  #local project_db_engine="${10}"
+  local mode="${9:-new}"  # 'new' for new installations, 'restore' for standard restorations
+  #local project_port="${10}"
+  #local project_db_engine="${11}"
 
   local project_env
-
   local database_host="localhost"
 
   # TODO: update brolit project config file
@@ -3202,73 +3204,98 @@ function project_post_install_tasks() {
 
     fi
 
-    # Change wp-config.php database parameters
-    project_set_configured_database_host "${project_install_path}" "${project_type}" "${project_install_type}" "${database_host}"
-    project_set_configured_database "${project_install_path}" "${project_type}" "${project_install_type}" "${project_name}_${project_stage}"
-    project_set_configured_database_user "${project_install_path}" "${project_type}" "${project_install_type}" "${project_name}_user"
-    project_set_configured_database_userpassw "${project_install_path}" "${project_type}" "${project_install_type}" "${project_db_pass}"
+    # For restore mode, only update database credentials if they don't match the backup
+    # For new mode, always update them
+    if [[ "${mode}" == "new" ]]; then
+      # Change wp-config.php database parameters (NEW INSTALLATION)
+      project_set_configured_database_host "${project_install_path}" "${project_type}" "${project_install_type}" "${database_host}"
+      project_set_configured_database "${project_install_path}" "${project_type}" "${project_install_type}" "${project_name}_${project_stage}"
+      project_set_configured_database_user "${project_install_path}" "${project_type}" "${project_install_type}" "${project_name}_user"
+      project_set_configured_database_userpassw "${project_install_path}" "${project_type}" "${project_install_type}" "${project_db_pass}"
+    else
+      # RESTORE MODE: Only update DB_HOST if needed (mysql for Docker)
+      log_event "debug" "Restore mode: preserving original database credentials from backup" "false"
+      if [[ ${project_install_type} == "docker"* ]]; then
+        project_set_configured_database_host "${project_install_path}" "${project_type}" "${project_install_type}" "${database_host}"
+      fi
+    fi
 
     # Change project_install_path
     #project_install_path="${project_install_path}/wordpress"
     project_install_path="$(project_get_configured_docker_data_dir "${project_install_path}")"
 
-    # Change WordPress directory permissions
+    # Change WordPress directory permissions (ALWAYS NEEDED)
     wp_change_permissions "${project_install_path}"
 
-    # TODO: need to check if http or https
+    # Search & Replace URLs if domain changed (ALWAYS NEEDED when domain changes)
     if [[ -n ${old_project_domain} && -n ${new_project_domain} ]]; then
       if [[ ${old_project_domain} != "${new_project_domain}" ]]; then
         # Change urls on database
         wpcli_search_and_replace "${project_install_path}" "${project_install_type}" "${old_project_domain}" "${new_project_domain}"
+
+        # Update WP_HOME & WP_SITEURL only if domain changed
+        wpcli_config_set "${project_install_path}" "${project_install_type}" "WP_HOME" "https://${new_project_domain}/"
+        wpcli_config_set "${project_install_path}" "${project_install_type}" "WP_SITEURL" "https://${new_project_domain}/"
       fi
     fi
 
-    # Set WP_HOME & WP_SITEURL
-    wpcli_config_set "${project_install_path}" "${project_install_type}" "WP_HOME" "https://${new_project_domain}/"
-    wpcli_config_set "${project_install_path}" "${project_install_type}" "WP_SITEURL" "https://${new_project_domain}/"
+    # Operations that differ between new and restore modes
+    if [[ "${mode}" == "new" ]]; then
+      # NEW INSTALLATION: Shuffle salts for security
+      wpcli_shuffle_salts "${project_install_path}" "${project_install_type}"
 
-    # Shuffle salts
-    wpcli_shuffle_salts "${project_install_path}" "${project_install_type}"
+      # Update upload_path
+      ## Context: https://core.trac.wordpress.org/ticket/41947
+      wpcli_update_upload_path "${project_install_path}" "${project_install_type}" "wp-content/uploads"
 
-    # Update upload_path
-    ## Context: https://core.trac.wordpress.org/ticket/41947
-    wpcli_update_upload_path "${project_install_path}" "${project_install_type}" "wp-content/uploads"
-
-    # Changing WordPress visibility
-    if [[ ${project_stage} == "prod" ]]; then
-      # Let search engines index the project
-      wpcli_change_wp_seo_visibility "${project_install_path}" "${project_install_type}" "1"
-      # Set debug mode to false
-      wpcli_set_debug_mode "${project_install_path}" "${project_install_type}" "false"
+      # Configure WordPress visibility based on stage
+      if [[ ${project_stage} == "prod" ]]; then
+        # Let search engines index the project
+        wpcli_change_wp_seo_visibility "${project_install_path}" "${project_install_type}" "1"
+        # Set debug mode to false
+        wpcli_set_debug_mode "${project_install_path}" "${project_install_type}" "false"
+      else
+        # Block search engines indexation
+        wpcli_change_wp_seo_visibility "${project_install_path}" "${project_install_type}" "0"
+        # De-activate cache plugins if present
+        wpcli_plugin_is_installed "${project_install_path}" "${project_install_type}" "wp-rocket" && wpcli_deactivate_plugin "${project_install_path}" "wp-rocket"
+        wpcli_plugin_is_installed "${project_install_path}" "${project_install_type}" "redis-cache" && wpcli_plugin_deactivate "${project_install_path}" "redis-cache"
+        wpcli_plugin_is_installed "${project_install_path}" "${project_install_type}" "w3-total-cache" && wpcli_plugin_deactivate "${project_install_path}" "w3-total-cache"
+        wpcli_plugin_is_installed "${project_install_path}" "${project_install_type}" "wp-super-cache" && wpcli_plugin_deactivate "${project_install_path}" "wp-super-cache"
+        # Set debug mode to true
+        wpcli_set_debug_mode "${project_install_path}" "${project_install_type}" "true"
+      fi
     else
-      # Block search engines indexation
-      wpcli_change_wp_seo_visibility "${project_install_path}" "${project_install_type}" "0"
-      # De-activate cache plugins if present
-      wpcli_plugin_is_installed "${project_install_path}" "${project_install_type}" "wp-rocket" && wpcli_deactivate_plugin "${project_install_path}" "wp-rocket"
-      wpcli_plugin_is_installed "${project_install_path}" "${project_install_type}" "redis-cache" && wpcli_plugin_deactivate "${project_install_path}" "redis-cache"
-      wpcli_plugin_is_installed "${project_install_path}" "${project_install_type}" "w3-total-cache" && wpcli_plugin_deactivate "${project_install_path}" "w3-total-cache"
-      wpcli_plugin_is_installed "${project_install_path}" "${project_install_type}" "wp-super-cache" && wpcli_plugin_deactivate "${project_install_path}" "wp-super-cache"
-      # Set debug mode to true
-      wpcli_set_debug_mode "${project_install_path}" "${project_install_type}" "true"
+      # RESTORE MODE: Keep original configuration, just update upload path
+      log_event "debug" "Restore mode: preserving original WordPress configuration (salts, debug mode, SEO visibility)" "false"
+
+      # Update upload_path (safe to run on restore)
+      wpcli_update_upload_path "${project_install_path}" "${project_install_type}" "wp-content/uploads"
     fi
 
+    # Flush cache (ALWAYS NEEDED)
     wpcli_cache_flush "${project_install_path}" "${project_install_type}"
 
-    # If .user.ini found, rename it (Wordfence issue workaround)
+    # If .user.ini found, rename it (Wordfence issue workaround - ALWAYS NEEDED)
     [[ -f "${project_install_path}/.user.ini" ]] && mv "${project_install_path}/.user.ini" "${project_install_path}/.user.ini.bak"
 
   else
 
-    # TODO: search .env file?
+    # NON-WORDPRESS PROJECTS
     project_env="${project_install_path}/.env"
 
     if [[ -f ${project_env} ]]; then
 
-      # Update project .env file
-      #project_set_config_var "${project_env}" "DB_CONNECTION" "${chosen_project}" "none"
-      project_set_config_var "${project_env}" "DB_DATABASE" "${project_name}_${project_stage}" "none"
-      project_set_config_var "${project_env}" "DB_USERNAME" "${project_name}_user" "none"
-      project_set_config_var "${project_env}" "DB_PASSWORD" "${project_db_pass}" "none"
+      if [[ "${mode}" == "new" ]]; then
+        # NEW INSTALLATION: Update all .env database variables
+        #project_set_config_var "${project_env}" "DB_CONNECTION" "${chosen_project}" "none"
+        project_set_config_var "${project_env}" "DB_DATABASE" "${project_name}_${project_stage}" "none"
+        project_set_config_var "${project_env}" "DB_USERNAME" "${project_name}_user" "none"
+        project_set_config_var "${project_env}" "DB_PASSWORD" "${project_db_pass}" "none"
+      else
+        # RESTORE MODE: Preserve original .env values from backup
+        log_event "debug" "Restore mode: preserving original .env database credentials from backup" "false"
+      fi
 
     else
 
