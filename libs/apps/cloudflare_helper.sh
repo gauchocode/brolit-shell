@@ -427,7 +427,7 @@ function cloudflare_get_record_details() {
             -H "Content-Type: application/json" 2>&1)"
 
         # Remove Cloudflare API garbage output (curl progress bars, etc)
-        clear_previous_lines "6"
+        clear_previous_lines "4"
 
         if [[ ${record} == *"\"success\":false"* || ${record} == "" ]]; then
             # Log
@@ -529,9 +529,10 @@ function cloudflare_set_record() {
             --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}")"
 
         # Remove Cloudflare API garbage output
-        # clear_previous_lines "4"
+        clear_previous_lines "1"
 
         if [[ ${update} == *"\"success\":false"* || ${update} == "" ]]; then
+            
             # Log
             log_event "error" "Update failed for ${record_name}. Results:\n${update}" "false"
             display --indent 6 --text "- Updating ${record_name} on Cloudflare" --result "FAIL" --color RED
@@ -548,7 +549,7 @@ function cloudflare_set_record() {
             # Log
             log_event "info" "Record ${record_name} updated to: ${cur_ip}" "false"
             display --indent 6 --text "- Updating ${record_name} on Cloudflare" --result "DONE" --color GREEN
-            display --indent 8 --text "Content: ${cur_ip}" --tcolor GREEN
+            display --indent 8 --text "content: ${cur_ip}" --tcolor GREEN
 
             return 0
 
