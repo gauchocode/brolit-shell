@@ -182,6 +182,10 @@ function backup_server_config() {
         # Log
         log_event "debug" "storage_upload_backup return: ${storage_result}" "false"
 
+        # Delete temp backup even on failure to avoid filling disk
+        rm --force "${BROLIT_TMP_DIR}/${NOW}/${backup_file}"
+        log_event "info" "Temp backup deleted from server (upload failed)" "false"
+
         # Return
         echo "${error_type};${error_msg}" && return 1
 
@@ -192,6 +196,10 @@ function backup_server_config() {
       # Log
       clear_previous_lines "1"
       display --indent 6 --text "- Files backup for ${YELLOW}${bk_sup_type}${ENDCOLOR}" --result "FAIL" --color RED
+
+      # Delete temp backup if compression failed to avoid filling disk
+      rm --force "${BROLIT_TMP_DIR}/${NOW}/${backup_file}"
+      log_event "info" "Temp backup deleted from server (compression failed)" "false"
 
       # Error
       #got_error=1
@@ -683,6 +691,10 @@ function backup_project_files() {
         # Log
         log_event "debug" "storage_upload_backup return: ${storage_result}" "false"
 
+        # Delete temp backup even on failure to avoid filling disk
+        rm --force "${BROLIT_TMP_DIR}/${NOW}/${backup_file}"
+        log_event "info" "Temp backup deleted from server (upload failed)" "false"
+
         # Return
         echo "${error_type};${error_msg}" && return 1
 
@@ -998,6 +1010,11 @@ function backup_project_database() {
 
         log_event "error" "${error_msg}" "false"
 
+        # Delete local temp files even on failure to avoid filling disk
+        rm --force "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"
+        rm --force "${BROLIT_TMP_DIR}/${NOW}/${backup_file}"
+        log_event "info" "Temp backup deleted from server (upload failed)" "false"
+
         # Return
         echo "${backup_file};${error_type};${error_msg}" && return 1
 
@@ -1008,6 +1025,10 @@ function backup_project_database() {
       error_type="compress_backup"
       error_msg="Error compressing file: ${dump_file}"
 
+      # Delete dump file if compression failed to avoid filling disk
+      rm --force "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"
+      log_event "info" "Temp dump file deleted from server (compression failed)" "false"
+
       # Return
       echo "${backup_file};${error_type};${error_msg}" && return 1
 
@@ -1017,6 +1038,10 @@ function backup_project_database() {
 
     error_type="export_database"
     error_msg="Error creating dump file for database: ${database}"
+
+    # Delete dump file if export failed to avoid filling disk
+    rm --force "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"
+    log_event "info" "Temp dump file deleted from server (export failed)" "false"
 
     # Return
     echo "${backup_file};${error_type};${error_msg}" && return 1
@@ -1232,6 +1257,11 @@ function borg_backup_database() {
               log_event "error" "All backup destinations failed" "true"
               display --indent 6 --text "- Database backup with Borg" --result "FAIL" --color RED
 
+              # Delete local temp files even on failure to avoid filling disk
+              rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.tar.bz2"
+              rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.sql"
+              log_event "info" "Temp backup deleted from server (upload failed)" "false"
+
               return 1
           fi
 
@@ -1239,6 +1269,10 @@ function borg_backup_database() {
           # Log
           log_event "error" "Error compressing the database dump." "true"
           display --indent 6 --text "- Database backup with Borg" --result "FAIL" --color RED
+
+          # Delete dump file if compression failed to avoid filling disk
+          rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${mysql_database}_database_${NOW}.sql"
+          log_event "info" "Temp dump file deleted from server (compression failed)" "false"
 
           return 1
       fi
