@@ -2080,18 +2080,43 @@ function docker_setup_configuration() {
   if [[ "${mode}" == "restore" ]]; then
     log_event "debug" "Docker restore mode: preserving original .env values, only updating domain" "false"
 
-    # Update PROJECT_DOMAIN only
-    sed -ie "s|^PROJECT_DOMAIN=.*$|PROJECT_DOMAIN=${project_domain_new}|g" "${project_install_path}/.env" && rm -f "${project_install_path}/.enve"
+    local env_file="${project_install_path}/.env"
+
+    # Update PROJECT_DOMAIN
+    project_set_config_var "${env_file}" "PROJECT_DOMAIN" "${project_domain_new}" "none"
 
     # Ensure APP_USER_ID and APP_GROUP_ID are set (required for wordpress-cli container)
-    if ! grep -q "^APP_USER_ID=" "${project_install_path}/.env"; then
-      log_event "debug" "Adding APP_USER_ID=1000 to .env" "false"
-      echo "APP_USER_ID=1000" >> "${project_install_path}/.env"
-    fi
+    # If they don't exist, they will be added; if they exist, they will be updated to ensure correct values
+    project_set_config_var "${env_file}" "APP_USER_ID" "1000" "none"
+    project_set_config_var "${env_file}" "APP_GROUP_ID" "1000" "none"
 
-    if ! grep -q "^APP_GROUP_ID=" "${project_install_path}/.env"; then
-      log_event "debug" "Adding APP_GROUP_ID=1000 to .env" "false"
-      echo "APP_GROUP_ID=1000" >> "${project_install_path}/.env"
+    # Check if the port from backup is available, if not find a new one
+    local backup_port
+    backup_port="$(grep -E "^(WP_PORT|APP_PORT|PORT|WEBSERVER_PORT)=" "${env_file}" | head -1 | cut -d'=' -f2)"
+
+    if [[ -n "${backup_port}" ]]; then
+      log_event "debug" "Checking if backup port ${backup_port} is available" "false"
+
+      # Check if port is already in use
+      if lsof -Pi :${backup_port} -sTCP:LISTEN -t >/dev/null 2>&1; then
+        # Port is in use, find next available port
+        log_event "warning" "Port ${backup_port} from backup is already in use" "false"
+        display --indent 6 --text "- Port ${backup_port} already in use" --result "WARNING" --color YELLOW
+
+        local new_port
+        new_port="$(network_next_available_port "81" "350")"
+        log_event "info" "Found available port: ${new_port}" "false"
+        display --indent 6 --text "- Using port ${new_port} instead" --result "DONE" --color GREEN
+
+        # Update port variables in .env using project_set_config_var
+        # The function will skip variables that don't exist in the file
+        project_set_config_var "${env_file}" "WP_PORT" "${new_port}" "none"
+        project_set_config_var "${env_file}" "APP_PORT" "${new_port}" "none"
+        project_set_config_var "${env_file}" "PORT" "${new_port}" "none"
+        project_set_config_var "${env_file}" "WEBSERVER_PORT" "${new_port}" "none"
+      else
+        log_event "debug" "Port ${backup_port} is available" "false"
+      fi
     fi
 
     # Rebuild docker image with existing configuration
@@ -2107,37 +2132,32 @@ function docker_setup_configuration() {
   # For new installations, update all .env values
   log_event "debug" "Docker new installation mode: updating all .env values" "false"
 
-  # Update COMPOSE_PROJECT_NAME
-  sed -ie "s|^COMPOSE_PROJECT_NAME=.*$|COMPOSE_PROJECT_NAME=${project_stage}_${project_name}_stack|g" "${project_install_path}/.env" && rm -f "${project_install_path}/.enve"
+  local env_file="${project_install_path}/.env"
 
-  # Update PROJECT_NAME
-  sed -ie "s|^PROJECT_NAME=.*$|PROJECT_NAME=${project_name}_${project_stage}|g" "${project_install_path}/.env" && rm -f "${project_install_path}/.enve"
+  # Update all configuration variables using project_set_config_var
+  project_set_config_var "${env_file}" "COMPOSE_PROJECT_NAME" "${project_stage}_${project_name}_stack" "none"
+  project_set_config_var "${env_file}" "PROJECT_NAME" "${project_name}_${project_stage}" "none"
+  project_set_config_var "${env_file}" "PROJECT_DOMAIN" "${project_domain_new}" "none"
+  project_set_config_var "${env_file}" "SSH_MASTER_USER" "${project_name}_sftp_user" "none"
 
-  # Update PROJECT_DOMAIN
-  sed -ie "s|^PROJECT_DOMAIN=.*$|PROJECT_DOMAIN=${project_domain_new}|g" "${project_install_path}/.env" && rm -f "${project_install_path}/.enve"
-
-  # Update SSH_MASTER_USER
-  sed -ie "s|^SSH_MASTER_USER=.*$|SSH_MASTER_USER=${project_name}_sftp_user|g" "${project_install_path}/.env" && rm -f "${project_install_path}/.enve"
-
-  # Update SSH_MASTER_PASS
-  ## Generate random password
+  # Generate random password for SSH
   project_passw="$(openssl rand -hex 12)"
-  sed -ie "s|^SSH_MASTER_PASS=.*$|SSH_MASTER_PASS=${project_passw}|g" "${project_install_path}/.env" && rm -f "${project_install_path}/.enve"
+  project_set_config_var "${env_file}" "SSH_MASTER_PASS" "${project_passw}" "none"
 
-  ## Update MYSQL DATABASE
-  sed -i -e "s|^MYSQL_DATABASE=.*$|MYSQL_DATABASE=${project_name}_${project_stage}|g" "${project_install_path}/.env" && rm -f "${project_install_path}/.enve"
+  # Update MySQL database configuration
+  project_set_config_var "${env_file}" "MYSQL_DATABASE" "${project_name}_${project_stage}" "none"
+  project_set_config_var "${env_file}" "MYSQL_USER" "${project_name}_user" "none"
 
-  ## Update MYSQL DATABASE
-  sed -ie "s|^MYSQL_USER=.*$|MYSQL_USER=${project_name}_user|g" "${project_install_path}/.env" && rm -f "${project_install_path}/.enve"
-
-  ## Will find the next port available from 81 to 350
+  # Find the next available port from 81 to 350
   project_port="$(network_next_available_port "81" "350")"
 
   # TODO: Check project type (WP, Laravel, etc)
 
-  ## Update WP_PORT or WEBSERVER_PORT, then remove tmp file generated by sed
-  sed -ie "s|^WP_PORT=.*$|WP_PORT=${project_port}|g" "${project_install_path}/.env" && rm -f "${project_install_path}/.enve"
-  sed -ie "s|^WEBSERVER_PORT=.*$|WEBSERVER_PORT=${project_port}|g" "${project_install_path}/.env" && rm -f "${project_install_path}/.enve"
+  # Update port variables (the function will skip variables that don't exist in the file)
+  project_set_config_var "${env_file}" "WP_PORT" "${project_port}" "none"
+  project_set_config_var "${env_file}" "APP_PORT" "${project_port}" "none"
+  project_set_config_var "${env_file}" "PORT" "${project_port}" "none"
+  project_set_config_var "${env_file}" "WEBSERVER_PORT" "${project_port}" "none"
 
   # Rebuild docker image
   if ! docker_compose_build "${project_install_path}/docker-compose.yml"; then

@@ -83,6 +83,32 @@ function project_set_config_var() {
   # Check if config file exists
   [[ ! -f ${file} ]] && die "Config file doesn't exist: ${file}"
 
+  # Check if variable exists in file
+  if ! grep -q "^${variable}=" "${file}"; then
+    # Variable doesn't exist, add it to the file
+    log_event "debug" "Variable ${variable} not found in ${file}, adding it" "false"
+
+    case ${quotes} in
+      single)
+        echo "${variable}='${content}'" >> "${file}"
+        ;;
+      double)
+        echo "${variable}=\"${content}\"" >> "${file}"
+        ;;
+      *)
+        echo "${variable}=${content}" >> "${file}"
+        ;;
+    esac
+
+    # Log
+    log_event "info" "Adding ${variable}=${content}" "false"
+    display --indent 6 --text "- Adding .env variable" --result "DONE" --color GREEN
+    display --indent 8 --text "${variable}=${content}" --tcolor GREEN
+
+    return 0
+  fi
+
+  # Variable exists, update it
   case ${quotes} in
 
   single)
