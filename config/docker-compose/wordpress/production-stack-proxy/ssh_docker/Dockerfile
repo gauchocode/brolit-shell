@@ -1,4 +1,4 @@
-FROM debian:10.13-slim
+FROM debian:12-slim
  
 ARG SSH_MASTER_USER
 ARG SSH_MASTER_PASS
