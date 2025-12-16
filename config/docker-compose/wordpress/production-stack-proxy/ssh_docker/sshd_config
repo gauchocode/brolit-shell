@@ -1,3 +1,5 @@
+AllowUsers broobe_sftp_user
+
 ChallengeResponseAuthentication no
 UsePAM no
 PrintMotd no
