@@ -3571,6 +3571,7 @@ function wpcli_delete_comments_by_date_range() {
     local comments_ids
     local comment_count
     local wpcli_result
+    local table_prefix
 
     # Check project_install_type
     [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
@@ -3579,17 +3580,23 @@ function wpcli_delete_comments_by_date_range() {
     log_event "info" "Searching comments between ${start_date} and ${end_date}" "false"
     display --indent 6 --text "- Searching comments from ${start_date} to ${end_date}"
 
+    # Get table prefix from wp-config.php
+    table_prefix="$(${wpcli_cmd} config get table_prefix 2>/dev/null | tr -d '\r')"
+    [[ -z "${table_prefix}" ]] && table_prefix="wp_"
+
+    log_event "debug" "Using table prefix: ${table_prefix}" "false"
+
     # Get comments IDs in date range
     # WP-CLI doesn't have built-in date filtering for comments, so we use SQL query
-    local sql_query="SELECT comment_ID FROM wp_comments WHERE comment_date >= '${start_date} 00:00:00' AND comment_date <= '${end_date} 23:59:59'"
+    local sql_query="SELECT comment_ID FROM ${table_prefix}comments WHERE comment_date >= '${start_date} 00:00:00' AND comment_date <= '${end_date} 23:59:59'"
 
-    if [[ ${install_type} == "docker"* ]]; then
-        comments_ids="$(${wpcli_cmd} db query \"${sql_query}\" --skip-column-names 2>/dev/null | tr '\n' ' ')"
-    else
-        comments_ids="$(${wpcli_cmd} db query \"${sql_query}\" --skip-column-names 2>/dev/null | tr '\n' ' ')"
-    fi
+    log_event "debug" "SQL Query: ${sql_query}" "false"
 
-    if [[ -z "${comments_ids}" || "${comments_ids}" == " " ]]; then
+    comments_ids="$(${wpcli_cmd} db query \"${sql_query}\" --skip-column-names 2>/dev/null | tr '\n' ' ' | xargs)"
+
+    log_event "debug" "Found comment IDs: ${comments_ids:0:200}..." "false"
+
+    if [[ -z "${comments_ids}" ]]; then
         log_event "info" "No comments found in date range for ${wp_site}" "false"
         clear_previous_lines "1"
         display --indent 6 --text "- Searching comments from ${start_date} to ${end_date}" --result "0" --color YELLOW
