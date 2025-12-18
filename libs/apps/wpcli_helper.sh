@@ -3571,7 +3571,8 @@ function wpcli_delete_comments_by_date_range() {
     local comments_ids
     local comment_count
     local wpcli_result
-    local table_prefix
+    local all_comments
+    local filtered_ids
 
     # Check project_install_type
     [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
@@ -3580,31 +3581,53 @@ function wpcli_delete_comments_by_date_range() {
     log_event "info" "Searching comments between ${start_date} and ${end_date}" "false"
     display --indent 6 --text "- Searching comments from ${start_date} to ${end_date}"
 
-    # Get table prefix from wp-config.php
-    table_prefix="$(${wpcli_cmd} config get table_prefix 2>/dev/null | tr -d '\r')"
-    [[ -z "${table_prefix}" ]] && table_prefix="wp_"
+    # Convert dates to Unix timestamps for comparison
+    local start_timestamp=$(date -d "${start_date} 00:00:00" +%s 2>/dev/null)
+    local end_timestamp=$(date -d "${end_date} 23:59:59" +%s 2>/dev/null)
 
-    log_event "debug" "Using table prefix: ${table_prefix}" "false"
+    log_event "debug" "Date range: ${start_date} (${start_timestamp}) to ${end_date} (${end_timestamp})" "false"
 
-    # Get comments IDs in date range
-    # WP-CLI doesn't have built-in date filtering for comments, so we use SQL query
-    local sql_query="SELECT comment_ID FROM ${table_prefix}comments WHERE comment_date >= '${start_date} 00:00:00' AND comment_date <= '${end_date} 23:59:59'"
+    # Get ALL comments with their dates using WP-CLI (avoids SQL/SSL issues)
+    log_event "debug" "Executing: ${wpcli_cmd} comment list --format=csv --fields=comment_ID,comment_date" "false"
+    all_comments="$(${wpcli_cmd} comment list --format=csv --fields=comment_ID,comment_date 2>&1 | grep -v '^Container')"
 
-    log_event "debug" "SQL Query: ${sql_query}" "false"
+    # Check for errors
+    if echo "${all_comments}" | grep -qi "error"; then
+        log_event "error" "WP-CLI command failed: ${all_comments:0:200}" "false"
+        clear_previous_lines "1"
+        display --indent 6 --text "- Searching comments from ${start_date} to ${end_date}" --result "FAIL" --color RED
+        display --indent 8 --text "Error retrieving comments from WordPress" --tcolor RED
+        return 1
+    fi
 
-    # First, let's test if we can get any comments at all
-    local test_count
-    local count_query="SELECT COUNT(*) FROM ${table_prefix}comments"
-    log_event "debug" "Executing count: ${wpcli_cmd} db query \"${count_query}\" --skip-column-names" "false"
-    test_count="$(${wpcli_cmd} db query "${count_query}" --skip-column-names 2>&1 | grep -v "^Container" | tail -1)"
-    log_event "debug" "Total comments in database: ${test_count}" "false"
+    # Filter comments by date range (skip CSV header)
+    filtered_ids=""
+    local line_count=0
+    while IFS=',' read -r comment_id comment_date; do
+        line_count=$((line_count + 1))
 
-    # Now get the comments in the date range
-    log_event "debug" "Executing query: ${wpcli_cmd} db query \"${sql_query}\" --skip-column-names" "false"
-    comments_ids="$(${wpcli_cmd} db query "${sql_query}" --skip-column-names 2>&1 | grep -v '^Container' | tr '\n' ' ' | xargs)"
+        # Skip header line
+        [[ ${line_count} -eq 1 ]] && continue
 
-    log_event "debug" "Raw output length: ${#comments_ids} chars" "false"
-    log_event "debug" "Found comment IDs (first 200 chars): ${comments_ids:0:200}" "false"
+        # Remove quotes if present
+        comment_id="${comment_id//\"/}"
+        comment_date="${comment_date//\"/}"
+
+        # Skip empty lines
+        [[ -z "${comment_id}" ]] && continue
+
+        # Convert comment date to timestamp
+        local comment_timestamp=$(date -d "${comment_date}" +%s 2>/dev/null)
+
+        # Check if comment is in date range
+        if [[ ${comment_timestamp} -ge ${start_timestamp} && ${comment_timestamp} -le ${end_timestamp} ]]; then
+            filtered_ids="${filtered_ids} ${comment_id}"
+        fi
+    done <<< "${all_comments}"
+
+    comments_ids=$(echo "${filtered_ids}" | xargs)
+
+    log_event "debug" "Filtered comment IDs (first 200 chars): ${comments_ids:0:200}" "false"
 
     if [[ -z "${comments_ids}" ]]; then
         log_event "info" "No comments found in date range for ${wp_site}" "false"
