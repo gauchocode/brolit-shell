@@ -626,6 +626,11 @@ function restore_project_backup() {
         # This is required for ALL Docker projects, not just those with databases
         docker_setup_configuration "${project_name}" "${project_install_path}" "${project_domain_new}" "restore"
 
+        # Re-read port from .env after docker_setup_configuration
+        # (it might have been changed if the original port was occupied)
+        project_port="$(project_get_port_from_env "${project_install_path}")"
+        log_event "debug" "Final port after docker setup: ${project_port}" "false"
+
         # Get database information
         db_name="$(project_get_configured_database "${project_install_path}" "${project_type}" "${project_install_type}")"
 
@@ -2099,30 +2104,41 @@ function docker_setup_configuration() {
 
       # Check if port is already in use
       if lsof -Pi :${backup_port} -sTCP:LISTEN -t >/dev/null 2>&1; then
+
         # Port is in use, find next available port
         log_event "warning" "Port ${backup_port} from backup is already in use" "false"
         display --indent 6 --text "- Port ${backup_port} already in use" --result "WARNING" --color YELLOW
 
         local new_port
         new_port="$(network_next_available_port "81" "350")"
+
         log_event "info" "Found available port: ${new_port}" "false"
         display --indent 6 --text "- Using port ${new_port} instead" --result "DONE" --color GREEN
 
         # Update port variables in .env using project_set_config_var
-        # The function will skip variables that don't exist in the file
-        project_set_config_var "${env_file}" "WP_PORT" "${new_port}" "none"
-        project_set_config_var "${env_file}" "APP_PORT" "${new_port}" "none"
-        project_set_config_var "${env_file}" "PORT" "${new_port}" "none"
-        project_set_config_var "${env_file}" "WEBSERVER_PORT" "${new_port}" "none"
+        # Only update existing variables, don't add new ones (update_only=true)
+        project_set_config_var "${env_file}" "WP_PORT" "${new_port}" "none" "true"
+        project_set_config_var "${env_file}" "APP_PORT" "${new_port}" "none" "true"
+        project_set_config_var "${env_file}" "PORT" "${new_port}" "none" "true"
+        project_set_config_var "${env_file}" "WEBSERVER_PORT" "${new_port}" "none" "true"
+
       else
+
         log_event "debug" "Port ${backup_port} is available" "false"
+
       fi
     fi
 
     # Rebuild docker image with existing configuration
     if ! docker_compose_build "${project_install_path}/docker-compose.yml"; then
-      log_event "error" "Docker rebuild failed." "true"
+
+      # Log
+      clear_previous_lines "1"
+      display --indent 6 --text "- Docker rebuild" --result "ERROR" --color RED
+      log_event "error" "Docker rebuild failed" "false"
+
       return 1
+
     fi
 
     log_event "info" "Docker restore completed successfully." "true"
@@ -2153,16 +2169,22 @@ function docker_setup_configuration() {
 
   # TODO: Check project type (WP, Laravel, etc)
 
-  # Update port variables (the function will skip variables that don't exist in the file)
-  project_set_config_var "${env_file}" "WP_PORT" "${project_port}" "none"
-  project_set_config_var "${env_file}" "APP_PORT" "${project_port}" "none"
-  project_set_config_var "${env_file}" "PORT" "${project_port}" "none"
-  project_set_config_var "${env_file}" "WEBSERVER_PORT" "${project_port}" "none"
+  # Update port variables - only update existing ones, don't add new ones (update_only=true)
+  project_set_config_var "${env_file}" "WP_PORT" "${project_port}" "none" "true"
+  project_set_config_var "${env_file}" "APP_PORT" "${project_port}" "none" "true"
+  project_set_config_var "${env_file}" "PORT" "${project_port}" "none" "true"
+  project_set_config_var "${env_file}" "WEBSERVER_PORT" "${project_port}" "none" "true"
 
   # Rebuild docker image
   if ! docker_compose_build "${project_install_path}/docker-compose.yml"; then
-    log_event "error" "Docker rebuild failed." "true"
+
+    # Log
+    clear_previous_lines "1"
+    log_event "error" "Docker rebuild failed." "false"
+    display --indent 6 --text "- Docker rebuild" --result "ERROR" --color RED
+
     return 1
+
   fi
 
   log_event "info" "Docker setup configuration completed successfully." "true"

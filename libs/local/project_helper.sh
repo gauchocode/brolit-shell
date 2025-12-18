@@ -79,12 +79,19 @@ function project_set_config_var() {
   local variable="${2}"
   local content="${3}"
   local quotes="${4}"
+  local update_only="${5:-false}"  # If true, only update existing variables, don't add new ones
 
   # Check if config file exists
   [[ ! -f ${file} ]] && die "Config file doesn't exist: ${file}"
 
   # Check if variable exists in file
   if ! grep -q "^${variable}=" "${file}"; then
+    if [[ "${update_only}" == "true" ]]; then
+      # Variable doesn't exist and update_only is true, skip silently
+      log_event "debug" "Variable ${variable} not found in ${file}, skipping (update_only mode)" "false"
+      return 0
+    fi
+
     # Variable doesn't exist, add it to the file
     log_event "debug" "Variable ${variable} not found in ${file}, adding it" "false"
 

@@ -885,25 +885,25 @@ function mysql_database_import() {
         mysql_container_user="$(docker exec -i "${container_name}" printenv MYSQL_USER)"
         mysql_container_user_pssw="$(docker exec -i "${container_name}" printenv MYSQL_PASSWORD)"
 
-        mysql_exec="docker exec -i ${container_name} mysql -u${mysql_container_user} -p${mysql_container_user_pssw}"
+        mysql_exec="docker exec -i ${container_name} mysql -u${mysql_container_user} -p${mysql_container_user_pssw} -f -D ${database}"
 
     else
 
-        mysql_exec="${MYSQL_ROOT}"
+        mysql_exec="${MYSQL_ROOT} -f -D ${database}"
 
     fi
 
     # Log
     display --indent 6 --text "- Importing backup into: ${database}" --tcolor YELLOW
     log_event "info" "Importing dump file ${dump_file} into database: ${database}" "false"
-    log_event "debug" "Running: pv ${dump_file} | ${mysql_exec} -f -D ${database}" "false"
+    log_event "debug" "Running: pv ${dump_file} | ${mysql_exec}" "false"
 
-    # String “utf8mb4_0900_ai_ci” replaced it with “utf8mb4_general_ci“
-    # This is a workaround for a bug in MySQL 5.7.x and 5.6.x where the default collation is “utf8mb4_0900_ai_ci”.
+    # String "utf8mb4_0900_ai_ci" replaced it with "utf8mb4_general_ci"
+    # This is a workaround for a bug in MySQL 5.7.x and 5.6.x where the default collation is "utf8mb4_0900_ai_ci".
     sed -i 's/utf8mb4_0900_ai_ci/utf8mb4_general_ci/g' "${dump_file}"
 
     # Execute command
-    pv --width 70 "${dump_file}" | ${mysql_exec} -f -D "${database}"
+    pv --width 70 "${dump_file}" | ${mysql_exec}
 
     if [[ ${PIPESTATUS[1]} -eq 0 ]]; then
 
@@ -921,7 +921,7 @@ function mysql_database_import() {
         display --indent 6 --text "- Database backup import" --result "ERROR" --color RED
         display --indent 8 --text "Please, read the log file!" --tcolor RED
         log_event "error" "Something went wrong importing database: ${database}"
-        log_event "debug" "Last command executed: pv ${dump_file} | ${mysql_exec} -f -D ${database}"
+        log_event "debug" "Last command executed: pv ${dump_file} | ${mysql_exec}"
 
         return 1
 
