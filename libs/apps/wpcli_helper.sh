@@ -3592,9 +3592,19 @@ function wpcli_delete_comments_by_date_range() {
 
     log_event "debug" "SQL Query: ${sql_query}" "false"
 
-    comments_ids="$(${wpcli_cmd} db query \"${sql_query}\" --skip-column-names 2>/dev/null | tr '\n' ' ' | xargs)"
+    # First, let's test if we can get any comments at all
+    local test_count
+    local count_query="SELECT COUNT(*) FROM ${table_prefix}comments"
+    log_event "debug" "Executing count: ${wpcli_cmd} db query \"${count_query}\" --skip-column-names" "false"
+    test_count="$(${wpcli_cmd} db query "${count_query}" --skip-column-names 2>&1 | grep -v "^Container" | tail -1)"
+    log_event "debug" "Total comments in database: ${test_count}" "false"
 
-    log_event "debug" "Found comment IDs: ${comments_ids:0:200}..." "false"
+    # Now get the comments in the date range
+    log_event "debug" "Executing query: ${wpcli_cmd} db query \"${sql_query}\" --skip-column-names" "false"
+    comments_ids="$(${wpcli_cmd} db query "${sql_query}" --skip-column-names 2>&1 | grep -v '^Container' | tr '\n' ' ' | xargs)"
+
+    log_event "debug" "Raw output length: ${#comments_ids} chars" "false"
+    log_event "debug" "Found comment IDs (first 200 chars): ${comments_ids:0:200}" "false"
 
     if [[ -z "${comments_ids}" ]]; then
         log_event "info" "No comments found in date range for ${wp_site}" "false"
