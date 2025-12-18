@@ -3548,6 +3548,237 @@ function wpcli_delete_comments() {
 }
 
 ################################################################################
+# Delete comments by date range
+#
+# Arguments:
+#   ${1} = ${wp_site}
+#   ${2} = ${install_type}
+#   ${3} = ${start_date} (YYYY-MM-DD)
+#   ${4} = ${end_date} (YYYY-MM-DD)
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function wpcli_delete_comments_by_date_range() {
+
+    local wp_site="${1}"
+    local install_type="${2}"
+    local start_date="${3}"
+    local end_date="${4}"
+
+    local wpcli_cmd
+    local comments_ids
+    local comment_count
+    local wpcli_result
+
+    # Check project_install_type
+    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose --progress=quiet -f ${wp_site}/../docker-compose.yml run -T -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
+
+    log_event "info" "Searching comments between ${start_date} and ${end_date}" "false"
+    display --indent 6 --text "- Searching comments from ${start_date} to ${end_date}"
+
+    # Get comments IDs in date range
+    # WP-CLI doesn't have built-in date filtering for comments, so we use SQL query
+    local sql_query="SELECT comment_ID FROM wp_comments WHERE comment_date >= '${start_date} 00:00:00' AND comment_date <= '${end_date} 23:59:59'"
+
+    if [[ ${install_type} == "docker"* ]]; then
+        comments_ids="$(${wpcli_cmd} db query \"${sql_query}\" --skip-column-names 2>/dev/null | tr '\n' ' ')"
+    else
+        comments_ids="$(${wpcli_cmd} db query \"${sql_query}\" --skip-column-names 2>/dev/null | tr '\n' ' ')"
+    fi
+
+    if [[ -z "${comments_ids}" || "${comments_ids}" == " " ]]; then
+        log_event "info" "No comments found in date range for ${wp_site}" "false"
+        clear_previous_lines "1"
+        display --indent 6 --text "- Searching comments from ${start_date} to ${end_date}" --result "0" --color YELLOW
+        return 0
+    fi
+
+    # Count comments
+    comment_count=$(echo "${comments_ids}" | wc -w)
+
+    display --indent 8 --text "Found ${comment_count} comments in date range" --tcolor RED
+
+    # Show confirmation
+    if whiptail --title "CONFIRM DELETION" --yesno "Found ${comment_count} comments between ${start_date} and ${end_date}.\n\nAre you sure you want to DELETE ALL these comments?\n\nThis action CANNOT be undone!" 14 70; then
+
+        log_event "warning" "Deleting ${comment_count} comments from ${start_date} to ${end_date}" "false"
+        display --indent 6 --text "- Deleting ${comment_count} comments"
+
+        # Delete comments
+        wpcli_result="$(${wpcli_cmd} comment delete ${comments_ids} --force 2>/dev/null)"
+
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+            log_event "success" "Deleted ${comment_count} comments from ${start_date} to ${end_date}" "false"
+            clear_previous_lines "1"
+            display --indent 6 --text "- Deleting ${comment_count} comments" --result "DONE" --color GREEN
+            return 0
+        else
+            log_event "error" "Failed to delete comments" "false"
+            clear_previous_lines "1"
+            display --indent 6 --text "- Deleting ${comment_count} comments" --result "FAIL" --color RED
+            return 1
+        fi
+    else
+        display --indent 8 --text "Operation cancelled by user" --tcolor YELLOW
+        log_event "info" "Comment deletion cancelled by user" "false"
+        return 0
+    fi
+
+}
+
+################################################################################
+# Delete comments by user (comment author email)
+#
+# Arguments:
+#   ${1} = ${wp_site}
+#   ${2} = ${install_type}
+#   ${3} = ${user_email}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function wpcli_delete_comments_by_user() {
+
+    local wp_site="${1}"
+    local install_type="${2}"
+    local user_email="${3}"
+
+    local wpcli_cmd
+    local comments_ids
+    local comment_count
+    local wpcli_result
+
+    # Check project_install_type
+    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose --progress=quiet -f ${wp_site}/../docker-compose.yml run -T -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
+
+    log_event "info" "Searching comments by user: ${user_email}" "false"
+    display --indent 6 --text "- Searching comments by user: ${user_email}"
+
+    # Get comments IDs by author email
+    comments_ids="$(${wpcli_cmd} comment list --author_email="${user_email}" --format=ids 2>/dev/null)"
+
+    if [[ -z "${comments_ids}" ]]; then
+        log_event "info" "No comments found for user ${user_email}" "false"
+        clear_previous_lines "1"
+        display --indent 6 --text "- Searching comments by user: ${user_email}" --result "0" --color YELLOW
+        return 0
+    fi
+
+    # Count comments
+    comment_count=$(echo "${comments_ids}" | wc -w)
+
+    display --indent 8 --text "Found ${comment_count} comments by user '${user_email}'" --tcolor RED
+
+    # Show confirmation
+    if whiptail --title "CONFIRM DELETION" --yesno "Found ${comment_count} comments by user '${user_email}'.\n\nAre you sure you want to DELETE ALL these comments?\n\nThis action CANNOT be undone!" 14 70; then
+
+        log_event "warning" "Deleting ${comment_count} comments by user: ${user_email}" "false"
+        display --indent 6 --text "- Deleting ${comment_count} comments"
+
+        # Delete comments
+        wpcli_result="$(${wpcli_cmd} comment delete ${comments_ids} --force 2>/dev/null)"
+
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+            log_event "success" "Deleted ${comment_count} comments by user: ${user_email}" "false"
+            clear_previous_lines "1"
+            display --indent 6 --text "- Deleting ${comment_count} comments" --result "DONE" --color GREEN
+            return 0
+        else
+            log_event "error" "Failed to delete comments" "false"
+            clear_previous_lines "1"
+            display --indent 6 --text "- Deleting ${comment_count} comments" --result "FAIL" --color RED
+            return 1
+        fi
+    else
+        display --indent 8 --text "Operation cancelled by user" --tcolor YELLOW
+        log_event "info" "Comment deletion cancelled by user" "false"
+        return 0
+    fi
+
+}
+
+################################################################################
+# Delete comments by WordPress user ID
+#
+# Arguments:
+#   ${1} = ${wp_site}
+#   ${2} = ${install_type}
+#   ${3} = ${user_id}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function wpcli_delete_comments_by_user_id() {
+
+    local wp_site="${1}"
+    local install_type="${2}"
+    local user_id="${3}"
+
+    local wpcli_cmd
+    local comments_ids
+    local comment_count
+    local wpcli_result
+
+    # Check project_install_type
+    [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose --progress=quiet -f ${wp_site}/../docker-compose.yml run -T -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
+
+    log_event "info" "Searching comments by user ID: ${user_id}" "false"
+    display --indent 6 --text "- Searching comments by user ID: ${user_id}"
+
+    # Get comments IDs by user ID
+    comments_ids="$(${wpcli_cmd} comment list --user_id="${user_id}" --format=ids 2>/dev/null)"
+
+    if [[ -z "${comments_ids}" ]]; then
+        log_event "info" "No comments found for user ID ${user_id}" "false"
+        clear_previous_lines "1"
+        display --indent 6 --text "- Searching comments by user ID: ${user_id}" --result "0" --color YELLOW
+        return 0
+    fi
+
+    # Count comments
+    comment_count=$(echo "${comments_ids}" | wc -w)
+
+    display --indent 8 --text "Found ${comment_count} comments by user ID '${user_id}'" --tcolor RED
+
+    # Show confirmation
+    if whiptail --title "CONFIRM DELETION" --yesno "Found ${comment_count} comments by user ID '${user_id}'.\n\nAre you sure you want to DELETE ALL these comments?\n\nThis action CANNOT be undone!" 14 70; then
+
+        log_event "warning" "Deleting ${comment_count} comments by user ID: ${user_id}" "false"
+        display --indent 6 --text "- Deleting ${comment_count} comments"
+
+        # Delete comments
+        wpcli_result="$(${wpcli_cmd} comment delete ${comments_ids} --force 2>/dev/null)"
+
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+            log_event "success" "Deleted ${comment_count} comments by user ID: ${user_id}" "false"
+            clear_previous_lines "1"
+            display --indent 6 --text "- Deleting ${comment_count} comments" --result "DONE" --color GREEN
+            return 0
+        else
+            log_event "error" "Failed to delete comments" "false"
+            clear_previous_lines "1"
+            display --indent 6 --text "- Deleting ${comment_count} comments" --result "FAIL" --color RED
+            return 1
+        fi
+    else
+        display --indent 8 --text "Operation cancelled by user" --tcolor YELLOW
+        log_event "info" "Comment deletion cancelled by user" "false"
+        return 0
+    fi
+
+}
+
+################################################################################
 # Scan WordPress database for malicious code using WP-CLI
 #
 # Arguments:

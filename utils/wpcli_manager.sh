@@ -149,7 +149,7 @@ function wpcli_main_menu() {
     # DATABASE
     "13)" "CLEAN WP DB"
     "14)" "CHANGE TABLES PREFIX"
-    "15)" "DELETE SPAM COMMENTS"
+    "15)" "DELETE COMMENTS"
     "16)" "SCAN DATABASE FOR MALWARE"
     # MAINTENANCE & OPTIMIZATION
     "17)" "REPLACE URLs"
@@ -309,15 +309,8 @@ function wpcli_main_menu() {
 
     fi
 
-    # DATABASE - DELETE SPAM COMMENTS
-    if [[ ${chosen_wpcli_options} == *"15"* ]]; then
-
-      log_subsection "WP Delete Spam Comments"
-
-      wpcli_delete_comments "${wp_site}" "${project_install_type}" "spam"
-      wpcli_delete_comments "${wp_site}" "${project_install_type}" "hold"
-
-    fi
+    # DATABASE - DELETE COMMENTS (with multiple criteria)
+    [[ ${chosen_wpcli_options} == *"15"* ]] && wpcli_delete_comments_menu "${wp_site}" "${project_install_type}"
 
     # DATABASE - SCAN DATABASE FOR MALWARE
     if [[ ${chosen_wpcli_options} == *"16"* ]]; then
@@ -852,6 +845,123 @@ function wpcli_delete_malicious_posts_menu() {
       if [[ -n ${author_name} ]]; then
         wpcli_list_posts_by_author "${wp_site}" "${install_type}" "${author_name}"
       fi
+    fi
+
+  fi
+
+}
+
+################################################################################
+# Delete comments menu
+#
+# Arguments:
+#  ${1} = ${wp_site}
+#  ${2} = ${install_type}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function wpcli_delete_comments_menu() {
+
+  local wp_site="${1}"
+  local install_type="${2}"
+
+  local comment_options
+  local chosen_comment_option
+
+  log_subsection "Delete Comments"
+
+  comment_options=(
+    "01)" "DELETE SPAM COMMENTS"
+    "02)" "DELETE COMMENTS BY DATE RANGE"
+    "03)" "DELETE COMMENTS BY USER EMAIL"
+    "04)" "DELETE COMMENTS BY USER ID (WordPress user)"
+    "05)" "LIST ALL COMMENTS"
+  )
+
+  chosen_comment_option="$(whiptail --title "DELETE COMMENTS" --menu "Choose filtering method:" 20 78 10 "${comment_options[@]}" 3>&1 1>&2 2>&3)"
+
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    # DELETE SPAM COMMENTS
+    if [[ ${chosen_comment_option} == *"01"* ]]; then
+      log_subsection "WP Delete Spam Comments"
+      wpcli_delete_comments "${wp_site}" "${install_type}" "spam"
+      wpcli_delete_comments "${wp_site}" "${install_type}" "hold"
+    fi
+
+    # DELETE COMMENTS BY DATE RANGE
+    if [[ ${chosen_comment_option} == *"02"* ]]; then
+      local start_date
+      local end_date
+
+      start_date="$(whiptail_input "START DATE" "Enter start date (YYYY-MM-DD):" "$(date -d '30 days ago' +%Y-%m-%d)")"
+
+      if [[ -n ${start_date} ]]; then
+        end_date="$(whiptail_input "END DATE" "Enter end date (YYYY-MM-DD):" "$(date +%Y-%m-%d)")"
+
+        if [[ -n ${end_date} ]]; then
+          wpcli_delete_comments_by_date_range "${wp_site}" "${install_type}" "${start_date}" "${end_date}"
+        fi
+      fi
+    fi
+
+    # DELETE COMMENTS BY USER EMAIL
+    if [[ ${chosen_comment_option} == *"03"* ]]; then
+      local user_email
+
+      user_email="$(whiptail_input "USER EMAIL" "Enter comment author email:" "")"
+
+      if [[ -n ${user_email} ]]; then
+        wpcli_delete_comments_by_user "${wp_site}" "${install_type}" "${user_email}"
+      fi
+    fi
+
+    # DELETE COMMENTS BY USER ID
+    if [[ ${chosen_comment_option} == *"04"* ]]; then
+      local selected_user
+      local user_id
+      local project_path
+
+      # Let user select from list of available WordPress users
+      selected_user="$(wpcli_select_user "${wp_site}" "${install_type}")"
+
+      if [[ -n ${selected_user} ]]; then
+        # Get the user ID for the selected username
+        if [[ ${install_type} == "docker"* ]]; then
+          project_path=$(dirname "${wp_site}")
+          user_id=$(docker compose -f "${project_path}/docker-compose.yml" run -T --rm -u 33 -e HOME=/tmp wordpress-cli wp user get "${selected_user}" --field=ID 2>/dev/null | tail -1)
+        else
+          user_id=$(wp user get "${selected_user}" --path="${wp_site}" --field=ID 2>/dev/null)
+        fi
+
+        if [[ -n ${user_id} ]]; then
+          wpcli_delete_comments_by_user_id "${wp_site}" "${install_type}" "${user_id}"
+        fi
+      fi
+    fi
+
+    # LIST ALL COMMENTS
+    if [[ ${chosen_comment_option} == *"05"* ]]; then
+      local wpcli_cmd
+      local comments_list
+
+      log_event "info" "Listing all comments" "false"
+      display --indent 6 --text "- Listing all comments"
+
+      # Check project_install_type
+      [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
+      [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose --progress=quiet -f ${wp_site}/../docker-compose.yml run -T -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
+
+      comments_list=$(${wpcli_cmd} comment list --format=table --fields=comment_ID,comment_date,comment_author,comment_author_email,comment_approved 2>&1)
+
+      echo ""
+      echo "${comments_list}"
+      echo ""
+
+      log_event "info" "Listed all comments" "false"
     fi
 
   fi
