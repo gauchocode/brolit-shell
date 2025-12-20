@@ -2661,6 +2661,10 @@ function wpcli_user_create() {
     local mail="${4}"
     local role="${5}"
 
+    local wpcli_cmd
+    local wpcli_result
+    local generated_password
+
     # Check project_install_type
     [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
     ## -u 33 -e HOME=/tmp to avoid permission denied error: https://github.com/docker-library/wordpress/issues/417
@@ -2669,15 +2673,29 @@ function wpcli_user_create() {
 
     log_event "debug" "Running: ${wpcli_cmd} user create ${user} ${mail} --role=${role}" "false"
 
-    # Command
-    ${wpcli_cmd} user create "${user}" "${mail}" --role="${role}" > /dev/null 2>&1
+    # Command - capture output to get the generated password
+    wpcli_result="$(${wpcli_cmd} user create "${user}" "${mail}" --role="${role}" 2>&1)"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
+        # Extract password from output (WP-CLI outputs: "Success: Created user X. Password: XXXXXX")
+        generated_password=$(echo "${wpcli_result}" | grep -oP 'Password: \K\S+' | head -1)
+
         # Log
         display --indent 6 --text "- Creating WP user: ${user}" --result "DONE" --color GREEN
         log_event "info" "Creating WordPress user ${user} for site ${wp_site}" "false"
+
+        # Display the generated password
+        if [[ -n "${generated_password}" ]]; then
+            echo ""
+            display --indent 6 --text "Username: ${user}" --tcolor GREEN
+            display --indent 6 --text "Password: ${generated_password}" --tcolor YELLOW
+            display --indent 6 --text "Email: ${mail}" --tcolor GREEN
+            display --indent 6 --text "Role: ${role}" --tcolor GREEN
+            echo ""
+            log_event "info" "Generated password for user ${user}: ${generated_password}" "false"
+        fi
 
         return 0
 
@@ -2685,7 +2703,7 @@ function wpcli_user_create() {
 
         # Log
         display --indent 6 --text "- Creating WP user: ${user}" --result "FAIL" --color RED
-        log_event "error" "Creating WordPress user ${user} for site ${wp_site}" "false"
+        log_event "error" "Creating WordPress user ${user} for site ${wp_site}: ${wpcli_result}" "false"
 
         return 1
 
