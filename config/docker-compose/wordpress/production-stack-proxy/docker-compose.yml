@@ -49,7 +49,6 @@ services:
         volumes:
             - ${WWW_DATA_DIR}:/wordpress
             - ./php-${PHP_VERSION}_docker/php-fpm/php-ini-overrides.ini:/etc/php/${PHP_VERSION}/fpm/conf.d/99-overrides.ini
-        #    - ./php-${PHP_VERSION}_docker/php-fpm/www.conf-overrides:/etc/php/${PHP_VERSION}/fpm/pool.d/z-optimised.conf
         networks:
             - internal
         healthcheck:
