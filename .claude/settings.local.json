@@ -14,7 +14,18 @@
       "Bash(command -v:*)",
       "Bash(borgmatic:*)",
       "Bash(nginx -t:*)",
-      "Bash(certbot show_account:*)"
+      "Bash(certbot show_account:*)",
+      "Bash(ls:*)",
+      "Bash(done)",
+      "Bash(for version in 8.0 8.2 8.3)",
+      "Bash(do)",
+      "Bash(config/docker-compose/php/production-stack-proxy/php-$version_docker/php-fpm/www.conf-overrides)",
+      "Bash( for version in 7.4 8.0 8.1 8.2 8.3)",
+      "Bash(do echo \"\" echo \"PHP $version:\" ls -1 config/docker-compose/wordpress/production-stack-proxy/php-$version_docker/php-fpm/)",
+      "Bash(do echo \"\" echo \"PHP $version:\" ls -1 config/docker-compose/php/production-stack-proxy/php-$version_docker/php-fpm/)",
+      "Bash(config/docker-compose/php/production-stack-proxy/php-8.2_docker/php-fpm/www.conf-overrides )",
+      "Bash(config/docker-compose/php/production-stack-proxy/php-8.3_docker/php-fpm/www.conf-overrides)",
+      "Bash(__NEW_LINE__ echo \"Archivos incorrectos eliminados:\")"
     ],
     "deny": [],
     "ask": []

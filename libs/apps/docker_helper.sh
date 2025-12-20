@@ -914,8 +914,8 @@ function docker_project_install() {
 
     # PHP Version
     # Whiptail menu to ask php version to work with
-    php_versions="7.4 8.0 8.1 8.2 8.3"
-    php_version="$(whiptail_selection_menu "PHP Version" "Choose a PHP version for the Docker container:" "${php_versions}" "8.2")"
+    php_versions="8.0 8.1 8.2 8.3 8.4"
+    php_version="$(whiptail_selection_menu "PHP Version" "Choose a PHP version for the Docker container:" "${php_versions}" "8.3")" # Changed default from 8.2 to 8.3
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 1 ]]; then
@@ -1852,8 +1852,8 @@ function docker_project_install_from_git() {
             # Generate configuration
             port_available="$(network_next_available_port "81" "350")"
 
-            php_versions="7.4 8.0 8.1 8.2 8.3"
-            php_version="$(whiptail_selection_menu "PHP Version" "Choose a PHP version for the Docker container:" "${php_versions}" "8.2")"
+            php_versions="8.0 8.1 8.2 8.3 8.4"
+            php_version="$(whiptail_selection_menu "PHP Version" "Choose a PHP version for the Docker container:" "${php_versions}" "8.3")" # Changed default from 8.2 to 8.3
             [[ $? -eq 1 ]] && return 1
 
             project_database="${project_name}_${project_stage}"
@@ -1893,8 +1893,8 @@ function docker_project_install_from_git() {
             # Similar configuration as WordPress
             port_available="$(network_next_available_port "81" "350")"
 
-            php_versions="7.4 8.0 8.1 8.2 8.3"
-            php_version="$(whiptail_selection_menu "PHP Version" "Choose a PHP version:" "${php_versions}" "8.2")"
+            php_versions="8.0 8.1 8.2 8.3 8.4"
+            php_version="$(whiptail_selection_menu "PHP Version" "Choose a PHP version:" "${php_versions}" "8.3")" # Changed default from 8.2 to 8.3
             [[ $? -eq 1 ]] && return 1
 
             project_database="${project_name}_${project_stage}"
