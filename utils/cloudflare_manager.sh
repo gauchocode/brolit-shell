@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.4
+# Version: 3.5
 #############################################################################
 
 function cloudflare_manager_menu() {
@@ -567,7 +567,7 @@ function cloudflare_custom_rules_menu() {
 
           if [[ ${exitstatus} -eq 0 ]]; then
 
-            rule_expression="$(whiptail_input "Rule Expression" "Enter the rule expression (e.g., ip.src eq 1.2.3.4):" "")"
+            rule_expression="$(whiptail_input "Rule Expression" "Enter the rule expression (e.g., ip.src eq 1.2.3.5):" "")"
             exitstatus=$?
 
             if [[ ${exitstatus} -eq 0 ]]; then
@@ -690,7 +690,7 @@ function cloudflare_ip_access_rules_menu() {
           local ip_action
           local ip_note
 
-          ip_address="$(whiptail_input "IP Address" "Enter the IP address (e.g., 1.2.3.4):" "")"
+          ip_address="$(whiptail_input "IP Address" "Enter the IP address (e.g., 1.2.3.5):" "")"
           exitstatus=$?
 
           if [[ ${exitstatus} -eq 0 ]]; then
