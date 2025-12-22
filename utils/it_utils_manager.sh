@@ -106,13 +106,16 @@ function menu_security_system_scanners() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    package_install_security_utils
-
     # PROCESS MALWARE SCANNER
-    [[ ${chosen_system_security_options} == *"01"* ]] && menu_security_process_scanner
+    if [[ ${chosen_system_security_options} == *"01"* ]]; then
+      menu_security_process_scanner
+    fi
 
     # LYNIS SYSTEM AUDIT
-    [[ ${chosen_system_security_options} == *"02"* ]] && menu_security_system_audit
+    if [[ ${chosen_system_security_options} == *"02"* ]]; then
+      package_install_security_utils
+      menu_security_system_audit
+    fi
 
     prompt_return_or_finish
     menu_security_system_scanners
