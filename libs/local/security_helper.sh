@@ -181,13 +181,16 @@ function security_process_scanner() {
   echo "[3] PROCESSES WITH SUSPICIOUS NAMES:" >>"${report_file}"
   echo "-------------------------------------" >>"${report_file}"
 
-  suspicious_patterns="(xmrig|minerd|ccminer|ethminer|cryptonight|linux64|linuxsys|kdevtmpfs|kworker|systemd-resolve|^\\.|^-)"
+  # Known malware/miner names - excluding legitimate system processes (kworker, systemd-resolve are legit)
+  suspicious_patterns="(xmrig|minerd|ccminer|ethminer|cryptonight|coinhive|crypto-pool|stratum|linux64|linuxsys|\.\/\.|\.\-)"
 
-  ps aux | grep -iE "${suspicious_patterns}" | grep -v grep | grep -v "security_helper" >>"${report_file}" 2>/dev/null || echo "No suspicious process names found." >>"${report_file}"
+  suspicious_processes=$(ps aux | grep -iE "${suspicious_patterns}" | grep -v grep | grep -v "security_helper")
 
-  suspicious_proc_count=$(ps aux | grep -iE "${suspicious_patterns}" | grep -v grep | grep -v "security_helper" | wc -l)
-  if [[ ${suspicious_proc_count} -gt 0 ]]; then
+  if [[ -n "${suspicious_processes}" ]]; then
+    echo "${suspicious_processes}" >>"${report_file}"
     suspicious_found=true
+  else
+    echo "No suspicious process names found." >>"${report_file}"
   fi
   echo "" >>"${report_file}"
 
@@ -233,9 +236,21 @@ function security_process_scanner() {
   echo "----------------------------" >>"${report_file}"
 
   echo "Checking crontabs..." >>"${report_file}"
+  cron_suspicious=false
   for user in $(cut -d: -f1 /etc/passwd); do
-    crontab -u "${user}" -l 2>/dev/null | grep -v "^#" | grep -iE "(curl|wget|download|sh|bash)" && echo "  User: ${user}" >>"${report_file}"
-  done || echo "No suspicious cron jobs found." >>"${report_file}"
+    # Check crontabs but exclude known safe patterns (brolit-shell, package managers, system maintenance)
+    suspicious_crons=$(crontab -u "${user}" -l 2>/dev/null | grep -v "^#" | grep -v "^$" | grep -iE "(curl|wget)" | grep -vE "(brolit-shell|apt|yum|dnf|certbot|letsencrypt)")
+    if [[ -n "${suspicious_crons}" ]]; then
+      echo "  User: ${user}" >>"${report_file}"
+      echo "${suspicious_crons}" >>"${report_file}"
+      cron_suspicious=true
+    fi
+  done
+  if [[ ${cron_suspicious} == false ]]; then
+    echo "No suspicious cron jobs found." >>"${report_file}"
+  else
+    suspicious_found=true
+  fi
   echo "" >>"${report_file}"
 
   echo "Checking systemd services..." >>"${report_file}"
