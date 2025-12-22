@@ -70,29 +70,19 @@ function menu_security_utils() {
   local security_options chosen_security_options
 
   security_options=(
-    "01)" "WORFENCE-CLI MALWARE SCAN"
-    "02)" "CLAMAV MALWARE SCAN"
-    "03)" "CUSTOM MALWARE SCAN"
-    "04)" "LYNIS SYSTEM AUDIT"
+    "01)" "SYSTEM SCANNERS"
+    "02)" "PROJECT SCANNERS"
   )
-  chosen_security_options=$(whiptail --title "SECURITY TOOLS" --menu "Choose an option to run" 20 78 10 "${security_options[@]}" 3>&1 1>&2 2>&3)
+  chosen_security_options=$(whiptail --title "SECURITY TOOLS" --menu "Choose a category" 20 78 10 "${security_options[@]}" 3>&1 1>&2 2>&3)
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    package_install_security_utils
+    # SYSTEM SCANNERS
+    [[ ${chosen_security_options} == *"01"* ]] && menu_security_system_scanners
 
-    # WORFENCE-CLI MALWARE SCAN
-    [[ ${chosen_security_options} == *"01"* ]] && menu_security_wordfencecli_scan
-
-    # CLAMAV MALWARE SCAN
-    [[ ${chosen_security_options} == *"02"* ]] && menu_security_clamav_scan
-
-    # CUSTOM MALWARE SCAN
-    [[ ${chosen_security_options} == *"03"* ]] && menu_security_custom_scan
-
-    # LYNIS SYSTEM AUDIT
-    [[ ${chosen_security_options} == *"04"* ]] && menu_security_system_audit
+    # PROJECT SCANNERS
+    [[ ${chosen_security_options} == *"02"* ]] && menu_security_project_scanners
 
     prompt_return_or_finish
     menu_security_utils
@@ -100,6 +90,70 @@ function menu_security_utils() {
   fi
 
   menu_main_options
+
+}
+
+function menu_security_system_scanners() {
+
+  local system_security_options chosen_system_security_options
+
+  system_security_options=(
+    "01)" "PROCESS MALWARE SCANNER"
+    "02)" "LYNIS SYSTEM AUDIT"
+  )
+  chosen_system_security_options=$(whiptail --title "SYSTEM SCANNERS" --menu "Choose a scanner to run" 20 78 10 "${system_security_options[@]}" 3>&1 1>&2 2>&3)
+
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    package_install_security_utils
+
+    # PROCESS MALWARE SCANNER
+    [[ ${chosen_system_security_options} == *"01"* ]] && menu_security_process_scanner
+
+    # LYNIS SYSTEM AUDIT
+    [[ ${chosen_system_security_options} == *"02"* ]] && menu_security_system_audit
+
+    prompt_return_or_finish
+    menu_security_system_scanners
+
+  fi
+
+  menu_security_utils
+
+}
+
+function menu_security_project_scanners() {
+
+  local project_security_options chosen_project_security_options
+
+  project_security_options=(
+    "01)" "WORDFENCE-CLI MALWARE SCAN"
+    "02)" "CLAMAV MALWARE SCAN"
+    "03)" "CUSTOM MALWARE SCAN"
+  )
+  chosen_project_security_options=$(whiptail --title "PROJECT SCANNERS" --menu "Choose a scanner to run" 20 78 10 "${project_security_options[@]}" 3>&1 1>&2 2>&3)
+
+  exitstatus=$?
+  if [[ ${exitstatus} -eq 0 ]]; then
+
+    package_install_security_utils
+
+    # WORDFENCE-CLI MALWARE SCAN
+    [[ ${chosen_project_security_options} == *"01"* ]] && menu_security_wordfencecli_scan
+
+    # CLAMAV MALWARE SCAN
+    [[ ${chosen_project_security_options} == *"02"* ]] && menu_security_clamav_scan
+
+    # CUSTOM MALWARE SCAN
+    [[ ${chosen_project_security_options} == *"03"* ]] && menu_security_custom_scan
+
+    prompt_return_or_finish
+    menu_security_project_scanners
+
+  fi
+
+  menu_security_utils
 
 }
 
@@ -185,6 +239,14 @@ function menu_security_custom_scan() {
     security_custom_scan "${to_scan}"
 
   fi
+
+}
+
+function menu_security_process_scanner() {
+
+  log_event "info" "Starting process malware scanner" "false"
+
+  security_process_scanner
 
 }
 

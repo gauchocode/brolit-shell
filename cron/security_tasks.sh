@@ -65,6 +65,22 @@ _security_tasks() {
 
   fi
 
+  # Process Malware Scanner
+  process_scanner_result="$(security_process_scanner)"
+
+  if [[ ${process_scanner_result} == "true" ]]; then
+
+    log_event "warning" "Process scanner found suspicious activity! Please check result file." "false"
+    send_notification "${SERVER_NAME}" "Process malware scanner detected suspicious processes! Possible cryptominer or malware running. Check server immediately." "alert"
+
+    SCAN_STATUS="Found Issues"
+
+  else
+
+    log_event "info" "Process scanner has not found suspicious activity" "false"
+
+  fi
+
   date "+%Y-%m-%d %H:%M:%S" >$LAST_SCAN_DATE_FILE
 
   echo "${SCAN_STATUS}" >$SCAN_STATUS_FILE
