@@ -470,14 +470,18 @@ function security_scanner_action_menu() {
 
       "02)"*)
         # View suspicious processes
-        local suspicious_pids
-        suspicious_pids=$(ps aux | grep -iE "(xmrig|minerd|ccminer|ethminer|cryptonight|coinhive|kdevtmpfsi|kdevtmpfs|linuxsys)" | grep -v grep | grep -v "security_helper")
+        local temp_procs
+        temp_procs=$(mktemp)
 
-        if [[ -n "${suspicious_pids}" ]]; then
-          echo "${suspicious_pids}" | whiptail --title "Suspicious Processes" --scrolltext --textbox /dev/stdin 20 120
+        ps aux | grep -iE "(xmrig|minerd|ccminer|ethminer|cryptonight|coinhive|kdevtmpfsi|kdevtmpfs|linuxsys)" | grep -v grep | grep -v "security_helper" > "${temp_procs}"
+
+        if [[ -s "${temp_procs}" ]]; then
+          whiptail --title "Suspicious Processes" --scrolltext --textbox "${temp_procs}" 20 120
         else
           whiptail --title "Info" --msgbox "No suspicious processes currently running.\n\nThey may have been in the report but are no longer active." 10 60
         fi
+
+        rm -f "${temp_procs}"
         ;;
 
       "03)"*)
@@ -603,16 +607,32 @@ function security_scanner_action_menu() {
 
               case ${container_action} in
                 1)
-                  docker exec "${selected_container}" ps aux 2>/dev/null | whiptail --title "Processes in ${selected_container}" --scrolltext --textbox /dev/stdin 20 120
+                  local temp_container_ps
+                  temp_container_ps=$(mktemp)
+                  docker exec "${selected_container}" ps aux 2>/dev/null > "${temp_container_ps}"
+                  whiptail --title "Processes in ${selected_container}" --scrolltext --textbox "${temp_container_ps}" 20 120
+                  rm -f "${temp_container_ps}"
                   ;;
                 2)
-                  docker exec "${selected_container}" ps aux --sort=-%cpu 2>/dev/null | head -20 | whiptail --title "High CPU in ${selected_container}" --scrolltext --textbox /dev/stdin 20 120
+                  local temp_container_cpu
+                  temp_container_cpu=$(mktemp)
+                  docker exec "${selected_container}" ps aux --sort=-%cpu 2>/dev/null | head -20 > "${temp_container_cpu}"
+                  whiptail --title "High CPU in ${selected_container}" --scrolltext --textbox "${temp_container_cpu}" 20 120
+                  rm -f "${temp_container_cpu}"
                   ;;
                 3)
-                  docker exec "${selected_container}" find /var/www /app /usr/local -type f -executable 2>/dev/null | head -50 | whiptail --title "Executables in ${selected_container}" --scrolltext --textbox /dev/stdin 20 120
+                  local temp_container_files
+                  temp_container_files=$(mktemp)
+                  docker exec "${selected_container}" find /var/www /app /usr/local -type f -executable 2>/dev/null | head -50 > "${temp_container_files}"
+                  whiptail --title "Executables in ${selected_container}" --scrolltext --textbox "${temp_container_files}" 20 120
+                  rm -f "${temp_container_files}"
                   ;;
                 4)
-                  docker logs --tail 100 "${selected_container}" 2>&1 | whiptail --title "Logs: ${selected_container}" --scrolltext --textbox /dev/stdin 30 120
+                  local temp_container_logs
+                  temp_container_logs=$(mktemp)
+                  docker logs --tail 100 "${selected_container}" > "${temp_container_logs}" 2>&1
+                  whiptail --title "Logs: ${selected_container}" --scrolltext --textbox "${temp_container_logs}" 30 120
+                  rm -f "${temp_container_logs}"
                   ;;
               esac
             fi
