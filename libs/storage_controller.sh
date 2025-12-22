@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.4
+# Version: 3.5
 ################################################################################
 #
 # Storage Controller: Controller to upload and download backups.
@@ -705,7 +705,7 @@ function storage_backup_selection() {
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.4
+# Version: 3.5
 ################################################################################
 #
 # Storage Controller - Additional Functions

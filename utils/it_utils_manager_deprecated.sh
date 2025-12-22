@@ -5,7 +5,7 @@
 ################################################################################
 #
 # DEPRECATED: This file has been replaced by Environment Manager.
-# Kept for reference only. Will be removed in version 3.4.0.
+# Kept for reference only. Will be removed in version 3.5.0.
 #
 # Migration:
 #   it_utils_menu() -> environment_manager_menu()
