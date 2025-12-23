@@ -732,44 +732,96 @@ function backup_all_databases() {
   local error_msg
   local error_type
   local database_backup_index
+  local mysql_containers
+  local container_databases
+  local total_databases=0
+  local has_databases=false
 
   # Starting Messages
   log_subsection "Backup Databases"
 
-  if [[ ${PACKAGES_MARIADB_STATUS} != "enabled" ]] && [[ ${PACKAGES_MYSQL_STATUS} != "enabled" ]] && [[ ${PACKAGES_POSTGRES_STATUS} != "enabled" ]]; then
+  # Check for MySQL/MariaDB in host OR Docker containers
+  mysql_containers="$(docker ps --format '{{.Names}}' --filter 'ancestor=mysql' --filter 'ancestor=mariadb' 2>/dev/null || true)"
+
+  if [[ ${PACKAGES_MARIADB_STATUS} != "enabled" ]] && [[ ${PACKAGES_MYSQL_STATUS} != "enabled" ]] && [[ ${PACKAGES_POSTGRES_STATUS} != "enabled" ]] && [[ -z "${mysql_containers}" ]]; then
 
     display --indent 6 --text "- Initializing database backup script" --result "SKIPPED" --color YELLOW
-    display --indent 8 --text "No database engine present on server" --tcolor YELLOW
+    display --indent 8 --text "No database engine present on server or Docker containers" --tcolor YELLOW
+
+    # Create empty mail file to prevent sed errors
+    touch "${BROLIT_TMP_DIR}/databases-bk-${NOW}.mail"
+
     return 1
 
   fi
 
   display --indent 6 --text "- Initializing database backup script" --result "DONE" --color GREEN
 
-  # Mysql backup
+  # MySQL backup from HOST
   if [[ ${PACKAGES_MARIADB_STATUS} == "enabled" ]] || [[ ${PACKAGES_MYSQL_STATUS} == "enabled" ]]; then
 
-    # Get MySQL databases
+    # Get MySQL databases from host
     mysql_databases="$(mysql_list_databases "all" "")"
 
-    # Count MySQL databases
-    databases_count="$(mysql_count_databases "${mysql_databases}")"
+    if [[ -n "${mysql_databases}" ]]; then
+      # Count MySQL databases
+      databases_count="$(mysql_count_databases "${mysql_databases}")"
+      total_databases=$((total_databases + databases_count))
+      has_databases=true
 
-    # Log
-    display --indent 6 --text "- MySql databases found" --result "${databases_count}" --color WHITE
-    log_event "info" "MySql databases found: ${databases_count}" "false"
-    log_break "true"
+      # Log
+      display --indent 6 --text "- MySQL databases found on host" --result "${databases_count}" --color WHITE
+      log_event "info" "MySQL databases found on host: ${databases_count}" "false"
+      log_break "true"
 
-    # Loop in to MySQL Databases and make backup
-    backup_databases "${mysql_databases}" "mysql"
+      # Loop in to MySQL Databases and make backup
+      backup_databases "${mysql_databases}" "mysql"
 
-    backup_databases_status=$?
-    if [[ ${backup_databases_status} -eq 1 ]]; then
+      backup_databases_status=$?
+      if [[ ${backup_databases_status} -eq 1 ]]; then
 
-      error_type="${error_type}${error_type:+\n}MySQL"
-      error_msg="${error_msg}${error_msg:+\n}MySQL backup failed"
+        error_type="${error_type}${error_type:+\n}MySQL (host)"
+        error_msg="${error_msg}${error_msg:+\n}MySQL backup failed (host)"
 
+      fi
     fi
+
+  fi
+
+  # MySQL backup from DOCKER CONTAINERS
+  if [[ -n "${mysql_containers}" ]]; then
+
+    log_event "info" "Found MySQL/MariaDB Docker containers: ${mysql_containers}" "false"
+
+    for container in ${mysql_containers}; do
+
+      # Get MySQL databases from this container
+      container_databases="$(mysql_list_databases "all" "${container}")"
+
+      if [[ -n "${container_databases}" ]]; then
+        # Count MySQL databases
+        databases_count="$(mysql_count_databases "${container_databases}")"
+        total_databases=$((total_databases + databases_count))
+        has_databases=true
+
+        # Log
+        display --indent 6 --text "- MySQL databases found in ${container}" --result "${databases_count}" --color WHITE
+        log_event "info" "MySQL databases found in container ${container}: ${databases_count}" "false"
+        log_break "true"
+
+        # Loop in to MySQL Databases and make backup
+        backup_databases "${container_databases}" "mysql" "${container}"
+
+        backup_databases_status=$?
+        if [[ ${backup_databases_status} -eq 1 ]]; then
+
+          error_type="${error_type}${error_type:+\n}MySQL (${container})"
+          error_msg="${error_msg}${error_msg:+\n}MySQL backup failed (${container})"
+
+        fi
+      fi
+
+    done
 
   fi
 
@@ -852,6 +904,7 @@ function backup_all_databases_docker() {
 # Arguments:
 #  ${1} = ${databases}
 #  ${2} = ${db_engine}
+#  ${3} = ${container_name} (optional)
 #
 # Outputs:
 #  0 if ok, 1 if error
@@ -861,6 +914,7 @@ function backup_databases() {
 
   local databases="${1}"
   local db_engine="${2}"
+  local container_name="${3:-}"
 
   local database_backup_index=0
 
@@ -875,7 +929,7 @@ function backup_databases() {
       log_event "info" "Processing [${database}] ..." "false"
 
       # Make database backup
-      backup_project_database_output="$(backup_project_database "${database}" "${db_engine}")"
+      backup_project_database_output="$(backup_project_database "${database}" "${db_engine}" "${container_name}")"
 
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
