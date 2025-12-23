@@ -2520,12 +2520,14 @@ function project_delete() {
   local files_skipped="false"
 
   log_section "Project Delete"
-  log_subsection "Reading Project Config"
+  #log_subsection "Reading Project Config"
 
   if [[ -z ${project_domain} ]]; then
+    
     # Folder where sites are hosted: ${PROJECTS_PATH}
     menu_title="PROJECT DIRECTORY TO DELETE"
     directory_browser "${menu_title}" "${PROJECTS_PATH}"
+    
     # Directory_broser returns: " ${filepath}"/"${filename}
     if [[ -z ${filepath} ]]; then
       # Log
@@ -2565,7 +2567,7 @@ function project_delete() {
     [[ -z "${project_db_engine}" ]] && project_db_engine="$(database_ask_engine)"
 
     # Remove unwanted output
-    clear_previous_lines "2"
+    clear_previous_lines "1"
 
     # Make one last backup
     backup_project "${project_domain}" "all"
