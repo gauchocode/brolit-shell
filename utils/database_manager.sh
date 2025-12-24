@@ -163,8 +163,15 @@ function database_manager_menu() {
   # Always check for docker containers if docker available
   database_container=""
   if command -v docker >/dev/null 2>&1; then
-    database_container="$(docker ps --format "{{.Names}}" | grep -iE 'mysql|mariadb|postgres')"
-    log_event "debug" "Docker containers found: '${database_container}'" "false"
+    # Use docker helper function for database detection (MySQL/MariaDB/PostgreSQL)
+    local mysql_containers postgres_containers
+    mysql_containers="$(docker_find_mysql_containers)"
+    postgres_containers="$(docker_find_postgres_containers)"
+
+    # Combine results
+    database_container="$(echo -e "${mysql_containers}\n${postgres_containers}" | grep -v '^$' || true)"
+
+    log_event "debug" "Docker database containers found: '${database_container}'" "false"
   else
     log_event "warn" "Docker not available" "false"
   fi

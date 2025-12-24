@@ -741,20 +741,8 @@ function backup_all_databases() {
   log_subsection "Backup Databases"
 
   # Check for MySQL/MariaDB in host OR Docker containers
-  # Strategy: combine multiple detection methods for maximum coverage
-  local containers_by_name containers_by_image containers_by_port
-
-  # Method 1: Find by container name (mysql, mariadb in name)
-  containers_by_name="$(docker ps --format '{{.Names}}' 2>/dev/null | grep -iE 'mysql|mariadb' || true)"
-
-  # Method 2: Find by image name (mysql, mariadb in image)
-  containers_by_image="$(docker ps --format '{{.Names}} {{.Image}}' 2>/dev/null | grep -iE 'mysql|mariadb' | awk '{print $1}' || true)"
-
-  # Method 3: Find containers with MySQL port exposed (3306)
-  containers_by_port="$(docker ps --format '{{.Names}} {{.Ports}}' 2>/dev/null | grep -E ':3306->|->3306/' | awk '{print $1}' || true)"
-
-  # Combine all results and remove duplicates
-  mysql_containers="$(echo -e "${containers_by_name}\n${containers_by_image}\n${containers_by_port}" | sort -u | grep -v '^$' || true)"
+  # Use docker helper function to detect containers with multiple methods
+  mysql_containers="$(docker_find_mysql_containers)"
 
   if [[ ${PACKAGES_MARIADB_STATUS} != "enabled" ]] && [[ ${PACKAGES_MYSQL_STATUS} != "enabled" ]] && [[ ${PACKAGES_POSTGRES_STATUS} != "enabled" ]] && [[ -z "${mysql_containers}" ]]; then
 
