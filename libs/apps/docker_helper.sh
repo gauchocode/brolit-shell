@@ -458,6 +458,77 @@ function docker_system_prune() {
 }
 
 ################################################################################
+# Find database containers using multiple detection methods
+#
+# Arguments:
+#   ${1} = ${db_type} - Database type(s) to search for (e.g., "mysql|mariadb", "postgres", "redis")
+#
+# Outputs:
+#   List of container names (one per line), empty if none found
+#
+# Detection methods:
+#   1. By container name (db_type in container name)
+#   2. By image name (db_type in image name)
+################################################################################
+
+function docker_find_containers() {
+
+    local db_type="${1}"
+    local containers_by_name containers_by_image db_containers
+
+    # Validate input
+    if [[ -z "${db_type}" ]]; then
+        log_event "error" "docker_find_containers: db_type parameter is required" "false"
+        return 1
+    fi
+
+    # Method 1: Find by container name (db_type in name)
+    containers_by_name="$(docker ps --format '{{.Names}}' 2>/dev/null | grep -iE "${db_type}" || true)"
+
+    # Method 2: Find by image name (db_type in image)
+    containers_by_image="$(docker ps --format '{{.Names}} {{.Image}}' 2>/dev/null | grep -iE "${db_type}" | awk '{print $1}' || true)"
+
+    # Combine both results and remove duplicates
+    db_containers="$(echo -e "${containers_by_name}\n${containers_by_image}" | sort -u | grep -v '^$' || true)"
+
+    # Return container names
+    echo "${db_containers}"
+
+}
+
+################################################################################
+# Find MySQL/MariaDB containers (wrapper for docker_find_containers)
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   List of container names (one per line), empty if none found
+################################################################################
+
+function docker_find_mysql_containers() {
+
+    docker_find_containers "mysql|mariadb"
+
+}
+
+################################################################################
+# Find PostgreSQL containers (wrapper for docker_find_containers)
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   List of container names (one per line), empty if none found
+################################################################################
+
+function docker_find_postgres_containers() {
+
+    docker_find_containers "postgres|postgresql"
+
+}
+
+################################################################################
 # Docker MySQL database import
 #
 # Arguments:

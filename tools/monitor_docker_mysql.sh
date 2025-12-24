@@ -1,7 +1,11 @@
 #!/bin/bash
 
-# Get a list of all running containers with "mysql" in their name
-running_containers=$(docker ps --filter "ancestor=mysql" --format "{{.Names}}")
+# Source docker helper to use docker_find_mysql_containers
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/../libs/apps/docker_helper.sh"
+
+# Get a list of all running MySQL/MariaDB containers using multiple detection methods
+running_containers=$(docker_find_mysql_containers)
 
 if [[ -z "$running_containers" ]]; then
     #echo "No MySQL containers are running."
