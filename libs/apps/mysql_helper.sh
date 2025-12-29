@@ -217,10 +217,26 @@ function mysql_list_databases() {
         local mysql_container_user
         local mysql_container_user_pssw
 
+        # Verify container is running
+        if ! docker ps --format '{{.Names}}' | grep -q "^${container_name}$"; then
+            log_event "error" "Container '${container_name}' is not running" "false"
+            display --indent 6 --text "- Listing MySQL databases" --result "FAIL" --color RED
+            display --indent 8 --text "Container not running: ${container_name}" --tcolor RED
+            return 1
+        fi
+
         # Get MYSQL_USER and MYSQL_PASSWORD from container
         ## Ref: https://www.baeldung.com/ops/docker-get-environment-variable
-        mysql_container_user="$(docker exec -i "${container_name}" printenv MYSQL_USER)"
-        mysql_container_user_pssw="$(docker exec -i "${container_name}" printenv MYSQL_PASSWORD)"
+        mysql_container_user="$(docker exec -i "${container_name}" printenv MYSQL_USER 2>/dev/null)"
+        mysql_container_user_pssw="$(docker exec -i "${container_name}" printenv MYSQL_PASSWORD 2>/dev/null)"
+
+        # Verify credentials were retrieved
+        if [[ -z "${mysql_container_user}" ]] || [[ -z "${mysql_container_user_pssw}" ]]; then
+            log_event "error" "Could not retrieve MySQL credentials from container '${container_name}'" "false"
+            display --indent 6 --text "- Listing MySQL databases" --result "FAIL" --color RED
+            display --indent 8 --text "Missing MYSQL_USER or MYSQL_PASSWORD in container" --tcolor RED
+            return 1
+        fi
 
         mysql_exec="docker exec -i ${container_name} mysql -u${mysql_container_user} -p${mysql_container_user_pssw}"
 
@@ -232,17 +248,23 @@ function mysql_list_databases() {
 
     log_event "info" "Listing '${stage}' MySQL databases" "false"
 
+    # Execute command and capture stderr separately
+    local mysql_output mysql_errors
+
     if [[ ${stage} == "all" ]]; then
-        # Run command and filter out system databases
-        databases="$(${mysql_exec} -Bse 'show databases' | grep -Ev '^(information_schema|performance_schema|mysql|sys)$')"
+        # Run command and filter out system databases (stderr redirected to variable)
+        mysql_output="$(${mysql_exec} -Bse 'show databases' 2>&1)"
+        mysql_result=$?
+        databases="$(echo "${mysql_output}" | grep -Ev '^(information_schema|performance_schema|mysql|sys)$')"
     else
         # Run command and filter out system databases
-        databases="$(${mysql_exec} -Bse 'show databases' | grep -Ev '^(information_schema|performance_schema|mysql|sys)$' | grep "${stage}")"
+        mysql_output="$(${mysql_exec} -Bse 'show databases' 2>&1)"
+        mysql_result=$?
+        databases="$(echo "${mysql_output}" | grep -Ev '^(information_schema|performance_schema|mysql|sys)$' | grep "${stage}")"
     fi
 
-    # Check result
-    mysql_result=$?
-    if [[ ${mysql_result} -eq 0 && ${databases} != "error" ]]; then
+    # Check result and validate output doesn't contain error messages
+    if [[ ${mysql_result} -eq 0 && ${databases} != "error" && ! "${mysql_output}" =~ (OCI|runtime|exec|failed|Error|ERROR) ]]; then
 
         # Replace all newlines with a space
         databases="${databases//$'\n'/ }"
@@ -258,10 +280,18 @@ function mysql_list_databases() {
 
     else
 
-        # Log
+        # Log error with actual output
         display --indent 6 --text "- Listing MySQL databases" --result "FAIL" --color RED
         log_event "error" "Something went wrong listing MySQL databases" "false"
+        log_event "error" "MySQL output: ${mysql_output}" "false"
         log_event "debug" "Last command executed: ${mysql_exec} -Bse 'show databases'" "false"
+        log_event "debug" "Exit code: ${mysql_result}" "false"
+
+        # Show container info if applicable
+        if [[ -n ${container_name} && ${container_name} != "false" ]]; then
+            display --indent 8 --text "Container: ${container_name}" --tcolor YELLOW
+            log_event "error" "Failed to list databases from container: ${container_name}" "false"
+        fi
 
         return 1
 
