@@ -725,7 +725,7 @@ function wpcli_core_verify() {
     if [[ -s "${wp_verify_checksum_output_file}" ]]; then
 
         # Log failure
-        clear_previous_lines "2"
+        clear_previous_lines "1"
         display --indent 6 --text "- WordPress verify-checksums" --result "FAIL" --color RED
         display --indent 8 --text "Read the log file for details" --tcolor YELLOW
         display --indent 8 --text "Log file: ${wp_verify_checksum_output_file}" --tcolor YELLOW
