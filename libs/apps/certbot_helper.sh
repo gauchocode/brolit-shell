@@ -583,7 +583,7 @@ function certbot_certificate_install_auto() {
       if [[ ${exitstatus} -eq 0 ]]; then
         
         # Step 2: Regenerate certificate using Cloudflare
-        clear_previous_lines "1"
+        #clear_previous_lines "1"
         display --indent 6 --text "- Regenerating certificate with Cloudflare" --tcolor CYAN
         log_event "info" "Step 2: Regenerating certificate with Cloudflare DNS" "false"
 
