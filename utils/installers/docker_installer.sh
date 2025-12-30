@@ -65,6 +65,8 @@ function docker_installer() {
 
 function docker_purge() {
 
+    log_subsection "Docker CE Uninstaller"
+
     # Remove docker and dependencies
     for pkg in docker docker-ce docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do
         package_purge ${pkg}
