@@ -1,4 +1,6 @@
-AllowUsers broobe_sftp_user
+# AllowUsers is removed - the user is dynamically created via SSH_MASTER_USER env var
+# If you need to restrict access, uncomment and use:
+# AllowUsers ${SSH_MASTER_USER}
 
 ChallengeResponseAuthentication no
 UsePAM no
@@ -7,9 +9,11 @@ X11Forwarding no
 AllowTcpForwarding no
 AllowAgentForwarding no
 PermitTunnel no
- 
+
 Subsystem sftp internal-sftp
-Match Group sftp
+
+# Chroot SFTP users to their home directory
+Match Group www-data
     ChrootDirectory %h
     X11Forwarding no
     AllowTcpForwarding no
