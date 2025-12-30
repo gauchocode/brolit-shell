@@ -104,19 +104,66 @@ function dtop_purge() {
 
     display --indent 6 --text "- Uninstalling dtop"
 
-    # Remove dtop binary
-    if [[ -f "/usr/local/bin/dtop" ]]; then
-        rm -f /usr/local/bin/dtop
+    local _home="${HOME:-}"
+    local _binary_removed=false
+
+    # Remove dtop binary from default install location
+    if [[ -n "$_home" && -f "$_home/.local/bin/dtop" ]]; then
+        rm -f "$_home/.local/bin/dtop" && _binary_removed=true
     fi
 
-    if [[ -f "$HOME/.cargo/bin/dtop" ]]; then
-        rm -f "$HOME/.cargo/bin/dtop"
+    # Remove dtop binary from /usr/local/bin (if installed there)
+    if [[ -f "/usr/local/bin/dtop" ]]; then
+        rm -f /usr/local/bin/dtop && _binary_removed=true
+    fi
+
+    # Remove dtop binary from cargo bin (legacy install method)
+    if [[ -n "$_home" && -f "$_home/.cargo/bin/dtop" ]]; then
+        rm -f "$_home/.cargo/bin/dtop" && _binary_removed=true
+    fi
+
+    # Remove env script
+    if [[ -n "$_home" && -f "$_home/.local/bin/env" ]]; then
+        rm -f "$_home/.local/bin/env"
+    fi
+
+    # Remove receipt directory
+    if [[ -n "$_home" && -d "$_home/.config/dtop" ]]; then
+        rm -rf "$_home/.config/dtop"
+    fi
+
+    # Remove PATH modifications from rc files
+    if [[ -n "$_home" ]]; then
+        local _env_script_expr='".local/bin/env"'
+        local _robust_line=". \"$_home/$_env_script_expr\""
+        local _pretty_line="source \"$_home/$_env_script_expr\""
+
+        for _rcfile in "$_home/.profile" "$_home/.bashrc" "$_home/.bash_profile" "$_home/.bash_login" "$_home/.zshrc" "$_home/.zshenv"; do
+            if [[ -f "$_rcfile" ]]; then
+                # Remove both robust and pretty line variants
+                grep -vF "$_robust_line" "$_rcfile" > "${_rcfile}.tmp" 2>/dev/null && mv "${_rcfile}.tmp" "$_rcfile"
+                grep -vF "$_pretty_line" "$_rcfile" > "${_rcfile}.tmp" 2>/dev/null && mv "${_rcfile}.tmp" "$_rcfile"
+            fi
+        done
+
+        # Remove fish config
+        local _fish_env_script="$_home/.local/bin/env.fish"
+        if [[ -f "$_home/.config/fish/conf.d/dtop.env.fish" ]]; then
+            rm -f "$_home/.config/fish/conf.d/dtop.env.fish"
+        fi
     fi
 
     # Log
     clear_previous_lines "1"
-    display --indent 6 --text "- Uninstalling dtop" --result "DONE" --color GREEN
-    log_event "info" "dtop uninstalled successfully" "false"
+
+    if [[ "$_binary_removed" == "true" ]]; then
+        display --indent 6 --text "- Uninstalling dtop" --result "DONE" --color GREEN
+        log_event "info" "dtop uninstalled successfully" "false"
+    else
+        display --indent 6 --text "- Uninstalling dtop" --result "WARNING" --color YELLOW
+        display --indent 8 --text "dtop binary not found (already removed?)" --tcolor YELLOW
+        log_event "warning" "dtop binary not found for removal" "false"
+    fi
 
     return 0
 
