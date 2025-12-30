@@ -5,16 +5,19 @@ WORKDIR "/wordpress"
 USER root
 
 # Install additional PHP extensions using install-php-extensions
-# mysqli, pdo, pdo_mysql, zip, opcache are already included in the base image
+# mysqli is REQUIRED by WordPress and must be installed explicitly
 RUN install-php-extensions \
+    mysqli \
     bcmath \
     bz2 \
     exif \
     gd \
     intl \
+    pdo_mysql \
     redis \
     imagick \
     imap \
+    opcache \
     soap \
     xsl \
     zip
