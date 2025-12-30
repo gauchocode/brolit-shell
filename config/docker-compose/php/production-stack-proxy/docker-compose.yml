@@ -111,6 +111,9 @@ services:
 #            args:
 #                SSH_MASTER_USER: ${SSH_MASTER_USER}
 #                SSH_MASTER_PASS: ${SSH_MASTER_PASS}
+#        environment:
+#            SSH_MASTER_USER: ${SSH_MASTER_USER}
+#            SSH_MASTER_PASS: ${SSH_MASTER_PASS}
 #        restart: always
 #        hostname: ${PROJECT_DOMAIN}
 #        working_dir: /home/${SSH_MASTER_USER}/application
