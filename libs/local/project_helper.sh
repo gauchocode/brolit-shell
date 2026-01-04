@@ -2357,9 +2357,6 @@ function project_delete_files() {
       # Make a copy of nginx configuration file
       copy_files "/etc/nginx/sites-available/${project_domain}" "${BROLIT_TMP_DIR}"
 
-      # Send notification
-      send_notification "${SERVER_NAME}" "Project files for '${project_domain}' deleted." "info"
-
       return 0
 
     else
@@ -2438,9 +2435,6 @@ function project_delete_database() {
 
         # Delete project database
         database_drop "${chosen_database}" "${database_engine}"
-
-        # Send notification
-        send_notification "${SERVER_NAME}" "Project database'${chosen_database}' deleted!" "info"
 
       fi
 
@@ -2566,17 +2560,32 @@ function project_delete() {
 
     [[ -z "${project_db_engine}" ]] && project_db_engine="$(database_ask_engine)"
 
+    # For Docker projects: stop containers FIRST to ensure consistent backup
+    if [[ ${project_install_type} == "docker"* ]]; then
+      local compose_file="${PROJECTS_PATH}/${project_domain}/docker-compose.yml"
+
+      if [[ -f "${compose_file}" ]]; then
+        log_subsection "Stopping Docker Containers"
+        docker_compose_stop "${compose_file}"
+        if [[ $? -eq 1 ]]; then
+          log_event "error" "Failed to stop Docker containers" "false"
+          display --indent 6 --text "- Stopping docker stack" --result "FAIL" --color RED
+          return 1
+        fi
+      fi
+    fi
+
     # Remove unwanted output
     clear_previous_lines "1"
 
-    # Make one last backup
+    # Make one last backup (now containers are stopped for Docker projects)
     backup_project "${project_domain}" "all"
     [[ $? -eq 1 ]] && return 1
 
     # Delete Files
     project_delete_files "${project_domain}"
     if [[ $? -eq 1 ]]; then
-      
+
       # Log
       display --indent 6 --text "- Deleting project files" --result "FAIL" --color RED
       display --indent 8 --text "Please read the log file for more information:" --tcolor YELLOW
@@ -2592,50 +2601,6 @@ function project_delete() {
 
     # Delete certificates
     certbot_certificate_delete "${project_domain}"
-
-    if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
-
-      project_root_domain="$(domain_get_root "${project_domain}")"
-      project_actual_ip="$(cloudflare_get_record_details "${project_root_domain}" "${project_domain}" "content")"
-
-      if [[ ${project_actual_ip} == "${SERVER_IP}" ]]; then
-
-        if [[ ${delete_cf_entry} != "true" ]]; then
-
-          # Cloudflare Manager
-          project_domain="$(whiptail --title "CLOUDFLARE MANAGER" --inputbox "Do you want to delete the Cloudflare entries for the followings subdomains?" 10 60 "${project_domain}" 3>&1 1>&2 2>&3)"
-          exitstatus=$?
-          if [[ ${exitstatus} -eq 0 ]]; then
-
-            # Delete Cloudflare entries
-            cloudflare_delete_record "${project_root_domain}" "${project_domain}" "A"
-
-          else
-
-            # Log
-            log_event "info" "Cloudflare entries not deleted. Skipped by user." "false"
-            display --indent 6 --text "- Deleting Cloudflare entries" --result "SKIPPED" --color YELLOW
-
-          fi
-
-        else
-
-          # Delete Cloudflare entries
-          project_root_domain="$(domain_get_root "${project_domain}")"
-          cloudflare_delete_record "${project_root_domain}" "${project_domain}" "A"
-
-        fi
-
-      else
-
-        # Log
-        log_event "info" "Cloudflare entries not deleted. The Cloudflare entry's IP address differs from the server's IP address." "false"
-        display --indent 6 --text "- Deleting Cloudflare entries" --result "SKIPPED" --color YELLOW
-        display --indent 8 --text "The Cloudflare entry's IP address differs from the server's IP address." --tcolor YELLOW
-
-      fi
-
-    fi
 
   fi
 
@@ -2658,8 +2623,6 @@ function project_delete() {
         # Delete database from Docker container
         database_drop "${project_db_name}" "${project_db_engine}" "${container_name}"
 
-        # Send notification
-        send_notification "${SERVER_NAME}" "Project database '${project_db_name}' deleted!" "info"
       else
         log_event "warning" ".env file not found for Docker project. Skipping database deletion." "false"
       fi
@@ -2671,6 +2634,53 @@ function project_delete() {
     log_event "warning" "Can not determine database engine or database name. Skipping database deletion." "false"
   fi
 
+  # Cloudflare DNS deletion (moved to end, after all deletions are done)
+  if [[ ${files_skipped} == "false" && ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
+
+    log_subsection "DNS Cleanup"
+
+    project_root_domain="$(domain_get_root "${project_domain}")"
+    project_actual_ip="$(cloudflare_get_record_details "${project_root_domain}" "${project_domain}" "content")"
+
+    if [[ ${project_actual_ip} == "${SERVER_IP}" ]]; then
+
+      if [[ ${delete_cf_entry} != "true" ]]; then
+
+        # Cloudflare Manager - ask BEFORE deleting
+        local cf_delete_domain
+        cf_delete_domain="$(whiptail --title "CLOUDFLARE MANAGER" --yesno "Do you want to delete the Cloudflare DNS entry for: ${project_domain}?" 10 60 3>&1 1>&2 2>&3)"
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+
+          # Delete Cloudflare entries
+          cloudflare_delete_record "${project_root_domain}" "${project_domain}" "A"
+
+        else
+
+          # Log
+          log_event "info" "Cloudflare entries not deleted. Skipped by user." "false"
+          display --indent 6 --text "- Deleting Cloudflare entries" --result "SKIPPED" --color YELLOW
+
+        fi
+
+      else
+
+        # Delete Cloudflare entries (auto mode)
+        cloudflare_delete_record "${project_root_domain}" "${project_domain}" "A"
+
+      fi
+
+    else
+
+      # Log
+      log_event "info" "Cloudflare entries not deleted. The Cloudflare entry's IP address differs from the server's IP address." "false"
+      display --indent 6 --text "- Deleting Cloudflare entries" --result "SKIPPED" --color YELLOW
+      display --indent 8 --text "The Cloudflare entry's IP address differs from the server's IP address." --tcolor YELLOW
+
+    fi
+
+  fi
+
   # TODO: backup project config file, maybe inside /site ?
 
   # Delete config file
@@ -2680,6 +2690,10 @@ function project_delete() {
   # Log
   log_event "info" "Removing project config file: ${project_config}" "false"
   display --indent 6 --text "- Removing project config file" --result "DONE" --color GREEN
+
+  # Send single notification at the end (after everything is deleted)
+  log_subsection "Notifications"
+  send_notification "${SERVER_NAME}" "Project '${project_domain}' deleted successfully!" "warning"
 
   # Delete tmp backups
   display --indent 2 --text "Please, remove ${BROLIT_TMP_DIR} after check backup was uploaded ok" --tcolor YELLOW
