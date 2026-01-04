@@ -12,7 +12,7 @@ services:
             MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
         volumes:
             - ${MYSQL_DATA_DIR}:/var/lib/mysql
-            - .${MYSQL_DATA_DIR}/conf.d/60-tuning.cnf:/etc/mysql/conf.d/60-tuning.cnf:ro
+            - ${MYSQL_DATA_DIR}/conf.d/60-tuning.cnf:/etc/mysql/conf.d/60-tuning.cnf:ro
         networks:
             - internal
         healthcheck:
