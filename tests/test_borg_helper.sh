@@ -198,6 +198,7 @@ function borg_check_if_installed() {
 #############################################################################
 
 function borg_installer() {
+  
     log_subsection "Borg Installer"
 
     display --indent 6 --text "- Updating repositories"

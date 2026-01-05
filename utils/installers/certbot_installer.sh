@@ -58,7 +58,7 @@ function certbot_installer() {
   # Update repositories
   package_update
 
-  clear_previous_lines "1"
+  clear_previous_lines "2"
   display --indent 6 --text "- Updating repositories" --result "DONE" --color GREEN
 
   # Installing Certbot
