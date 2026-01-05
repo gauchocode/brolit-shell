@@ -268,7 +268,7 @@ function docker_compose_rm() {
 
         # Log success
         clear_previous_lines "1"
-        display --indent 6 --text "- Deleting docker stack ..." --result "DONE" --color GREEN
+        display --indent 6 --text "- Deleting docker stack" --result "DONE" --color GREEN
         log_event "info" "Docker stack deleted" "false"
 
         return 0
@@ -277,7 +277,7 @@ function docker_compose_rm() {
 
         # Log failure
         clear_previous_lines "1"
-        display --indent 6 --text "- Deleting docker stack ..." --result "FAIL" --color RED
+        display --indent 6 --text "- Deleting docker stack" --result "FAIL" --color RED
         log_event "error" "Docker stack delete failed" "false"
 
         return 1

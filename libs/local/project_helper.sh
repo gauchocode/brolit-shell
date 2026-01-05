@@ -2316,7 +2316,7 @@ function project_delete_files() {
   project_type=$(project_get_type "${PROJECTS_PATH}/${project_domain}")
   project_install_type=$(project_get_install_type "${PROJECTS_PATH}/${project_domain}")
 
-  clear_previous_lines "1"
+  #clear_previous_lines "1"
 
   if [[ -n ${project_type} && -n ${project_install_type} ]]; then
 
