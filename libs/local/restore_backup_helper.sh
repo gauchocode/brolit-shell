@@ -575,20 +575,9 @@ function restore_project_backup() {
         return 1
     fi
 
-    # Determine project name and stage
-    if [[ -z "${project_domain_new}" ]]; then
-        project_domain_new="${project_domain}"
-        project_name="$(project_get_name_from_domain "${project_domain_new}")"
-        project_stage="$(project_get_stage_from_domain "${project_domain_new}")"
-    else
-        possible_project_name="$(project_get_name_from_domain "${project_domain_new}")"
-        project_name="$(project_ask_name "${possible_project_name}")"
-        [[ $? -eq 1 ]] && return 1
-        
-        possible_project_stage="$(project_get_stage_from_domain "${project_domain_new}")"
-        project_stage="$(project_ask_stage "${possible_project_stage}")"
-        [[ $? -eq 1 ]] && return 1
-    fi
+    # Determine project name and stage from domain (NEVER ask user in restore mode)
+    project_name="$(project_get_name_from_domain "${project_domain_new}")"
+    project_stage="$(project_get_stage_from_domain "${project_domain_new}")"
 
     # Restore project files
     local values=($(restore_project_files "${project_backup_file}" "${project_backup_status}" "${project_backup_server}" "${project_domain}" "${project_domain_new}"))
@@ -618,6 +607,18 @@ function restore_project_backup() {
 
             log_event "info" "User provided port: ${project_port}" "false"
             display --indent 6 --text "- Using port ${project_port}" --result "DONE" --color GREEN
+
+            # CRITICAL: Write port to .env BEFORE docker_setup_configuration
+            local env_file="${project_install_path}/.env"
+            if [[ -f "${env_file}" ]]; then
+                # Try to update any of the common port variables
+                project_set_config_var "${env_file}" "WP_PORT" "${project_port}" "none" "true"
+                project_set_config_var "${env_file}" "APP_PORT" "${project_port}" "none" "true"
+                project_set_config_var "${env_file}" "PORT" "${project_port}" "none" "true"
+                project_set_config_var "${env_file}" "WEBSERVER_PORT" "${project_port}" "none" "true"
+
+                log_event "debug" "Port ${project_port} written to ${env_file}" "false"
+            fi
         else
             log_event "info" "Detected port from .env: ${project_port}" "false"
         fi
@@ -630,6 +631,12 @@ function restore_project_backup() {
         # (it might have been changed if the original port was occupied)
         project_port="$(project_get_port_from_env "${project_install_path}")"
         log_event "debug" "Final port after docker setup: ${project_port}" "false"
+
+        # Validate port was successfully set
+        if [[ -z "${project_port}" ]]; then
+            _handle_restore_error 9 "Failed to set port for Docker project after docker_setup_configuration"
+            return 1
+        fi
 
         # Get database information
         db_name="$(project_get_configured_database "${project_install_path}" "${project_type}" "${project_install_type}")"
@@ -687,12 +694,6 @@ function restore_project_backup() {
             restore_backup_database "${db_engine}" "${project_stage}" "${project_name}_${project_stage}" "${db_user}" "${db_pass}" "${BROLIT_TMP_DIR}/${db_to_restore}"
             project_db_status="enabled"
         fi
-    fi
-
-    # Final validation: for Docker projects, ensure port is set
-    if [[ "${project_install_type}" == "docker"* && -z "${project_port}" ]]; then
-        _handle_restore_error 9 "Port is required for Docker/proxy projects but was not provided"
-        return 1
     fi
 
     # Configure the restored project
