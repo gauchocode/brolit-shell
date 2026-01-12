@@ -109,6 +109,33 @@ function backup_get_rotation_type() {
 }
 
 ################################################################################
+# Check if any compression-based backup method is enabled
+#
+# These methods require file compression before upload:
+# - DROPBOX: Compresses and uploads to Dropbox
+# - SFTP: Compresses and uploads via SFTP
+# - LOCAL: Compresses and stores locally via rsync
+#
+# Note: BORG is NOT included here as it has its own separate backup flow
+#       and does not use this compression mechanism.
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if at least one compression method is enabled, 1 otherwise
+################################################################################
+
+function compression_backup_methods_enabled() {
+
+  [[ ${BACKUP_DROPBOX_STATUS} == "enabled" || \
+     ${BACKUP_SFTP_STATUS} == "enabled" || \
+     ${BACKUP_LOCAL_STATUS} == "enabled" ]]
+  return $?
+
+}
+
+################################################################################
 # Make server files Backup
 #
 # Arguments:
@@ -134,6 +161,15 @@ function backup_server_config() {
   local storage_result
 
   if [[ -n ${backup_path} ]]; then
+
+    # Check if any compression-based backup method is enabled
+    if ! compression_backup_methods_enabled; then
+
+      log_event "info" "No compression backup method enabled (Dropbox, SFTP, or Local). Skipping server config backup for: ${bk_sup_type}" "false"
+
+      return 0
+
+    fi
 
     backup_prefix_name="${bk_sup_type}-${backup_type}-files"
     backup_file="$(backup_get_filename "${backup_prefix_name}" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
@@ -638,7 +674,7 @@ function backup_project_files() {
 
   storage_path="${SERVER_NAME}/projects-online/${backup_type}/${directory_to_backup}"
 
-  if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" || ${BACKUP_SFTP_STATUS} == "enabled" ]]; then
+  if compression_backup_methods_enabled; then
 
     # Log
     display --indent 6 --text "- Files backup for ${YELLOW}${directory_to_backup}${ENDCOLOR}"
@@ -1004,6 +1040,15 @@ function backup_project_database() {
   local error_msg
 
   log_event "info" "Creating new database backup of '${database}'" "false"
+
+  # Check if any compression-based backup method is enabled before exporting
+  if ! compression_backup_methods_enabled; then
+
+    log_event "info" "No compression backup method enabled (Dropbox, SFTP, or Local). Skipping database backup for: ${database}" "false"
+
+    return 0
+
+  fi
 
   # Backups file names
   backup_prefix_name="${database}_database"
