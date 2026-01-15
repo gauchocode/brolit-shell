@@ -587,53 +587,6 @@ function restore_backup_with_borg() {
         display --indent 6 --text "- Server configuration" --result "SINGLE" --color GREEN
     fi
 
-    # Check server connectivity before proceeding
-    log_event "info" "Checking connectivity to selected server: ${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}" "false"
-    display --indent 6 --text "- Checking server connectivity" --result "RUNNING" --color YELLOW
-    
-    # Create temporary arrays with only the selected server for connectivity check
-    local temp_users=("${BACKUP_BORG_USER}")
-    local temp_servers=("${BACKUP_BORG_SERVER}")
-    local temp_ports=("${BACKUP_BORG_PORT}")
-    
-    # Temporarily override global arrays for single server check
-    local original_users=("${BACKUP_BORG_USERS[@]}")
-    local original_servers=("${BACKUP_BORG_SERVERS[@]}")
-    local original_ports=("${BACKUP_BORG_PORTS[@]}")
-    
-    BACKUP_BORG_USERS=("${temp_users[@]}")
-    BACKUP_BORG_SERVERS=("${temp_servers[@]}")
-    BACKUP_BORG_PORTS=("${temp_ports[@]}")
-    
-    # Run connectivity check
-    if ! check_borg_server_connectivity; then
-        # Restore original arrays
-        BACKUP_BORG_USERS=("${original_users[@]}")
-        BACKUP_BORG_SERVERS=("${original_servers[@]}")
-        BACKUP_BORG_PORTS=("${original_ports[@]}")
-        
-        log_event "error" "Server connectivity check failed, aborting restore operation" "false"
-        display --indent 6 --text "- Server connectivity check" --result "FAIL" --color RED
-        
-        # Ask user if they want to continue anyway
-        if whiptail --title "CONNECTIVITY WARNING" --yesno "Server connectivity check failed. Do you want to continue with the restore operation anyway? This may fail." 10 60; then
-            log_event "info" "User chose to continue despite connectivity issues" "false"
-            display --indent 6 --text "- User override" --result "CONTINUE" --color YELLOW
-        else
-            log_event "info" "User canceled restore due to connectivity issues" "false"
-            display --indent 6 --text "- Restore operation" --result "CANCELED" --color YELLOW
-            return 1
-        fi
-    else
-        # Restore original arrays
-        BACKUP_BORG_USERS=("${original_users[@]}")
-        BACKUP_BORG_SERVERS=("${original_servers[@]}")
-        BACKUP_BORG_PORTS=("${original_ports[@]}")
-        
-        log_event "info" "Server connectivity check passed" "false"
-        display --indent 6 --text "- Server connectivity check" --result "OK" --color GREEN
-    fi
-
     # umount storage box first
     umount_storage_box ${storage_box_directory} && sleep 1
 
@@ -713,8 +666,9 @@ function generate_tar_and_decompress() {
     # Backup integrity verification
     display --indent 6 --text "- Verifying backup integrity: ${chosen_archive}"
     spinner_start "Verifying backup"
-    
-    if ! borg check --info "${repo_path}::{chosen_archive}"; then
+
+    # Add lock timeout to prevent hanging on stale locks (wait max 5 minutes)
+    if ! borg check --lock-wait 300 --info "${repo_path}::{chosen_archive}"; then
 
         spinner_stop 1
         log_event "error" "Corrupted backup: ${chosen_archive}" "true"
@@ -900,8 +854,9 @@ function restore_project_with_borg() {
     # Repository integrity verification
     display --indent 6 --text "- Verifying repository integrity"
     spinner_start "Verifying repository"
-    
-    if ! borg check --info "${repo_path}/${chosen_domain}"; then
+
+    # Add lock timeout to prevent hanging on stale locks (wait max 5 minutes)
+    if ! borg check --lock-wait 300 --info "${repo_path}/${chosen_domain}"; then
         spinner_stop 1
         log_event "error" "Corrupted repository for ${chosen_domain}" "true"
         display --indent 6 --text "- Repository verification" --result "FAIL" --color RED
@@ -960,7 +915,25 @@ function restore_project_with_borg() {
 
                 display --indent 6 --text "- Selecting Project Backup" --result "DONE" --color GREEN
                 display --indent 8 --text "${chosen_archive}.tar.bz2" --tcolor YELLOW
-                
+
+                # Show confirmation with backup details before proceeding
+                local confirm_msg
+                confirm_msg="You are about to restore the following backup:\n\n"
+                confirm_msg+="  Domain: ${chosen_domain}\n"
+                confirm_msg+="  Archive: ${chosen_archive}\n"
+                confirm_msg+="  Type: Project files + database\n"
+                confirm_msg+="  Server: ${server_hostname}\n\n"
+                confirm_msg+="This will REPLACE existing files and database for ${chosen_domain}.\n\n"
+                confirm_msg+="Do you want to continue?"
+
+                if ! whiptail --title "CONFIRM RESTORE" --yesno "${confirm_msg}" 20 78; then
+                    log_event "info" "User canceled restore operation at confirmation" "false"
+                    display --indent 6 --text "- Restore canceled by user" --result "SKIPPED" --color YELLOW
+                    return 1
+                fi
+
+                display --indent 6 --text "- Confirmation received, starting restore" --result "DONE" --color GREEN
+
                 # Get project install type before calling generate_tar_and_decompress
                 local project_install_type
                 project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${chosen_domain}")"
