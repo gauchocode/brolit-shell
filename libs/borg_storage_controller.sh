@@ -85,15 +85,22 @@ function mount_storage_box() {
     local server_user="${BACKUP_BORG_USERS[$i]}"
     local server_server="${BACKUP_BORG_SERVERS[$i]}"
     local server_port="${BACKUP_BORG_PORTS[$i]}"
-    
+
     # Skip if any required parameter is empty
     if [[ -z "${server_user}" || -z "${server_server}" || -z "${server_port}" ]]; then
       continue
     fi
-    
+
     index=$(printf "%02d)" $((i+1)))  # Format "01)", "02)", ...
     label="STORAGE-BOX $((i+1)) (${server_user}@${server_server}:${server_port})"  # Associated text with server details
-    runner_options+=("$index" "$label") # Add to array
+
+    # Set first item as selected, others as not selected
+    # whiptail radiolist requires: tag name status [on|off]
+    if [[ ${#runner_options[@]} -eq 0 ]]; then
+      runner_options+=("$index" "$label" "ON")  # First item: selected by default
+    else
+      runner_options+=("$index" "$label" "OFF")  # Other items: not selected
+    fi
   done
 
   # Check if we have any valid servers
