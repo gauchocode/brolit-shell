@@ -18,9 +18,12 @@ if [ -n "${SSH_MASTER_USER}" ]; then
 
   if [ ! -d /home/${SSH_MASTER_USER} ]; then
     mkdir -p /home/${SSH_MASTER_USER}
-    chown 33:33 /home/${SSH_MASTER_USER}
-    chmod 755 /home/${SSH_MASTER_USER}
   fi
+
+  # ChrootDirectory requires the directory to be owned by root
+  # and not writable by group/others
+  chown root:root /home/${SSH_MASTER_USER}
+  chmod 755 /home/${SSH_MASTER_USER}
 
   echo "SSH user created: ${SSH_MASTER_USER}"
 else
