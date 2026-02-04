@@ -667,33 +667,42 @@ function generate_tar_and_decompress() {
     display --indent 6 --text "- Verifying backup integrity: ${chosen_archive}"
     spinner_start "Verifying backup"
 
-    # Add lock timeout to prevent hanging on stale locks (wait max 5 minutes)
-    if ! borg check --lock-wait 300 --info "${repo_path}::{chosen_archive}"; then
+    # Capture borg output and exit code immediately
+    local borg_output
+    local borg_exit_code
 
-        spinner_stop 1
-        log_event "error" "Corrupted backup: ${chosen_archive}" "true"
+    # Run borg check with shorter timeout and capture all output
+    borg_output=$(borg check --lock-wait 30 --info "${repo_path}::${chosen_archive}" 2>&1)
+    borg_exit_code=$?
+
+    spinner_stop $borg_exit_code
+
+    if [[ ${borg_exit_code} -ne 0 ]]; then
+        # Log the actual error from borg
+        log_event "error" "Borg check failed (exit code: ${borg_exit_code}): ${borg_output}" "true"
         display --indent 6 --text "- Backup verification" --result "FAIL" --color RED
-        
-        # Detailed error handling with existing notifications
-        case $? in
+
+        # Determine error type from exit code
+        local error_msg
+        case ${borg_exit_code} in
             1)
-                error_msg="Warning: The backup has minor issues but might be restorable."
+                error_msg="Warning: The backup has minor issues but might be restorable.\n\nBorg output: ${borg_output}"
                 send_notification "${SERVER_NAME}" "Warning in backup ${chosen_archive}: minor issues detected" "warning"
                 ;;
             2)
-                error_msg="Critical error: The backup is corrupted and cannot be restored."
+                error_msg="Critical error: The backup is corrupted and cannot be restored.\n\nBorg output: ${borg_output}"
                 send_notification "${SERVER_NAME}" "CRITICAL ERROR: Backup ${chosen_archive} corrupted during restoration" "alert"
                 ;;
             3)
-                error_msg="Connection error: Could not access the remote repository."
+                error_msg="Connection error: Could not access the remote repository.\n\nBorg output: ${borg_output}"
                 send_notification "${SERVER_NAME}" "Connection error to repository for backup ${chosen_archive}" "alert"
                 ;;
             *)
-                error_msg="Unknown error during backup verification."
+                error_msg="Unknown error during backup verification (exit code: ${borg_exit_code}).\n\nBorg output: ${borg_output}"
                 send_notification "${SERVER_NAME}" "Unknown error in backup verification ${chosen_archive}" "alert"
                 ;;
         esac
-        
+
         whiptail_message "VERIFICATION FAILED" "${error_msg}\n\nDo you want to try another backup?"
         
         # Ofrecer opciones al usuario
@@ -855,33 +864,42 @@ function restore_project_with_borg() {
     display --indent 6 --text "- Verifying repository integrity"
     spinner_start "Verifying repository"
 
-    # Add lock timeout to prevent hanging on stale locks (wait max 5 minutes)
-    if ! borg check --lock-wait 300 --info "${repo_path}/${chosen_domain}"; then
-        spinner_stop 1
-        log_event "error" "Corrupted repository for ${chosen_domain}" "true"
+    # Capture borg output and exit code immediately
+    local borg_output
+    local borg_exit_code
+
+    # Run borg check with shorter timeout and capture all output
+    borg_output=$(borg check --lock-wait 30 --info "${repo_path}/${chosen_domain}" 2>&1)
+    borg_exit_code=$?
+
+    spinner_stop $borg_exit_code
+
+    if [[ ${borg_exit_code} -ne 0 ]]; then
+        # Log the actual error from borg
+        log_event "error" "Borg check failed (exit code: ${borg_exit_code}): ${borg_output}" "true"
         display --indent 6 --text "- Repository verification" --result "FAIL" --color RED
-        
-        # Specific Borg error handling with existing notifications
-        case $? in
+
+        # Determine error type from exit code
+        local error_msg
+        case ${borg_exit_code} in
             1)
-                error_msg="Warning: The repository has minor issues but might be restorable."
+                error_msg="Warning: The repository has minor issues but might be restorable.\n\nBorg output: ${borg_output}"
                 send_notification "${SERVER_NAME}" "Warning in repository ${chosen_domain}: minor issues detected" "warning"
                 ;;
             2)
-                error_msg="Critical error: The repository is corrupted and cannot be restored."
+                error_msg="Critical error: The repository is corrupted and cannot be restored.\n\nBorg output: ${borg_output}"
                 send_notification "${SERVER_NAME}" "CRITICAL ERROR: Repository ${chosen_domain} corrupted during restoration" "alert"
                 ;;
             *)
-                error_msg="Unknown error during repository verification."
+                error_msg="Unknown error during repository verification (exit code: ${borg_exit_code}).\n\nBorg output: ${borg_output}"
                 send_notification "${SERVER_NAME}" "Unknown error in repository verification ${chosen_domain}" "alert"
                 ;;
         esac
-        
+
         whiptail_message "VERIFICATION FAILED" "${error_msg}\n\nDo you want to try another backup or server?"
         return 1
     else
-        spinner_stop 0
-        display --indent 6 --text "- Verificación del repositorio" --result "OK" --color GREEN
+        display --indent 6 --text "- Repository verification" --result "OK" --color GREEN
         # Notificación de éxito opcional
         send_notification "${SERVER_NAME}" "Repositorio ${chosen_domain} verificado correctamente" "info"
     fi
