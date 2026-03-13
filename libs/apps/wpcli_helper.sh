@@ -773,7 +773,7 @@ function wpcli_plugin_verify() {
     [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site} --no-color"
     ## -u 33 -e HOME=/tmp to avoid permission denied error: https://github.com/docker-library/wordpress/issues/417
     ## --no-color added to avoid unwanted wp-cli output
-    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose --progress=quiet -f ${wp_site}/../docker-compose.yml run -T -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color > /dev/null 2>&1"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose --progress=quiet -f ${wp_site}/../docker-compose.yml run -T -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
 
     [[ -z ${wp_plugin} || ${wp_plugin} == "all" ]] && wp_plugin="--all"
 
@@ -1880,42 +1880,68 @@ function wpcli_clean_and_reinstall_core() {
     local wp_version
     local delete_result
 
+    # Show immediate feedback
+    log_event "info" "Starting WordPress clean and reinstall process for: ${wp_site}" "false"
+    display --indent 6 --text "- Starting Clean & Reinstall WP Core" --tcolor CYAN
+    display --indent 8 --text "Site: ${wp_site}" --tcolor WHITE
+    display --indent 8 --text "Install type: ${install_type}" --tcolor WHITE
+
     # Step 1: Get current WordPress version using dedicated function
-    wp_version="$(wpcli_get_wpcore_version "${wp_site}" "${install_type}")"
+    display --indent 6 --text "- Step 1/3: Getting WordPress version..." --tcolor YELLOW
+    log_event "debug" "Step 1: Getting WordPress version with 60s timeout" "false"
+    
+    # Add timeout to prevent hanging
+    wp_version="$(timeout 60 bash -c "wpcli_get_wpcore_version \"${wp_site}\" \"${install_type}\"")"
     exitstatus=$?
 
     if [[ ${exitstatus} -ne 0 || -z ${wp_version} ]]; then
-        log_event "error" "Failed to get WordPress version" "false"
+        log_event "error" "Failed to get WordPress version (exit code: ${exitstatus})" "false"
         display --indent 6 --text "- Getting WordPress version" --result "FAIL" --color RED
+        display --indent 8 --text "Command timed out or failed" --tcolor RED
         return 1
     fi
 
     log_event "info" "Current WordPress version: ${wp_version}" "false"
-    display --indent 6 --text "- Detected WordPress version: ${wp_version}" --tcolor CYAN
+    display --indent 6 --text "- Step 1/3: Getting WordPress version" --result "DONE" --color GREEN
+    display --indent 8 --text "Version: ${wp_version}" --tcolor CYAN
 
     # Step 2: Delete non-core files
-    wpcli_delete_not_core_files "${wp_site}" "${install_type}"
+    display --indent 6 --text "- Step 2/3: Scanning and deleting non-core files..." --tcolor YELLOW
+    log_event "debug" "Step 2: Deleting non-core files with 120s timeout" "false"
+    
+    timeout 180 bash -c "wpcli_delete_not_core_files \"${wp_site}\" \"${install_type}\""
     delete_result=$?
 
+    if [[ ${delete_result} -ne 0 ]]; then
+        log_event "error" "Failed to delete non-core files (exit code: ${delete_result})" "false"
+        display --indent 6 --text "- Step 2/3: Deleting non-core files" --result "FAIL" --color RED
+        display --indent 8 --text "Command timed out or failed" --tcolor RED
+        return 1
+    fi
+
+    display --indent 6 --text "- Step 2/3: Deleting non-core files" --result "DONE" --color GREEN
+
     # Step 3: Reinstall WordPress core with the same version
-    if [[ ${delete_result} -eq 0 ]]; then
-        log_event "info" "Re-installing WordPress core version ${wp_version}" "false"
+    display --indent 6 --text "- Step 3/3: Reinstalling WordPress core..." --tcolor YELLOW
+    log_event "info" "Re-installing WordPress core version ${wp_version} with 180s timeout" "false"
 
-        wpcli_core_reinstall "${wp_site}" "${install_type}" "${wp_version}"
-        exitstatus=$?
+    timeout 220 bash -c "wpcli_core_reinstall \"${wp_site}\" \"${install_type}\" \"${wp_version}\""
+    exitstatus=$?
 
-        if [[ ${exitstatus} -eq 0 ]]; then
-            echo ""
-            log_event "success" "WordPress core cleaned and reinstalled successfully" "false"
-            display --indent 6 --text "- Clean & Reinstall completed" --result "DONE" --color GREEN
-            return 0
-        else
-            log_event "error" "Failed to reinstall WordPress core" "false"
-            display --indent 6 --text "- Reinstalling WordPress Core" --result "FAIL" --color RED
-            return 1
-        fi
+    if [[ ${exitstatus} -eq 0 ]]; then
+        echo ""
+        log_event "success" "WordPress core cleaned and reinstalled successfully" "false"
+        display --indent 6 --text "- Step 3/3: Reinstalling WordPress core" --result "DONE" --color GREEN
+        display --indent 6 --text "- Clean & Reinstall completed" --result "DONE" --color GREEN
+        return 0
+    elif [[ ${exitstatus} -eq 124 ]]; then
+        log_event "error" "WordPress reinstall timed out after 180 seconds" "false"
+        display --indent 6 --text "- Step 3/3: Reinstalling WordPress core" --result "TIMEOUT" --color RED
+        display --indent 8 --text "Operation took too long" --tcolor RED
+        return 1
     else
-        log_event "warning" "Skipping WordPress reinstall due to deletion errors" "false"
+        log_event "error" "Failed to reinstall WordPress core (exit code: ${exitstatus})" "false"
+        display --indent 6 --text "- Step 3/3: Reinstalling WordPress core" --result "FAIL" --color RED
         return 1
     fi
 
@@ -1944,7 +1970,7 @@ function wpcli_maintenance_mode_status() {
     [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
     ## -u 33 -e HOME=/tmp to avoid permission denied error: https://github.com/docker-library/wordpress/issues/417
     ## --no-color added to avoid unwanted wp-cli output
-    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose --progress=quiet -f ${wp_site}/../docker-compose.yml run -T -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color > /dev/null 2>&1"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose --progress=quiet -f ${wp_site}/../docker-compose.yml run -T -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
 
     log_event "debug" "Running: ${wpcli_cmd} maintenance-mode status" "false"
 
@@ -1992,7 +2018,7 @@ function wpcli_maintenance_mode_set() {
     [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
     ## -u 33 -e HOME=/tmp to avoid permission denied error: https://github.com/docker-library/wordpress/issues/417
     ## --no-color added to avoid unwanted wp-cli output
-    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose --progress=quiet -f ${wp_site}/../docker-compose.yml run -T -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color > /dev/null 2>&1"
+    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose --progress=quiet -f ${wp_site}/../docker-compose.yml run -T -u 33 -e HOME=/tmp --rm wordpress-cli wp --no-color"
 
     log_event "debug" "Running: ${wpcli_cmd} maintenance-mode ${mode}" "false"
 
