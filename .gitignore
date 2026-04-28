@@ -1,6 +1,6 @@
 .vscode/
 .gitpod.yml
-settings.json
+settings*.json*
 res
 tmp/
 log/
