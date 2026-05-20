@@ -363,7 +363,7 @@ function ensure_accesstoken
 {
     local now=`date +%s`
 
-    if [[ $OAUTH_ACCESS_TOKEN_EXPIRE > $now ]]; then
+    if (( OAUTH_ACCESS_TOKEN_EXPIRE > now )); then
 	 return
     fi
 
@@ -994,15 +994,17 @@ function db_account_space
     #Check
     if grep -q "^HTTP/[12].* 200" "$RESPONSE_FILE"; then
 
-        quota=$(sed -n 's/.*"allocated": \([0-9]*\).*/\1/p' "$RESPONSE_FILE")
-        let quota_mb=$quota/1024/1024
+        json_body=$(grep -o '{.*' "$RESPONSE_FILE")
+
+        quota=$(echo "${json_body}" | jq '.allocation.allocated // .allocated // 0')
+        quota_mb=$(( quota / 1024 / 1024 ))
         echo -e "\n\nQuota:\t$quota_mb Mb"
 
-        used=$(sed -n 's/.*"used": \([0-9]*\).*/\1/p' "$RESPONSE_FILE")
-        let used_mb=$used/1024/1024
+        used=$(echo "${json_body}" | jq '.used // 0')
+        used_mb=$(( used / 1024 / 1024 ))
         echo -e "Used:\t$used_mb Mb"
 
-		let free_mb=$((quota-used))/1024/1024
+        free_mb=$(( (quota - used) / 1024 / 1024 ))
         echo -e "Free:\t$free_mb Mb"
 
         echo ""
