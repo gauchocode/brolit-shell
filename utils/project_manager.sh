@@ -138,9 +138,10 @@ function project_manager_menu() {
     "07)" "DELETE PROJECT"
     "08)" "OPTIMIZE PROJECT IMAGES"
     "09)" "OPTIMIZE PROJECT PDFS"
+    "10)" "UPDATE PHP VERSION"
   )
 
-  chosen_project_manager_option="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${project_manager_options[@]}" 3>&1 1>&2 2>&3)"
+  chosen_project_manager_option="$(whiptail --title "${whip_title}" --menu "${whip_description}" 22 78 11 "${project_manager_options[@]}" 3>&1 1>&2 2>&3)"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
@@ -252,6 +253,32 @@ function project_manager_menu() {
     # OPTIMIZE PROJECT PDFS
     if [[ ${chosen_project_manager_option} == *"09"* ]]; then
       _project_manager_optimize_pdfs
+      prompt_return_or_finish
+      project_manager_menu
+    fi
+
+    # UPDATE PHP VERSION
+    if [[ ${chosen_project_manager_option} == *"10"* ]]; then
+
+      log_section "Project Utils"
+      log_subsection "Update PHP Version"
+
+      menu_title="PROJECT TO WORK WITH"
+      directory_browser "${menu_title}" "${PROJECTS_PATH}"
+
+      if [[ -z "${filepath}" ]]; then
+        log_event "info" "Operation cancelled!" "false"
+      else
+        local project_path="${filepath}/${filename}"
+
+        if [[ ! -f "${project_path}/docker-compose.yml" ]]; then
+          log_event "error" "Project does not have a docker-compose.yml file" "true"
+          display --indent 6 --text "- Docker project not found" --result "ERROR" --color RED
+        else
+          docker_update_php_version "${project_path}"
+        fi
+      fi
+
       prompt_return_or_finish
       project_manager_menu
     fi

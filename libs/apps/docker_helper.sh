@@ -2063,3 +2063,252 @@ function docker_project_install_from_git() {
     return 0
 
 }
+
+################################################################################
+# Docker: Update PHP version for an existing project
+#
+# Arguments:
+#   ${1} = ${project_path}
+#
+# Outputs:
+#   0 if ok, 1 on error
+################################################################################
+
+function docker_update_php_version() {
+
+    local project_path="${1}"
+    local compose_file="${project_path}/docker-compose.yml"
+    local env_file="${project_path}/.env"
+    local old_version
+    local new_version
+    local project_type
+    local template_base
+    local php_versions
+    local version_dir
+    local env_backup
+    local ts
+
+    log_section "Update PHP Version"
+
+    # Validate .env file
+    if [[ ! -f "${env_file}" ]]; then
+        display --indent 6 --text "- .env file not found" --result "FAIL" --color RED
+        return 1
+    fi
+
+    # Validate docker-compose.yml file
+    if [[ ! -f "${compose_file}" ]]; then
+        display --indent 6 --text "- docker-compose.yml not found" --result "FAIL" --color RED
+        return 1
+    fi
+
+    # Get current PHP version from .env
+    old_version="$(grep '^PHP_VERSION=' "${env_file}" | cut -d'=' -f2 | tr -d '[:space:]')"
+    if [[ -z "${old_version}" ]]; then
+        display --indent 6 --text "- PHP_VERSION not found in .env" --result "FAIL" --color RED
+        return 1
+    fi
+
+    display --indent 6 --text "- Current PHP version: ${old_version}" --tcolor YELLOW
+
+    # Detect project type (wordpress vs php) by checking .env vars
+    if grep -q '^WP_PORT=' "${env_file}" 2>/dev/null; then
+        project_type="wordpress"
+    else
+        project_type="php"
+    fi
+
+    # Ask user to select new PHP version
+    php_versions="8.0 8.1 8.2 8.3 8.4 8.5"
+    new_version="$(whiptail_selection_menu "PHP Version" "Choose new PHP version for Docker container:" "${php_versions}" "${old_version}")"
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 1 ]]; then
+        display --indent 6 --text "- PHP version update" --result "CANCELLED" --color YELLOW
+        return 1
+    fi
+
+    # Check if selected version is the same as current
+    if [[ "${new_version}" == "${old_version}" ]]; then
+        display --indent 6 --text "- Already running PHP ${old_version}" --result "SKIPPED" --color YELLOW
+        return 0
+    fi
+
+    # Dry-run summary: show what will change
+    echo ""
+    display --indent 6 --text "=== DRY-RUN: Summary of changes ===" --tcolor CYAN --tstyle BOLD
+    display --indent 8 --text "Project: $(basename "${project_path}")"
+    display --indent 8 --text "PHP version: ${old_version} -> ${new_version}"
+    display --indent 8 --text "Services affected: php-fpm (rebuild), nginx (restart)"
+    display --indent 8 --text "Services unchanged: mysql, redis"
+
+    version_dir="php-${new_version}_docker"
+    if [[ -d "${project_path}/${version_dir}" ]]; then
+        display --indent 8 --text "Config dir: ${version_dir} (exists)"
+    else
+        display --indent 8 --text "Config dir: ${version_dir} (will be created from template)"
+    fi
+    echo ""
+
+    # Confirm with user before proceeding
+    if ! whiptail --title "Confirm PHP Version Update" \
+        --yesno "PHP version will be updated from ${old_version} to ${new_version}.\n\nServices affected: php-fpm (rebuild), nginx (restart)\nServices unchanged: mysql, redis\n\nContainers will be rebuilt and restarted.\n\nA backup of .env will be saved in tmp/ for revert.\n\nProceed?" 18 70; then
+        display --indent 6 --text "- PHP version update" --result "CANCELLED" --color YELLOW
+        return 1
+    fi
+
+    # -- Execute update --
+
+    display --indent 6 --text "- Updating PHP version from ${old_version} to ${new_version}" --tcolor YELLOW
+
+    # Backup .env for revert
+    ts="$(date +%s)"
+    env_backup="${BROLIT_TMP_DIR}/.env.phpupdate.${ts}.bak"
+    cp "${env_file}" "${env_backup}"
+    display --indent 6 --text "- .env backed up to ${env_backup}" --result "DONE" --color GREEN
+
+    # Ensure target version config directory exists
+    if [[ ! -d "${project_path}/${version_dir}" ]]; then
+        template_base="${BROLIT_MAIN_DIR}/config/docker-compose/${project_type}/production-stack-proxy"
+        if [[ -d "${template_base}/${version_dir}" ]]; then
+            cp -r "${template_base}/${version_dir}" "${project_path}/${version_dir}"
+            display --indent 6 --text "- Copied config directory for PHP ${new_version}" --result "DONE" --color GREEN
+        else
+            display --indent 6 --text "- Template ${version_dir} not found at ${template_base}" --result "FAIL" --color RED
+            return 1
+        fi
+    else
+        display --indent 6 --text "- Config directory for PHP ${new_version} already exists" --result "OK" --color GREEN
+    fi
+
+    # Detect project stack and adjust nginx root accordingly
+    # (only for php-type projects with a public/ subdir assumption)
+    if [[ "${project_type}" == "php" ]]; then
+        local app_dir="${project_path}/application"
+        local nginx_conf="${project_path}/${version_dir}/nginx/nginx.conf"
+
+        if [[ -f "${app_dir}/artisan" ]] || [[ -f "${app_dir}/public/index.php" ]]; then
+            display --indent 6 --text "- Detected Laravel/Symfony stack, keeping nginx root /application/public" --result "OK" --color GREEN
+        else
+            if [[ -f "${nginx_conf}" ]]; then
+                sed -i "s|root /application/public;|root /application;|g" "${nginx_conf}"
+                display --indent 6 --text "- Detected non-Laravel stack, adjusted nginx root to /application" --result "DONE" --color GREEN
+            fi
+        fi
+    fi
+
+    # Update PHP_VERSION in .env
+    sed -i "s|^PHP_VERSION=.*$|PHP_VERSION=${new_version}|g" "${env_file}"
+    display --indent 6 --text "- Updated PHP_VERSION in .env" --result "DONE" --color GREEN
+
+    # Rebuild containers (pull + up --detach --build)
+    docker_compose_build "${compose_file}"
+    exitstatus=$?
+
+    if [[ ${exitstatus} -ne 0 ]]; then
+        display --indent 6 --text "- Container build failed" --result "FAIL" --color RED
+        log_event "error" "Docker build failed after PHP version change, reverting" "false"
+        docker_update_php_version_revert "${project_path}" "${env_backup}"
+        return 1
+    fi
+
+    # Verify containers are running
+    display --indent 6 --text "- Verifying containers ..."
+    local containers
+    local running_services
+    local total_services
+
+    containers="$(docker compose -f "${compose_file}" ps --services 2>/dev/null)"
+    running_services="$(docker compose -f "${compose_file}" ps --services --filter 'status=running' 2>/dev/null | wc -l)"
+    total_services="$(echo "${containers}" | wc -l)"
+
+    if [[ ${running_services} -lt ${total_services} ]]; then
+        clear_previous_lines "1"
+        display --indent 6 --text "- Containers running: ${running_services}/${total_services}" --result "WARN" --color YELLOW
+        log_event "warning" "Not all containers are running after PHP version update (${running_services}/${total_services})" "false"
+    else
+        clear_previous_lines "1"
+        display --indent 6 --text "- Verifying containers" --result "DONE" --color GREEN
+    fi
+
+    # User validation prompt
+    echo ""
+    display --indent 6 --text "=== VALIDATION ===" --tcolor CYAN --tstyle BOLD
+    display --indent 8 --text "PHP version updated from ${old_version} to ${new_version}"
+    display --indent 8 --text "Please check if your site/application is working correctly."
+    echo ""
+
+    if whiptail --title "Validation" \
+        --yesno "Is the site/application working correctly with PHP ${new_version}?" 10 70; then
+        # Success
+        display --indent 6 --text "- PHP version updated to ${new_version}" --result "DONE" --color GREEN
+        log_event "info" "PHP version updated from ${old_version} to ${new_version} for project $(basename "${project_path}")" "false"
+
+        send_notification "${SERVER_NAME}" "PHP version updated for project $(basename "${project_path}"): ${old_version} -> ${new_version}" "success"
+
+        return 0
+    else
+        # User says it does not work — revert
+        display --indent 6 --text "- User reported issues" --result "REVERTING" --color YELLOW
+        docker_update_php_version_revert "${project_path}" "${env_backup}"
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]]; then
+            display --indent 6 --text "- PHP version reverted to ${old_version}" --result "DONE" --color GREEN
+        fi
+        return 1
+    fi
+
+}
+
+################################################################################
+# Docker: Revert PHP version update
+#
+# Arguments:
+#   ${1} = ${project_path}
+#   ${2} = ${env_backup}
+#
+# Outputs:
+#   0 if ok, 1 on error
+################################################################################
+
+function docker_update_php_version_revert() {
+
+    local project_path="${1}"
+    local env_backup="${2}"
+    local compose_file="${project_path}/docker-compose.yml"
+    local env_file="${project_path}/.env"
+
+    log_subsection "Reverting PHP Version Update"
+
+    display --indent 6 --text "- Reverting PHP version ..." --tcolor YELLOW
+
+    # Validate backup file
+    if [[ ! -f "${env_backup}" ]]; then
+        display --indent 6 --text "- Backup file not found: ${env_backup}" --result "FAIL" --color RED
+        log_event "error" "Cannot revert: backup file ${env_backup} not found" "false"
+        return 1
+    fi
+
+    # Restore .env from backup
+    cp "${env_backup}" "${env_file}"
+    display --indent 6 --text "- Restored .env from backup" --result "DONE" --color GREEN
+
+    # Get the PHP version we are reverting to (for messaging)
+    local reverted_version
+    reverted_version="$(grep '^PHP_VERSION=' "${env_file}" | cut -d'=' -f2 | tr -d '[:space:]')"
+
+    # Rebuild containers with original PHP version
+    docker_compose_build "${compose_file}"
+    exitstatus=$?
+
+    if [[ ${exitstatus} -eq 0 ]]; then
+        display --indent 6 --text "- PHP version reverted to ${reverted_version}" --result "DONE" --color GREEN
+        log_event "info" "PHP version reverted to ${reverted_version} for project $(basename "${project_path}")" "false"
+        send_notification "${SERVER_NAME}" "PHP version reverted to ${reverted_version} for project $(basename "${project_path}")" "warning"
+        return 0
+    else
+        display --indent 6 --text "- Revert build failed" --result "FAIL" --color RED
+        log_event "error" "Revert build failed for project $(basename "${project_path}")" "false"
+        return 1
+    fi
+
+}

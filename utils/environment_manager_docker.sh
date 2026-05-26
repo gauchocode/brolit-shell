@@ -108,9 +108,10 @@ function docker_project_menu() {
     "10)" "STOP CONTAINERS"
     "11)" "START CONTAINERS"
     "12)" "EXECUTE COMMAND IN CONTAINER"
+    "13)" "UPDATE PHP VERSION"
   )
 
-  chosen_docker_project_option="$(whiptail --title "DOCKER PROJECT: ${project_name}" --menu "\nManage Docker containers:\n" 20 78 10 "${docker_project_options[@]}" 3>&1 1>&2 2>&3)"
+  chosen_docker_project_option="$(whiptail --title "DOCKER PROJECT: ${project_name}" --menu "\nManage Docker containers:\n" 22 78 14 "${docker_project_options[@]}" 3>&1 1>&2 2>&3)"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
@@ -173,6 +174,11 @@ function docker_project_menu() {
     # EXECUTE COMMAND IN CONTAINER
     if [[ ${chosen_docker_project_option} == *"12"* ]]; then
       docker_exec_command_menu "${project_path}"
+    fi
+
+    # UPDATE PHP VERSION
+    if [[ ${chosen_docker_project_option} == *"13"* ]]; then
+      docker_update_php_version "${project_path}"
     fi
 
     prompt_return_or_finish
