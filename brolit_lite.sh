@@ -2183,7 +2183,7 @@ function dropbox_get_sites_backups() {
 
         # Get dropbox backup list
         dropbox_chosen_backup_path="${SERVER_NAME}/projects-online/${backup_type}"
-        dropbox_project_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}" | awk -F " " '{ print $2 }')"
+        dropbox_project_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}" | awk -F " " '{ print $NF }')"
 
         for backup_dir in ${dropbox_project_backup_list}; do
 

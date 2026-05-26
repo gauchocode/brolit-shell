@@ -374,12 +374,12 @@ function dropbox_list_directory() {
 
     # Log
     log_event "debug" "Listing directory ${directory} on Dropbox" "false"
-    log_event "debug" "Executing: ${DROPBOX_UPLOADER} -hq list \"${directory}\" | awk '{print $2;}'" "false"
+    log_event "debug" "Executing: ${DROPBOX_UPLOADER} -hq list \"${directory}\" | awk '{print $NF;}'" "false"
 
-    # Dropbox API returns directory/file names on the second column
+    # Dropbox API returns directory/file names on the last column
     for ((attempt=1; attempt<=max_attempts; attempt++)); do
 
-        dir_list="$("${DROPBOX_UPLOADER}" -hq list "${directory}" | awk '{print $2;}')"
+        dir_list="$("${DROPBOX_UPLOADER}" -hq list "${directory}" | awk '{print $NF;}')"
         exitstatus=$?
 
         # If command succeeded and we got results, we're done
@@ -413,7 +413,7 @@ function dropbox_list_directory() {
 
         # Log
         log_event "error" "Can't list directory ${directory} on Dropbox" "false"
-        log_event "debug" "Command executed: ${DROPBOX_UPLOADER} -hq list \"${directory}\" | awk '{print $2;}'" "false"
+        log_event "debug" "Command executed: ${DROPBOX_UPLOADER} -hq list \"${directory}\" | awk '{print $NF;}'" "false"
 
         return 1
 
@@ -447,7 +447,7 @@ function dropbox_get_modified_date() {
 
     # Log
     log_event "debug" "Getting modified date from ${file} on Dropbox" "false"
-    log_event "debug" "Executing: ${DROPBOX_UPLOADER} -hq list \"${remote_path}\"'" "false"
+    log_event "debug" "Executing: ${DROPBOX_UPLOADER} -hq list \"${remote_path}\"" "false"
 
     # Dropbox API returns files names on the fourth column (brolit modified version)
     output="$("${DROPBOX_UPLOADER}" -hq list "${remote_path}")"
@@ -471,7 +471,7 @@ function dropbox_get_modified_date() {
 
         # Log
         log_event "error" "Can't get modified date from ${file} on Dropbox" "false"
-        log_event "debug" "Command executed: ${DROPBOX_UPLOADER} -hq list \"${file}\" | awk '{print $ 3;}'" "false"
+        log_event "debug" "Command executed: ${DROPBOX_UPLOADER} -hq list \"${file}\" | awk '{print $3;}'" "false"
 
         return 1
 
