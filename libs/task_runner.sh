@@ -37,6 +37,8 @@ function show_help() {
                         project-restore
                         project-install
                         cloudflare-api
+                        disk-cleanup
+    -dr, --dry-run    Dry-run mode (show what would be freed, no changes)
     -st, --subtask    Sub-task to run:
                         from cloudflare-api: clear_cache, dev_mode
     -s  --site        Site path for tasks execution
@@ -402,6 +404,21 @@ function tasks_handler() {
     exit ${exit_code}
     ;;
 
+  disk-cleanup)
+    # Validate subtask
+    validate_task_and_subtask "disk-cleanup" "${STASK}" "apt journal docker all"
+    exit_code=$?
+    [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
+
+    # Validate dry-run mode (pass DRY_RUN)
+    export DRY_RUN
+
+    # Execute task
+    execute_task_with_error_handling "disk-cleanup-${STASK}" "clean_disk_${STASK}"
+    exit_code=$?
+    exit ${exit_code}
+    ;;
+
   *)
     log_event "error" "INVALID TASK: ${TASK}" "true"
     display --indent 2 --text "- Invalid task: ${TASK}" --result "FAIL" --color RED
@@ -434,6 +451,7 @@ function flags_handler() {
   declare -g STASK=""
   declare -g TVALUE=""
   declare -g DEBUG="false"
+  declare -g DRY_RUN="false"
 
   ## PROJECT
   declare -g SITE=""
@@ -462,6 +480,11 @@ function flags_handler() {
     -d | --debug)
       DEBUG="true"
       export DEBUG
+      ;;
+
+    -dr | --dry-run)
+      DRY_RUN="true"
+      export DRY_RUN
       ;;
 
     -e | --env)
