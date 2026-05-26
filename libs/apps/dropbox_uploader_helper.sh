@@ -369,25 +369,38 @@ function dropbox_list_directory() {
     local directory="${1}"
 
     local dir_list
+    local attempt
+    local max_attempts=3
 
     # Log
     log_event "debug" "Listing directory ${directory} on Dropbox" "false"
-    log_event "debug" "Executing: ${DROPBOX_UPLOADER} -hq list \"${directory}\" | awk '{print $ 4;}'" "false"
+    log_event "debug" "Executing: ${DROPBOX_UPLOADER} -hq list \"${directory}\" | awk '{print $ 2;}'" "false"
 
-    # Dropbox API returns files names on the fourth column (brolit modified version)
-    dir_list="$("${DROPBOX_UPLOADER}" -hq list "${directory}" | awk '{print $4;}')"
-    exitstatus=$?
+    # Dropbox API returns directory/file names on the second column
+    for ((attempt=1; attempt<=max_attempts; attempt++)); do
 
-    # If dir_list is empty, try to check the second column where directory names are
-    if [[ -z ${dir_list} ]]; then
-
-        # Dropbox API returns directories names on the second column
-        dir_list="$("${DROPBOX_UPLOADER}" -hq list "${directory}" | awk '{print $2;}')"
+        dir_list="$("${DROPBOX_UPLOADER}" -hq list "${directory}" | awk '{print $ 2;}')"
         exitstatus=$?
 
-    fi
+        # If command succeeded and we got results, we're done
+        if [[ ${exitstatus} -eq 0 && -n ${dir_list} ]]; then
+            break
+        fi
 
-    if [[ ${exitstatus} -eq 0 ]]; then
+        # If command failed, don't retry
+        if [[ ${exitstatus} -ne 0 ]]; then
+            break
+        fi
+
+        # If empty and not the last attempt, wait and retry
+        if [[ ${attempt} -lt ${max_attempts} ]]; then
+            log_event "debug" "Empty response from Dropbox API, retrying in 3 seconds... (attempt ${attempt}/$((max_attempts - 1)))" "false"
+            sleep 3
+        fi
+
+    done
+
+    if [[ ${exitstatus} -eq 0 && -n ${dir_list} ]]; then
 
         # Log
         log_event "info" "Listing directory: ${directory}" "false"
@@ -400,7 +413,7 @@ function dropbox_list_directory() {
 
         # Log
         log_event "error" "Can't list directory ${directory} on Dropbox" "false"
-        log_event "debug" "Command executed: ${DROPBOX_UPLOADER} -hq list \"${directory}\" | awk '{print $ 4;}'" "false"
+        log_event "debug" "Command executed: ${DROPBOX_UPLOADER} -hq list \"${directory}\" | awk '{print $ 2;}'" "false"
 
         return 1
 
