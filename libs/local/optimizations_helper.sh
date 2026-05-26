@@ -802,6 +802,124 @@ function delete_old_logs() {
 }
 
 ################################################################################
+# Clean disk - APT cache
+#
+# Arguments:
+#   none (reads global DRY_RUN)
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function clean_disk_apt() {
+
+  local dry_run
+  dry_run="${DRY_RUN:-false}"
+
+  log_subsection "Disk Cleanup - APT Cache"
+
+  if [[ "${dry_run}" == "true" ]]; then
+    local apt_cache_size
+    apt_cache_size=$(du -sh /var/cache/apt/archives 2>/dev/null | awk '{print $1}')
+    display --indent 6 --text "- APT cache size: ${apt_cache_size:-0}" --tcolor YELLOW
+    log_event "info" "DRY-RUN: Would clean APT cache (${apt_cache_size:-0})" "false"
+    display --indent 6 --text "- Run without --dry-run to clean" --tcolor WHITE
+  else
+    packages_remove_old
+  fi
+
+}
+
+################################################################################
+# Clean disk - Journal logs
+#
+# Arguments:
+#   none (reads global DRY_RUN)
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function clean_disk_journal() {
+
+  local dry_run
+  dry_run="${DRY_RUN:-false}"
+
+  log_subsection "Disk Cleanup - Journal Logs"
+
+  if [[ "${dry_run}" == "true" ]]; then
+    local journal_usage
+    journal_usage=$(journalctl --disk-usage 2>/dev/null)
+    display --indent 6 --text "- ${journal_usage}" --tcolor YELLOW
+    log_event "info" "DRY-RUN: Would vacuum journal logs (keep 7 days)" "false"
+    display --indent 6 --text "- Run without --dry-run to vacuum (keep 7 days)" --tcolor WHITE
+  else
+    journalctl --vacuum-time=7d
+  fi
+
+}
+
+################################################################################
+# Clean disk - Docker prune
+#
+# Arguments:
+#   none (reads global DRY_RUN)
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function clean_disk_docker() {
+
+  local dry_run
+  dry_run="${DRY_RUN:-false}"
+
+  log_subsection "Disk Cleanup - Docker"
+
+  if ! command -v docker &> /dev/null; then
+    display --indent 6 --text "- Docker is not installed" --result "SKIP" --color YELLOW
+    return 0
+  fi
+
+  if [[ "${dry_run}" == "true" ]]; then
+    docker system df
+    log_event "info" "DRY-RUN: Would prune Docker system" "false"
+    display --indent 6 --text "- Run without --dry-run to prune" --tcolor WHITE
+  else
+    display --indent 6 --text "- Pruning Docker system..."
+    docker system prune -af >/dev/null 2>&1
+    docker container prune -f >/dev/null 2>&1
+    clear_previous_lines "1"
+    display --indent 6 --text "- Docker system pruned" --result "DONE" --color GREEN
+    log_event "info" "Docker system pruned" "false"
+  fi
+
+}
+
+################################################################################
+# Clean disk - All (apt + journal + docker)
+#
+# Arguments:
+#   none (reads global DRY_RUN)
+#
+# Outputs:
+#   nothing
+################################################################################
+
+function clean_disk_all() {
+
+  log_section "Full Disk Cleanup"
+  log_event "info" "Starting full disk cleanup" "false"
+
+  clean_disk_apt
+  clean_disk_journal
+  clean_disk_docker
+
+  log_event "info" "Full disk cleanup completed" "false"
+
+}
+
+################################################################################
 # Clean swap
 #
 # Arguments:

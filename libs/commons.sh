@@ -2028,6 +2028,7 @@ function menu_cron_script_tasks() {
     "05)" "SECURITY TASKS"
     "06)" "UPTIME TASKS"
     "07)" "BROLIT UI HELPER"
+    "08)" "DISK CLEANUP TASKS"
   )
   chosen_type="$(whiptail --title "CRONEABLE TASKS" --menu "\n" 20 78 10 "${runner_options[@]}" 3>&1 1>&2 2>&3)"
 
@@ -2120,6 +2121,19 @@ function menu_cron_script_tasks() {
       if [[ ${exitstatus} -eq 0 ]]; then
 
         brolit_cronjob_install "${BROLIT_MAIN_DIR}/cron/brolit_ui_tasks.sh > /dev/null" "${scheduled_time}"
+
+      fi
+
+    fi
+    if [[ ${chosen_type} == *"08"* ]]; then
+
+      # DISK-CLEANUP-TASKS
+      suggested_cron="0 05 * * 0" # Every Sunday at 05:00 AM
+      scheduled_time="$(whiptail_input "CRON DISK-CLEANUP TASKS" "Insert a cron expression for selected task:" "${suggested_cron}")"
+      exitstatus=$?
+      if [[ ${exitstatus} -eq 0 ]]; then
+
+        brolit_cronjob_install "${BROLIT_MAIN_DIR}/cron/disk_cleanup_tasks.sh" "${scheduled_time}"
 
       fi
 
