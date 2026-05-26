@@ -456,7 +456,7 @@ function dropbox_get_modified_date() {
     if [[ ${exitstatus} -eq 0 ]]; then
 
         # Match file with output
-        output="$(echo "${output}" | grep "${filename}" | awk '{print $3;}')"
+        output="$(echo "${output}" | grep -F "${filename}" | awk '{print $3;}')"
 
         # This will return 2023-11-16;00:56:37 need to replace ; with space
         output="$(echo "${output}" | sed 's/;/ /g')"
