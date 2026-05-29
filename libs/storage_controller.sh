@@ -279,10 +279,10 @@ function storage_download_backup() {
 
     local file_to_download="${1}"
     local local_directory="${2}"
+    local skip_confirm="${3:-false}"
 
     local got_error=0
     local error_type
-    local backup_date
     #local local_space_free
 
     # TODO: add option to skip download if local file already exists?
@@ -296,9 +296,13 @@ function storage_download_backup() {
         # Check date from file to download
         backup_date="$(dropbox_get_modified_date "${file_to_download}")"
 
-        # Show whiptail message
-        whiptail_message_with_skip_option "Backup date" "\n\nThis backup date is: ${backup_date}\n\nDo you want to continue?"
-        [[ $? -eq 1 ]] && error_type="dropbox_skipped" && return 1
+        if [[ "${skip_confirm}" != "true" ]]; then
+            # Show whiptail message
+            whiptail_message_with_skip_option "Backup date" "\n\nThis backup date is: ${backup_date}\n\nDo you want to continue?"
+            [[ $? -eq 1 ]] && error_type="dropbox_skipped" && return 1
+        else
+            display --indent 6 --text "- Backup date: ${backup_date}"
+        fi
 
         # Download
         dropbox_download "${file_to_download}" "${local_directory}"
@@ -700,6 +704,86 @@ function storage_backup_selection() {
         return 1
 
     fi
+
+}
+
+################################################################################
+# Storage Backup multi-project selection (batch restore)
+#
+# Arguments:
+#   ${1} = ${remote_backup_path}  (e.g., "server-name/projects-online")
+#   ${2} = ${remote_backup_type}  (e.g., "site", "database", "docker-volume")
+#
+# Outputs:
+#   Newline-separated list of full backup paths. Returns 0 if ok, 1 on error.
+################################################################################
+function storage_backup_multi_project_selection() {
+
+    local remote_backup_path="${1}"
+    local remote_backup_type="${2}"
+
+    local storage_project_list
+    local selected_projects
+    local project_path
+    local remote_backup_list
+    local latest_backup
+    local result_list=""
+
+    log_event "info" "Running multi-project backup selection menu" "false"
+
+    storage_project_list="$(storage_list_dir "${remote_backup_path}/${remote_backup_type}")"
+
+    if [[ -z "${storage_project_list}" ]]; then
+        log_event "error" "No projects found in ${remote_backup_path}/${remote_backup_type}" "false"
+        display --indent 6 --text "No projects found for this backup type" --result "ERROR" --color RED
+        return 1
+    fi
+
+    storage_project_list="$(sort_array_alphabetically "${storage_project_list}")"
+
+    local checklist_options=()
+    for project in ${storage_project_list}; do
+        checklist_options+=("${project}" "" "OFF")
+    done
+
+    selected_projects="$(whiptail --title "BATCH BACKUP SELECTION" --checklist "Select projects to restore (use SPACE to mark):" 25 78 12 "${checklist_options[@]}" 3>&1 1>&2 2>&3)"
+
+    exitstatus=$?
+    if [[ ${exitstatus} -ne 0 || -z "${selected_projects}" ]]; then
+        display --indent 6 --text "- Multi-project selection" --result "SKIPPED" --color YELLOW
+        return 1
+    fi
+
+    log_event "debug" "selected_projects: ${selected_projects}" "false"
+
+    for project in ${selected_projects}; do
+        project="${project//\"/}"
+
+        project_path="${remote_backup_path}/${remote_backup_type}/${project}"
+        remote_backup_list="$(storage_list_dir "${project_path}")"
+
+        if [[ -z "${remote_backup_list}" ]]; then
+            log_event "warning" "No backups found for project ${project}, skipping" "false"
+            display --indent 6 --text "- No backups found for ${project}, skipping" --result "WARNING" --color YELLOW
+            continue
+        fi
+
+        remote_backup_list="$(sort_files_by_date ${remote_backup_list})"
+        latest_backup="${remote_backup_list%% *}"
+
+        result_list="${result_list}${project_path}/${latest_backup}"$'\n'
+
+    done
+
+    result_list="$(echo "${result_list}" | sed '/^$/d')"
+
+    if [[ -z "${result_list}" ]]; then
+        log_event "error" "No valid backups found for selected projects" "false"
+        return 1
+    fi
+
+    echo "${result_list}"
+    return 0
 
 }
 #!/usr/bin/env bash
