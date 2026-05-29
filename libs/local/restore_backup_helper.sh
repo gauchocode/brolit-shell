@@ -1426,6 +1426,136 @@ function restore_backup_from_storage() {
 }
 
 ################################################################################
+# Batch restore multiple projects from storage
+#
+# Allows selecting multiple projects at once and restoring them in sequence.
+# Automatically picks the latest backup for each selected project.
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+function restore_backup_from_storage_batch() {
+
+  local chosen_server
+  local chosen_remote_status
+  local chosen_restore_type
+  local remote_list
+  local remote_backup_type
+  local selected_backups
+  local total_count=0
+  local current=0
+  local success_count=0
+  local fail_count=0
+  local failed_projects=""
+
+  chosen_server="$(storage_remote_server_list)"
+  exitstatus=$?
+  if [[ ${exitstatus} -ne 0 ]]; then
+    return 1
+  fi
+
+  chosen_remote_status="$(storage_remote_status_list)"
+  [[ -z "${chosen_remote_status}" ]] && return 1
+
+  chosen_restore_type="$(storage_remote_type_list)"
+  [[ -z "${chosen_restore_type}" ]] && return 1
+
+  case "${chosen_restore_type}" in
+  project|site)
+    remote_backup_type="site"
+    ;;
+  database)
+    remote_backup_type="database"
+    ;;
+  docker-volume)
+    remote_backup_type="docker-volume"
+    ;;
+  *)
+    display --indent 6 --text "Batch restore not supported for type: ${chosen_restore_type}" --result "ERROR" --color RED
+    return 1
+    ;;
+  esac
+
+  remote_list="${chosen_server}/projects-${chosen_remote_status}"
+
+  log_subsection "Batch Restore: ${chosen_restore_type}"
+
+  selected_backups="$(storage_backup_multi_project_selection "${remote_list}" "${remote_backup_type}")"
+  [[ $? -ne 0 ]] && return 1
+
+  total_count="$(echo "${selected_backups}" | wc -l)"
+
+  whiptail_message_with_skip_option "Batch Restore" "\n\nYou are about to restore ${total_count} ${chosen_restore_type}(s).\n\nThe latest backup will be used for each project.\n\nDo you want to continue?"
+  [[ $? -eq 1 ]] && return 1
+
+  while IFS= read -r backup_to_dowload; do
+    [[ -z "${backup_to_dowload}" ]] && continue
+
+    ((current++))
+
+    local chosen_project
+    chosen_project="$(dirname "${backup_to_dowload}")"
+    chosen_project="$(basename "${chosen_project}")"
+
+    display --indent 4 --text "--------------------------------------------------"
+    display --indent 4 --text "[${current}/${total_count}] Restoring: ${chosen_project}"
+    display --indent 4 --text "--------------------------------------------------"
+
+    storage_download_backup "${backup_to_dowload}" "${BROLIT_TMP_DIR}" "true"
+    if [[ $? -ne 0 ]]; then
+      display --indent 6 --text "- Downloading backup for ${chosen_project}" --result "ERROR" --color RED
+      ((fail_count++))
+      failed_projects="${failed_projects}${chosen_project} "
+      continue
+    fi
+
+    local backup_to_restore
+    backup_to_restore="$(basename "${backup_to_dowload}")"
+
+    case "${chosen_restore_type}" in
+    project)
+      restore_project_backup "${backup_to_restore}" "${chosen_remote_status}" "${chosen_server}" "${chosen_project}" ""
+      ;;
+    site)
+      restore_backup_project_files "${backup_to_restore}" "${chosen_project}" ""
+      ;;
+    database)
+      restore_backup_project_database "${chosen_project}" "${backup_to_restore}"
+      ;;
+    esac
+
+    if [[ $? -ne 0 ]]; then
+      display --indent 6 --text "- Restoring ${chosen_project}" --result "ERROR" --color RED
+      ((fail_count++))
+      failed_projects="${failed_projects}${chosen_project} "
+      continue
+    fi
+
+    ((success_count++))
+    send_notification "${SERVER_NAME}" "${chosen_restore_type} ${chosen_project} restored!" "success"
+
+  done <<< "${selected_backups}"
+
+  log_subsection "Batch Restore Summary"
+  display --indent 6 --text "- Total: ${total_count}" --tcolor WHITE
+  display --indent 6 --text "- Successful: ${success_count}" --result "DONE" --color GREEN
+  if [[ ${fail_count} -gt 0 ]]; then
+    display --indent 6 --text "- Failed: ${fail_count}" --result "FAIL" --color RED
+    display --indent 8 --text "Failed: ${failed_projects}" --tcolor RED
+  fi
+
+  if [[ ${success_count} -gt 0 ]]; then
+    send_notification "${SERVER_NAME}" "Batch restore completed: ${success_count} OK, ${fail_count} failed" "info"
+  fi
+
+  restore_manager_menu
+
+}
+
+################################################################################
 # Restore config files from dropbox
 #
 # Arguments:

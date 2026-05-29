@@ -453,10 +453,11 @@ function restore_manager_menu() {
 
   restore_options=(
     "01)" "FROM DROPBOX"
-    "02)" "FROM PUBLIC LINK (BETA)"
-    "03)" "FROM LOCAL FILE (BETA)"
-    "04)" "FROM FTP (BETA)"
-    "05)" "FROM BORG (BETA)"
+    "02)" "BATCH RESTORE FROM DROPBOX"
+    "03)" "FROM PUBLIC LINK (BETA)"
+    "04)" "FROM LOCAL FILE (BETA)"
+    "05)" "FROM FTP (BETA)"
+    "06)" "FROM BORG (BETA)"
   )
 
   chosen_restore_options="$(whiptail --title "RESTORE BACKUP" --menu " " 20 78 10 "${restore_options[@]}" 3>&1 1>&2 2>&3)"
@@ -469,20 +470,25 @@ function restore_manager_menu() {
     fi
     if [[ ${chosen_restore_options} == *"02"* ]]; then
 
-      restore_backup_from_public_url
+      restore_backup_from_storage_batch
 
     fi
     if [[ ${chosen_restore_options} == *"03"* ]]; then
 
-      restore_backup_from_local
+      restore_backup_from_public_url
 
     fi
     if [[ ${chosen_restore_options} == *"04"* ]]; then
 
-      restore_backup_from_ftp
+      restore_backup_from_local
 
     fi
     if [[ ${chosen_restore_options} == *"05"* ]]; then
+
+      restore_backup_from_ftp
+
+    fi
+    if [[ ${chosen_restore_options} == *"06"* ]]; then
       restore_backup_with_borg 
     fi
 
