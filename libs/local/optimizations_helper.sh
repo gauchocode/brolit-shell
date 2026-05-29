@@ -976,10 +976,10 @@ function fix_wordpress_permissions() {
   for project_path in "${PROJECTS_PATH}"/*/; do
     if [[ -f "${project_path}wp-config.php" ]]; then
       # Directories: 755
-      find "${project_path}" -type d -exec chmod 755 {} \; >/dev/null 2>&1
+      find "${project_path}" -type d -exec chmod 755 {} + >/dev/null 2>&1
       
       # Files: 644
-      find "${project_path}" -type f -exec chmod 644 {} \; >/dev/null 2>&1
+      find "${project_path}" -type f -exec chmod 644 {} + >/dev/null 2>&1
       
       # Specific for uploads
       local uploads_path="${project_path}wp-content/uploads"
