@@ -1701,8 +1701,19 @@ function _brolit_configuration_load_docker() {
     # Globals
     declare -g DOCKER
     declare -g PACKAGES_DOCKER_STATUS
+    declare -g DOCKER_PORT_RANGE_START
+    declare -g DOCKER_PORT_RANGE_END
+    declare -g DOCKER_EXCLUDED_PORTS
 
     PACKAGES_DOCKER_STATUS="$(json_read_field "${server_config_file}" "PACKAGES.docker[].status")"
+
+    DOCKER_PORT_RANGE_START="$(json_read_field "${server_config_file}" "PACKAGES.docker[].config[].port_range_start")"
+    DOCKER_PORT_RANGE_END="$(json_read_field "${server_config_file}" "PACKAGES.docker[].config[].port_range_end")"
+    DOCKER_EXCLUDED_PORTS="$(json_read_field "${server_config_file}" "PACKAGES.docker[].config[].excluded_ports")"
+
+    [[ -z "${DOCKER_PORT_RANGE_START}" ]] && DOCKER_PORT_RANGE_START="81"
+    [[ -z "${DOCKER_PORT_RANGE_END}" ]] && DOCKER_PORT_RANGE_END="9999"
+    [[ -z "${DOCKER_EXCLUDED_PORTS}" ]] && DOCKER_EXCLUDED_PORTS="22,25,53,80,443,3306,5432,5601,6379,8080,8443,9090,9200,9300,27017"
 
     # Docker
     # Check if docker package are installed
@@ -1721,7 +1732,7 @@ function _brolit_configuration_load_docker() {
 
     fi
 
-    export DOCKER PACKAGES_DOCKER_STATUS
+    export DOCKER PACKAGES_DOCKER_STATUS DOCKER_PORT_RANGE_START DOCKER_PORT_RANGE_END DOCKER_EXCLUDED_PORTS
 
 }
 

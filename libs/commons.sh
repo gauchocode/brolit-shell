@@ -1090,12 +1090,8 @@ function network_port_is_use() {
 
   local port="${1}"
 
-  local result
-
-  result="$(lsof -i:"${port}")"
-
-  if [[ -n ${result} ]]; then
-    log_event "info" "Port ${port} is use by another service." "false"
+  if ss -tlnH 2>/dev/null | grep -qP ":${port}\b"; then
+    log_event "info" "Port ${port} is in use by another service." "false"
     return 0
   else
     log_event "info" "Port ${port} is not in use." "false"
@@ -1112,7 +1108,7 @@ function network_port_is_use() {
 #   ${2} = ${port_end} - port range end
 #
 # Outputs:
-#   0 if port is in use, or 1 if not
+#   Available port number, 1 on error.
 ################################################################################
 
 function network_next_available_port() {
@@ -1121,19 +1117,60 @@ function network_next_available_port() {
   local port_end="${2}"
 
   local port
+  local used_ports
+  local excluded=""
+
+  [[ -n "${DOCKER_EXCLUDED_PORTS}" ]] && excluded=",${DOCKER_EXCLUDED_PORTS},"
 
   log_event "debug" "Getting next available port from ${port_start} to ${port_end}" "false"
 
+  used_ports="$(ss -tlnH 2>/dev/null | awk '{print $4}' | grep -oP ':\d+$' | sed 's/://' | sort -nu)"
+
   for port in $(seq "${port_start}" "${port_end}"); do
 
-    echo -ne "\035" | telnet 127.0.0.1 "${port}" >/dev/null 2>&1
-    if [[ $? -eq 1 ]]; then
-      log_event "debug" "Available port: ${port}" "false"
-      # Return
-      echo "${port}" && return 0
+    if echo "${used_ports}" | grep -qx "${port}"; then
+      continue
     fi
 
+    if [[ -n "${excluded}" ]] && echo "${excluded}" | grep -q ",${port},"; then
+      continue
+    fi
+
+    log_event "debug" "Available port: ${port}" "false"
+    echo "${port}" && return 0
+
   done
+
+  log_event "error" "No available port found in range ${port_start}-${port_end}" "false"
+  return 1
+
+}
+
+################################################################################
+# Check if a port is in the excluded ports list
+#
+# Arguments:
+#   ${1} = ${port}
+#
+# Outputs:
+#   0 if excluded, 1 if not excluded
+################################################################################
+
+function network_port_is_excluded() {
+
+  local port="${1}"
+  local excluded=""
+
+  [[ -z "${DOCKER_EXCLUDED_PORTS}" ]] && return 1
+
+  excluded=",${DOCKER_EXCLUDED_PORTS},"
+
+  if echo "${excluded}" | grep -q ",${port},"; then
+    log_event "debug" "Port ${port} is in the excluded list" "false"
+    return 0
+  fi
+
+  return 1
 
 }
 

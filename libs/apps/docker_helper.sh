@@ -981,7 +981,7 @@ function docker_project_install() {
 
     # Project Port (docker internal)
     ## Will find the next port available from 81 to 250
-    port_available="$(network_next_available_port "81" "350")"
+    port_available="$(network_next_available_port "${DOCKER_PORT_RANGE_START}" "${DOCKER_PORT_RANGE_END}")"
 
     # PHP Version
     # Whiptail menu to ask php version to work with
@@ -1900,7 +1900,7 @@ function docker_project_install_from_git() {
 
             # Get port from existing config
             port_available="$(grep -E '^(WP_PORT|APP_PORT|PHP_PORT|WEBSERVER_PORT|PORT)=' "${project_path}/.env" 2>/dev/null | head -n1 | cut -d'=' -f2)"
-            [[ -z ${port_available} ]] && port_available="$(network_next_available_port "81" "350")"
+            [[ -z ${port_available} ]] && port_available="$(network_next_available_port "${DOCKER_PORT_RANGE_START}" "${DOCKER_PORT_RANGE_END}")"
 
             # Start the stack
             compose_file="${project_path}/docker-compose.yml"
@@ -1921,7 +1921,7 @@ function docker_project_install_from_git() {
             cp -r "${BROLIT_MAIN_DIR}/config/docker-compose/wordpress/production-stack-proxy/.env" "${project_path}/.env.docker"
 
             # Generate configuration
-            port_available="$(network_next_available_port "81" "350")"
+            port_available="$(network_next_available_port "${DOCKER_PORT_RANGE_START}" "${DOCKER_PORT_RANGE_END}")"
 
             php_versions="8.0 8.1 8.2 8.3 8.4"
             php_version="$(whiptail_selection_menu "PHP Version" "Choose a PHP version for the Docker container:" "${php_versions}" "8.3")" # Changed default from 8.2 to 8.3
@@ -1962,7 +1962,7 @@ function docker_project_install_from_git() {
             fi
 
             # Similar configuration as WordPress
-            port_available="$(network_next_available_port "81" "350")"
+            port_available="$(network_next_available_port "${DOCKER_PORT_RANGE_START}" "${DOCKER_PORT_RANGE_END}")"
 
             php_versions="8.0 8.1 8.2 8.3 8.4"
             php_version="$(whiptail_selection_menu "PHP Version" "Choose a PHP version:" "${php_versions}" "8.3")" # Changed default from 8.2 to 8.3
