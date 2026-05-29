@@ -323,7 +323,14 @@
         ],
         "docker": [
             {
-                "status": "disabled"
+                "status": "disabled",
+                "config": [
+                    {
+                        "port_range_start": "81",
+                        "port_range_end": "9999",
+                        "excluded_ports": "22,25,53,80,443,3306,5432,5601,6379,8080,8443,9090,9200,9300,27017"
+                    }
+                ]
             }
         ],
         "dtop": [

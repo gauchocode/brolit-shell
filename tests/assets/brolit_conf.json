@@ -14,6 +14,9 @@
                 "webserver": "false",
                 "database": "false",
                 "docker": "false",
+                "docker_port_range_start": "81",
+                "docker_port_range_end": "9999",
+                "docker_excluded_ports": "22,25,53,80,443,3306,5432,5601,6379,8080,8443,9090,9200,9300,27017",
                 "cache": "false",
                 "other": "false"
             }

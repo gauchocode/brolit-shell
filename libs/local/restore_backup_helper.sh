@@ -1457,6 +1457,7 @@ function restore_backup_from_storage_batch() {
   local success_count=0
   local fail_count=0
   local failed_projects=""
+  local port_assignments=""
 
   chosen_server="$(storage_remote_server_list)"
   exitstatus=$?
@@ -1542,6 +1543,17 @@ function restore_backup_from_storage_batch() {
     fi
 
     ((success_count++))
+
+    # Track port assignment for Docker projects
+    if [[ "${chosen_restore_type}" == "project" ]]; then
+      local project_env="${PROJECTS_PATH}/${chosen_project}/.env"
+      if [[ -f "${project_env}" ]]; then
+        local assigned_port
+        assigned_port="$(grep -E "^(WP_PORT|APP_PORT|PORT|WEBSERVER_PORT)=" "${project_env}" | head -1 | cut -d'=' -f2)"
+        [[ -n "${assigned_port}" ]] && port_assignments="${port_assignments}  ${chosen_project} -> port ${assigned_port}\n"
+      fi
+    fi
+
     send_notification "${SERVER_NAME}" "${chosen_restore_type} ${chosen_project} restored!" "success"
 
   done <<< "${selected_backups}"
@@ -1552,6 +1564,10 @@ function restore_backup_from_storage_batch() {
   if [[ ${fail_count} -gt 0 ]]; then
     display --indent 6 --text "- Failed: ${fail_count}" --result "FAIL" --color RED
     display --indent 8 --text "Failed: ${failed_projects}" --tcolor RED
+  fi
+  if [[ -n "${port_assignments}" ]]; then
+    display --indent 6 --text "- Port assignments:" --tcolor WHITE
+    display --indent 8 --text "$(echo -e "${port_assignments}")" --tcolor CYAN
   fi
 
   if [[ ${success_count} -gt 0 ]]; then
@@ -2240,15 +2256,19 @@ function docker_setup_configuration() {
     if [[ -n "${backup_port}" ]]; then
       log_event "debug" "Checking if backup port ${backup_port} is available" "false"
 
-      # Check if port is already in use
-      if lsof -Pi :${backup_port} -sTCP:LISTEN -t >/dev/null 2>&1; then
+      # Check if port is already in use or in excluded list
+      if network_port_is_use "${backup_port}" || network_port_is_excluded "${backup_port}"; then
 
-        # Port is in use, find next available port
-        log_event "warning" "Port ${backup_port} from backup is already in use" "false"
-        display --indent 6 --text "- Port ${backup_port} already in use" --result "WARNING" --color YELLOW
+        # Port is in use or excluded, find next available port
+        local skip_reason=""
+        network_port_is_use "${backup_port}" && skip_reason="already in use"
+        network_port_is_excluded "${backup_port}" && skip_reason="excluded"
+
+        log_event "warning" "Port ${backup_port} from backup is ${skip_reason}" "false"
+        display --indent 6 --text "- Port ${backup_port} ${skip_reason}" --result "WARNING" --color YELLOW
 
         local new_port
-        new_port="$(network_next_available_port "81" "350")"
+        new_port="$(network_next_available_port "${DOCKER_PORT_RANGE_START}" "${DOCKER_PORT_RANGE_END}")"
 
         log_event "info" "Found available port: ${new_port}" "false"
         display --indent 6 --text "- Using port ${new_port} instead" --result "DONE" --color GREEN
@@ -2265,6 +2285,26 @@ function docker_setup_configuration() {
         log_event "debug" "Port ${backup_port} is available" "false"
 
       fi
+    fi
+
+    # Re-read final port from .env (might have changed above)
+    local final_port
+    final_port="$(grep -E "^(WP_PORT|APP_PORT|PORT|WEBSERVER_PORT)=" "${env_file}" | head -1 | cut -d'=' -f2)"
+
+    # Re-verify port is still available right before build
+    if [[ -n "${final_port}" ]] && network_port_is_use "${final_port}"; then
+      log_event "warning" "Port ${final_port} was taken before build, reassigning" "false"
+      display --indent 6 --text "- Port ${final_port} taken before build" --result "WARNING" --color YELLOW
+
+      local retry_port
+      retry_port="$(network_next_available_port "${DOCKER_PORT_RANGE_START}" "${DOCKER_PORT_RANGE_END}")"
+
+      project_set_config_var "${env_file}" "WP_PORT" "${retry_port}" "none" "true"
+      project_set_config_var "${env_file}" "APP_PORT" "${retry_port}" "none" "true"
+      project_set_config_var "${env_file}" "PORT" "${retry_port}" "none" "true"
+      project_set_config_var "${env_file}" "WEBSERVER_PORT" "${retry_port}" "none" "true"
+
+      display --indent 6 --text "- Using port ${retry_port} instead" --result "DONE" --color GREEN
     fi
 
     # Rebuild docker image with existing configuration
@@ -2303,7 +2343,7 @@ function docker_setup_configuration() {
   project_set_config_var "${env_file}" "MYSQL_USER" "${project_name}_user" "none"
 
   # Find the next available port from 81 to 350
-  project_port="$(network_next_available_port "81" "350")"
+  project_port="$(network_next_available_port "${DOCKER_PORT_RANGE_START}" "${DOCKER_PORT_RANGE_END}")"
 
   # TODO: Check project type (WP, Laravel, etc)
 
