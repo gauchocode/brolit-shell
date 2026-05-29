@@ -185,7 +185,11 @@ function _handle_installation_permissions() {
                 # Apply permissions recursively with proper ownership
                 # Use www-data for compatibility with both host and container
                 log_event "debug" "Applying www-data:www-data permissions to ${app_dir}" "false"
-                chown -R www-data:www-data "${app_dir}" 2>/dev/null
+                local current_owner
+                current_owner="$(stat -c '%U:%G' "${app_dir}" 2>/dev/null)"
+                if [[ "${current_owner}" != "www-data:www-data" ]]; then
+                    chown -R www-data:www-data "${app_dir}" 2>/dev/null
+                fi
                 local chown_status=$?
 
                 # If www-data doesn't exist, fall back to 1000:1000 (common Docker UID)
@@ -202,8 +206,8 @@ function _handle_installation_permissions() {
                 # Ensure proper permissions for WordPress directories
                 if [[ "${project_type}" == "wordpress" ]]; then
                     log_event "debug" "Setting WordPress directory permissions" "false"
-                    find "${app_dir}" -type d -exec chmod 755 {} \; 2>/dev/null
-                    find "${app_dir}" -type f -exec chmod 644 {} \; 2>/dev/null
+                    find "${app_dir}" -type d -exec chmod 755 {} + 2>/dev/null
+                    find "${app_dir}" -type f -exec chmod 644 {} + 2>/dev/null
                 fi
 
                 display --indent 6 --text "- Permissions applied to ${app_dir}" --result "DONE" --color GREEN
@@ -212,7 +216,10 @@ function _handle_installation_permissions() {
                 log_event "info" "Standard application directory not found. Setting permissions on entire project directory." "false"
                 display --indent 6 --text "- Setting permissions for Docker project directory"
 
-                chown -R www-data:www-data "${destination_dir}" 2>/dev/null
+                current_owner="$(stat -c '%U:%G' "${destination_dir}" 2>/dev/null)"
+                if [[ "${current_owner}" != "www-data:www-data" ]]; then
+                    chown -R www-data:www-data "${destination_dir}" 2>/dev/null
+                fi
                 if [[ $? -ne 0 ]]; then
                     change_ownership "1000" "1000" "${destination_dir}"
                     if [[ $? -ne 0 ]]; then
