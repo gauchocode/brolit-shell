@@ -369,9 +369,9 @@ function ensure_accesstoken
 
     $CURL_BIN $CURL_ACCEPT_CERTIFICATES $API_OAUTH_TOKEN -d grant_type=refresh_token -d refresh_token=$OAUTH_REFRESH_TOKEN -u $OAUTH_APP_KEY:$OAUTH_APP_SECRET -o "$RESPONSE_FILE" 2>/dev/null
     check_http_response
-    OAUTH_ACCESS_TOKEN=$(sed -n 's/.*"access_token": "\([^"]*\).*/\1/p' "$RESPONSE_FILE")
+    OAUTH_ACCESS_TOKEN=$(sed -n 's/.*"access_token": *"\([^"]*\).*/\1/p' "$RESPONSE_FILE")
 
-    local expires_in=$(sed -n 's/.*"expires_in": \([0-9]*\).*/\1/p' "$RESPONSE_FILE")
+    local expires_in=$(sed -n 's/.*"expires_in": *\([0-9]*\).*/\1/p' "$RESPONSE_FILE")
 
     # one minute safety buffer
     OAUTH_ACCESS_TOKEN_EXPIRE=$(($now + $expires_in - 60))
@@ -962,16 +962,16 @@ function db_account_info
     #Check
     if grep -q "^HTTP/[12].* 200" "$RESPONSE_FILE"; then
 
-        name=$(sed -n 's/.*"display_name": "\([^"]*\).*/\1/p' "$RESPONSE_FILE")
+        name=$(sed -n 's/.*"display_name": *"\([^"]*\).*/\1/p' "$RESPONSE_FILE")
         echo -e "\n\nName:\t\t$name"
 
-        uid=$(sed -n 's/.*"account_id": "\([^"]*\).*/\1/p' "$RESPONSE_FILE")
+        uid=$(sed -n 's/.*"account_id": *"\([^"]*\).*/\1/p' "$RESPONSE_FILE")
         echo -e "UID:\t\t$uid"
 
-        email=$(sed -n 's/.*"email": "\([^"]*\).*/\1/p' "$RESPONSE_FILE")
+        email=$(sed -n 's/.*"email": *"\([^"]*\).*/\1/p' "$RESPONSE_FILE")
         echo -e "Email:\t\t$email"
 
-        country=$(sed -n 's/.*"country": "\([^"]*\).*/\1/p' "$RESPONSE_FILE")
+        country=$(sed -n 's/.*"country": *"\([^"]*\).*/\1/p' "$RESPONSE_FILE")
         echo -e "Country:\t$country"
 
         echo ""
@@ -1163,14 +1163,18 @@ function db_list_outfile
         #Check
         if grep -q "^HTTP/[12].* 200" "$RESPONSE_FILE"; then
 
-            #Extracting directory content [...]
-            #and replacing "}, {" with "}\n{"
-            #I don't like this piece of code... but seems to be the only way to do this with SED, writing a portable code...
-            local DIR_CONTENT=$(sed -n 's/.*: \[{\(.*\)/\1/p' "$RESPONSE_FILE" | sed 's/}, *{/}\
+            #Extracting directory content [...] using jq (resilient to JSON with or without spaces).
+            #Fallback to sed (also resilient) if jq is unavailable.
+            local json_body
+            json_body=$(grep -o '{.*' "$RESPONSE_FILE")
+            if echo "${json_body}" | jq -c '.entries[]?' > "$TEMP_FILE" 2>/dev/null; then
+                : # jq succeeded, one entry per line in $TEMP_FILE
+            else
+                local DIR_CONTENT=$(sed -n 's/.*:\[{\(.*\)/\1/p' "$RESPONSE_FILE" | sed 's/}, *{/}\
     {/g')
-
-            #Converting escaped quotes to unicode format
-            echo "$DIR_CONTENT" | sed 's/\\"/\\u0022/' > "$TEMP_FILE"
+                #Converting escaped quotes to unicode format
+                echo "$DIR_CONTENT" | sed 's/\\"/\\u0022/' > "$TEMP_FILE"
+            fi
 
             #Extracting files and subfolders
             while read -r line; do
@@ -1382,7 +1386,7 @@ function db_share
     #Check
     if grep -q "^HTTP/[12].* 200" "$RESPONSE_FILE"; then
         print " > Share link: "
-        SHARE_LINK=$(sed -n 's/.*"url": "\([^"]*\).*/\1/p' "$RESPONSE_FILE")
+        SHARE_LINK=$(sed -n 's/.*"url": *"\([^"]*\).*/\1/p' "$RESPONSE_FILE")
         echo "$SHARE_LINK"
     else
         get_Share "$FILE_DST"
@@ -1401,7 +1405,7 @@ function get_Share
     #Check
     if grep -q "^HTTP/[12].* 200" "$RESPONSE_FILE"; then
         print " > Share link: "
-        SHARE_LINK=$(sed -n 's/.*"url": "\([^"]*\).*/\1/p' "$RESPONSE_FILE")
+        SHARE_LINK=$(sed -n 's/.*"url": *"\([^"]*\).*/\1/p' "$RESPONSE_FILE")
         echo "$SHARE_LINK"
     else
         print "FAILED\n"
@@ -1520,7 +1524,7 @@ function db_sha
         return
     fi
 
-    local SHA256=$(sed -n 's/.*"content_hash": "\([^"]*\).*/\1/p' "$RESPONSE_FILE")
+    local SHA256=$(sed -n 's/.*"content_hash": *"\([^"]*\).*/\1/p' "$RESPONSE_FILE")
     echo "$SHA256"
 }
 
@@ -1624,7 +1628,7 @@ else
 
     $CURL_BIN $CURL_ACCEPT_CERTIFICATES $API_OAUTH_TOKEN -d code=$access_code -d grant_type=authorization_code -u $OAUTH_APP_KEY:$OAUTH_APP_SECRET -o "$RESPONSE_FILE" 2>/dev/null
     check_http_response
-    OAUTH_REFRESH_TOKEN=$(sed -n 's/.*"refresh_token": "\([^"]*\).*/\1/p' "$RESPONSE_FILE")
+    OAUTH_REFRESH_TOKEN=$(sed -n 's/.*"refresh_token": *"\([^"]*\).*/\1/p' "$RESPONSE_FILE")
 
     echo "CONFIGFILE_VERSION=2.0" > "$CONFIG_FILE"
     echo "OAUTH_APP_KEY=$OAUTH_APP_KEY" >> "$CONFIG_FILE"

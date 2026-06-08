@@ -133,6 +133,117 @@ function docker_compose_up() {
 }
 
 ################################################################################
+# Patch pnpm-workspace.yaml to whitelist native build scripts (pnpm 10/11+)
+#
+# Since pnpm 10, build/postinstall scripts of native packages (sharp, @swc/core,
+# @parcel/watcher, unrs-resolver, esbuild, etc.) are blocked by default. They
+# must be explicitly whitelisted or pnpm install inside the Dockerfile fails
+# with [ERR_PNPM_IGNORED_BUILDS].
+#
+# IMPORTANT: pnpm 11 stopped reading the `pnpm` field in package.json. The new
+# format is `allowBuilds:` (a map of package -> true) in pnpm-workspace.yaml,
+# and the Dockerfile must COPY that file before running pnpm install.
+#
+# This function:
+#   1. Searches for a pnpm-lock.yaml in the project directory (root or
+#      common subdirs like application/, app/, web/, frontend/).
+#   2. Writes/updates a pnpm-workspace.yaml next to it using the pnpm 11
+#      `allowBuilds` map format with the most common native packages.
+#   3. Patches the Dockerfile so the pnpm-workspace.yaml is copied into the
+#      build context before the `pnpm install` step.
+#
+# Arguments:
+#   ${1} = ${project_dir} - Directory containing the docker-compose.yml
+#
+# Outputs:
+#   0 (always, even if no pnpm project is found or patch fails)
+################################################################################
+
+function docker_compose_patch_pnpm_builds() {
+
+    local project_dir="${1}"
+
+    local pnpm_dir=""
+    local workspace_file=""
+
+    # Search for a pnpm-lock.yaml in common locations
+    for candidate in \
+        "${project_dir}/pnpm-lock.yaml" \
+        "${project_dir}/application/pnpm-lock.yaml" \
+        "${project_dir}/app/pnpm-lock.yaml" \
+        "${project_dir}/web/pnpm-lock.yaml" \
+        "${project_dir}/frontend/pnpm-lock.yaml"; do
+        if [[ -f "${candidate}" ]]; then
+            pnpm_dir="$(dirname "${candidate}")"
+            workspace_file="${pnpm_dir}/pnpm-workspace.yaml"
+            break
+        fi
+    done
+
+    [[ -z "${pnpm_dir}" ]] && return 0
+
+    log_event "info" "Detected pnpm project at ${pnpm_dir}; writing pnpm-workspace.yaml with allowBuilds" "false"
+
+    # Write pnpm 11 allowBuilds map. Use a heredoc to keep formatting clean.
+    cat > "${workspace_file}" << 'PWS_EOF'
+allowBuilds:
+  sharp: true
+  "@swc/core": true
+  "@parcel/watcher": true
+  unrs-resolver: true
+  esbuild: true
+  better-sqlite3: true
+  node-gyp: true
+PWS_EOF
+
+    log_event "info" "Wrote ${workspace_file}" "false"
+
+    # Patch the Dockerfile (if any) so pnpm-workspace.yaml is copied into the
+    # image before pnpm install. We rewrite the typical COPY line:
+    #   COPY application/package.json application/pnpm-lock.yaml* ./
+    # to also include application/pnpm-workspace.yaml* (matching the pnpm_dir).
+    local dockerfile="${project_dir}/Dockerfile"
+    if [[ -f "${dockerfile}" ]]; then
+
+        # Compute the relative path of pnpm-workspace.yaml from the build context
+        # (project_dir is the build context root for the typical Brolit compose).
+        local rel_workspace
+        rel_workspace="${workspace_file#${project_dir}/}"
+
+        # Skip if the Dockerfile already references pnpm-workspace.yaml
+        if ! grep -q 'pnpm-workspace.yaml' "${dockerfile}"; then
+
+        # Try to amend an existing "COPY ... pnpm-lock.yaml* ./" line
+        if grep -Eq 'COPY[[:space:]]+[^#\n]*pnpm-lock.yaml\*' "${dockerfile}"; then
+            local copy_line
+            copy_line="$(grep -nE 'COPY[[:space:]]+[^#\n]*pnpm-lock.yaml\*[[:space:]]+\./' "${dockerfile}" | head -1 | cut -d: -f1)"
+            if [[ -n "${copy_line}" ]]; then
+                sed -i -E "${copy_line}s|(COPY[[:space:]]+[^#\n]*pnpm-lock.yaml\*)([[:space:]]+\./)|\1 ${rel_workspace}*\2|" "${dockerfile}"
+                log_event "info" "Patched Dockerfile line ${copy_line} to include ${rel_workspace}*" "false"
+            fi
+        else
+                # No existing pnpm-lock.yaml COPY line found. Insert a new COPY
+                # line right before the first `RUN corepack enable` or
+                # `pnpm install` line.
+                local insert_line
+                insert_line="$(grep -nE 'RUN[[:space:]]+corepack[[:space:]]+enable|pnpm[[:space:]]+install' "${dockerfile}" | head -1 | cut -d: -f1)"
+                if [[ -n "${insert_line}" ]]; then
+                    sed -i "${insert_line}i COPY ${rel_workspace}* ./" "${dockerfile}"
+                    log_event "info" "Inserted COPY ${rel_workspace}* ./ before line ${insert_line} in Dockerfile" "false"
+                else
+                    log_event "warning" "Could not locate pnpm install step in ${dockerfile}; please add COPY ${rel_workspace}* ./ manually" "false"
+                fi
+            fi
+        else
+            log_event "debug" "Dockerfile already references pnpm-workspace.yaml; no Dockerfile patch needed" "false"
+        fi
+    fi
+
+    return 0
+
+}
+
+################################################################################
 # Execute a docker compose build
 #
 # Arguments:
@@ -147,6 +258,11 @@ function docker_compose_build() {
     local compose_file="${1}"
 
     local exitstatus
+
+    # Patch pnpm package.json (if any) so pnpm 10+ allows native build scripts
+    # (sharp, @swc/core, @parcel/watcher, etc.). Without this, `pnpm install`
+    # fails with [ERR_PNPM_IGNORED_BUILDS] and the Docker build aborts.
+    docker_compose_patch_pnpm_builds "$(dirname "${compose_file}")"
 
     # Log
     display --indent 6 --text "- Pulling docker stack ..."
@@ -985,8 +1101,8 @@ function docker_project_install() {
 
     # PHP Version
     # Whiptail menu to ask php version to work with
-    php_versions="8.0 8.1 8.2 8.3 8.4"
-    php_version="$(whiptail_selection_menu "PHP Version" "Choose a PHP version for the Docker container:" "${php_versions}" "8.3")" # Changed default from 8.2 to 8.3
+    php_versions="8.3 8.4 8.5"
+    php_version="$(whiptail_selection_menu "PHP Version" "Choose a PHP version for the Docker container:" "${php_versions}" "8.3")"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 1 ]]; then
@@ -1076,7 +1192,7 @@ function docker_project_install() {
         max_retries=3
         success=false
         for retry in $(seq 1 $max_retries); do
-            if docker compose -f "${compose_file}" run -T -u 33 -e HOME=/tmp -e APP_USER_ID="${APP_USER_ID}" -e APP_GROUP_ID="${APP_GROUP_ID}" --rm wordpress-cli \
+            if docker compose -f "${compose_file}" run -T -u "${APP_USER_ID}" -e HOME=/tmp -e APP_USER_ID="${APP_USER_ID}" -e APP_GROUP_ID="${APP_GROUP_ID}" --rm wordpress-cli \
                 wp config create \
                 --dbname="${project_database}" \
                 --dbuser="${project_database_user}" \
@@ -1923,8 +2039,8 @@ function docker_project_install_from_git() {
             # Generate configuration
             port_available="$(network_next_available_port "${DOCKER_PORT_RANGE_START}" "${DOCKER_PORT_RANGE_END}")"
 
-            php_versions="8.0 8.1 8.2 8.3 8.4"
-            php_version="$(whiptail_selection_menu "PHP Version" "Choose a PHP version for the Docker container:" "${php_versions}" "8.3")" # Changed default from 8.2 to 8.3
+            php_versions="8.3 8.4 8.5"
+            php_version="$(whiptail_selection_menu "PHP Version" "Choose a PHP version for the Docker container:" "${php_versions}" "8.3")"
             [[ $? -eq 1 ]] && return 1
 
             project_database="${project_name}_${project_stage}"
@@ -2090,6 +2206,14 @@ function docker_update_php_version() {
 
     log_section "Update PHP Version"
 
+    # Normalize project before upgrade (fix .env, docker-compose.yml, config dirs)
+    docker_project_normalize "${project_path}"
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 1 ]]; then
+        display --indent 6 --text "- Project normalization failed" --result "FAIL" --color RED
+        return 1
+    fi
+
     # Validate .env file
     if [[ ! -f "${env_file}" ]]; then
         display --indent 6 --text "- .env file not found" --result "FAIL" --color RED
@@ -2119,7 +2243,7 @@ function docker_update_php_version() {
     fi
 
     # Ask user to select new PHP version
-    php_versions="8.0 8.1 8.2 8.3 8.4 8.5"
+    php_versions="8.3 8.4 8.5"
     new_version="$(whiptail_selection_menu "PHP Version" "Choose new PHP version for Docker container:" "${php_versions}" "${old_version}")"
     exitstatus=$?
     if [[ ${exitstatus} -eq 1 ]]; then
@@ -2224,7 +2348,9 @@ function docker_update_php_version() {
     if [[ ${running_services} -lt ${total_services} ]]; then
         clear_previous_lines "1"
         display --indent 6 --text "- Containers running: ${running_services}/${total_services}" --result "WARN" --color YELLOW
-        log_event "warning" "Not all containers are running after PHP version update (${running_services}/${total_services})" "false"
+        log_event "error" "Not all containers are running after PHP version update, reverting (${running_services}/${total_services})" "false"
+        docker_update_php_version_revert "${project_path}" "${env_backup}"
+        return 1
     else
         clear_previous_lines "1"
         display --indent 6 --text "- Verifying containers" --result "DONE" --color GREEN
@@ -2245,6 +2371,19 @@ function docker_update_php_version() {
 
         send_notification "${SERVER_NAME}" "PHP version updated for project $(basename "${project_path}"): ${old_version} -> ${new_version}" "success"
 
+        # Cleanup old PHP version config directory
+        local old_version_dir="${project_path}/php-${old_version}_docker"
+        if [[ -d "${old_version_dir}" ]]; then
+            if whiptail --title "Cleanup" \
+                --yesno "Remove old PHP ${old_version} config directory?\n\n(${old_version_dir})\n\nYou can also keep it as a backup." 12 70; then
+                rm -rf "${old_version_dir}"
+                display --indent 6 --text "- Removed old PHP ${old_version} config directory" --result "DONE" --color GREEN
+                log_event "info" "Removed old PHP ${old_version} config directory for project $(basename "${project_path}")" "false"
+            else
+                display --indent 6 --text "- Kept old PHP ${old_version} config directory" --result "SKIPPED" --color YELLOW
+            fi
+        fi
+
         return 0
     else
         # User says it does not work — revert
@@ -2257,6 +2396,143 @@ function docker_update_php_version() {
         return 1
     fi
 
+}
+
+################################################################################
+# Docker: Normalize project structure before PHP version update
+#
+# Inspects the project's .env, docker-compose.yml, and PHP config directories,
+# and aligns them with the brolit-shell standard template.
+#
+# Arguments:
+#   ${1} = ${project_path}
+#
+# Outputs:
+#   0 if ok, 1 on error
+################################################################################
+
+function docker_project_normalize() {
+
+    local project_path="${1}"
+    local compose_file="${project_path}/docker-compose.yml"
+    local env_file="${project_path}/.env"
+    local php_version
+    local normalized=false
+
+    log_subsection "Normalize Project"
+
+    # -- Step 1: Normalize .env ------------------------------------------------
+
+    if [[ ! -f "${env_file}" ]]; then
+        display --indent 6 --text "- .env file not found, cannot normalize" --result "FAIL" --color RED
+        return 1
+    fi
+
+    # Get current PHP version
+    php_version="$(grep '^PHP_VERSION=' "${env_file}" | cut -d'=' -f2 | tr -d '[:space:]')"
+
+    # Ensure APP_USER_ID and APP_GROUP_ID exist (default: 33 = www-data)
+    if ! grep -q '^APP_USER_ID=' "${env_file}"; then
+        project_set_config_var "${env_file}" "APP_USER_ID" "33" "none"
+        normalized=true
+    fi
+    if ! grep -q '^APP_GROUP_ID=' "${env_file}"; then
+        project_set_config_var "${env_file}" "APP_GROUP_ID" "33" "none"
+        normalized=true
+    fi
+
+    # Ensure MYSQL_DATA_DIR exists
+    if ! grep -q '^MYSQL_DATA_DIR=' "${env_file}"; then
+        project_set_config_var "${env_file}" "MYSQL_DATA_DIR" "./mysql_data" "none"
+        normalized=true
+    fi
+
+    # Ensure REDIS_DATA exists
+    if ! grep -q '^REDIS_DATA=' "${env_file}"; then
+        project_set_config_var "${env_file}" "REDIS_DATA" "./redis" "none"
+        normalized=true
+    fi
+
+    # -- Step 2: Normalize docker-compose.yml ----------------------------------
+
+    if [[ ! -f "${compose_file}" ]]; then
+        display --indent 6 --text "- docker-compose.yml not found, cannot normalize" --result "FAIL" --color RED
+        return 1
+    fi
+
+    # Fix wordpress-cli user: must use APP_USER_ID:APP_GROUP_ID
+    if grep -q '^[[:space:]]*wordpress-cli:' "${compose_file}"; then
+        local current_user
+        current_user="$(sed -n '/^[[:space:]]*wordpress-cli:/,/^[^[:space:]#]/p' "${compose_file}" | grep 'user:' | head -1)"
+        if [[ -n "${current_user}" ]] && ! echo "${current_user}" | grep -q 'APP_USER_ID'; then
+            # Replace hardcoded user with variable reference
+            sed -i '/^[[:space:]]*wordpress-cli:/,/^[^[:space:]#]/ s/^\([[:space:]]*\)user:.*$/\1user: ${APP_USER_ID}:${APP_GROUP_ID}  # This is required to run wordpress-cli with the same user-id as wordpress./' "${compose_file}"
+            display --indent 6 --text "- Fixed wordpress-cli user to use APP_USER_ID:APP_GROUP_ID" --result "DONE" --color GREEN
+            normalized=true
+        fi
+    fi
+
+    # Remove invalid www.conf-overrides volume mount from php-fpm
+    if grep -q 'www.conf-overrides' "${compose_file}"; then
+        sed -i '/www.conf-overrides/d' "${compose_file}"
+        display --indent 6 --text "- Removed invalid www.conf-overrides volume mount from php-fpm" --result "DONE" --color GREEN
+        normalized=true
+    fi
+
+    # -- Step 3: Normalize PHP config directories -----------------------------
+
+    if [[ -n "${php_version}" ]]; then
+        local php_config_dir="${project_path}/php-${php_version}_docker/php-fpm"
+
+        if [[ -d "${php_config_dir}" ]]; then
+            # Remove empty www.conf-overrides directory if it exists
+            if [[ -d "${php_config_dir}/www.conf-overrides" ]]; then
+                if [[ -z "$(ls -A "${php_config_dir}/www.conf-overrides" 2>/dev/null)" ]]; then
+                    rmdir "${php_config_dir}/www.conf-overrides"
+                    display --indent 6 --text "- Removed empty www.conf-overrides directory" --result "DONE" --color GREEN
+                    normalized=true
+                fi
+            fi
+
+            # Ensure php-fpm-pool-prod.conf exists
+            if [[ ! -f "${php_config_dir}/php-fpm-pool-prod.conf" ]]; then
+                local template_base
+                if grep -q '^WP_PORT=' "${env_file}" 2>/dev/null; then
+                    template_base="${BROLIT_MAIN_DIR}/config/docker-compose/wordpress/production-stack-proxy"
+                else
+                    template_base="${BROLIT_MAIN_DIR}/config/docker-compose/php/production-stack-proxy"
+                fi
+                local template_pool="${template_base}/php-${php_version}_docker/php-fpm/php-fpm-pool-prod.conf"
+                if [[ -f "${template_pool}" ]]; then
+                    cp "${template_pool}" "${php_config_dir}/php-fpm-pool-prod.conf"
+                    display --indent 6 --text "- Created missing php-fpm-pool-prod.conf from template" --result "DONE" --color GREEN
+                    normalized=true
+                fi
+            fi
+
+            # Ensure php-ini-overrides.ini exists
+            if [[ ! -f "${php_config_dir}/php-ini-overrides.ini" ]]; then
+                local template_base
+                if grep -q '^WP_PORT=' "${env_file}" 2>/dev/null; then
+                    template_base="${BROLIT_MAIN_DIR}/config/docker-compose/wordpress/production-stack-proxy"
+                else
+                    template_base="${BROLIT_MAIN_DIR}/config/docker-compose/php/production-stack-proxy"
+                fi
+                local template_ini="${template_base}/php-${php_version}_docker/php-fpm/php-ini-overrides.ini"
+                if [[ -f "${template_ini}" ]]; then
+                    cp "${template_ini}" "${php_config_dir}/php-ini-overrides.ini"
+                    display --indent 6 --text "- Created missing php-ini-overrides.ini from template" --result "DONE" --color GREEN
+                    normalized=true
+                fi
+            fi
+        fi
+    fi
+
+    if [[ "${normalized}" == "false" ]]; then
+        display --indent 6 --text "- Project already normalized" --result "OK" --color GREEN
+    fi
+
+    return 0
 }
 
 ################################################################################
@@ -2306,9 +2582,24 @@ function docker_update_php_version_revert() {
         send_notification "${SERVER_NAME}" "PHP version reverted to ${reverted_version} for project $(basename "${project_path}")" "warning"
         return 0
     else
-        display --indent 6 --text "- Revert build failed" --result "FAIL" --color RED
-        log_event "error" "Revert build failed for project $(basename "${project_path}")" "false"
-        return 1
+        display --indent 6 --text "- Revert build failed, attempting recovery with existing images ..." --result "FAIL" --color RED
+        log_event "warning" "Revert build failed, attempting docker compose up without build for project $(basename "${project_path}")" "false"
+
+        # Fallback: restart stack with cached images (skip build)
+        docker compose -f "${compose_file}" down 2>/dev/null
+        docker compose -f "${compose_file}" up --detach 2>/dev/null
+        fallback_status=$?
+
+        if [[ ${fallback_status} -eq 0 ]]; then
+            display --indent 6 --text "- Stack restarted with cached images" --result "DONE" --color GREEN
+            log_event "info" "Recovery: stack restarted with cached images for project $(basename "${project_path}")" "false"
+            send_notification "${SERVER_NAME}" "PHP version reverted but using cached images for $(basename "${project_path}") - rebuild failed" "warning"
+            return 0
+        else
+            display --indent 6 --text "- Recovery also failed, manual intervention required" --result "FAIL" --color RED
+            log_event "error" "Revert and recovery both failed for project $(basename "${project_path}")" "false"
+            return 1
+        fi
     fi
 
 }

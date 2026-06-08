@@ -30,6 +30,11 @@ function nginx_server_create() {
     local redirect_domains="${4}"
     local proxy_port="${5}"
 
+    # Ensure Brolit's nginx.conf is in place: defines $connection_upgrade (used by
+    # proxy_* templates) and other shared maps. Without this, nginx -t fails with
+    # "unknown connection_upgrade variable" on hosts still using stock nginx.conf.
+    nginx_reconfigure
+
     # Log
     log_event "debug" "Project type: ${project_type}" "false"
     log_event "debug" "Server type: ${server_type}" "false"

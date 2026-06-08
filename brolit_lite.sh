@@ -1972,7 +1972,7 @@ function _sites_directories() {
     local site_size
 
     ## List only directories
-    all_directories="$(find -L "${PROJECTS_PATH}" -maxdepth 1 -mindepth 1 -type d -not -path '*/.*')"
+    all_directories="$(find -L "${PROJECTS_PATH}" -maxdepth 1 -mindepth 1 -type d -not -path '*/.*' | sort)"
 
     for site_path in ${all_directories}; do
 
