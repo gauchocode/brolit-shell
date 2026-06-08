@@ -923,6 +923,8 @@ function _brolit_configuration_load_mariadb() {
         else
 
             mysql_ask_root_psw
+            MYSQL_ROOT="${MYSQL} --defaults-file=${MYSQL_CONF}"
+            MYSQLDUMP_ROOT="${MYSQLDUMP} --defaults-file=${MYSQL_CONF}"
 
         fi
 
@@ -1022,6 +1024,8 @@ function _brolit_configuration_load_mysql() {
         else
 
             mysql_ask_root_psw
+            MYSQL_ROOT="${MYSQL} --defaults-file=${MYSQL_CONF}"
+            MYSQLDUMP_ROOT="${MYSQLDUMP} --defaults-file=${MYSQL_CONF}"
 
         fi
 

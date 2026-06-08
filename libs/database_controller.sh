@@ -194,7 +194,7 @@ function database_import() {
 
     case ${db_engine} in
         MYSQL|mysql)
-            mysql_database_import "${db_name}" "false" "${dump_file}"
+            mysql_database_import "${db_name}" "${container_name}" "${dump_file}"
             ;;
         POSTGRESQL|postgres)
             postgres_database_import "${db_name}" "${container_name}" "${dump_file}"
