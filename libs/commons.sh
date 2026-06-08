@@ -849,7 +849,7 @@ function get_all_directories() {
   fi
 
   # -L follows symlinks, -not -path '*/.*' will ommit hidden directories
-  first_level_dir="$(find ${find_opts} "${main_dir}" -maxdepth 1 -mindepth 1 -type d -not -path '*/.*' 2>&1)"
+  first_level_dir="$(find ${find_opts} "${main_dir}" -maxdepth 1 -mindepth 1 -type d -not -path '*/.*' 2>&1 | sort)"
 
   # Debug logging
   if [[ -z "${first_level_dir}" ]]; then

@@ -31,6 +31,9 @@ function docker_optimizer_list_projects() {
     fi
   done < <(find "${PROJECTS_PATH}" -maxdepth 2 -name "docker-compose.yml" -type f -print0 2>/dev/null)
 
+  # Sort alphabetically
+  IFS=$'\n' project_list=($(sort <<<"${project_list[*]}")); unset IFS
+
   # Output project list
   if [[ ${#project_list[@]} -gt 0 ]]; then
     printf '%s\n' "${project_list[@]}"
