@@ -48,7 +48,7 @@ services:
         working_dir: /wordpress
         volumes:
             - ${WWW_DATA_DIR}:/wordpress
-            - ./php-${PHP_VERSION}_docker/php-fpm/php-ini-overrides.ini:/etc/php/${PHP_VERSION}/fpm/conf.d/99-overrides.ini
+            - ./php-${PHP_VERSION}_docker/php-fpm/php-ini-overrides.ini:/usr/local/etc/php/conf.d/99-overrides.ini
         networks:
             - internal
         healthcheck:

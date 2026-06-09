@@ -49,6 +49,6 @@ server {
     
     server_name domain.com;
 
-    return 301 http://www.domain.com$request_uri;
+    return 301 https://www.domain.com$request_uri;
 
 }

@@ -338,6 +338,14 @@ function project_creation_menu() {
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
+        # Ask if user wants to enable OPCache for this PHP/WP project
+        if whiptail --title "OPCache" --yesno "Do you want to enable OPCache for this project?\n\nOPCache improves PHP performance by caching compiled bytecode.\nRecommended for production sites." 10 60; then
+          PROJECT_OPCACHE_ENABLED="true"
+          log_event "info" "OPCache will be enabled for this project" "false"
+        else
+          PROJECT_OPCACHE_ENABLED="false"
+        fi
+
         # NEW WORDPRESS PROJECT
         [[ ${chosen_project_type_options} == *"01"* ]] && project_install "${PROJECTS_PATH}" "wordpress" "" "" "" "clean"
 
@@ -378,6 +386,14 @@ function project_creation_menu() {
         log_event "info" "Working with domain: ${chosen_domain}"
         display --indent 6 --text "- Selecting project domain" --result "DONE" --color GREEN
         display --indent 8 --text "${chosen_domain}" --tcolor YELLOW
+
+        # Ask if user wants to enable OPCache
+        if whiptail --title "OPCache" --yesno "Do you want to enable OPCache for this project?\n\nOPCache improves PHP performance by caching compiled bytecode.\nRecommended for production sites." 10 60; then
+          PROJECT_OPCACHE_ENABLED="true"
+          log_event "info" "OPCache will be enabled for this project" "false"
+        else
+          PROJECT_OPCACHE_ENABLED="false"
+        fi
 
         # Restore backup from storage
         restore_backup_from_storage "${chosen_domain}"

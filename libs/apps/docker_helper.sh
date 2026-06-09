@@ -1172,6 +1172,16 @@ function docker_project_install() {
 
         compose_file="${project_path}/docker-compose.yml"
 
+        # Apply OPCache if enabled via PROJECT_OPCACHE_ENABLED (set during project creation)
+        if [[ "${PROJECT_OPCACHE_ENABLED:-false}" == "true" ]]; then
+          local opcache_file="${project_path}/php-${php_version}_docker/php-fpm/opcache-prod.ini"
+          if [[ -f "${opcache_file}" ]]; then
+            sed -i "s/^opcache\.enable=0/opcache.enable=1/" "${opcache_file}"
+            sed -i "s/^opcache\.enable_cli=0/opcache.enable_cli=1/" "${opcache_file}"
+            display --indent 6 --text "- OPCache enabled" --result "DONE" --color GREEN
+          fi
+        fi
+
         # Execute docker compose commands
         docker_compose_build "${compose_file}"
         [[ $? -eq 1 ]] && return 1
@@ -1349,6 +1359,16 @@ define('WP_REDIS_HOST','redis');\n" "${project_path}/wordpress/wp-config.php"
         rm -f "${project_path}/.enve" 2>/dev/null
 
         compose_file="${project_path}/docker-compose.yml"
+
+        # Apply OPCache if enabled via PROJECT_OPCACHE_ENABLED (set during project creation)
+        if [[ "${PROJECT_OPCACHE_ENABLED:-false}" == "true" ]]; then
+          local opcache_file="${project_path}/php-${php_version}_docker/php-fpm/opcache-prod.ini"
+          if [[ -f "${opcache_file}" ]]; then
+            sed -i "s/^opcache\.enable=0/opcache.enable=1/" "${opcache_file}"
+            sed -i "s/^opcache\.enable_cli=0/opcache.enable_cli=1/" "${opcache_file}"
+            display --indent 6 --text "- OPCache enabled" --result "DONE" --color GREEN
+          fi
+        fi
 
         # Execute docker compose commands
         docker_compose_pull "${compose_file}"

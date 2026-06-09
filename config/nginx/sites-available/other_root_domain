@@ -50,6 +50,6 @@ server {
 
     server_name root_domain.com;
 
-    return 301 http://domain.com$request_uri;
+    return 301 https://domain.com$request_uri;
 
 }
