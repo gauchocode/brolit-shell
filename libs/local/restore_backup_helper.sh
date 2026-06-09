@@ -198,6 +198,7 @@ function _handle_installation_permissions() {
                     change_ownership "1000" "1000" "${app_dir}"
                     if [[ $? -ne 0 ]]; then
                         log_event "error" "Failed to change ownership on ${app_dir}" "false"
+                        clear_previous_lines "1"
                         display --indent 6 --text "- Applying ownership to ${app_dir}" --result "FAIL" --color RED
                         return 1
                     fi
@@ -210,7 +211,10 @@ function _handle_installation_permissions() {
                     find "${app_dir}" -type f -exec chmod 644 {} + 2>/dev/null
                 fi
 
-                display --indent 6 --text "- Permissions applied to ${app_dir}" --result "DONE" --color GREEN
+                local project_short
+                project_short="$(basename "$(dirname "${app_dir}")")/$(basename "${app_dir}")"
+                clear_previous_lines "1"
+                display --indent 6 --text "- Permissions applied to ${project_short}" --result "DONE" --color GREEN
             else
                 # For dockerized projects without standard structure, set permissions on the entire project directory
                 log_event "info" "Standard application directory not found. Setting permissions on entire project directory." "false"
@@ -224,9 +228,16 @@ function _handle_installation_permissions() {
                     change_ownership "1000" "1000" "${destination_dir}"
                     if [[ $? -ne 0 ]]; then
                         log_event "warning" "Failed to change ownership on ${destination_dir}" "false"
+                        clear_previous_lines "1"
                         display --indent 6 --text "- Applying ownership to ${destination_dir}" --result "WARNING" --color YELLOW
                         # Don't return error - permissions might not be critical for all dockerized projects
+                    else
+                        clear_previous_lines "1"
+                        display --indent 6 --text "- Permissions applied to $(basename "${destination_dir}")" --result "DONE" --color GREEN
                     fi
+                else
+                    clear_previous_lines "1"
+                    display --indent 6 --text "- Permissions applied to $(basename "${destination_dir}")" --result "DONE" --color GREEN
                 fi
             fi
             ;;
@@ -236,9 +247,12 @@ function _handle_installation_permissions() {
             change_ownership "${WSERVER_USER}" "${WSERVER_GROUP}" "${destination_dir}"
             if [[ $? -ne 0 ]]; then
                 log_event "error" "Failed to change ownership to ${WSERVER_USER}:${WSERVER_GROUP} on ${destination_dir}" "false"
+                clear_previous_lines "1"
                 display --indent 6 --text "- Applying ownership ${WSERVER_USER}:${WSERVER_GROUP} to ${destination_dir}" --result "FAIL" --color RED
                 return 1
             fi
+            clear_previous_lines "1"
+            display --indent 6 --text "- Permissions applied to $(basename "${destination_dir}")" --result "DONE" --color GREEN
             ;;
 
     esac
@@ -313,7 +327,11 @@ function restore_project_files() {
         return 1
     fi
 
-    log_subsection "Restoring project files: ${project_domain} → ${project_domain_new}"
+    if [[ "${project_domain}" != "${project_domain_new}" ]]; then
+        log_subsection "Restoring project files: ${project_domain} → ${project_domain_new}"
+    else
+        log_subsection "Restoring project files: ${project_domain}"
+    fi
 
     # 1. Ensure backup file exists locally (download must be done by caller)
     local local_backup_path="${BROLIT_TMP_DIR}/${project_backup_file}"
@@ -382,7 +400,6 @@ function restore_project_files() {
         fi
     fi
 
-    display --indent 6 --text "- Moving files to ${destination_dir}"
     if ! move_files "${project_tmp_dir}" "${PROJECTS_PATH}"; then
         _handle_restore_error 5 "Failed to move files to ${PROJECTS_PATH}"
         return 1
@@ -2345,7 +2362,7 @@ function docker_setup_configuration() {
 
     fi
 
-    log_event "info" "Docker restore completed successfully." "true"
+    display --indent 6 --text "- Docker restore completed successfully" --result "DONE" --color GREEN
     return 0
   fi
 

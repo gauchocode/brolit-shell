@@ -573,7 +573,6 @@ function certbot_certificate_install_auto() {
       log_subsection "Certificate Installation with Certbot Cloudflare"
 
       # Step 1: Install certificate with nginx
-      clear_previous_lines "1"
       display --indent 6 --text "- Installing certificate with nginx" --tcolor CYAN
       log_event "info" "Step 1: Installing certificate with nginx to configure nginx files" "false"
 
