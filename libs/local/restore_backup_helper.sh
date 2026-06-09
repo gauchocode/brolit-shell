@@ -2127,7 +2127,12 @@ function restore_backup_project_database() {
       fi
 
       # Import database directly into the Docker container
-      database_import "${database_engine}" "${docker_mysql_database}" "${BROLIT_TMP_DIR}/${dump_file}" "${container_name}"
+      if database_import "${database_engine}" "${docker_mysql_database}" "${BROLIT_TMP_DIR}/${dump_file}" "${container_name}"; then
+        display --indent 6 --text "- Restore database backup" --result "DONE" --color GREEN
+        log_event "info" "Database ${docker_mysql_database} restored successfully on container ${container_name}" "false"
+      else
+        display --indent 6 --text "- Restore database backup" --result "FAIL" --color RED
+      fi
 
     else
 
