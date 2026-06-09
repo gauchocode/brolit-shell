@@ -3087,6 +3087,7 @@ function project_update_domain_config() {
 
   local project_root_domain
   local project_https_enable="false"
+  local nginx_config_file=""  # tracks the nginx config filename (redirect_domain for root_domain type)
 
   # Log
   log_subsection "Update Domain Configuration"
@@ -3104,29 +3105,52 @@ function project_update_domain_config() {
   [[ ${project_install_type} == "proxy" || ${project_install_type} == "docker"* ]] && project_type="proxy"
 
   # Working with root domain or www?
-  if [[ ${project_domain} == "${project_root_domain}" || ${project_domain} == "www.${project_root_domain}" ]]; then
-
-    # Nginx config
-    nginx_server_create "www.${project_root_domain}" "${project_type}" "root_domain" "${project_root_domain}" "${project_port}"
+  # Use the user-provided domain as canonical, not always www.
+  # Previously this always used www.project_root_domain as primary,
+  # causing infinite redirects when WordPress WP_HOME was set to non-www.
+  if [[ ${project_domain} == "${project_root_domain}" ]]; then
+    # User provided root domain (non-www): serve at non-www, redirect www → non-www
+    # Nginx config: primary = project_domain (non-www), redirect = www
+    # nginx_server_create names root_domain files after the 4th arg (redirect_domains)
+    nginx_config_file="www.${project_root_domain}"
+    nginx_server_create "${project_domain}" "${project_type}" "root_domain" "${nginx_config_file}" "${project_port}"
 
     # Cloudflare
     if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
-      ## Set records based on nginx root_domain configuration
+      ## Nginx redirects: www.root_domain.com -> root_domain.com
+      ## So Cloudflare must point: root -> server IP (A), www -> root (CNAME)
+      cloudflare_delete_record "${project_root_domain}" "www.${project_root_domain}" "A" 2>/dev/null || true
+      cloudflare_set_record "${project_root_domain}" "${project_root_domain}" "A" "false" "${SERVER_IP}"
+      exitstatus=$?
+      [[ ${exitstatus} -ne 0 ]] && cloudflare_exitstatus=${exitstatus}
+
+      cloudflare_delete_record "${project_root_domain}" "${project_root_domain}" "CNAME" 2>/dev/null || true
+      cloudflare_set_record "${project_root_domain}" "www.${project_root_domain}" "CNAME" "false" "${project_root_domain}"
+      exitstatus=$?
+      [[ ${exitstatus} -ne 0 ]] && cloudflare_exitstatus=${exitstatus}
+    fi
+  elif [[ ${project_domain} == "www.${project_root_domain}" ]]; then
+    # User provided www: serve at www, redirect non-www → www
+    nginx_config_file="${project_root_domain}"
+    nginx_server_create "${project_domain}" "${project_type}" "root_domain" "${nginx_config_file}" "${project_port}"
+
+    # Cloudflare
+    if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
       ## Nginx redirects: root_domain.com -> www.root_domain.com
       ## So Cloudflare must point: www -> server IP (A), root -> www (CNAME)
-
-      # For www subdomain: ensure no conflicting CNAME exists, then set A record
       cloudflare_delete_record "${project_root_domain}" "www.${project_root_domain}" "CNAME" 2>/dev/null || true
       cloudflare_set_record "${project_root_domain}" "www.${project_root_domain}" "A" "false" "${SERVER_IP}"
       exitstatus=$?
       [[ ${exitstatus} -ne 0 ]] && cloudflare_exitstatus=${exitstatus}
 
-      # For root domain: ensure no conflicting A record exists, then set CNAME
       cloudflare_delete_record "${project_root_domain}" "${project_root_domain}" "A" 2>/dev/null || true
       cloudflare_set_record "${project_root_domain}" "${project_root_domain}" "CNAME" "false" "www.${project_root_domain}"
       exitstatus=$?
       [[ ${exitstatus} -ne 0 ]] && cloudflare_exitstatus=${exitstatus}
     fi
+  fi
+
+  if [[ ${project_domain} == "${project_root_domain}" || ${project_domain} == "www.${project_root_domain}" ]]; then
 
     if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
       # Wait for DNS propagation (independent of Cloudflare status)
@@ -3145,8 +3169,15 @@ function project_update_domain_config() {
       # Use non-interactive mode (true) to avoid prompts during automated restoration
       if certbot_certificate_install_auto "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_root_domain},www.${project_root_domain}" "true"; then
         # Enable HTTP/2 only if not already enabled
-        if ! grep -q "listen.*http2" "/etc/nginx/sites-available/${project_domain}"; then
-          nginx_server_add_http2_support "${project_domain}"
+        # Use nginx_config_file (redirect_domain) for root_domain type, project_domain for single
+        if [[ -n "${nginx_config_file}" ]]; then
+          if ! grep -q "listen.*http2" "/etc/nginx/sites-available/${nginx_config_file}"; then
+            nginx_server_add_http2_support "${nginx_config_file}"
+          fi
+        else
+          if ! grep -q "listen.*http2" "/etc/nginx/sites-available/${project_domain}"; then
+            nginx_server_add_http2_support "${project_domain}"
+          fi
         fi
         project_https_enable="true"
       else

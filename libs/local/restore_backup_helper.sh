@@ -528,6 +528,46 @@ function _configure_restored_project() {
     
     local project_install_path="${PROJECTS_PATH}/${project_domain_new}"
 
+    # Detect www pattern from backup's wp-config.php and align both old and new domains
+    # This ensures nginx canonical domain matches WordPress WP_HOME, preventing infinite redirects
+    local www_prefix=""
+    local wp_config_path=""
+
+    if [[ ${project_install_type} == "docker"* ]]; then
+        local ww_data_dir
+        ww_data_dir="$(project_get_configured_docker_data_dir "${project_install_path}")"
+        wp_config_path="${ww_data_dir}/wp-config.php"
+    else
+        # Common locations for non-Docker WordPress installations
+        for conf_candidate in "${project_install_path}/wp-config.php" "${project_install_path}/public/wp-config.php" "${project_install_path}/wordpress/wp-config.php"; do
+            if [[ -f "${conf_candidate}" ]]; then
+                wp_config_path="${conf_candidate}"
+                break
+            fi
+        done
+    fi
+
+    if [[ -f "${wp_config_path}" ]]; then
+        local wp_home_url
+        wp_home_url="$(grep -oP "define\s*\(\s*['\"]WP_HOME['\"]\s*,\s*['\"]https?://\K[^'\"]+" "${wp_config_path}" 2>/dev/null | head -1)"
+        if [[ -n "${wp_home_url}" ]]; then
+            if [[ "${wp_home_url}" == "www."* ]]; then
+                www_prefix="www."
+            fi
+            log_event "debug" "Detected WP_HOME from backup: ${wp_home_url} (www_prefix='${www_prefix}')" "false"
+        fi
+    fi
+
+    # Apply the detected www pattern to both old and new domains
+    local root_domain_old root_domain_new
+    root_domain_old="$(domain_get_root "${project_domain}")"
+    root_domain_new="$(domain_get_root "${project_domain_new}")"
+
+    project_domain="${www_prefix}${root_domain_old}"
+    project_domain_new="${www_prefix}${root_domain_new}"
+
+    log_event "debug" "Domains aligned with backup pattern: old=${project_domain}, new=${project_domain_new}" "false"
+
     # Project domain configuration (webserver+certbot+DNS)
     local https_enable="$(project_update_domain_config "${project_domain_new}" "${project_type}" "${project_install_type}" "${project_port}")"
 
@@ -2278,6 +2318,21 @@ function docker_setup_configuration() {
       display --indent 6 --text "- Using port ${retry_port} instead" --result "DONE" --color GREEN
     fi
 
+    # Apply OPCache if enabled via PROJECT_OPCACHE_ENABLED (set during project creation)
+    if [[ "${PROJECT_OPCACHE_ENABLED:-false}" == "true" ]]; then
+      local php_version opcache_file
+      php_version="$(grep -oP '^PHP_VERSION=\K.*' "${env_file}")"
+      if [[ -n "${php_version}" ]]; then
+        opcache_file="${project_install_path}/php-${php_version}_docker/php-fpm/opcache-prod.ini"
+        if [[ -f "${opcache_file}" ]]; then
+          sed -i "s/^opcache\.enable=0/opcache.enable=1/" "${opcache_file}"
+          sed -i "s/^opcache\.enable_cli=0/opcache.enable_cli=1/" "${opcache_file}"
+          project_set_config_var "${env_file}" "OPCACHE_ENABLED" "true" "none"
+          display --indent 6 --text "- OPCache enabled" --result "DONE" --color GREEN
+        fi
+      fi
+    fi
+
     # Rebuild docker image with existing configuration
     if ! docker_compose_build "${project_install_path}/docker-compose.yml"; then
 
@@ -2323,6 +2378,21 @@ function docker_setup_configuration() {
   project_set_config_var "${env_file}" "APP_PORT" "${project_port}" "none" "true"
   project_set_config_var "${env_file}" "PORT" "${project_port}" "none" "true"
   project_set_config_var "${env_file}" "WEBSERVER_PORT" "${project_port}" "none" "true"
+
+  # Apply OPCache if enabled via PROJECT_OPCACHE_ENABLED (set during project creation)
+  if [[ "${PROJECT_OPCACHE_ENABLED:-false}" == "true" ]]; then
+    local php_version opcache_file
+    php_version="$(grep -oP '^PHP_VERSION=\K.*' "${env_file}")"
+    if [[ -n "${php_version}" ]]; then
+      opcache_file="${project_install_path}/php-${php_version}_docker/php-fpm/opcache-prod.ini"
+      if [[ -f "${opcache_file}" ]]; then
+        sed -i "s/^opcache\.enable=0/opcache.enable=1/" "${opcache_file}"
+        sed -i "s/^opcache\.enable_cli=0/opcache.enable_cli=1/" "${opcache_file}"
+        project_set_config_var "${env_file}" "OPCACHE_ENABLED" "true" "none"
+        display --indent 6 --text "- OPCache enabled" --result "DONE" --color GREEN
+      fi
+    fi
+  fi
 
   # Rebuild docker image
   if ! docker_compose_build "${project_install_path}/docker-compose.yml"; then
