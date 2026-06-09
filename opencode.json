@@ -1,0 +1,13 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "ai-first-dev-standard": {
+      "type": "local",
+      "command": ["node", "/home/lpadula/Documents/tukiverse-apps/ai-first-dev-standard/mcp/standard-mcp/server.mjs"],
+      "environment": {
+        "AIFIRST_STANDARD_PATH": "/home/lpadula/Documents/tukiverse-apps/ai-first-dev-standard"
+      },
+      "enabled": true
+    }
+  }
+}
