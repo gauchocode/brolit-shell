@@ -27,7 +27,7 @@ function json_read_field() {
 
     local json_field_value
 
-    json_field_value="$(cat "${json_file}" | jq -r ".${json_field}")"
+    json_field_value="$(cat "${json_file}" | jq -r ".${json_field}" 2>/dev/null)"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
