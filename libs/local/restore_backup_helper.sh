@@ -576,14 +576,27 @@ function _configure_restored_project() {
     fi
 
     # Apply the detected www pattern to both old and new domains
+    # IMPORTANT: Only apply root-level alignment when domains are at root level
+    # (bare domain or www. prefix). Subdomains like paisajismo.bark.com.ar
+    # must be preserved as-is to avoid overwriting root domain configuration.
     local root_domain_old root_domain_new
     root_domain_old="$(domain_get_root "${project_domain}")"
     root_domain_new="$(domain_get_root "${project_domain_new}")"
 
-    project_domain="${www_prefix}${root_domain_old}"
-    project_domain_new="${www_prefix}${root_domain_new}"
+    local is_subdomain=false
+    if [[ "${project_domain}" != "${root_domain_old}" && "${project_domain}" != "www.${root_domain_old}" ]]; then
+        is_subdomain=true
+    elif [[ "${project_domain_new}" != "${root_domain_new}" && "${project_domain_new}" != "www.${root_domain_new}" ]]; then
+        is_subdomain=true
+    fi
 
-    log_event "debug" "Domains aligned with backup pattern: old=${project_domain}, new=${project_domain_new}" "false"
+    if [[ ${is_subdomain} == false ]]; then
+        project_domain="${www_prefix}${root_domain_old}"
+        project_domain_new="${www_prefix}${root_domain_new}"
+        log_event "debug" "Domains aligned with backup pattern: old=${project_domain}, new=${project_domain_new}" "false"
+    else
+        log_event "debug" "Subdomain-level domains detected, preserving original: old=${project_domain}, new=${project_domain_new}" "false"
+    fi
 
     # Project domain configuration (webserver+certbot+DNS)
     local https_enable="$(project_update_domain_config "${project_domain_new}" "${project_type}" "${project_install_type}" "${project_port}")"
