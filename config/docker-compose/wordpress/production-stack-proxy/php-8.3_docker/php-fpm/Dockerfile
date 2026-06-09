@@ -37,6 +37,6 @@ RUN apt-get update; \
 # Switch back to the default user (www-data for serversideup/php)
 USER www-data
 
-COPY --chown=www-data:www-data php-ini-overrides.ini  /etc/php/8.3/fpm/conf.d/z-overrides.ini
-COPY --chown=www-data:www-data opcache-prod.ini       /etc/php/8.3/fpm/conf.d/z-opcache.ini
-COPY --chown=www-data:www-data php-fpm-pool-prod.conf /etc/php/8.3/fpm/pool.d/z-optimised.conf
+COPY --chown=www-data:www-data php-ini-overrides.ini  /usr/local/etc/php/conf.d/z-overrides.ini
+COPY --chown=www-data:www-data opcache-prod.ini       /usr/local/etc/php/conf.d/z-opcache.ini
+COPY --chown=www-data:www-data php-fpm-pool-prod.conf /usr/local/etc/php-fpm.d/z-optimised.conf
