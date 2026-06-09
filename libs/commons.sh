@@ -1036,7 +1036,7 @@ function move_files() {
     # Log
     clear_previous_lines "1"
     log_event "info" "Files moved from ${source_path} to ${destination_path}" "false"
-    #display --indent 6 --text "- Moving files to ${destination_path}" --result "DONE" --color GREEN
+    display --indent 6 --text "- Moving files to ${destination_path}" --result "DONE" --color GREEN
     return 0
 
   else
