@@ -29,28 +29,53 @@ function show_help() {
 
   log_section "Help Menu"
 
-  echo -n "./runner.sh [TASK] [SUB-TASK]... [DOMAIN]...
+  echo -n "./runner.sh [TASK] [SUB-TASK]... [OPTIONS]...
+
+  Tasks:
+    -t, --task        Task to run:
+                        backup              Subtasks: all, files, databases, server-config, project
+                        restore             Subtasks: all, files, databases, server-config, project
+                        project             Subtasks: delete
+                        project-install     (uses -tf/-tt instead of subtask)
+                        database            Subtasks: list_db, create_db, delete_db, rename_db,
+                                            import_db, export_db, list_db_user, create_db_user,
+                                            delete_db_user, change_db_user_psw
+                        cloudflare-api      Subtasks: clear_cache, dev_mode, ssl_mode
+                        wpcli               Subtasks: plugin-install, plugin-activate, plugin-deactivate,
+                                            plugin-update, plugin-version, clear-cache, cache-activate,
+                                            cache-deactivate, verify-installation, core-update, search-replace
+                        ssh-keygen          (no subtask)
+                        disk-cleanup        Subtasks: apt, journal, docker, all
+                        aliases-install     (no subtask)
 
   Options:
-    -t, --task        Task to run:
-                        project-backup
-                        project-restore
-                        project-install
-                        cloudflare-api
-                        disk-cleanup
+    -st, --subtask    Sub-task to run (see task list above)
+    -s,  --site       Site path for tasks execution
+    -D,  --domain     Domain for tasks execution
+    -pn, --pname      Project Name
+    -pt, --ptype      Project Type (wordpress, laravel, php, etc.)
+    -ps, --pstate     Project Stage (prod, dev, test, stage)
+    -db, --dbname     Database name
+    -dbn, --dbname-new  New database name (for rename)
+    -dbs, --dbstage   Database stage
+    -dbu, --dbuser    Database user
+    -dbup, --dbuser-psw  Database user password
+    -tf, --file       Config file path (for project-install)
+    -tt, --type       Install type: clean, copy (for project-install)
+    -tv, --task-value Value parameter for tasks that need it
     -dr, --dry-run    Dry-run mode (show what would be freed, no changes)
-    -st, --subtask    Sub-task to run:
-                        from cloudflare-api: clear_cache, dev_mode
-    -s  --site        Site path for tasks execution
-    -d  --domain      Domain for tasks execution
-    -pn --pname       Project Name
-    -pt --ptype       Project Type (wordpress,laravel)
-    -ps --pstate      Project Stage (prod,dev,test,stage)
-    -q, --quiet       Quiet (no output)
-    -v, --verbose     Output more information. (Items echoed to 'verbose')
-    -d, --debug       Runs script in BASH debug mode (set -x)
-    -h, --help        Display this help and exit
+    -e,  --env        Environment
+    -sl, --slog       Script log name
+    -d,  --debug      Runs script in BASH debug mode (set -x)
+    -h,  --help       Display this help and exit
         --version     Output version information and exit
+
+  Examples:
+    ./runner.sh -t backup -st project -D example.com
+    ./runner.sh -t cloudflare-api -st clear_cache -D example.com
+    ./runner.sh -t database -st create_db -db mydb_prod
+    ./runner.sh -t disk-cleanup -st apt -dr
+    ./runner.sh -t project-install -tf /path/to/config.json -tt clean
 
   "
 
@@ -227,12 +252,19 @@ function tasks_handler() {
     exit_code=$?
     [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
 
-    # Validate required params for project backup
-    if [[ "${STASK}" == "project" ]]; then
-      validate_required_params "backup-project" "DOMAIN"
-      exit_code=$?
-      [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
-    fi
+    # Validate required params based on subtask
+    case "${STASK}" in
+      project)
+        validate_required_params "backup-project" "DOMAIN"
+        exit_code=$?
+        [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
+        ;;
+      databases)
+        validate_required_params "backup-databases" "DBNAME"
+        exit_code=$?
+        [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
+        ;;
+    esac
 
     # Execute task
     execute_task_with_error_handling "backup-${STASK}" "subtasks_backup_handler" "${STASK}"
@@ -263,25 +295,17 @@ function tasks_handler() {
 
   project)
     # Validate subtask
-    validate_task_and_subtask "project" "${STASK}" "delete install"
+    validate_task_and_subtask "project" "${STASK}" "delete"
     exit_code=$?
     [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
 
     # Validate required params
-    case "${STASK}" in
-      delete)
-        validate_required_params "project-delete" "DOMAIN"
-        exit_code=$?
-        ;;
-      install)
-        validate_required_params "project-install" "DOMAIN" "PNAME" "PTYPE" "PSTATE"
-        exit_code=$?
-        ;;
-    esac
+    validate_required_params "project-delete" "DOMAIN"
+    exit_code=$?
     [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
 
     # Execute task
-    execute_task_with_error_handling "project-${STASK}" "project_tasks_handler" "${STASK}" "${PROJECTS_PATH}"
+    execute_task_with_error_handling "project-${STASK}" "project_tasks_handler" "${STASK}" "${PROJECTS_PATH}" "${PTYPE}" "${DOMAIN}" "${PNAME}" "${PSTATE}"
     exit_code=$?
     exit ${exit_code}
     ;;
@@ -300,13 +324,13 @@ function tasks_handler() {
 
   database)
     # Validate subtask
-    validate_task_and_subtask "database" "${STASK}" "list_db create_db delete_db rename_db import_db export_db user_create user_delete"
+    validate_task_and_subtask "database" "${STASK}" "list_db create_db delete_db rename_db list_db_user create_db_user delete_db_user change_db_user_psw"
     exit_code=$?
     [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
 
     # Validate required params based on subtask
     case "${STASK}" in
-      create_db|delete_db|export_db)
+      create_db|delete_db)
         validate_required_params "database-${STASK}" "DBNAME"
         exit_code=$?
         ;;
@@ -314,16 +338,16 @@ function tasks_handler() {
         validate_required_params "database-rename" "DBNAME" "DBNAME_N"
         exit_code=$?
         ;;
-      import_db)
-        validate_required_params "database-import" "DBNAME"
+      create_db_user)
+        validate_required_params "database-create-user" "DBUSER"
         exit_code=$?
         ;;
-      user_create)
-        validate_required_params "database-user-create" "DBUSER" "DBUSERPSW"
+      delete_db_user)
+        validate_required_params "database-delete-user" "DBUSER"
         exit_code=$?
         ;;
-      user_delete)
-        validate_required_params "database-user-delete" "DBUSER"
+      change_db_user_psw)
+        validate_required_params "database-change-psw" "DBUSER" "DBUSERPSW"
         exit_code=$?
         ;;
     esac
@@ -354,7 +378,7 @@ function tasks_handler() {
     fi
 
     # Execute task
-    execute_task_with_error_handling "cloudflare-${STASK}" "cloudflare_tasks_handler" "${STASK}" "${TVALUE}"
+    execute_task_with_error_handling "cloudflare-${STASK}" "cloudflare_tasks_handler" "${STASK}" "${DOMAIN}" "${TVALUE}"
     exit_code=$?
     exit ${exit_code}
     ;;
@@ -384,14 +408,14 @@ function tasks_handler() {
     ;;
 
   aliases-install)
-    # Execute task
+    # No subtask required
     execute_task_with_error_handling "aliases-install" "install_script_aliases"
     exit_code=$?
     exit ${exit_code}
     ;;
 
   ssh-keygen)
-    # Set default keydir if not provided
+    # No subtask required. STASK used as optional keydir path.
     if [[ -z ${STASK} ]]; then
       keydir=/root/pem
     else
@@ -474,7 +498,12 @@ function flags_handler() {
     # OPTIONS
     -h | -\? | --help)
       show_help # Display a usage synopsis
-      exit
+      exit 0
+      ;;
+
+    --version)
+      echo "BROLIT Shell v${SCRIPT_V}"
+      exit 0
       ;;
 
     -d | --debug)
@@ -554,7 +583,7 @@ function flags_handler() {
       export PSTATE
       ;;
 
-    -do | --domain)
+    -D | -do | --domain)
       shift
       DOMAIN="${1}"
       export DOMAIN
@@ -594,7 +623,7 @@ function flags_handler() {
 
     *)
       echo "Invalid option: ${1}" >&2
-      exit
+      exit 1
       ;;
 
     esac

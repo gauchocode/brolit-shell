@@ -761,6 +761,8 @@ function cloudflare_ip_access_rules_menu() {
 function cloudflare_tasks_handler() {
 
   local subtask="${1}"
+  local domain="${2}"
+  local tvalue="${3}"
 
   log_subsection "Cloudflare Manager"
 
@@ -768,21 +770,21 @@ function cloudflare_tasks_handler() {
 
   clear_cache)
 
-    cloudflare_clear_cache "${DOMAIN}"
+    cloudflare_clear_cache "${domain}"
 
     exit
     ;;
 
   dev_mode)
 
-    cloudflare_set_development_mode "${DOMAIN}" "${TVALUE}"
+    cloudflare_set_development_mode "${domain}" "${tvalue}"
 
     exit
     ;;
 
   ssl_mode)
 
-    cloudflare_set_ssl_mode "${DOMAIN}" "${TVALUE}"
+    cloudflare_set_ssl_mode "${domain}" "${tvalue}"
 
     exit
     ;;
@@ -791,7 +793,7 @@ function cloudflare_tasks_handler() {
 
     log_event "error" "INVALID SUBTASK: ${subtask}" "true"
 
-    exit
+    exit 1
     ;;
 
   esac

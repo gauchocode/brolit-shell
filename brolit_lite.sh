@@ -2226,7 +2226,8 @@ function dropbox_get_sites_backups() {
 declare -g SERVER_NAME="${HOSTNAME}"
 
 ## Dirs
-declare -g BROLIT_MAIN_DIR="/root/brolit-shell"
+declare -g BROLIT_MAIN_DIR
+BROLIT_MAIN_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
 declare -g BROLIT_PROJECT_CONFIG_PATH="/etc/brolit"
 
 declare -g BROLIT_CONFIG_FILE=~/.brolit_conf.json
