@@ -528,6 +528,42 @@ function subtasks_backup_handler() {
     exit
     ;;
 
+  full-report)
+
+    log_subsection "Full Backup with Report"
+
+    backup_all_databases
+    exitstatus=$?
+    if [[ ${exitstatus} -ne 0 ]]; then
+      log_event "error" "Backup all databases failed" "true"
+    fi
+
+    all_sites="$(get_all_directories "${PROJECTS_PATH}")"
+    for site in ${all_sites}; do
+      local project_domain
+      project_domain="$(basename "${site}")"
+      if [[ "${IGNORED_PROJECTS_LIST}" != *"${project_domain}"* ]]; then
+        local project_type
+        project_type="$(project_get_brolit_config_var "${site}" "project_type")"
+        backup_project "${project_domain}" "${project_type}"
+      fi
+    done
+
+    backup_all_projects_files
+    exitstatus=$?
+    if [[ ${exitstatus} -ne 0 ]]; then
+      log_event "error" "Backup all files failed" "true"
+    fi
+
+    if [[ ${BACKUP_BORG_STATUS} == "enabled" ]]; then
+      backup_all_files_with_borg
+    fi
+
+    send_notification "${SERVER_NAME}" "Full backup with report completed" "info"
+
+    exit ${exitstatus}
+    ;;
+
   files)
 
     backup_all_projects_files
@@ -544,10 +580,7 @@ function subtasks_backup_handler() {
 
   databases)
 
-    # TODO: postgres support
-    backup_project_database_output="$(backup_project_database "${DBNAME}" "mysql")"
-
-    # TODO: error handling
+    backup_all_databases
 
     exit
     ;;
