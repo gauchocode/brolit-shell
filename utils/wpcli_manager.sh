@@ -594,6 +594,8 @@ function wpcli_profiler_menu() {
 function wpcli_tasks_handler() {
 
   local subtask="${1}"
+  local domain="${2}"
+  local tvalue="${3}"
 
   log_subsection "WP-CLI Manager"
 
@@ -608,56 +610,56 @@ function wpcli_tasks_handler() {
 
   plugin-install)
 
-    wpcli_plugin_install "${PROJECTS_PATH}/${DOMAIN}" "${TVALUE}"
+    wpcli_plugin_install "${PROJECTS_PATH}/${domain}" "${tvalue}"
 
     exit
     ;;
 
   plugin-activate)
 
-    wpcli_plugin_activate "${PROJECTS_PATH}/${DOMAIN}" "${TVALUE}"
+    wpcli_plugin_activate "${PROJECTS_PATH}/${domain}" "${tvalue}"
 
     exit
     ;;
 
   plugin-deactivate)
 
-    wpcli_plugin_deactivate "${PROJECTS_PATH}/${DOMAIN}" "${TVALUE}"
+    wpcli_plugin_deactivate "${PROJECTS_PATH}/${domain}" "${tvalue}"
 
     exit
     ;;
 
   plugin-version)
 
-    wpcli_plugin_get_version "${PROJECTS_PATH}/${DOMAIN}" "${TVALUE}"
+    wpcli_plugin_get_version "${PROJECTS_PATH}/${domain}" "${tvalue}"
 
     exit
     ;;
 
   plugin-update)
 
-    wpcli_plugin_update "${PROJECTS_PATH}/${DOMAIN}" "${TVALUE}" ""
+    wpcli_plugin_update "${PROJECTS_PATH}/${domain}" "${tvalue}" ""
 
     exit
     ;;
 
   clear-cache)
 
-    wpcli_rocket_cache_clean "${PROJECTS_PATH}/${DOMAIN}" "${TVALUE}"
+    wpcli_rocket_cache_clean "${PROJECTS_PATH}/${domain}" "${tvalue}"
 
     exit
     ;;
 
   cache-activate)
 
-    wpcli_rocket_cache_activate "${PROJECTS_PATH}/${DOMAIN}" "${TVALUE}"
+    wpcli_rocket_cache_activate "${PROJECTS_PATH}/${domain}" "${tvalue}"
 
     exit
     ;;
 
   cache-deactivate)
 
-    wpcli_rocket_cache_deactivate "${PROJECTS_PATH}/${DOMAIN}"
+    wpcli_rocket_cache_deactivate "${PROJECTS_PATH}/${domain}"
 
     exit
     ;;
@@ -665,25 +667,40 @@ function wpcli_tasks_handler() {
   verify-installation)
 
     # TODO: get install_type
-    wpcli_core_verify "${PROJECTS_PATH}/${DOMAIN}" "${TVALUE}"
-    wpcli_plugin_verify "${PROJECTS_PATH}/${DOMAIN}" "${TVALUE}" ""
+    wpcli_core_verify "${PROJECTS_PATH}/${domain}" "${tvalue}"
+    wpcli_plugin_verify "${PROJECTS_PATH}/${domain}" "${tvalue}" ""
 
     exit
     ;;
 
   core-update)
 
-    wpcli_core_update "${PROJECTS_PATH}/${DOMAIN}"
+    wpcli_core_update "${PROJECTS_PATH}/${domain}"
 
     exit
     ;;
 
-    #search-replace)
-    #
-    #  wpcli_rocket_cache_deactivate "${SITE}" "${existing_URL}" "${new_URL}"
-    #
-    # exit
-    # ;;
+  search-replace)
+
+    # TVALUE should be "old_url,new_url"
+    local search_url
+    local replace_url
+
+    search_url="$(echo "${tvalue}" | cut -d',' -f1)"
+    replace_url="$(echo "${tvalue}" | cut -d',' -f2)"
+
+    if [[ -z "${search_url}" || -z "${replace_url}" ]]; then
+      log_event "error" "search-replace requires TVALUE as 'old_url,new_url'" "true"
+      exit 1
+    fi
+
+    local project_install_type
+    project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${domain}")"
+
+    wpcli_search_and_replace "${PROJECTS_PATH}/${domain}" "${project_install_type}" "${search_url}" "${replace_url}"
+
+    exit $?
+    ;;
 
   *)
 

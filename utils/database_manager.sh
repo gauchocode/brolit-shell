@@ -800,6 +800,20 @@ function database_tasks_handler() {
     exit
     ;;
 
+  export_db)
+
+    mysql_database_export "${dbname}" "false" "${PROJECTS_PATH}/${dbname}_export.sql"
+
+    exit
+    ;;
+
+  import_db)
+
+    mysql_database_import "${dbname}" "false" "${FILE}"
+
+    exit
+    ;;
+
   list_db_user)
 
     mysql_users_list

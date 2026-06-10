@@ -584,48 +584,45 @@ function subtasks_backup_handler() {
 function subtasks_restore_handler() {
 
   local subtask="${1}"
+  local domain="${2}"
+  local file="${3}"
+  local backup_date="${4}"
 
   case ${subtask} in
 
-  project)
+  from-local)
 
-    log_event "debug" "TODO: restore project backup" "true"
-    #make_databases_backup
-    #backup_all_server_configs
-    #backup_all_projects_files
+    restore_backup_from_local "${file}" "${domain}"
 
-    exit
+    exit $?
     ;;
 
-  files)
+  from-storage)
 
-    log_event "debug" "TODO: restore files backup" "true"
-    #backup_all_projects_files
+    restore_backup_from_storage "${domain}" "${backup_date}"
 
-    exit
+    exit $?
     ;;
 
-  server-config)
+  from-url)
 
-    log_event "debug" "TODO: restore config backup" "true"
-    #backup_all_server_configs
+    restore_backup_from_public_url "${file}" "${domain}"
 
-    exit
+    exit $?
     ;;
 
-  databases)
+  from-borg)
 
-    log_event "warning" "TODO: restore database backup" "true"
-    #log_event "debug" "Running: backup_all_projects_files"
-    #backup_all_projects_files
+    restore_backup_with_borg "${domain}" "${backup_date}"
 
-    exit
+    exit $?
     ;;
 
   *)
+
     log_event "error" "INVALID SUBTASK: ${subtask}" "true"
 
-    exit
+    exit 1
     ;;
 
   esac

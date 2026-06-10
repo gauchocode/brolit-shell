@@ -97,6 +97,62 @@ function certbot_manager_menu() {
 
 function certbot_tasks_handler() {
 
-    echo "TODO"
+    local subtask="${1}"
+    local domain="${2}"
+
+    log_subsection "Certbot Manager"
+
+    case ${subtask} in
+
+    install)
+
+        certbot_certificate_install "${NOTIFICATION_EMAIL_EMAIL_TO}" "${domain}"
+
+        exit $?
+        ;;
+
+    expand)
+
+        certbot_certificate_expand "${NOTIFICATION_EMAIL_EMAIL_TO}" "${domain}"
+
+        exit $?
+        ;;
+
+    force-renew)
+
+        certbot_certificate_force_renew "${domain}"
+
+        exit $?
+        ;;
+
+    delete)
+
+        certbot_certificate_delete "${domain}"
+
+        exit $?
+        ;;
+
+    list)
+
+        certbot_show_certificates_info
+
+        exit $?
+        ;;
+
+    test-renew)
+
+        certbot_certificate_renew_test "${domain}"
+
+        exit $?
+        ;;
+
+    *)
+
+        log_event "error" "INVALID SUBTASK: ${subtask}" "true"
+
+        exit 1
+        ;;
+
+    esac
 
 }
