@@ -17,6 +17,23 @@ if [[ -z "${BROLIT_MAIN_DIR}" ]]; then
   exit 1 # error; the path is not accessible
 fi
 
+### Early exit for help/version (no init needed) ###########################
+
+for arg in "$@"; do
+  case ${arg} in
+    -h | --help | -\?)
+      # shellcheck source=/root/brolit-shell/libs/task_runner.sh
+      source "${BROLIT_MAIN_DIR}/libs/task_runner.sh"
+      show_help
+      exit 0
+      ;;
+    --version)
+      echo "BROLIT Shell v3.6"
+      exit 0
+      ;;
+  esac
+done
+
 ### Load Main library
 # shellcheck source=/root/brolit-shell/libs/commons.sh
 source "${BROLIT_MAIN_DIR}/libs/commons.sh"

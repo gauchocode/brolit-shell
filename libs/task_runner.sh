@@ -27,8 +27,6 @@
 
 function show_help() {
 
-  log_section "Help Menu"
-
   echo -n "./runner.sh [TASK] [SUB-TASK]... [OPTIONS]...
 
   Tasks:
@@ -91,8 +89,10 @@ function show_help() {
     ./runner.sh -t wpcli -t search-replace -D example.com -tv \"http://old.com,https://new.com\"
     ./runner.sh -t server-status
     ./runner.sh -t server-status -st certs
+    ./runner.sh -t server-status -st certs -D example.com
     ./runner.sh -t security-scan
-    ./runner.sh -t security-scan -st wordfence
+    ./runner.sh -t security-scan -D example.com
+    ./runner.sh -t security-scan -st wordfence -D example.com
     ./runner.sh -t disk-cleanup -st apt -dr
     ./runner.sh -t project-install -tf /path/to/config.json -tt clean
 
@@ -306,26 +306,40 @@ function server_status_handler() {
   fi
 
   if [[ "${subtask}" == "full" || "${subtask}" == "certs" ]]; then
-    local all_sites
-    all_sites="$(get_all_directories "${PROJECTS_PATH}")"
-    for site in ${all_sites}; do
-      local domain
-      domain="$(basename "${site}")"
-      if [[ "${IGNORED_PROJECTS_LIST}" == *"${domain}"* ]]; then
-        continue
-      fi
+    if [[ -n "${DOMAIN}" ]]; then
       local cert_days
-      cert_days="$(certbot_certificate_valid_days "${domain}")"
+      cert_days="$(certbot_certificate_valid_days "${DOMAIN}")"
       if [[ -z "${cert_days}" ]]; then
-        display --indent 2 --text "${domain} - no certificate" --result "MISSING" --color WHITE
+        display --indent 2 --text "${DOMAIN} - no certificate" --result "MISSING" --color WHITE
       elif [[ ${cert_days} -ge 14 ]]; then
-        display --indent 2 --text "${domain} - ${cert_days} days remaining" --result "OK" --color GREEN
+        display --indent 2 --text "${DOMAIN} - ${cert_days} days remaining" --result "OK" --color GREEN
       elif [[ ${cert_days} -ge 7 ]]; then
-        display --indent 2 --text "${domain} - ${cert_days} days remaining" --result "WARNING" --color YELLOW
+        display --indent 2 --text "${DOMAIN} - ${cert_days} days remaining" --result "WARNING" --color YELLOW
       else
-        display --indent 2 --text "${domain} - ${cert_days} days remaining" --result "CRITICAL" --color RED
+        display --indent 2 --text "${DOMAIN} - ${cert_days} days remaining" --result "CRITICAL" --color RED
       fi
-    done
+    else
+      local all_sites
+      all_sites="$(get_all_directories "${PROJECTS_PATH}")"
+      for site in ${all_sites}; do
+        local domain
+        domain="$(basename "${site}")"
+        if [[ "${IGNORED_PROJECTS_LIST}" == *"${domain}"* ]]; then
+          continue
+        fi
+        local cert_days
+        cert_days="$(certbot_certificate_valid_days "${domain}")"
+        if [[ -z "${cert_days}" ]]; then
+          display --indent 2 --text "${domain} - no certificate" --result "MISSING" --color WHITE
+        elif [[ ${cert_days} -ge 14 ]]; then
+          display --indent 2 --text "${domain} - ${cert_days} days remaining" --result "OK" --color GREEN
+        elif [[ ${cert_days} -ge 7 ]]; then
+          display --indent 2 --text "${domain} - ${cert_days} days remaining" --result "WARNING" --color YELLOW
+        else
+          display --indent 2 --text "${domain} - ${cert_days} days remaining" --result "CRITICAL" --color RED
+        fi
+      done
+    fi
   fi
 
 }
@@ -343,41 +357,69 @@ function server_status_handler() {
 function security_scan_handler() {
 
   local subtask="${1:-full}"
+  local domain="${2:-}"
   local scan_status="No Issues"
+  local scan_target
+  local scan_label
 
-  log_section "Security Scan"
+  if [[ -n "${domain}" ]]; then
+    scan_target="${PROJECTS_PATH}/${domain}"
+    scan_label="${domain}"
+  else
+    scan_target="${PROJECTS_PATH}"
+    scan_label="all projects"
+  fi
+
+  log_section "Security Scan (${scan_label})"
 
   if [[ "${subtask}" == "full" || "${subtask}" == "wordfence" ]]; then
     log_subsection "Wordfence Malware Scan"
-    local all_sites
-    all_sites="$(get_all_directories "${PROJECTS_PATH}")"
-    for site in ${all_sites}; do
-      local project_name
-      project_name="$(basename "${site}")"
+    if [[ -n "${domain}" ]]; then
+      local site="${PROJECTS_PATH}/${domain}"
       if [[ -d "${site}/wordpress" ]] || { [[ -f "${site}/index.php" ]] && [[ -d "${site}/wp-content" ]]; }; then
         local wf_result
         wf_result="$(wordfencecli_malware_scan "${site}" "true")"
         if [[ "${wf_result}" == "true" ]]; then
-          display --indent 2 --text "${project_name}" --result "MALWARE" --color RED
-          send_notification "${SERVER_NAME}" "Malware detected on ${project_name}" "alert"
+          display --indent 2 --text "${domain}" --result "MALWARE" --color RED
+          send_notification "${SERVER_NAME}" "Malware detected on ${domain}" "alert"
           scan_status="Found Issues"
         else
-          display --indent 2 --text "${project_name}" --result "CLEAN" --color GREEN
+          display --indent 2 --text "${domain}" --result "CLEAN" --color GREEN
         fi
+      else
+        display --indent 2 --text "${domain} is not a WordPress site, skipping wordfence" --result "SKIP" --color YELLOW
       fi
-    done
+    else
+      local all_sites
+      all_sites="$(get_all_directories "${PROJECTS_PATH}")"
+      for site in ${all_sites}; do
+        local project_name
+        project_name="$(basename "${site}")"
+        if [[ -d "${site}/wordpress" ]] || { [[ -f "${site}/index.php" ]] && [[ -d "${site}/wp-content" ]]; }; then
+          local wf_result
+          wf_result="$(wordfencecli_malware_scan "${site}" "true")"
+          if [[ "${wf_result}" == "true" ]]; then
+            display --indent 2 --text "${project_name}" --result "MALWARE" --color RED
+            send_notification "${SERVER_NAME}" "Malware detected on ${project_name}" "alert"
+            scan_status="Found Issues"
+          else
+            display --indent 2 --text "${project_name}" --result "CLEAN" --color GREEN
+          fi
+        fi
+      done
+    fi
   fi
 
   if [[ "${subtask}" == "full" || "${subtask}" == "clamav" ]]; then
     log_subsection "ClamAV Scan"
     local clamav_result
-    clamav_result="$(security_clamav_scan "${PROJECTS_PATH}")"
+    clamav_result="$(security_clamav_scan "${scan_target}")"
     if [[ "${clamav_result}" == "true" ]]; then
-      display --indent 2 --text "ClamAV scan" --result "THREATS" --color RED
-      send_notification "${SERVER_NAME}" "ClamAV detected threats in ${PROJECTS_PATH}" "alert"
+      display --indent 2 --text "ClamAV scan on ${scan_label}" --result "THREATS" --color RED
+      send_notification "${SERVER_NAME}" "ClamAV detected threats in ${scan_label}" "alert"
       scan_status="Found Issues"
     else
-      display --indent 2 --text "ClamAV scan" --result "CLEAN" --color GREEN
+      display --indent 2 --text "ClamAV scan on ${scan_label}" --result "CLEAN" --color GREEN
     fi
   fi
 
@@ -634,7 +676,7 @@ function tasks_handler() {
       netdata_alerts_disable
     fi
 
-    execute_task_with_error_handling "security-${STASK:-full}" "security_scan_handler" "${STASK:-full}"
+    execute_task_with_error_handling "security-${STASK:-full}" "security_scan_handler" "${STASK:-full}" "${DOMAIN}"
     exit_code=$?
 
     if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
