@@ -448,19 +448,44 @@ function project_tasks_handler() {
 
   case ${subtask} in
 
-  #  install)
-  #
-  #    project_install "${sites}" "${ptype}" "${domain}" "${pname}" "${pstate}"
-  #
-  #    exit
-  #    ;;
-
   delete)
 
     # Second parameter with "true" will delete cloudflare entry
     project_delete "${domain}" "true"
 
     exit $? # exit with the exit code
+    ;;
+
+  online)
+
+    nginx_server_change_status "${domain}" "online"
+
+    exit $?
+    ;;
+
+  offline)
+
+    nginx_server_change_status "${domain}" "offline"
+
+    exit $?
+    ;;
+
+  regen-nginx)
+
+    local project_path="${sites}/${domain}"
+    local project_type
+    local project_install_type
+
+    project_type="$(project_get_type "${project_path}")"
+    project_install_type="$(project_get_install_type "${project_path}")"
+
+    if [[ ${project_install_type} == "docker"* ]]; then
+      project_install_type="proxy"
+    fi
+
+    project_update_domain_config "${domain}" "${project_type}" "${project_install_type}"
+
+    exit $?
     ;;
 
   *)
