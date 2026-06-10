@@ -374,6 +374,7 @@ function script_init() {
 
   # Parameters
   declare -g SKIPTESTS="${1}"
+  local exec_mode="${2:-interactive}"
 
   # Define log name
   declare -g BROLIT_LOG_FILE
@@ -422,8 +423,21 @@ function script_init() {
   # Load colors and styles
   _setup_colors_and_styles
 
-  # Clear Screen
-  clear_screen
+  # Clear Screen & Banner (interactive only)
+  if [[ "${exec_mode}" != "cli" ]]; then
+    clear_screen
+
+    log_event "" "                                             " "true"
+    log_event "" "██████╗ ██████╗  ██████╗ ██╗     ██╗████████╗" "true"
+    log_event "" "██╔══██╗██╔══██╗██╔═══██╗██║     ██║╚══██╔══╝" "true"
+    log_event "" "██████╔╝██████╔╝██║   ██║██║     ██║   ██║   " "true"
+    log_event "" "██╔══██╗██╔══██╗██║   ██║██║     ██║   ██║   " "true"
+    log_event "" "██████╔╝██║  ██║╚██████╔╝███████╗██║   ██║   " "true"
+    log_event "" "╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝   ╚═╝   " "true"
+    log_event "" "              ${SCRIPT_N} v${SCRIPT_V} by GauchoCode" "true"
+    log_event "" "                                             " "true"
+    log_event "" "------------------------------------------------------------" "true"
+  fi
 
   # Log Start
   log_event "info" "BROLIT Shell start" "false"
@@ -434,19 +448,6 @@ function script_init() {
   # Brolit configuration check
   brolit_configuration_file_check "${BROLIT_CONFIG_FILE}"
   brolit_configuration_setup_check "${BROLIT_CONFIG_FILE}"
-
-  ### Welcome Message ###########################################################
-
-  log_event "" "                                             " "true"
-  log_event "" "██████╗ ██████╗  ██████╗ ██╗     ██╗████████╗" "true"
-  log_event "" "██╔══██╗██╔══██╗██╔═══██╗██║     ██║╚══██╔══╝" "true"
-  log_event "" "██████╔╝██████╔╝██║   ██║██║     ██║   ██║   " "true"
-  log_event "" "██╔══██╗██╔══██╗██║   ██║██║     ██║   ██║   " "true"
-  log_event "" "██████╔╝██║  ██║╚██████╔╝███████╗██║   ██║   " "true"
-  log_event "" "╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝   ╚═╝   " "true"
-  log_event "" "              ${SCRIPT_N} v${SCRIPT_V} by GauchoCode" "true"
-  log_event "" "                                             " "true"
-  log_event "" "------------------------------------------------------------" "true"
 
   log_section "Initialization"
 

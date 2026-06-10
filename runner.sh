@@ -24,18 +24,13 @@ source "${BROLIT_MAIN_DIR}/libs/commons.sh"
 ### Init #######################################################################
 
 if [[ $# -eq 0 ]]; then
-
-  # Script initialization
-  script_init "true"
-
-  # RUNNING MAIN MENU
+  # RUNNING INTERACTIVE MODE
+  script_init "true" "interactive"
   menu_main_options
-
 else
-
-  # RUNNING WITH FLAGS
+  # RUNNING CLI MODE
+  script_init "true" "cli"
   flags_handler "$@"
-
 fi
 
 # Script cleanup
