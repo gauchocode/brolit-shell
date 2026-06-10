@@ -34,12 +34,13 @@ function show_help() {
   Tasks:
     -t, --task        Task to run:
                         backup              Subtasks: all, files, databases, server-config, project
-                        restore             Subtasks: all, files, databases, server-config, project
-                        project             Subtasks: delete
+                        restore             Subtasks: from-local, from-storage, from-url, from-borg
+                        project             Subtasks: delete, online, offline, regen-nginx
                         project-install     (uses -tf/-tt instead of subtask)
                         database            Subtasks: list_db, create_db, delete_db, rename_db,
                                             import_db, export_db, list_db_user, create_db_user,
                                             delete_db_user, change_db_user_psw
+                        certbot             Subtasks: install, expand, force-renew, delete, list, test-renew
                         cloudflare-api      Subtasks: clear_cache, dev_mode, ssl_mode
                         wpcli               Subtasks: plugin-install, plugin-activate, plugin-deactivate,
                                             plugin-update, plugin-version, clear-cache, cache-activate,
@@ -72,8 +73,15 @@ function show_help() {
 
   Examples:
     ./runner.sh -t backup -st project -D example.com
+    ./runner.sh -t restore -st from-storage -D example.com -tv 2026-06-09
+    ./runner.sh -t project -st online -D example.com
+    ./runner.sh -t project -st regen-nginx -D example.com
+    ./runner.sh -t database -st export_db -db mydb_prod
+    ./runner.sh -t database -st import_db -db mydb_prod -tf /path/to/dump.sql
+    ./runner.sh -t certbot -st install -D example.com
+    ./runner.sh -t certbot -st force-renew -D example.com
     ./runner.sh -t cloudflare-api -st clear_cache -D example.com
-    ./runner.sh -t database -st create_db -db mydb_prod
+    ./runner.sh -t wpcli -t search-replace -D example.com -tv "http://old.com,https://new.com"
     ./runner.sh -t disk-cleanup -st apt -dr
     ./runner.sh -t project-install -tf /path/to/config.json -tt clean
 
@@ -274,13 +282,13 @@ function tasks_handler() {
 
   restore)
     # Validate subtask
-    validate_task_and_subtask "restore" "${STASK}" "all files databases server-config project"
+    validate_task_and_subtask "restore" "${STASK}" "from-local from-storage from-url from-borg"
     exit_code=$?
     [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
 
-    # Validate required params for restore tasks
+    # Validate required params
     case "${STASK}" in
-      files|database|project)
+      from-local|from-storage|from-url|from-borg)
         validate_required_params "restore-${STASK}" "DOMAIN"
         exit_code=$?
         [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
@@ -288,21 +296,25 @@ function tasks_handler() {
     esac
 
     # Execute task
-    execute_task_with_error_handling "restore-${STASK}" "subtasks_restore_handler" "${STASK}"
+    execute_task_with_error_handling "restore-${STASK}" "subtasks_restore_handler" "${STASK}" "${DOMAIN}" "${FILE}" "${TVALUE}"
     exit_code=$?
     exit ${exit_code}
     ;;
 
   project)
     # Validate subtask
-    validate_task_and_subtask "project" "${STASK}" "delete"
+    validate_task_and_subtask "project" "${STASK}" "delete online offline regen-nginx"
     exit_code=$?
     [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
 
     # Validate required params
-    validate_required_params "project-delete" "DOMAIN"
-    exit_code=$?
-    [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
+    case "${STASK}" in
+      delete|online|offline|regen-nginx)
+        validate_required_params "project-${STASK}" "DOMAIN"
+        exit_code=$?
+        [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
+        ;;
+    esac
 
     # Execute task
     execute_task_with_error_handling "project-${STASK}" "project_tasks_handler" "${STASK}" "${PROJECTS_PATH}" "${PTYPE}" "${DOMAIN}" "${PNAME}" "${PSTATE}"
@@ -324,13 +336,13 @@ function tasks_handler() {
 
   database)
     # Validate subtask
-    validate_task_and_subtask "database" "${STASK}" "list_db create_db delete_db rename_db list_db_user create_db_user delete_db_user change_db_user_psw"
+    validate_task_and_subtask "database" "${STASK}" "list_db create_db delete_db rename_db export_db import_db list_db_user create_db_user delete_db_user change_db_user_psw"
     exit_code=$?
     [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
 
     # Validate required params based on subtask
     case "${STASK}" in
-      create_db|delete_db)
+      create_db|delete_db|export_db|import_db)
         validate_required_params "database-${STASK}" "DBNAME"
         exit_code=$?
         ;;
@@ -402,7 +414,28 @@ function tasks_handler() {
     fi
 
     # Execute task
-    execute_task_with_error_handling "wpcli-${STASK}" "wpcli_tasks_handler" "${STASK}" "${TVALUE}"
+    execute_task_with_error_handling "wpcli-${STASK}" "wpcli_tasks_handler" "${STASK}" "${DOMAIN}" "${TVALUE}"
+    exit_code=$?
+    exit ${exit_code}
+    ;;
+
+  certbot)
+    # Validate subtask
+    validate_task_and_subtask "certbot" "${STASK}" "install expand force-renew delete list test-renew"
+    exit_code=$?
+    [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
+
+    # Validate required params based on subtask
+    case "${STASK}" in
+      install|expand|force-renew|delete|test-renew)
+        validate_required_params "certbot-${STASK}" "DOMAIN"
+        exit_code=$?
+        [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
+        ;;
+    esac
+
+    # Execute task
+    execute_task_with_error_handling "certbot-${STASK}" "certbot_tasks_handler" "${STASK}" "${DOMAIN}"
     exit_code=$?
     exit ${exit_code}
     ;;
