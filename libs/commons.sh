@@ -1850,109 +1850,109 @@ function menu_main_options() {
     "10)" "CRON TASKS"
   )
 
-  chosen_type="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${runner_options[@]}" 3>&1 1>&2 2>&3)"
+  while true; do
 
-  exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
+    chosen_type="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${runner_options[@]}" 3>&1 1>&2 2>&3)"
 
-    # BACKUP OPTIONS
-    [[ ${chosen_type} == *"01"* ]] && backup_manager_menu
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
 
-    # RESTORE OPTIONS
-    [[ ${chosen_type} == *"02"* ]] && restore_manager_menu
+      # BACKUP OPTIONS
+      [[ ${chosen_type} == *"01"* ]] && backup_manager_menu
 
-    # PROJECT MANAGER
-    [[ ${chosen_type} == *"03"* ]] && project_manager_menu
+      # RESTORE OPTIONS
+      [[ ${chosen_type} == *"02"* ]] && restore_manager_menu
 
-    # DATABASE MANAGER
-    if [[ ${chosen_type} == *"04"* ]]; then
-      # shellcheck source=${BROLIT_MAIN_DIR}/utils/database_manager.sh
-      source "${BROLIT_MAIN_DIR}/utils/database_manager.sh"
+      # PROJECT MANAGER
+      [[ ${chosen_type} == *"03"* ]] && project_manager_menu
 
-      database_manager_menu
+      # DATABASE MANAGER
+      if [[ ${chosen_type} == *"04"* ]]; then
+        # shellcheck source=${BROLIT_MAIN_DIR}/utils/database_manager.sh
+        source "${BROLIT_MAIN_DIR}/utils/database_manager.sh"
 
-    fi
-
-    # ENVIRONMENT MANAGER
-    if [[ ${chosen_type} == *"05"* ]]; then
-      # shellcheck source=${BROLIT_MAIN_DIR}/utils/environment_manager.sh
-      source "${BROLIT_MAIN_DIR}/utils/environment_manager.sh"
-      environment_manager_menu
-    fi
-
-    # WP-CLI MANAGER
-    if [[ ${chosen_type} == *"06"* ]]; then
-      # shellcheck source=${BROLIT_MAIN_DIR}/utils/wpcli_manager.sh
-      source "${BROLIT_MAIN_DIR}/utils/wpcli_manager.sh"
-
-      log_section "WP-CLI Manager"
-      wpcli_manager
-
-    fi
-
-    # CERTBOT MANAGER
-    if [[ ${chosen_type} == *"07"* ]]; then
-
-      if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
-
-        # shellcheck source=${BROLIT_MAIN_DIR}/utils/certbot_manager.sh
-        source "${BROLIT_MAIN_DIR}/utils/certbot_manager.sh"
-
-        log_section "Certbot Manager"
-        certbot_manager_menu
-
-      else
-
-        # Log
-        display --indent 6 --text "- Certbot support is disabled. Enable it on brolit_conf.json" --tcolor YELLOW
-        # Press any key to return to main menu
-        read -n 1 -s -r -p "Press any key to continue"
-        # Return to main menu
-        menu_main_options
+        database_manager_menu
 
       fi
 
-    fi
+      # ENVIRONMENT MANAGER
+      if [[ ${chosen_type} == *"05"* ]]; then
+        # shellcheck source=${BROLIT_MAIN_DIR}/utils/environment_manager.sh
+        source "${BROLIT_MAIN_DIR}/utils/environment_manager.sh"
+        environment_manager_menu
+      fi
 
-    # CLOUDFLARE MANAGER
-    if [[ ${chosen_type} == *"08"* ]]; then
+      # WP-CLI MANAGER
+      if [[ ${chosen_type} == *"06"* ]]; then
+        # shellcheck source=${BROLIT_MAIN_DIR}/utils/wpcli_manager.sh
+        source "${BROLIT_MAIN_DIR}/utils/wpcli_manager.sh"
 
-      if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
-
-        # shellcheck source=${BROLIT_MAIN_DIR}/utils/cloudflare_manager.sh
-        source "${BROLIT_MAIN_DIR}/utils/cloudflare_manager.sh"
-
-        log_section "Cloudflare Manager"
-        cloudflare_manager_menu
-
-      else
-
-        # Log
-        display --indent 6 --text "Cloudflare support is disabled. Configure the api key on brolit_conf.json" --tcolor YELLOW
-        # Press any key to return to main menu
-        read -n 1 -s -r -p "Press any key to continue"
-        # Return to main menu
-        menu_main_options
+        log_section "WP-CLI Manager"
+        wpcli_manager
 
       fi
 
+      # CERTBOT MANAGER
+      if [[ ${chosen_type} == *"07"* ]]; then
+
+        if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
+
+          # shellcheck source=${BROLIT_MAIN_DIR}/utils/certbot_manager.sh
+          source "${BROLIT_MAIN_DIR}/utils/certbot_manager.sh"
+
+          log_section "Certbot Manager"
+          certbot_manager_menu
+
+        else
+
+          # Log
+          display --indent 6 --text "- Certbot support is disabled. Enable it on brolit_conf.json" --tcolor YELLOW
+          # Press any key to return to main menu
+          read -n 1 -s -r -p "Press any key to continue"
+
+        fi
+
+      fi
+
+      # CLOUDFLARE MANAGER
+      if [[ ${chosen_type} == *"08"* ]]; then
+
+        if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
+
+          # shellcheck source=${BROLIT_MAIN_DIR}/utils/cloudflare_manager.sh
+          source "${BROLIT_MAIN_DIR}/utils/cloudflare_manager.sh"
+
+          log_section "Cloudflare Manager"
+          cloudflare_manager_menu
+
+        else
+
+          # Log
+          display --indent 6 --text "Cloudflare support is disabled. Configure the api key on brolit_conf.json" --tcolor YELLOW
+          # Press any key to return to main menu
+          read -n 1 -s -r -p "Press any key to continue"
+
+        fi
+
+      fi
+
+      # IT UTILS
+      [[ ${chosen_type} == *"09"* ]] && it_utils_menu
+
+      # CRON SCRIPT TASKS
+      [[ ${chosen_type} == *"10"* ]] && menu_cron_script_tasks
+
+    else
+
+      # Log
+      echo ""
+      echo -e "${B_RED}Exiting script ...${ENDCOLOR}"
+
+      exit 0
+
     fi
 
-    # IT UTILS
-    [[ ${chosen_type} == *"09"* ]] && it_utils_menu
-
-    # CRON SCRIPT TASKS
-    [[ ${chosen_type} == *"10"* ]] && menu_cron_script_tasks
-
-  else
-
-    # Log
-    echo ""
-    echo -e "${B_RED}Exiting script ...${ENDCOLOR}"
-
-    exit 0
-
-  fi
+  done
 
 }
 
@@ -2179,9 +2179,11 @@ function menu_cron_script_tasks() {
     prompt_return_or_finish
     menu_cron_script_tasks
 
-  fi
+  else
 
-  menu_main_options
+    return 0
+
+  fi
 
 }
 
