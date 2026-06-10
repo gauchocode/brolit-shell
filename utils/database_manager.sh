@@ -745,6 +745,58 @@ function database_manager_menu() {
 }
 
 ################################################################################
+# Auto-detect database engine
+#
+# Arguments:
+#   ${1} = requested engine ("auto", "mysql", "postgres")
+#
+# Outputs:
+#   echoes "mysql" or "postgres" on success, error message on failure.
+#   Returns 0 on success, 1 on error.
+################################################################################
+
+function _database_auto_detect_engine() {
+
+  local requested="${1}"
+  local found_engines=()
+
+  if [[ "${requested}" == "mysql" || "${requested}" == "postgres" ]]; then
+    echo "${requested}"
+    return 0
+  fi
+
+  if docker_find_mysql_containers &>/dev/null | grep -q .; then
+    found_engines+=("mysql")
+  fi
+
+  if docker_find_postgres_containers &>/dev/null | grep -q .; then
+    found_engines+=("postgres")
+  fi
+
+  if [[ ${PACKAGES_MYSQL_STATUS} == "enabled" || ${PACKAGES_MARIADB_STATUS} == "enabled" ]] && [[ ! " ${found_engines[*]} " =~ " mysql " ]]; then
+    found_engines+=("mysql")
+  fi
+
+  if [[ ${PACKAGES_POSTGRES_STATUS} == "enabled" ]] && [[ ! " ${found_engines[*]} " =~ " postgres " ]]; then
+    found_engines+=("postgres")
+  fi
+
+  if [[ ${#found_engines[@]} -eq 0 ]]; then
+    echo "No database engine found (no MySQL, MariaDB, or PostgreSQL detected)"
+    return 1
+  fi
+
+  if [[ ${#found_engines[@]} -eq 1 ]]; then
+    echo "${found_engines[0]}"
+    return 0
+  fi
+
+  echo "Multiple engines detected (${found_engines[*]}). Specify --db-engine mysql or --db-engine postgres"
+  return 1
+
+}
+
+################################################################################
 # Task handler for database functions
 #
 # Arguments:
@@ -767,77 +819,153 @@ function database_tasks_handler() {
   local dbname_n="${4}"
   local dbuser="${5}"
   local dbuser_psw="${6}"
+  local dbengine="${7:-auto}"
+  local tvalue="${8:-}"
+
+  local engine=""
+  local container=""
 
   log_subsection "Database Manager"
+
+  engine="$(_database_auto_detect_engine "${dbengine}")"
+  exitstatus=$?
+  if [[ ${exitstatus} -ne 0 ]]; then
+    log_event "error" "Could not determine database engine: ${engine}" "true"
+    exit 1
+  fi
+
+  display --indent 2 --text "- Using engine: ${engine}" --tcolor WHITE
 
   case ${subtask} in
 
   list_db)
 
-    mysql_list_databases "${dbstage}"
+    if [[ "${engine}" == "mysql" ]]; then
+      mysql_list_databases "${dbstage}"
+    else
+      postgres_list_databases "${dbstage}" "${container}"
+    fi
 
     exit
     ;;
 
   create_db)
 
-    mysql_database_create "${dbname}"
+    if [[ "${engine}" == "mysql" ]]; then
+      mysql_database_create "${dbname}"
+    else
+      postgres_database_create "${dbname}"
+    fi
 
     exit
     ;;
 
   delete_db)
 
-    mysql_database_drop "${dbname}"
+    if [[ "${engine}" == "mysql" ]]; then
+      mysql_database_drop "${dbname}"
+    else
+      postgres_database_drop "${dbname}"
+    fi
 
     exit
     ;;
 
   rename_db)
 
-    mysql_database_rename "${dbname}" "${dbname_n}"
+    if [[ "${engine}" == "mysql" ]]; then
+      mysql_database_rename "${dbname}" "${dbname_n}"
+    else
+      postgres_database_rename "${dbname}" "${dbname_n}"
+    fi
+
+    exit
+    ;;
+
+  clone-db)
+
+    if [[ "${engine}" == "mysql" ]]; then
+      mysql_database_clone "${dbname}" "${dbname_n}"
+    else
+      postgres_database_clone "${dbname}" "${dbname_n}"
+    fi
 
     exit
     ;;
 
   export_db)
 
-    mysql_database_export "${dbname}" "false" "${PROJECTS_PATH}/${dbname}_export.sql"
+    if [[ "${engine}" == "mysql" ]]; then
+      mysql_database_export "${dbname}" "${container}" "${PROJECTS_PATH}/${dbname}_export.sql"
+    else
+      postgres_database_export "${dbname}" "${container}" "${PROJECTS_PATH}/${dbname}_export.sql"
+    fi
 
     exit
     ;;
 
   import_db)
 
-    mysql_database_import "${dbname}" "false" "${FILE}"
+    if [[ "${engine}" == "mysql" ]]; then
+      mysql_database_import "${dbname}" "${container}" "${FILE}"
+    else
+      postgres_database_import "${dbname}" "${container}" "${FILE}"
+    fi
 
     exit
     ;;
 
   list_db_user)
 
-    mysql_users_list
+    if [[ "${engine}" == "mysql" ]]; then
+      mysql_users_list "${container}"
+    else
+      postgres_users_list "${container}"
+    fi
 
     exit
     ;;
 
   create_db_user)
 
-    mysql_user_create "${dbuser}" "" ""
+    if [[ "${engine}" == "mysql" ]]; then
+      mysql_user_create "${dbuser}" "" ""
+    else
+      postgres_user_create "${dbuser}" "" ""
+    fi
 
     exit
     ;;
 
   delete_db_user)
 
-    mysql_user_delete "${dbuser}" "localhost"
+    if [[ "${engine}" == "mysql" ]]; then
+      mysql_user_delete "${dbuser}" "localhost"
+    else
+      postgres_user_delete "${dbuser}" ""
+    fi
 
     exit
     ;;
 
   change_db_user_psw)
 
-    mysql_user_psw_change "${dbuser}" "${dbuser_psw}"
+    if [[ "${engine}" == "mysql" ]]; then
+      mysql_user_psw_change "${dbuser}" "${dbuser_psw}"
+    else
+      postgres_user_psw_change "${dbuser}" "${dbuser_psw}"
+    fi
+
+    exit
+    ;;
+
+  search-string)
+
+    if [[ "${engine}" == "mysql" ]]; then
+      mysql_database_search_string "${dbname}" "${tvalue}" "${container}"
+    else
+      postgres_database_search_string "${dbname}" "${tvalue}" "${container}"
+    fi
 
     exit
     ;;

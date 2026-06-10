@@ -33,18 +33,22 @@ function show_help() {
 
   Tasks:
     -t, --task        Task to run:
-                        backup              Subtasks: all, files, databases, server-config, project
+                        backup              Subtasks: all, files, databases, server-config,
+                                            project, full-report
                         restore             Subtasks: from-local, from-storage, from-url, from-borg
                         project             Subtasks: delete, online, offline, regen-nginx
                         project-install     (uses -tf/-tt instead of subtask)
                         database            Subtasks: list_db, create_db, delete_db, rename_db,
                                             import_db, export_db, list_db_user, create_db_user,
-                                            delete_db_user, change_db_user_psw
+                                            delete_db_user, change_db_user_psw, search-string,
+                                            clone-db
                         certbot             Subtasks: install, expand, force-renew, delete, list, test-renew
                         cloudflare-api      Subtasks: clear_cache, dev_mode, ssl_mode
                         wpcli               Subtasks: plugin-install, plugin-activate, plugin-deactivate,
                                             plugin-update, plugin-version, clear-cache, cache-activate,
                                             cache-deactivate, verify-installation, core-update, search-replace
+                        server-status       Subtasks: full (default), disk, packages, certs
+                        security-scan       Subtasks: full (default), clamav, wordfence, processes
                         ssh-keygen          (no subtask)
                         disk-cleanup        Subtasks: apt, journal, docker, all
                         aliases-install     (no subtask)
@@ -61,6 +65,7 @@ function show_help() {
     -dbs, --dbstage   Database stage
     -dbu, --dbuser    Database user
     -dbup, --dbuser-psw  Database user password
+    -de, --db-engine  Database engine: auto (default), mysql, postgres
     -tf, --file       Config file path (for project-install)
     -tt, --type       Install type: clean, copy (for project-install)
     -tv, --task-value Value parameter for tasks that need it
@@ -73,15 +78,21 @@ function show_help() {
 
   Examples:
     ./runner.sh -t backup -st project -D example.com
+    ./runner.sh -t backup -st full-report
     ./runner.sh -t restore -st from-storage -D example.com -tv 2026-06-09
     ./runner.sh -t project -st online -D example.com
     ./runner.sh -t project -st regen-nginx -D example.com
     ./runner.sh -t database -st export_db -db mydb_prod
+    ./runner.sh -t database -st export_db -db mydb_prod -de postgres
     ./runner.sh -t database -st import_db -db mydb_prod -tf /path/to/dump.sql
+    ./runner.sh -t database -st search-string -db mydb -tv 'suspicious_string'
     ./runner.sh -t certbot -st install -D example.com
-    ./runner.sh -t certbot -st force-renew -D example.com
     ./runner.sh -t cloudflare-api -st clear_cache -D example.com
-    ./runner.sh -t wpcli -t search-replace -D example.com -tv "http://old.com,https://new.com"
+    ./runner.sh -t wpcli -t search-replace -D example.com -tv \"http://old.com,https://new.com\"
+    ./runner.sh -t server-status
+    ./runner.sh -t server-status -st certs
+    ./runner.sh -t security-scan
+    ./runner.sh -t security-scan -st wordfence
     ./runner.sh -t disk-cleanup -st apt -dr
     ./runner.sh -t project-install -tf /path/to/config.json -tt clean
 
@@ -238,6 +249,156 @@ function execute_task_with_error_handling() {
 }
 
 ################################################################################
+# Server status handler (plain-text output)
+#
+# Arguments:
+#   ${1} = ${subtask} (full, disk, packages, certs)
+#
+# Outputs:
+#   Plain-text status report to stdout
+################################################################################
+
+function server_status_handler() {
+
+  local subtask="${1:-full}"
+
+  log_section "Server Status"
+
+  if [[ "${subtask}" == "full" || "${subtask}" == "disk" ]]; then
+    local disk_pct
+    local disk_info
+    disk_pct="$(calculate_disk_usage "${MAIN_VOL}")"
+    disk_info="$(df -h | grep -w "${MAIN_VOL}")"
+    if [[ -n "${disk_pct}" ]]; then
+      local disk_num
+      disk_num="$(echo "${disk_pct}" | tr -d '%')"
+      if [[ ${disk_num} -ge 80 ]]; then
+        display --indent 2 --text "Disk: ${disk_info}" --result "WARNING" --color RED
+      elif [[ ${disk_num} -ge 45 ]]; then
+        display --indent 2 --text "Disk: ${disk_info}" --result "WARNING" --color YELLOW
+      else
+        display --indent 2 --text "Disk: ${disk_info}" --result "OK" --color GREEN
+      fi
+    else
+      display --indent 2 --text "Disk: unable to read" --result "WARN" --color YELLOW
+    fi
+  fi
+
+  if [[ "${subtask}" == "full" || "${subtask}" == "packages" ]]; then
+    local outdated_count=0
+    local pkg_list=""
+    for pkg in "${PACKAGES[@]}"; do
+      local installed_version
+      local candidate_version
+      installed_version="$(apt-cache policy "${pkg}" 2>/dev/null | grep 'Installed' | awk '{print $2}')"
+      candidate_version="$(apt-cache policy "${pkg}" 2>/dev/null | grep 'Candidate' | awk '{print $2}')"
+      if [[ -n "${installed_version}" && "${installed_version}" != "${candidate_version}" && "${candidate_version}" != "(none)" ]]; then
+        pkg_list+="  ${pkg}: ${installed_version} -> ${candidate_version}\n"
+        outdated_count=$((outdated_count + 1))
+      fi
+    done
+    if [[ ${outdated_count} -gt 0 ]]; then
+      display --indent 2 --text "Packages: ${outdated_count} outdated" --result "WARNING" --color YELLOW
+      echo -e "${pkg_list}"
+    else
+      display --indent 2 --text "Packages: all up to date" --result "OK" --color GREEN
+    fi
+  fi
+
+  if [[ "${subtask}" == "full" || "${subtask}" == "certs" ]]; then
+    local all_sites
+    all_sites="$(get_all_directories "${PROJECTS_PATH}")"
+    for site in ${all_sites}; do
+      local domain
+      domain="$(basename "${site}")"
+      if [[ "${IGNORED_PROJECTS_LIST}" == *"${domain}"* ]]; then
+        continue
+      fi
+      local cert_days
+      cert_days="$(certbot_certificate_valid_days "${domain}")"
+      if [[ -z "${cert_days}" ]]; then
+        display --indent 2 --text "${domain} - no certificate" --result "MISSING" --color WHITE
+      elif [[ ${cert_days} -ge 14 ]]; then
+        display --indent 2 --text "${domain} - ${cert_days} days remaining" --result "OK" --color GREEN
+      elif [[ ${cert_days} -ge 7 ]]; then
+        display --indent 2 --text "${domain} - ${cert_days} days remaining" --result "WARNING" --color YELLOW
+      else
+        display --indent 2 --text "${domain} - ${cert_days} days remaining" --result "CRITICAL" --color RED
+      fi
+    done
+  fi
+
+}
+
+################################################################################
+# Security scan handler
+#
+# Arguments:
+#   ${1} = ${subtask} (full, clamav, wordfence, processes)
+#
+# Outputs:
+#   Scan results and notifications
+################################################################################
+
+function security_scan_handler() {
+
+  local subtask="${1:-full}"
+  local scan_status="No Issues"
+
+  log_section "Security Scan"
+
+  if [[ "${subtask}" == "full" || "${subtask}" == "wordfence" ]]; then
+    log_subsection "Wordfence Malware Scan"
+    local all_sites
+    all_sites="$(get_all_directories "${PROJECTS_PATH}")"
+    for site in ${all_sites}; do
+      local project_name
+      project_name="$(basename "${site}")"
+      if [[ -d "${site}/wordpress" ]] || { [[ -f "${site}/index.php" ]] && [[ -d "${site}/wp-content" ]]; }; then
+        local wf_result
+        wf_result="$(wordfencecli_malware_scan "${site}" "true")"
+        if [[ "${wf_result}" == "true" ]]; then
+          display --indent 2 --text "${project_name}" --result "MALWARE" --color RED
+          send_notification "${SERVER_NAME}" "Malware detected on ${project_name}" "alert"
+          scan_status="Found Issues"
+        else
+          display --indent 2 --text "${project_name}" --result "CLEAN" --color GREEN
+        fi
+      fi
+    done
+  fi
+
+  if [[ "${subtask}" == "full" || "${subtask}" == "clamav" ]]; then
+    log_subsection "ClamAV Scan"
+    local clamav_result
+    clamav_result="$(security_clamav_scan "${PROJECTS_PATH}")"
+    if [[ "${clamav_result}" == "true" ]]; then
+      display --indent 2 --text "ClamAV scan" --result "THREATS" --color RED
+      send_notification "${SERVER_NAME}" "ClamAV detected threats in ${PROJECTS_PATH}" "alert"
+      scan_status="Found Issues"
+    else
+      display --indent 2 --text "ClamAV scan" --result "CLEAN" --color GREEN
+    fi
+  fi
+
+  if [[ "${subtask}" == "full" || "${subtask}" == "processes" ]]; then
+    log_subsection "Process Scanner"
+    local proc_result
+    proc_result="$(security_process_scanner)"
+    if [[ "${proc_result}" == "true" ]]; then
+      display --indent 2 --text "Process scanner" --result "SUSPICIOUS" --color RED
+      send_notification "${SERVER_NAME}" "Suspicious processes detected on ${SERVER_NAME}" "alert"
+      scan_status="Found Issues"
+    else
+      display --indent 2 --text "Process scanner" --result "CLEAN" --color GREEN
+    fi
+  fi
+
+  display --indent 2 --text "Security scan status: ${scan_status}" --tcolor WHITE
+
+}
+
+################################################################################
 # Tasks handler
 #
 # Arguments:
@@ -253,32 +414,6 @@ function tasks_handler() {
   local exit_code=0
 
   case ${task} in
-
-  backup)
-    # Validate subtask
-    validate_task_and_subtask "backup" "${STASK}" "all files databases server-config project"
-    exit_code=$?
-    [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
-
-    # Validate required params based on subtask
-    case "${STASK}" in
-      project)
-        validate_required_params "backup-project" "DOMAIN"
-        exit_code=$?
-        [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
-        ;;
-      databases)
-        validate_required_params "backup-databases" "DBNAME"
-        exit_code=$?
-        [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
-        ;;
-    esac
-
-    # Execute task
-    execute_task_with_error_handling "backup-${STASK}" "subtasks_backup_handler" "${STASK}"
-    exit_code=$?
-    exit ${exit_code}
-    ;;
 
   restore)
     # Validate subtask
@@ -336,7 +471,7 @@ function tasks_handler() {
 
   database)
     # Validate subtask
-    validate_task_and_subtask "database" "${STASK}" "list_db create_db delete_db rename_db export_db import_db list_db_user create_db_user delete_db_user change_db_user_psw"
+    validate_task_and_subtask "database" "${STASK}" "list_db create_db delete_db rename_db export_db import_db list_db_user create_db_user delete_db_user change_db_user_psw search-string clone-db"
     exit_code=$?
     [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
 
@@ -346,8 +481,12 @@ function tasks_handler() {
         validate_required_params "database-${STASK}" "DBNAME"
         exit_code=$?
         ;;
-      rename_db)
-        validate_required_params "database-rename" "DBNAME" "DBNAME_N"
+      rename_db|clone-db)
+        validate_required_params "database-${STASK}" "DBNAME" "DBNAME_N"
+        exit_code=$?
+        ;;
+      search-string)
+        validate_required_params "database-search-string" "DBNAME" "TVALUE"
         exit_code=$?
         ;;
       create_db_user)
@@ -366,7 +505,7 @@ function tasks_handler() {
     [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
 
     # Execute task
-    execute_task_with_error_handling "database-${STASK}" "database_tasks_handler" "${STASK}" "${DBNAME}" "${DBSTAGE}" "${DBNAME_N}" "${DBUSER}" "${DBUSERPSW}"
+    execute_task_with_error_handling "database-${STASK}" "database_tasks_handler" "${STASK}" "${DBNAME}" "${DBSTAGE}" "${DBNAME_N}" "${DBUSER}" "${DBUSERPSW}" "${DBENGINE}" "${TVALUE}"
     exit_code=$?
     exit ${exit_code}
     ;;
@@ -476,6 +615,76 @@ function tasks_handler() {
     exit ${exit_code}
     ;;
 
+  server-status)
+    validate_task_and_subtask "server-status" "${STASK:-full}" "full disk packages certs"
+    exit_code=$?
+    [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
+
+    server_status_handler "${STASK:-full}"
+    exit_code=$?
+    exit ${exit_code}
+    ;;
+
+  security-scan)
+    validate_task_and_subtask "security-scan" "${STASK:-full}" "full clamav wordfence processes"
+    exit_code=$?
+    [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
+
+    if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
+      netdata_alerts_disable
+    fi
+
+    execute_task_with_error_handling "security-${STASK:-full}" "security_scan_handler" "${STASK:-full}"
+    exit_code=$?
+
+    if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
+      netdata_alerts_enable
+    fi
+
+    exit ${exit_code}
+    ;;
+
+  backup)
+    # Validate subtask
+    validate_task_and_subtask "backup" "${STASK}" "all files databases server-config project full-report"
+    exit_code=$?
+    [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
+
+    if [[ "${STASK}" == "full-report" ]]; then
+      if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
+        netdata_alerts_disable
+      fi
+
+      execute_task_with_error_handling "backup-full-report" "subtasks_backup_handler" "full-report"
+      exit_code=$?
+
+      if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
+        netdata_alerts_enable
+      fi
+
+      exit ${exit_code}
+    fi
+
+    # Validate required params based on subtask
+    case "${STASK}" in
+      project)
+        validate_required_params "backup-project" "DOMAIN"
+        exit_code=$?
+        [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
+        ;;
+      databases)
+        validate_required_params "backup-databases" "DBNAME"
+        exit_code=$?
+        [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
+        ;;
+    esac
+
+    # Execute task
+    execute_task_with_error_handling "backup-${STASK}" "subtasks_backup_handler" "${STASK}"
+    exit_code=$?
+    exit ${exit_code}
+    ;;
+
   *)
     log_event "error" "INVALID TASK: ${TASK}" "true"
     display --indent 2 --text "- Invalid task: ${TASK}" --result "FAIL" --color RED
@@ -523,6 +732,7 @@ function flags_handler() {
   declare -g DBSTAGE=""
   declare -g DBUSER=""
   declare -g DBUSERPSW=""
+  declare -g DBENGINE="auto"
 
   while [ $# -ge 1 ]; do
 
@@ -654,6 +864,12 @@ function flags_handler() {
       export DBUSERPSW
       ;;
 
+    -de | --db-engine)
+      shift
+      DBENGINE="${1}"
+      export DBENGINE
+      ;;
+
     *)
       echo "Invalid option: ${1}" >&2
       exit 1
@@ -664,9 +880,6 @@ function flags_handler() {
     shift
 
   done
-
-  # Script initialization
-  script_init "true"
 
   tasks_handler "${TASK}"
 
