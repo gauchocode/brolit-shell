@@ -18,7 +18,6 @@ if [[ -z "${BROLIT_MAIN_DIR}" ]]; then
 fi
 
 ### Load Main library
-chmod +x "${BROLIT_MAIN_DIR}/libs/commons.sh"
 # shellcheck source=/root/brolit-shell/libs/commons.sh
 source "${BROLIT_MAIN_DIR}/libs/commons.sh"
 
@@ -35,7 +34,7 @@ if [[ $# -eq 0 ]]; then
 else
 
   # RUNNING WITH FLAGS
-  flags_handler $* #$* stores all arguments received when the script is runned
+  flags_handler "$@"
 
 fi
 

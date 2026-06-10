@@ -23,6 +23,7 @@ function tests_suite_menu() {
     "10)" "RUN DISPLAY TESTS"
     "11)" "RUN DOCKER TESTS"
     "12)" "RUN BROLIT NOTIFICATION TESTS"
+    "13)" "RUN CLI PARAMETER TESTS"
   )
 
   chosen_tests_options=$(whiptail --title "TESTS SUITE" --menu " " 20 78 10 "${tests_options[@]}" 3>&1 1>&2 2>&3)
@@ -39,6 +40,7 @@ function tests_suite_menu() {
       test_cloudflare_funtions
       test_common_funtions
       test_borg_helper_funtions
+      test_task_runner
     fi
     if [[ ${chosen_tests_options} == *"01"* ]]; then
       test_borg_backup_database
@@ -88,6 +90,10 @@ function tests_suite_menu() {
     fi
     if [[ ${chosen_tests_options} == *"12"* ]]; then
       send_notification "${SERVER_NAME}" "This is a notification test message!" ""
+
+    fi
+    if [[ ${chosen_tests_options} == *"13"* ]]; then
+      test_task_runner
 
     fi
 
