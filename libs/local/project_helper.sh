@@ -2769,10 +2769,17 @@ function project_get_install_type() {
   if [[ -n ${dir_path} ]]; then
 
     # docker-compose?
-    docker="$(
-      find "${dir_path}" -maxdepth 2 -name "docker-compose.yml" -type f
-      find "${dir_path}" -maxdepth 2 -name "docker-compose.yaml" -type f
-    )"
+    docker=""
+    local entry
+    for entry in "${dir_path}"/*/; do
+      if [[ -f "${entry}docker-compose.yml" ]] || [[ -f "${entry}docker-compose.yaml" ]]; then
+        docker="true"
+        break
+      fi
+    done
+    if [[ -f "${dir_path}/docker-compose.yml" ]] || [[ -f "${dir_path}/docker-compose.yaml" ]]; then
+      docker="true"
+    fi
     if [[ -n ${docker} ]]; then
 
       project_install_type="docker-compose"
