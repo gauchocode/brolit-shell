@@ -2227,13 +2227,13 @@ declare -g SERVER_NAME="${HOSTNAME}"
 
 ## Dirs
 declare -g BROLIT_MAIN_DIR
-BROLIT_MAIN_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
+BROLIT_MAIN_DIR=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" &>/dev/null && pwd -P)
 declare -g BROLIT_PROJECT_CONFIG_PATH="/etc/brolit"
 
 declare -g BROLIT_CONFIG_FILE=~/.brolit_conf.json
 
 #declare -g BROLIT_TMP_DIR="/root/brolit-shell/tmp"
-declare -g BROLIT_LITE_OUTPUT_DIR="/root/brolit-shell/tmp/lite-output"
+declare -g BROLIT_LITE_OUTPUT_DIR="${BROLIT_MAIN_DIR}/tmp/lite-output"
 if [[ ! -d ${BROLIT_LITE_OUTPUT_DIR} ]]; then
     mkdir -p "${BROLIT_LITE_OUTPUT_DIR}"
 fi
@@ -2288,10 +2288,10 @@ show_backup_information() {
     local storage_box_directory="/mnt/storage-box"
     local project_directory_path="/var/www"
 
-    source /root/brolit-shell/libs/borg_storage_controller.sh
-    source /root/brolit-shell/libs/local/log_and_display_helper.sh
-    source /root/brolit-shell/utils/brolit_configuration_manager.sh
-    source /root/brolit-shell/libs/local/json_helper.sh
+    source "${BROLIT_MAIN_DIR}/libs/borg_storage_controller.sh"
+    source "${BROLIT_MAIN_DIR}/libs/local/log_and_display_helper.sh"
+    source "${BROLIT_MAIN_DIR}/utils/brolit_configuration_manager.sh"
+    source "${BROLIT_MAIN_DIR}/libs/local/json_helper.sh"
 
     _brolit_configuration_load_backup_borg "/root/.brolit_conf.json"
 

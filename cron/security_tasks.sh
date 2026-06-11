@@ -7,9 +7,9 @@
 # Ref: https://github.com/wordfence/wordfence-cli
 #
 
-LAST_SCAN_DATE_FILE="/root/brolit-shell/tmp/last_scan_date.txt"
+LAST_SCAN_DATE_FILE="${BROLIT_MAIN_DIR}/tmp/last_scan_date.txt"
 
-SCAN_STATUS_FILE="/root/brolit-shell/tmp/scan_status.txt"
+SCAN_STATUS_FILE="${BROLIT_MAIN_DIR}/tmp/scan_status.txt"
 
 echo "In Progress" >$SCAN_STATUS_FILE
 
