@@ -550,6 +550,9 @@ function customize_ubuntu_login_message() {
 
 function install_script_aliases() {
 
+  local brolit_bin="/usr/local/bin/brolit"
+  local brolit_target="${BROLIT_MAIN_DIR}/runner.sh"
+
   log_subsection "Bash Aliases"
 
   if [[ ! -f ~/.bash_aliases ]]; then
@@ -575,8 +578,6 @@ function install_script_aliases() {
       display --indent 6 --text "Please now run: source ~/.bash_aliases" --tcolor CYAN
       log_event "info" "BROLIT aliases installed" "false"
 
-      return 0
-
     else
 
       display --indent 4 --text "- Installing BROLIT aliases" --result "FAIL" --color RED
@@ -587,6 +588,31 @@ function install_script_aliases() {
     fi
 
   fi
+
+  if [[ -L "${brolit_bin}" ]]; then
+    local current_target
+    current_target="$(readlink -f "${brolit_bin}")"
+    if [[ "${current_target}" == "$(readlink -f "${brolit_target}")" ]]; then
+      display --indent 4 --text "- Symlink ${brolit_bin} already correct" --result "DONE" --color GREEN
+    else
+      ln -sf "${brolit_target}" "${brolit_bin}"
+      display --indent 4 --text "- Updated symlink ${brolit_bin}" --result "DONE" --color GREEN
+    fi
+  elif [[ -e "${brolit_bin}" ]]; then
+    display --indent 4 --text "- ${brolit_bin} exists but is not a symlink, skipping" --result "WARN" --color YELLOW
+  else
+    ln -s "${brolit_target}" "${brolit_bin}"
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
+      display --indent 4 --text "- Created symlink: ${brolit_bin}" --result "DONE" --color GREEN
+      log_event "info" "Created brolit symlink at ${brolit_bin}" "false"
+    else
+      display --indent 4 --text "- Failed to create symlink ${brolit_bin}" --result "FAIL" --color RED
+      log_event "error" "Failed to create brolit symlink" "false"
+    fi
+  fi
+
+  return 0
 
 }
 
