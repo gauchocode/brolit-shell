@@ -22,19 +22,15 @@ function docker_optimizer_list_projects() {
 
   local project_list=()
 
-  # Scan PROJECTS_PATH for docker-compose.yml files
-  while IFS= read -r -d '' project_path; do
-    project_dir="$(dirname "${project_path}")"
-    # Verify it's a valid project directory
-    if [[ -f "${project_dir}/docker-compose.yml" ]]; then
-      project_list+=("${project_dir}")
+  local dir
+  for dir in "${PROJECTS_PATH}"/*/; do
+    if [[ -f "${dir}docker-compose.yml" ]] || [[ -f "${dir}docker-compose.yaml" ]]; then
+      project_list+=("${dir%/}")
     fi
-  done < <(find "${PROJECTS_PATH}" -maxdepth 2 -name "docker-compose.yml" -type f -print0 2>/dev/null)
+  done
 
-  # Sort alphabetically
   IFS=$'\n' project_list=($(sort <<<"${project_list[*]}")); unset IFS
 
-  # Output project list
   if [[ ${#project_list[@]} -gt 0 ]]; then
     printf '%s\n' "${project_list[@]}"
     return 0
