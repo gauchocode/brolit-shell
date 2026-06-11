@@ -97,7 +97,7 @@ function wordfencecli_read_license() {
 
 function build_wordfencecli_docker_image() {
 
-    local target_directory="/root/brolit-shell/tmp"
+    local target_directory="${BROLIT_MAIN_DIR}/tmp"
 
     if [[ ! -d "${target_directory}/wordfence-cli" ]]; then
         git clone https://github.com/wordfence/wordfence-cli.git "${target_directory}/wordfence-cli"
@@ -152,7 +152,7 @@ function wordfencecli_malware_scan() {
 
         # Output file path
         local output_file
-        output_file="/root/brolit-shell/tmp/$(basename "${directory_to_scan}")_scan.csv"
+        output_file="${BROLIT_MAIN_DIR}/tmp/$(basename "${directory_to_scan}")_scan.csv"
 
         # Calculate workers
         local workers
@@ -160,7 +160,7 @@ function wordfencecli_malware_scan() {
 
         # Malware Scan command - capture output
         local scan_output
-        scan_output=$(docker run -v /var/www:/var/www -v /root/brolit-shell/tmp:/output wordfence-cli:latest malware-scan ${scan_option} --workers "${workers}" --accept-terms --license "${license}" "${directory_to_scan}" --output-path "/output/$(basename "${directory_to_scan}")_scan.csv" 2>&1)
+        scan_output=$(docker run -v /var/www:/var/www -v "${BROLIT_MAIN_DIR}/tmp":/output wordfence-cli:latest malware-scan ${scan_option} --workers "${workers}" --accept-terms --license "${license}" "${directory_to_scan}" --output-path "/output/$(basename "${directory_to_scan}")_scan.csv" 2>&1)
 
         # Display formatted output
         echo ""
