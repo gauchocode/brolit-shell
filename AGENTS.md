@@ -131,6 +131,7 @@ All sourced from `BROLIT_MAIN_DIR`:
 | Systematic Debugging | `.claude/skills/brolit-systematic-debugging/SKILL.md` |
 | Backup and Restore | `.claude/skills/brolit-backup-restore/SKILL.md` |
 | Security Hardening | `.claude/skills/brolit-security-hardening/SKILL.md` |
+| CLI Commands | `.claude/skills/brolit-cli-commands/SKILL.md` |
 
 Skills provide specialized instructions and workflows for specific tasks.
 Use the skill tool to load a skill when a task matches its description.
