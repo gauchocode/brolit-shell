@@ -2340,10 +2340,16 @@ show_backup_information() {
 
                     (
                     local last_site_backup last_db_backup backup_date_site backup_date_db
+                    local site_size=0 db_size=0 backup_size=0 backup_status="unknown"
                     local project_json=""
+                    local site_line db_line
 
-                    # Get last site-files backup
-                    last_site_backup="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_site_dir}/${project_directory}" 2>/dev/null | grep -E 'site-files|tar\.bz2|tar\.gz|\.tgz' | tail -1 | awk '{print $NF;}')"
+                    # Get last site-files backup. Note: -q only (no -h) so the size column
+                    # is raw bytes; with -h it would be human-readable and hard to parse.
+                    site_line="$("${DROPBOX_UPLOADER}" -q list "${dropbox_site_dir}/${project_directory}" 2>/dev/null | grep -E 'site-files|tar\.bz2|tar\.gz|\.tgz' | tail -1)"
+                    last_site_backup="$(echo "${site_line}" | awk '{print $NF;}')"
+                    site_size="$(echo "${site_line}" | awk '{print $2;}')"
+                    [[ -z "${site_size}" || ! "${site_size}" =~ ^[0-9]+$ ]] && site_size=0
 
                     if [[ -n "${last_site_backup}" ]]; then
                         backup_date_site=$(echo "${last_site_backup}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')
@@ -2354,7 +2360,10 @@ show_backup_information() {
 
                     # Get last database backup
                     local dropbox_db_dir="${dropbox_base_path}/projects-online/database/${project_directory}"
-                    last_db_backup="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_db_dir}" 2>/dev/null | grep -E '\.tar\.bz2|\.sql|\.gz' | tail -1 | awk '{print $NF;}')"
+                    db_line="$("${DROPBOX_UPLOADER}" -q list "${dropbox_db_dir}" 2>/dev/null | grep -E '\.tar\.bz2|\.sql|\.gz' | tail -1)"
+                    last_db_backup="$(echo "${db_line}" | awk '{print $NF;}')"
+                    db_size="$(echo "${db_line}" | awk '{print $2;}')"
+                    [[ -z "${db_size}" || ! "${db_size}" =~ ^[0-9]+$ ]] && db_size=0
 
                     if [[ -n "${last_db_backup}" ]]; then
                         backup_date_db=$(echo "${last_db_backup}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')
@@ -2363,7 +2372,10 @@ show_backup_information() {
                         last_db_backup="empty"
                     fi
 
-                    project_json="\"${project_directory}\": { \"files\": \"${last_site_backup}\", \"files_date\": \"${backup_date_site}\", \"database\": \"${last_db_backup}\", \"database_date\": \"${backup_date_db}\" }"
+                    backup_size=$((site_size + db_size))
+                    { [[ "${last_site_backup}" != "empty" ]] || [[ "${last_db_backup}" != "empty" ]]; } && backup_status="success"
+
+                    project_json="\"${project_directory}\": { \"files\": \"${last_site_backup}\", \"files_date\": \"${backup_date_site}\", \"database\": \"${last_db_backup}\", \"database_date\": \"${backup_date_db}\", \"status\": \"${backup_status}\", \"size_bytes\": ${backup_size} }"
                     echo "${project_json}" >> "${temp_file}"
                     ) &
                 fi
@@ -2384,57 +2396,88 @@ show_backup_information() {
         local borg_configs_count
         borg_configs_count=$(jq '.BACKUPS.methods[].borg[].config | length' "${json_config_file}")
 
-        # Loop through each Borg configuration
-        for (( i=0; i<"${borg_configs_count}"; i++ )); do
+        BACKUP_BORG_GROUP=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].group")
 
-            # Get Borg configuration details
-            BACKUP_BORG_USER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[${i}].user")
-            BACKUP_BORG_SERVER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[${i}].server")
-            BACKUP_BORG_PORT=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[${i}].port")
-            BACKUP_BORG_GROUP=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].group")
+        # Local projects are discovered from the filesystem (same source as the sites listing),
+        # so this works non-interactively over SSH without mounting the storage box or relying
+        # on borgmatic. For each project we query the last archive in its remote borg repo with:
+        #   borg list ssh://user@server:port/./applications/<group>/<host>/projects-online/site/<project>
+        if [[ -d "${PROJECTS_PATH}" ]]; then
 
-            # Mount storage box
-            mount_storage_box "${storage_box_directory}"
+            # Loop through each Borg configuration until one yields data
+            for (( i=0; i<"${borg_configs_count}"; i++ )); do
 
-            # Loop through project directories in the mounted storage box
-            for project_directory in $(ls --color=never "${storage_box_directory}/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/site"); do
+                BACKUP_BORG_USER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[${i}].user")
+                BACKUP_BORG_SERVER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[${i}].server")
+                BACKUP_BORG_PORT=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[${i}].port")
 
-                (
+                # Host dir on the storage box. Defaults to the current HOSTNAME; an optional
+                # "backup_host" override lets renamed servers (whose history lives under an older
+                # hostname) point at it without code changes or slow runtime probing.
+                local backup_host
+                backup_host="$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].backup_host")"
+                [[ -z "${backup_host}" ]] && backup_host="${HOSTNAME}"
 
-                if [[ -d "${project_directory_path}/${project_directory}" ]]; then
+                for project_path in $(find -L "${PROJECTS_PATH}" -maxdepth 1 -mindepth 1 -type d -not -path '*/.*' | sort); do
+
+                    project_directory="$(basename "${project_path}")"
+
+                    # Skip projects listed as ignored on the brolit config
+                    if [[ "$(_project_is_ignored "${project_directory}")" == "true" ]]; then
+                        continue
+                    fi
+
+                    (
+
                     local project_json=""
+                    local last_backup_file=""
+                    local backup_date="unknown"
+                    local backup_status="empty"
+                    local backup_db="empty"
+                    local backup_size=0
 
-                    last_backup_file=$(/root/.local/bin/borgmatic list --last 1 --format '{archive}{NL}' --match-archives "*" | grep "${project_directory}_site-files" | head -n 1 | sed -r "s/\x1B\[[0-9;]*[mG]//g")
+                    local borg_repo="ssh://${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}/./applications/${BACKUP_BORG_GROUP}/${backup_host}/projects-online/site/${project_directory}"
+
+                    # BORG_RSH keeps ssh non-interactive (BatchMode) and accepts new host keys (TOFU).
+                    # Repos are unencrypted (encryption=none), so the two BORG_*_IS_OK flags silence
+                    # the confirmation prompts that would otherwise block a non-interactive run.
+                    last_backup_file="$(BORG_RSH="ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15" \
+                        BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=yes \
+                        BORG_RELOCATED_REPO_ACCESS_IS_OK=yes \
+                        borg list --last 1 --format '{archive}{NL}' "${borg_repo}" 2>/dev/null \
+                        | sed -r "s/\x1B\[[0-9;]*[mG]//g" | head -n 1)"
 
                     if [[ -n "${last_backup_file}" ]]; then
                         backup_date=$(echo "${last_backup_file}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')
-                        backup_files="\"${backup_date}\": { \"files\": \"${last_backup_file}\", \"database\": \"empty\" }"
+                        backup_status="success"
+                        # Original (uncompressed, pre-dedup) size of the last archive, in bytes.
+                        backup_size="$(BORG_RSH="ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15" \
+                            BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=yes \
+                            BORG_RELOCATED_REPO_ACCESS_IS_OK=yes \
+                            borg info --json "${borg_repo}::${last_backup_file}" 2>/dev/null \
+                            | jq -r '.archives[0].stats.original_size // 0' 2>/dev/null)"
+                        [[ -z "${backup_size}" || ! "${backup_size}" =~ ^[0-9]+$ ]] && backup_size=0
                     else
-                        backup_files="\"empty\": { \"files\": \"empty\", \"database\": \"empty\" }"
+                        last_backup_file="empty"
                     fi
 
-                    last_db_backup_file=$(ls -t "${storage_box_directory}/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/database/${project_directory}/"*.tar.bz2 | head -n 1)
-
-                    if [[ -n "${last_db_backup_file}" ]]; then
-                        backup_db=$(basename "${last_db_backup_file}")
-                    else
-                        backup_db="empty"
-                    fi
-
-                    backup_files="\"${backup_date}\": { \"files\": \"${last_backup_file}\", \"database\": \"${backup_db}\" }"
-
-                    project_json="\"${project_directory}\": { ${backup_files} }"
+                    project_json="\"${project_directory}\": { \"last_archive\": \"${last_backup_file}\", \"backup_date\": \"${backup_date}\", \"files\": \"${last_backup_file}\", \"database\": \"${backup_db}\", \"status\": \"${backup_status}\", \"size_bytes\": ${backup_size} }"
                     echo "${project_json}" >> "${temp_file}"
+
+                    ) &
+                done
+
+                wait
+
+                # First Borg configuration that yields backup data wins; avoids duplicate
+                # entries when more than one storage box is configured.
+                if [[ -s "${temp_file}" ]]; then
+                    break
                 fi
-                ) &
+
             done
 
-            wait
-
-            # Unmount storage box
-            umount_storage_box "${storage_box_directory}"
-
-        done
+        fi
 
     fi
 
