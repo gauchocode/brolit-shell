@@ -2295,84 +2295,158 @@ show_backup_information() {
     local storage_box_directory="/mnt/storage-box"
     local project_directory_path="/var/www"
 
-    source "${BROLIT_MAIN_DIR}/libs/borg_storage_controller.sh"
     source "${BROLIT_MAIN_DIR}/libs/local/log_and_display_helper.sh"
     source "${BROLIT_MAIN_DIR}/utils/brolit_configuration_manager.sh"
     source "${BROLIT_MAIN_DIR}/libs/local/json_helper.sh"
 
-    _brolit_configuration_load_backup_borg "/root/.brolit_conf.json"
+    # Detect enabled backup methods from config
+    local dropbox_status borg_status
+    dropbox_status="$(_json_read_field "${json_config_file}" "BACKUPS.methods[].dropbox[].status")"
+    borg_status="$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].status")"
 
-    # Get number of Borg configurations
-    local borg_configs_count
-    borg_configs_count=$(jq '.BACKUPS.methods[].borg[].config | length' "${json_config_file}")
+    # Determine primary backup method
+    if [[ "${dropbox_status}" == "enabled" ]]; then
+        backup_method="dropbox"
+    elif [[ "${borg_status}" == "enabled" ]]; then
+        backup_method="borg"
+    else
+        backup_method="none"
+    fi
 
     # Initialize JSON string
-    local json_string="{ \"check_date\": \"$(date -u +"%Y-%m-%dT%H:%M:%S")\", \"backup_method\": \"borg\", \"projects_backup\": { "
+    local json_string="{ \"check_date\": \"$(date -u +"%Y-%m-%dT%H:%M:%S")\", \"backup_method\": \"${backup_method}\", \"projects_backup\": { "
 
-    # Loop through each Borg configuration
-    for (( i=0; i<"${borg_configs_count}"; i++ )); do
+    local temp_file
+    temp_file=$(mktemp)
 
-        # Get Borg configuration details
-        BACKUP_BORG_USER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[${i}].user")
-        BACKUP_BORG_SERVER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[${i}].server")
-        BACKUP_BORG_PORT=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[${i}].port")
-        BACKUP_BORG_GROUP=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].group")
+    #######################################
+    # DROPBOX BACKUPS
+    #######################################
+    if [[ "${backup_method}" == "dropbox" && -n "${DROPBOX_UPLOADER}" && -f "${DROPBOX_UPLOADER}" ]]; then
 
-        # Mount storage box
-        mount_storage_box "${storage_box_directory}"
+        local dropbox_base_path="${HOSTNAME}"
 
-        # Temporary file to store each parallel process output
-        temp_file=$(mktemp)
+        # List projects that have backups on Dropbox
+        local dropbox_site_dir="${dropbox_base_path}/projects-online/site"
+        local dropbox_projects
 
-        # Loop through project directories in the mounted storage box
-        for project_directory in $(ls --color=never "${storage_box_directory}/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/site"); do
+        dropbox_projects="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_site_dir}" 2>/dev/null | awk '{print $NF;}')"
 
-            (
+        if [[ -n "${dropbox_projects}" ]]; then
 
-            if [[ -d "${project_directory_path}/${project_directory}" ]]; then
-                local project_json=""
+            for project_directory in ${dropbox_projects}; do
 
-                last_backup_file=$(/root/.local/bin/borgmatic list --last 1 --format '{archive}{NL}' --match-archives "*" | grep "${project_directory}_site-files" | head -n 1 | sed -r "s/\x1B\[[0-9;]*[mG]//g")
+                if [[ -d "${project_directory_path}/${project_directory}" ]]; then
 
-                if [[ -n "${last_backup_file}" ]]; then
-                    backup_date=$(echo "${last_backup_file}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')
-                    backup_files="\"${backup_date}\": { \"files\": \"${last_backup_file}\", \"database\": \"empty\" }"
-                else
-                    backup_files="\"empty\": { \"files\": \"empty\", \"database\": \"empty\" }"
+                    (
+                    local last_site_backup last_db_backup backup_date_site backup_date_db
+                    local project_json=""
+
+                    # Get last site-files backup
+                    last_site_backup="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_site_dir}/${project_directory}" 2>/dev/null | grep -E 'site-files|tar\.bz2|tar\.gz|\.tgz' | tail -1 | awk '{print $NF;}')"
+
+                    if [[ -n "${last_site_backup}" ]]; then
+                        backup_date_site=$(echo "${last_site_backup}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')
+                    else
+                        backup_date_site="unknown"
+                        last_site_backup="empty"
+                    fi
+
+                    # Get last database backup
+                    local dropbox_db_dir="${dropbox_base_path}/projects-online/database/${project_directory}"
+                    last_db_backup="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_db_dir}" 2>/dev/null | grep -E '\.tar\.bz2|\.sql|\.gz' | tail -1 | awk '{print $NF;}')"
+
+                    if [[ -n "${last_db_backup}" ]]; then
+                        backup_date_db=$(echo "${last_db_backup}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')
+                    else
+                        backup_date_db="empty"
+                        last_db_backup="empty"
+                    fi
+
+                    project_json="\"${project_directory}\": { \"files\": \"${last_site_backup}\", \"files_date\": \"${backup_date_site}\", \"database\": \"${last_db_backup}\", \"database_date\": \"${backup_date_db}\" }"
+                    echo "${project_json}" >> "${temp_file}"
+                    ) &
                 fi
+            done
 
-                last_db_backup_file=$(ls -t "${storage_box_directory}/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/database/${project_directory}/"*.tar.bz2 | head -n 1)
+            wait
+        fi
 
-                if [[ -n "${last_db_backup_file}" ]]; then
-                    backup_db=$(basename "${last_db_backup_file}")
-                else
-                    backup_db="empty"
+    #######################################
+    # BORG BACKUPS
+    #######################################
+    elif [[ "${backup_method}" == "borg" ]]; then
+
+        source "${BROLIT_MAIN_DIR}/libs/borg_storage_controller.sh"
+        _brolit_configuration_load_backup_borg "/root/.brolit_conf.json"
+
+        # Get number of Borg configurations
+        local borg_configs_count
+        borg_configs_count=$(jq '.BACKUPS.methods[].borg[].config | length' "${json_config_file}")
+
+        # Loop through each Borg configuration
+        for (( i=0; i<"${borg_configs_count}"; i++ )); do
+
+            # Get Borg configuration details
+            BACKUP_BORG_USER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[${i}].user")
+            BACKUP_BORG_SERVER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[${i}].server")
+            BACKUP_BORG_PORT=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[${i}].port")
+            BACKUP_BORG_GROUP=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].group")
+
+            # Mount storage box
+            mount_storage_box "${storage_box_directory}"
+
+            # Loop through project directories in the mounted storage box
+            for project_directory in $(ls --color=never "${storage_box_directory}/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/site"); do
+
+                (
+
+                if [[ -d "${project_directory_path}/${project_directory}" ]]; then
+                    local project_json=""
+
+                    last_backup_file=$(/root/.local/bin/borgmatic list --last 1 --format '{archive}{NL}' --match-archives "*" | grep "${project_directory}_site-files" | head -n 1 | sed -r "s/\x1B\[[0-9;]*[mG]//g")
+
+                    if [[ -n "${last_backup_file}" ]]; then
+                        backup_date=$(echo "${last_backup_file}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')
+                        backup_files="\"${backup_date}\": { \"files\": \"${last_backup_file}\", \"database\": \"empty\" }"
+                    else
+                        backup_files="\"empty\": { \"files\": \"empty\", \"database\": \"empty\" }"
+                    fi
+
+                    last_db_backup_file=$(ls -t "${storage_box_directory}/${BACKUP_BORG_GROUP}/${HOSTNAME}/projects-online/database/${project_directory}/"*.tar.bz2 | head -n 1)
+
+                    if [[ -n "${last_db_backup_file}" ]]; then
+                        backup_db=$(basename "${last_db_backup_file}")
+                    else
+                        backup_db="empty"
+                    fi
+
+                    backup_files="\"${backup_date}\": { \"files\": \"${last_backup_file}\", \"database\": \"${backup_db}\" }"
+
+                    project_json="\"${project_directory}\": { ${backup_files} }"
+                    echo "${project_json}" >> "${temp_file}"
                 fi
+                ) &
+            done
 
-                backup_files="\"${backup_date}\": { \"files\": \"${last_backup_file}\", \"database\": \"${backup_db}\" }"
+            wait
 
-                project_json="\"${project_directory}\": { ${backup_files} }"
-                echo "${project_json}" >> "${temp_file}"
-            fi
-            ) &
+            # Unmount storage box
+            umount_storage_box "${storage_box_directory}"
+
         done
 
+    fi
 
-        wait
+    # Read temp file and append to JSON string
+    while read -r line; do
+        [[ -n "${line}" ]] && json_string="${json_string}${line},"
+    done < "${temp_file}"
 
-        while read -r line; do
-            json_string="${json_string}${line},"
-        done < "${temp_file}"
+    rm -f "${temp_file}"
 
-        rm -f "${temp_file}"
-
-        # Unmount storage box
-        umount_storage_box "${storage_box_directory}"
-
-    done
-
-    # Finalize JSON string
-    json_string="${json_string::-1} } }"
+    # Finalize JSON string (remove trailing comma if present)
+    json_string="${json_string%,} } }"
 
     # Save JSON output to file
     json_output_file="${BROLIT_LITE_OUTPUT_DIR}/show_backups_information.json"
