@@ -49,6 +49,14 @@ brolit -t restore -st from-borg -D example.com
 
 # From Borg (specific date)
 brolit -t restore -st from-borg -D example.com -tv 2026-06-09
+
+# Download backup without restoring
+brolit -t restore -st download -D example.com
+brolit -t restore -st download -D example.com -tv 2026-06-09
+brolit -t restore -st download -D example.com -tf /path/to/output
+
+# List available backups (JSON output)
+brolit -t restore -st list -D example.com
 ```
 
 **Required parameters by subtask:**
@@ -58,6 +66,8 @@ brolit -t restore -st from-borg -D example.com -tv 2026-06-09
 | `from-local` | `-D`, `-tf` | — |
 | `from-url` | `-D`, `-tf` | — |
 | `from-borg` | `-D` | `-tv` (date) |
+| `download` | `-D` | `-tv` (date), `-tf` (output dir) |
+| `list` | `-D` | — |
 
 ### project
 

@@ -43,6 +43,13 @@ Guides backup and restore operations using brolit-shell. Use this skill when the
 # From Borg
 ./runner.sh -t restore -st from-borg -D example.com
 ./runner.sh -t restore -st from-borg -D example.com -tv 2026-06-09
+
+# Download backup without restoring
+./runner.sh -t restore -st download -D example.com
+./runner.sh -t restore -st download -D example.com -tf /path/to/output
+
+# List available backups (JSON)
+./runner.sh -t restore -st list -D example.com
 ```
 
 ## Supported Backup Methods
