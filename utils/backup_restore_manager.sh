@@ -681,6 +681,23 @@ function subtasks_restore_handler() {
     exit $?
     ;;
 
+  download)
+
+    # Always non-interactive - download backup without restoring
+    local output_dir="${FILE:-/root/backups}"
+    download_backup_cli "${domain}" "${backup_date}" "${output_dir}"
+
+    exit $?
+    ;;
+
+  list)
+
+    # Always non-interactive - list available backups
+    list_backups_cli "${domain}"
+
+    exit $?
+    ;;
+
   *)
 
     log_event "error" "INVALID SUBTASK: ${subtask}" "true"
