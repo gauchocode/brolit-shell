@@ -3,9 +3,9 @@
   "mcp": {
     "ai-first-dev-standard": {
       "type": "local",
-      "command": ["node", "/home/lpadula/Documents/tukiverse-apps/ai-first-dev-standard/mcp/standard-mcp/server.mjs"],
+      "command": ["node", "${AIFIRST_STANDARD_PATH}/mcp/standard-mcp/server.mjs"],
       "environment": {
-        "AIFIRST_STANDARD_PATH": "/home/lpadula/Documents/tukiverse-apps/ai-first-dev-standard"
+        "AIFIRST_STANDARD_PATH": "${AIFIRST_STANDARD_PATH}"
       },
       "enabled": true
     }
