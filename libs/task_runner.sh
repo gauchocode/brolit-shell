@@ -463,10 +463,25 @@ function tasks_handler() {
     exit_code=$?
     [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
 
-    # Validate required params
+    # Validate required params based on subtask
     case "${STASK}" in
-      from-local|from-storage|from-url|from-borg)
-        validate_required_params "restore-${STASK}" "DOMAIN"
+      from-local)
+        validate_required_params "restore-from-local" "DOMAIN" "FILE"
+        exit_code=$?
+        [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
+        ;;
+      from-storage)
+        validate_required_params "restore-from-storage" "DOMAIN"
+        exit_code=$?
+        [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
+        ;;
+      from-url)
+        validate_required_params "restore-from-url" "DOMAIN" "FILE"
+        exit_code=$?
+        [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
+        ;;
+      from-borg)
+        validate_required_params "restore-from-borg" "DOMAIN"
         exit_code=$?
         [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
         ;;

@@ -2439,3 +2439,472 @@ function docker_setup_configuration() {
   log_event "info" "Docker setup configuration completed successfully." "true"
 
 }
+
+################################################################################
+# * CLI Non-Interactive Functions
+#
+# These functions are designed for AI/automation use without whiptail prompts.
+# They require all parameters via CLI arguments.
+################################################################################
+
+################################################################################
+# Restore backup from storage (CLI non-interactive)
+#
+# Arguments:
+#   ${1} = ${domain} - Project domain to restore
+#   ${2} = ${backup_date} - Optional: specific backup date (YYYY-MM-DD)
+#   ${3} = ${new_domain} - Optional: new domain for the restored project
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function restore_backup_from_storage_cli() {
+
+  local domain="${1}"
+  local backup_date="${2}"
+  local new_domain="${3:-}"
+
+  # Validate required params
+  if [[ -z "${domain}" ]]; then
+    log_event "error" "Domain is required for non-interactive restore" "true"
+    display --indent 6 --text "- Domain parameter is required" --result "FAIL" --color RED
+    return 1
+  fi
+
+  log_subsection "Restore Backup from Storage (CLI)"
+
+  # Get server name from config
+  local chosen_server="${SERVER_NAME}"
+
+  # Get storage path based on backup configuration
+  local storage_path
+  if [[ "${BACKUP_DROPBOX_STATUS}" == "enabled" ]]; then
+    storage_path="${BACKUP_DROPBOX_PATH}"
+  elif [[ "${BACKUP_SFTP_STATUS}" == "enabled" ]]; then
+    storage_path="${BACKUP_SFTP_PATH}"
+  elif [[ "${BACKUP_LOCAL_STATUS}" == "enabled" ]]; then
+    storage_path="${BACKUP_LOCAL_PATH}"
+  else
+    log_event "error" "No backup storage method enabled" "true"
+    return 1
+  fi
+
+  # Build remote list path
+  local remote_list="${chosen_server}/projects-online"
+
+  # List available backups for domain
+  display --indent 6 --text "- Listing available backups for ${domain}"
+
+  local storage_backup_list
+  storage_backup_list="$(storage_list_dir "${remote_list}/site/${domain}")"
+
+  if [[ -z "${storage_backup_list}" ]]; then
+    log_event "error" "No backups found for domain: ${domain}" "true"
+    display --indent 6 --text "- No backups found" --result "FAIL" --color RED
+    return 1
+  fi
+
+  # Select backup based on date or use latest
+  local backup_to_download
+  if [[ -n "${backup_date}" ]]; then
+    # Find backup matching the date
+    backup_to_download="$(echo "${storage_backup_list}" | grep "${backup_date}" | head -1)"
+
+    if [[ -z "${backup_to_download}" ]]; then
+      log_event "error" "No backup found for date: ${backup_date}" "true"
+      display --indent 6 --text "- No backup found for date: ${backup_date}" --result "FAIL" --color RED
+      display --indent 8 --text "Available backups:" --tcolor YELLOW
+      echo "${storage_backup_list}" | head -5
+      return 1
+    fi
+  else
+    # Use latest backup (first in list)
+    backup_to_download="$(echo "${storage_backup_list}" | head -1)"
+  fi
+
+  display --indent 6 --text "- Selected backup: ${backup_to_download}" --tcolor GREEN
+
+  # Build full download path
+  local full_backup_path="${remote_list}/site/${domain}/${backup_to_download}"
+
+  # Download backup
+  display --indent 6 --text "- Downloading backup"
+  storage_download_backup "${full_backup_path}" "${BROLIT_TMP_DIR}"
+
+  if [[ $? -ne 0 ]]; then
+    display --indent 6 --text "- Downloading backup" --result "ERROR" --color RED
+    return 1
+  fi
+
+  # Get backup filename
+  local backup_to_restore
+  backup_to_restore="$(basename "${full_backup_path}")"
+
+  # Restore backup
+  display --indent 6 --text "- Restoring backup"
+  restore_project_backup "${backup_to_restore}" "online" "${chosen_server}" "${domain}" "${new_domain}"
+
+  if [[ $? -ne 0 ]]; then
+    display --indent 6 --text "- Restore" --result "ERROR" --color RED
+    return 1
+  fi
+
+  # Send notification
+  send_notification "${SERVER_NAME}" "Project ${domain} restored from backup (CLI)" "success"
+
+  display --indent 6 --text "- Restore completed" --result "DONE" --color GREEN
+  return 0
+
+}
+
+################################################################################
+# Restore backup from local file (CLI non-interactive)
+#
+# Arguments:
+#   ${1} = ${domain} - Project domain to restore
+#   ${2} = ${file_path} - Full path to backup file
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function restore_backup_from_local_cli() {
+
+  local domain="${1}"
+  local file_path="${2}"
+
+  # Validate
+  if [[ -z "${domain}" ]]; then
+    log_event "error" "Domain is required" "true"
+    display --indent 6 --text "- Domain parameter is required" --result "FAIL" --color RED
+    return 1
+  fi
+
+  if [[ -z "${file_path}" ]]; then
+    log_event "error" "File path is required (-tf)" "true"
+    display --indent 6 --text "- File path parameter is required" --result "FAIL" --color RED
+    return 1
+  fi
+
+  if [[ ! -f "${file_path}" ]]; then
+    log_event "error" "Backup file not found: ${file_path}" "true"
+    display --indent 6 --text "- File not found: ${file_path}" --result "FAIL" --color RED
+    return 1
+  fi
+
+  log_subsection "Restore Backup from Local File (CLI)"
+
+  display --indent 6 --text "- Source file: ${file_path}" --tcolor GREEN
+
+  # Get basepath
+  local basepath
+  basepath="$(dirname "${file_path}")"
+
+  # Decompress backup
+  display --indent 6 --text "- Decompressing backup"
+  decompress "${file_path}" "${basepath}/${domain}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
+
+  if [[ $? -ne 0 ]]; then
+    display --indent 6 --text "- Decompressing" --result "ERROR" --color RED
+    return 1
+  fi
+
+  # Check directory structure
+  local dir_count
+  dir_count="$(count_directories_on_directory "${basepath}/${domain}")"
+
+  if [[ ${dir_count} -eq 1 ]]; then
+    # Move files one level up
+    local main_dir
+    main_dir="$(ls -1 "${basepath}/${domain}")"
+    mv "${basepath}/${domain}/${main_dir}/"{.,}* "${basepath}/${domain}" 2>/dev/null
+  fi
+
+  # Moving project files to brolit temp directory
+  mv "${basepath}/${domain}" "${BROLIT_TMP_DIR}"
+
+  # Get project install type
+  local project_install_type
+  project_install_type="$(project_get_install_type "${BROLIT_TMP_DIR}/${domain}")"
+
+  # Restore site files
+  display --indent 6 --text "- Restoring project files"
+  restore_backup_files "${domain}" "${project_install_type}"
+
+  local destination_dir="${PROJECTS_PATH}/${domain}"
+
+  if [[ ${project_install_type} != "proxy" && ${project_install_type} != "docker"* ]]; then
+    # Change ownership
+    change_ownership "www-data" "www-data" "${destination_dir}"
+  fi
+
+  # Send notification
+  send_notification "${SERVER_NAME}" "Project ${domain} restored from local file (CLI)" "success"
+
+  display --indent 6 --text "- Restore completed" --result "DONE" --color GREEN
+  return 0
+
+}
+
+################################################################################
+# Restore backup from public URL (CLI non-interactive)
+#
+# Arguments:
+#   ${1} = ${domain} - Project domain to restore
+#   ${2} = ${url} - URL where backup files are stored
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function restore_backup_from_url_cli() {
+
+  local domain="${1}"
+  local url="${2}"
+
+  # Validate
+  if [[ -z "${domain}" ]]; then
+    log_event "error" "Domain is required" "true"
+    display --indent 6 --text "- Domain parameter is required" --result "FAIL" --color RED
+    return 1
+  fi
+
+  if [[ -z "${url}" ]]; then
+    log_event "error" "URL is required (-tf)" "true"
+    display --indent 6 --text "- URL parameter is required" --result "FAIL" --color RED
+    return 1
+  fi
+
+  log_subsection "Restore Backup from URL (CLI)"
+
+  display --indent 6 --text "- URL: ${url}" --tcolor GREEN
+
+  # File Backup details
+  local backup_file
+  backup_file="${url##*/}"
+
+  # Create tmp dir structure
+  mkdir -p "${BROLIT_TMP_DIR}"
+  mkdir -p "${BROLIT_TMP_DIR}/${domain}"
+
+  # Download file backup
+  display --indent 6 --text "- Downloading backup"
+  ${CURL} "${url}" >"${BROLIT_TMP_DIR}/${domain}/${backup_file}"
+
+  if [[ $? -ne 0 ]]; then
+    display --indent 6 --text "- Downloading backup" --result "FAIL" --color RED
+    return 1
+  fi
+
+  # Uncompressing
+  display --indent 6 --text "- Decompressing backup"
+  decompress "${BROLIT_TMP_DIR}/${domain}/${backup_file}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}"
+
+  if [[ $? -ne 0 ]]; then
+    display --indent 6 --text "- Decompressing" --result "ERROR" --color RED
+    return 1
+  fi
+
+  # Remove downloaded file
+  rm --force "${BROLIT_TMP_DIR}/${domain}/${backup_file}"
+
+  # Search for database backups
+  local find_result
+  find_result="$({
+    find "${BROLIT_TMP_DIR}/${domain}" -name "*.sql"
+    find "${BROLIT_TMP_DIR}/${domain}" -name "*.sql.gz"
+  })"
+
+  if [[ -n "${find_result}" ]]; then
+    # Use first database backup found
+    local db_backup
+    db_backup="$(echo "${find_result}" | head -1)"
+
+    display --indent 6 --text "- Database backup found: $(basename "${db_backup}")" --tcolor GREEN
+
+    # Get database info from project config
+    local project_type project_install_type db_engine db_name db_user db_pass
+    project_type="$(project_get_type "${domain}")"
+    project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${domain}")"
+
+    if [[ -d "${PROJECTS_PATH}/${domain}" ]]; then
+      db_engine="$(project_get_configured_database_engine "${PROJECTS_PATH}/${domain}" "${project_type}" "${project_install_type}")"
+      db_name="$(project_get_configured_database "${PROJECTS_PATH}/${domain}" "${project_type}" "${project_install_type}")"
+      db_user="$(project_get_configured_database_user "${PROJECTS_PATH}/${domain}" "${project_type}" "${project_install_type}")"
+      db_pass="$(project_get_configured_database_userpassw "${PROJECTS_PATH}/${domain}" "${project_type}" "${project_install_type}")"
+
+      if [[ -n "${db_engine}" && -n "${db_name}" && -n "${db_user}" ]]; then
+        display --indent 6 --text "- Restoring database"
+        restore_backup_database "${db_engine}" "prod" "${db_name}" "${db_user}" "${db_pass}" "${db_backup}"
+      fi
+    fi
+  fi
+
+  # Restore project files
+  display --indent 6 --text "- Restoring project files"
+  local project_install_type
+  project_install_type="$(project_get_install_type "${BROLIT_TMP_DIR}/${domain}")"
+
+  restore_backup_files "${domain}" "${project_install_type}"
+
+  # Send notification
+  send_notification "${SERVER_NAME}" "Project ${domain} restored from URL (CLI)" "success"
+
+  display --indent 6 --text "- Restore completed" --result "DONE" --color GREEN
+  return 0
+
+}
+
+################################################################################
+# Restore backup with Borg (CLI non-interactive)
+#
+# Arguments:
+#   ${1} = ${domain} - Project domain to restore
+#   ${2} = ${backup_date} - Optional: specific backup date (YYYY-MM-DD)
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function restore_backup_with_borg_cli() {
+
+  local domain="${1}"
+  local backup_date="${2}"
+
+  # Validate
+  if [[ -z "${domain}" ]]; then
+    log_event "error" "Domain is required" "true"
+    display --indent 6 --text "- Domain parameter is required" --result "FAIL" --color RED
+    return 1
+  fi
+
+  log_subsection "Restore Backup with Borg (CLI)"
+
+  # Check if Borg is configured
+  if [[ "${BACKUP_BORG_STATUS}" != "enabled" ]]; then
+    log_event "error" "Borg backup is not enabled" "true"
+    display --indent 6 --text "- Borg backup not enabled" --result "FAIL" --color RED
+    return 1
+  fi
+
+  # Use first configured server (non-interactive)
+  if [[ ${#BACKUP_BORG_USERS[@]} -eq 0 ]]; then
+    log_event "error" "No Borg servers configured" "true"
+    display --indent 6 --text "- No Borg servers configured" --result "FAIL" --color RED
+    return 1
+  fi
+
+  # Set first server
+  BACKUP_BORG_USER="${BACKUP_BORG_USERS[0]}"
+  BACKUP_BORG_SERVER="${BACKUP_BORG_SERVERS[0]}"
+  BACKUP_BORG_PORT="${BACKUP_BORG_PORTS[0]}"
+
+  display --indent 6 --text "- Using server: ${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}" --tcolor GREEN
+
+  local storage_box_directory="/mnt/storage-box"
+
+  # Create storage box directory if not exists
+  [[ ! -d "${storage_box_directory}" ]] && mkdir -p "${storage_box_directory}"
+
+  # umount storage box first
+  umount_storage_box "${storage_box_directory}" && sleep 1
+
+  # mount the storage box
+  if ! mount_storage_box "${storage_box_directory}"; then
+    log_event "error" "Failed to mount storage box" "true"
+    display --indent 6 --text "- Mounting storage box" --result "FAIL" --color RED
+    return 1
+  fi
+
+  sleep 1
+
+  # Find domain in mounted directory
+  local found_server=""
+  local found_domain_path=""
+
+  # Search for domain in all server directories
+  for server_dir in "${storage_box_directory}/${BACKUP_BORG_GROUP}"/*/; do
+    if [[ -d "${server_dir}" ]]; then
+      local server_name
+      server_name="$(basename "${server_dir}")"
+
+      # Search in projects-online/site/
+      if [[ -d "${server_dir}/projects-online/site/${domain}" ]]; then
+        found_server="${server_name}"
+        found_domain_path="${server_dir}/projects-online/site/${domain}"
+        break
+      fi
+    fi
+  done
+
+  if [[ -z "${found_server}" ]]; then
+    log_event "error" "Domain not found in Borg backup: ${domain}" "true"
+    display --indent 6 --text "- Domain not found: ${domain}" --result "FAIL" --color RED
+    umount_storage_box "${storage_box_directory}"
+    return 1
+  fi
+
+  display --indent 6 --text "- Found domain in server: ${found_server}" --tcolor GREEN
+
+  # List available backups
+  local backup_list
+  backup_list="$(ls -1 "${found_domain_path}" 2>/dev/null)"
+
+  if [[ -z "${backup_list}" ]]; then
+    log_event "error" "No backups found for domain: ${domain}" "true"
+    display --indent 6 --text "- No backups found" --result "FAIL" --color RED
+    umount_storage_box "${storage_box_directory}"
+    return 1
+  fi
+
+  # Select backup
+  local chosen_backup
+  if [[ -n "${backup_date}" ]]; then
+    chosen_backup="$(echo "${backup_list}" | grep "${backup_date}" | head -1)"
+
+    if [[ -z "${chosen_backup}" ]]; then
+      log_event "error" "No backup found for date: ${backup_date}" "true"
+      display --indent 6 --text "- No backup found for date: ${backup_date}" --result "FAIL" --color RED
+      display --indent 8 --text "Available backups:" --tcolor YELLOW
+      echo "${backup_list}" | head -5
+      umount_storage_box "${storage_box_directory}"
+      return 1
+    fi
+  else
+    # Use latest backup
+    chosen_backup="$(echo "${backup_list}" | head -1)"
+  fi
+
+  display --indent 6 --text "- Selected backup: ${chosen_backup}" --tcolor GREEN
+
+  # Copy backup to tmp
+  display --indent 6 --text "- Copying backup to tmp"
+  cp "${found_domain_path}/${chosen_backup}" "${BROLIT_TMP_DIR}/"
+
+  if [[ $? -ne 0 ]]; then
+    display --indent 6 --text "- Copying backup" --result "ERROR" --color RED
+    umount_storage_box "${storage_box_directory}"
+    return 1
+  fi
+
+  # Restore using restore_project_backup
+  display --indent 6 --text "- Restoring backup"
+  restore_project_backup "${chosen_backup}" "online" "${found_server}" "${domain}" ""
+
+  if [[ $? -ne 0 ]]; then
+    display --indent 6 --text "- Restore" --result "ERROR" --color RED
+    umount_storage_box "${storage_box_directory}"
+    return 1
+  fi
+
+  # Cleanup
+  umount_storage_box "${storage_box_directory}"
+
+  # Send notification
+  send_notification "${SERVER_NAME}" "Project ${domain} restored from Borg backup (CLI)" "success"
+
+  display --indent 6 --text "- Restore completed" --result "DONE" --color GREEN
+  return 0
+
+}

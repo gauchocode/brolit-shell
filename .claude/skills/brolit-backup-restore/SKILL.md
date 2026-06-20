@@ -4,14 +4,55 @@
 
 Guides backup and restore operations using brolit-shell. Use this skill when the user needs to create, schedule, verify, or restore backups for projects, databases, or full server configurations.
 
+## Quick Reference
+
+### Backup Commands (CLI)
+
+```bash
+# Full project backup (files + database)
+./runner.sh -t backup -st project -D example.com
+
+# All databases (MySQL + PostgreSQL, host + Docker)
+./runner.sh -t backup -st databases
+
+# Server configuration (nginx, brolit configs, SSL certs)
+./runner.sh -t backup -st server-config
+
+# All project files
+./runner.sh -t backup -st files
+
+# Everything with report + notification
+./runner.sh -t backup -st full-report
+```
+
+### Restore Commands (CLI)
+
+```bash
+# From storage (latest backup)
+./runner.sh -t restore -st from-storage -D example.com
+
+# From storage (specific date)
+./runner.sh -t restore -st from-storage -D example.com -tv 2026-06-09
+
+# From local file
+./runner.sh -t restore -st from-local -D example.com -tf /path/to/backup.tar.gz
+
+# From URL
+./runner.sh -t restore -st from-url -D example.com -tf https://example.com/backup.tar.gz
+
+# From Borg
+./runner.sh -t restore -st from-borg -D example.com
+./runner.sh -t restore -st from-borg -D example.com -tv 2026-06-09
+```
+
 ## Supported Backup Methods
 
-| Method | Storage Controller | Config Key |
+| Method | Config Key | Status |
 |---|---|---|
-| Borg (recommended) | `libs/borg_storage_controller.sh` | `BACKUPS.methods.borg` |
-| SFTP | `libs/storage_controller.sh` | `BACKUPS.methods.sftp` |
-| Local | `libs/storage_controller.sh` | `BACKUPS.methods.local` |
-| Dropbox | `libs/apps/dropbox_uploader_helper.sh` | `BACKUPS.methods.dropbox` |
+| Borg (recommended) | `BACKUPS.methods.borg` | Production ready |
+| SFTP | `BACKUPS.methods.sftp` | Production ready |
+| Local | `BACKUPS.methods.local` | Production ready |
+| Dropbox | `BACKUPS.methods.dropbox` | Production ready |
 
 ## What Gets Backed Up
 
@@ -20,57 +61,18 @@ Guides backup and restore operations using brolit-shell. Use this skill when the
 | Projects | `BACKUPS.projects` | `/var/www/<domain>/` files |
 | Databases | `BACKUPS.databases` | MySQL/PostgreSQL dumps |
 | Server config | `BACKUPS.server_cfg` | nginx vhosts, brolit configs, SSL certs |
-| Cron configs | `BACKUPS.server_cfg` | `/etc/cron.d/` entries |
+| Docker volumes | `BACKUPS.projects` | Docker volume data |
 
-## Backup Operations
+## Pre-Execution Checklist
 
-### CLI Backup Commands
+1. [ ] Verify brolit config exists: `cat ~/.brolit_conf.json | jq .BACKUPS`
+2. [ ] Check backup method is enabled (borg, sftp, local, dropbox)
+3. [ ] Verify disk space: `df -h /var/www`
+4. [ ] For restore: confirm target domain exists or will be created
 
-```bash
-# Full project backup (files + database)
-./runner.sh -t backup -st project -d example.com
+## Restore Flow
 
-# Database-only backup
-./runner.sh -t backup -st database -db database_name
-
-# Server configuration backup
-./runner.sh -t backup -st config
-
-# All projects backup (used by cron)
-./runner.sh -t backup -st all-projects
-```
-
-### Scheduled Backups (Cron)
-
-Cron backup flow is in `cron/backups_tasks.sh`:
-1. Generates borgmatic configs from brolit config
-2. Runs borgmatic for each configured backup set
-3. Sends notification with results
-
-### Backup Compression
-
-Configured under `BACKUPS.config.compression`:
-- Types: `lbzip2`, `pigz`, `zstd`
-- Retention: `keep_daily`, `keep_weekly`, `keep_monthly`
-
-## Restore Operations
-
-### CLI Restore Commands
-
-```bash
-# Restore project from backup
-./runner.sh -t restore -st project -d example.com
-
-# Restore database from backup
-./runner.sh -t restore -st database -db database_name
-
-# Restore server configuration
-./runner.sh -t restore -st config
-```
-
-### Restore Flow
-
-1. Select backup source (Borg archive, SFTP path, Local path, Dropbox, or URL)
+1. Select backup source (Borg, SFTP, Local, Dropbox, or URL)
 2. Download/extract backup files
 3. Restore project files to `/var/www/<domain>/`
 4. Restore database via `database_import()`
@@ -79,12 +81,21 @@ Configured under `BACKUPS.config.compression`:
 7. Restart services
 8. Verify site is responding
 
-### Docker Project Restore
+## Post-Execution Verification
 
-For Docker-based projects, the restore flow also:
-- Recreates the Docker Compose environment
-- Handles port collisions via `network_next_available_port()`
-- Restores `.env` and Docker volumes
+```bash
+# Check site is responding
+curl -I https://example.com
+
+# Check nginx config
+nginx -t
+
+# Check database exists
+./runner.sh -t database -st list_db
+
+# Check backup files
+ls -la /path/to/backups/
+```
 
 ## Key Files
 
@@ -92,11 +103,10 @@ For Docker-based projects, the restore flow also:
 |---|---|
 | `utils/backup_restore_manager.sh` | Menu + CLI handlers for backup/restore |
 | `libs/local/backup_helper.sh` | Backup filename, compression, retention |
-| `libs/local/restore_backup_helper.sh` | Restore from all sources |
+| `libs/local/restore_backup_helper.sh` | Restore from all sources (interactive + CLI) |
 | `libs/storage_controller.sh` | Storage abstraction layer |
 | `libs/borg_storage_controller.sh` | Borg-specific operations |
 | `cron/backups_tasks.sh` | Scheduled backup execution |
-| `config/borg/borgmatic.template-*.yml` | Borgmatic config templates |
 
 ## Troubleshooting
 
@@ -107,11 +117,15 @@ For Docker-based projects, the restore flow also:
 | Restore fails on DB import | Check `.my.cnf` credentials, verify DB doesn't exist |
 | Port collision on Docker restore | Automatic via `network_next_available_port()` |
 | Backup not in list | Check retention settings, verify archive exists on remote |
+| "Missing required parameters" | Check `--help` for required flags |
+| "Permission denied" | Script must run as root |
 
 ## Instructions for AI Assistant
 
 1. Always verify the backup method is enabled in config before starting
 2. Use `brolit_configuration_manager.sh` to read config, never parse JSON directly
 3. For restore operations, always confirm the target domain/path before overwriting
-4. Suggest verifying site health after restore: `curl -I https://domain.com`
-5. Remind user about retention settings when cleaning old backups
+4. Use CLI commands (not interactive menus) when executing programmatically
+5. Suggest verifying site health after restore: `curl -I https://domain.com`
+6. Remind user about retention settings when cleaning old backups
+7. Capture command output and exit codes for error reporting
