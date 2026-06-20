@@ -3069,3 +3069,106 @@ function list_backups_cli() {
   return 0
 
 }
+
+################################################################################
+# Search backups by date range (CLI non-interactive)
+#
+# Searches all enabled storage methods for backups within a date range.
+#
+# Arguments:
+#   ${1} = ${domain} - Project domain
+#   ${2} = ${start_date} - Start date (YYYY-MM-DD)
+#   ${3} = ${end_date} - End date (YYYY-MM-DD)
+#
+# Outputs:
+#   JSON with matching backups
+################################################################################
+
+function search_backups_cli() {
+
+  local domain="${1}"
+  local start_date="${2}"
+  local end_date="${3}"
+
+  # Validate required params
+  if [[ -z "${domain}" ]]; then
+    echo '{"error": "Domain parameter required"}'
+    return 1
+  fi
+
+  if [[ -z "${start_date}" || -z "${end_date}" ]]; then
+    echo '{"error": "Date range required (start_date,end_date)"}'
+    return 1
+  fi
+
+  # Validate date format
+  if ! [[ "${start_date}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+    echo '{"error": "Invalid start_date format. Use YYYY-MM-DD"}'
+    return 1
+  fi
+
+  if ! [[ "${end_date}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+    echo '{"error": "Invalid end_date format. Use YYYY-MM-DD"}'
+    return 1
+  fi
+
+  # Get all backups using unified function
+  local all_backups
+  all_backups="$(storage_list_all_backups "${domain}")"
+
+  if [[ -z "${all_backups}" ]]; then
+    echo "{\"domain\":\"${domain}\",\"start_date\":\"${start_date}\",\"end_date\":\"${end_date}\",\"backups\":[],\"count\":0}"
+    return 0
+  fi
+
+  # Filter by date range using jq
+  local filtered_backups
+  filtered_backups="$(echo "${all_backups}" | jq --arg start "${start_date}" --arg end "${end_date}" '
+    .methods |= with_entries(
+      .value |= map(
+        select(.date >= $start and .date <= $end)
+      )
+    ) |
+    .total_backups = (
+      .methods.dropbox | length
+    ) + (
+      .methods.borg | length
+    ) + (
+      .methods.local | length
+    )
+  ' 2>/dev/null)"
+
+  if [[ -z "${filtered_backups}" ]]; then
+    echo "{\"domain\":\"${domain}\",\"start_date\":\"${start_date}\",\"end_date\":\"${end_date}\",\"backups\":[],\"count\":0}"
+    return 0
+  fi
+
+  echo "${filtered_backups}"
+  return 0
+
+}
+
+################################################################################
+# List ALL backups across ALL storage methods (CLI non-interactive)
+#
+# Arguments:
+#   ${1} = ${domain} - Project domain
+#
+# Outputs:
+#   JSON with all backups from all methods
+################################################################################
+
+function list_all_backups_cli() {
+
+  local domain="${1}"
+
+  # Validate required params
+  if [[ -z "${domain}" ]]; then
+    echo '{"error": "Domain parameter required"}'
+    return 1
+  fi
+
+  # Use unified storage function
+  storage_list_all_backups "${domain}"
+
+}

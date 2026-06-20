@@ -4,6 +4,31 @@
 
 Guides backup and restore operations using brolit-shell. Use this skill when the user needs to create, schedule, verify, or restore backups for projects, databases, or full server configurations.
 
+## Pre-Flight Checklist (CRITICAL - Run Before ANY Restore)
+
+**ALWAYS verify config before attempting restore. This prevents failed restores.**
+
+```bash
+# 1. Check if project exists in config
+PROJECT_EXISTS=$(jq -r --arg d "DOMAIN" '.projects[] | select(.project_domain == $d)' /root/.brolit_conf.json 2>/dev/null)
+[[ -z "${PROJECT_EXISTS}" ]] && echo "ERROR: Project not in config" && exit 1
+
+# 2. Get project type and containers
+PROJECT_TYPE=$(echo "${PROJECT_EXISTS}" | jq -r '.project_type')
+CONTAINERS=$(echo "${PROJECT_EXISTS}" | jq -r '.project_container.docker_compose_action != "skip"' 2>/dev/null)
+WEBROOT=$(echo "${PROJECT_EXISTS}" | jq -r '.project_config.webroot' 2>/dev/null)
+
+# 3. Check backup methods enabled
+BACKUP_METHODS=$(jq -r '.BACKUPS.methods[] | keys[]' /root/.brolit_conf.json 2>/dev/null)
+echo "Available methods: ${BACKUP_METHODS}"
+
+# 4. Check if backup file exists
+ls -la /root/backups/DOMAIN/
+
+# 5. Check for docker-compose
+find "${WEBROOT}" -name "docker-compose*.yml" 2>/dev/null | head -5
+```
+
 ## Quick Reference
 
 ### Backup Commands (CLI)
@@ -50,6 +75,12 @@ Guides backup and restore operations using brolit-shell. Use this skill when the
 
 # List available backups (JSON)
 ./runner.sh -t restore -st list -D example.com
+
+# List ALL backups (all storage methods unified)
+./runner.sh -t restore -st list-all -D example.com
+
+# Search backups by date range
+./runner.sh -t restore -st search -D example.com -tv "2026-06-01,2026-06-15"
 ```
 
 ## Supported Backup Methods
