@@ -2500,6 +2500,190 @@ show_backup_information() {
 }
 
 ################################################################################
+# Show backup information for a specific domain
+#
+# Arguments:
+#   ${1} = ${project_domain} - Domain to list backups for
+#
+# Outputs:
+#   JSON with all backups for the specified domain
+################################################################################
+
+show_backup_information_by_domain() {
+
+    local project_domain="${1}"
+    local timestamp
+    local backup_method
+    local json_output_file
+    local json_config_file="/root/.brolit_conf.json"
+
+    source "${BROLIT_MAIN_DIR}/libs/local/log_and_display_helper.sh"
+    source "${BROLIT_MAIN_DIR}/utils/brolit_configuration_manager.sh"
+    source "${BROLIT_MAIN_DIR}/libs/local/json_helper.sh"
+
+    # Validate domain parameter
+    if [[ -z "${project_domain}" ]]; then
+        echo '{"error": "Domain parameter required (-D)"}'
+        return 1
+    fi
+
+    # Detect enabled backup methods from config
+    local dropbox_status borg_status
+    dropbox_status="$(_json_read_field "${json_config_file}" "BACKUPS.methods[].dropbox[].status")"
+    borg_status="$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].status")"
+
+    # Determine primary backup method
+    if [[ "${dropbox_status}" == "enabled" ]]; then
+        backup_method="dropbox"
+    elif [[ "${borg_status}" == "enabled" ]]; then
+        backup_method="borg"
+    else
+        backup_method="none"
+    fi
+
+    timestamp="$(date -u +"%Y-%m-%dT%H:%M:%S")"
+
+    #######################################
+    # DROPBOX BACKUPS
+    #######################################
+    if [[ "${backup_method}" == "dropbox" && -n "${DROPBOX_UPLOADER}" && -f "${DROPBOX_UPLOADER}" ]]; then
+
+        local dropbox_base_path="${HOSTNAME}"
+        local dropbox_site_dir="${dropbox_base_path}/projects-online/site/${project_domain}"
+        local dropbox_db_dir="${dropbox_base_path}/projects-online/database"
+
+        # Get all site backups
+        local site_backups
+        site_backups="$("${DROPBOX_UPLOADER}" -q list "${dropbox_site_dir}" 2>/dev/null | grep -E 'site-files|tar\.bz2|tar\.gz|\.tgz')"
+
+        # Initialize JSON array
+        local backups_json="["
+        local first_entry="true"
+
+        for site_line in ${site_backups}; do
+            local backup_file backup_date site_size
+            backup_file="$(echo "${site_line}" | awk '{print $NF;}')"
+            site_size="$(echo "${site_line}" | awk '{print $2;}')"
+            [[ -z "${site_size}" || ! "${site_size}" =~ ^[0-9]+$ ]] && site_size=0
+
+            # Extract date from filename
+            backup_date="$(echo "${backup_file}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')"
+            [[ -z "${backup_date}" ]] && backup_date="unknown"
+
+            # Search for matching database backup
+            local project_name db_backup="empty" db_size=0
+            project_name="$(echo "${project_domain}" | cut -d'.' -f2)"
+
+            local project_types=("prod" "dev" "stage" "test" "beta" "demo")
+            for project_type in "${project_types[@]}"; do
+                local db_dir="${dropbox_db_dir}/${project_name}_${project_type}"
+                local search_pattern="${project_name}_${project_type}_database_${backup_date}"
+                local found_db
+                found_db="$("${DROPBOX_UPLOADER}" -q list "${db_dir}" 2>/dev/null | grep "${search_pattern}" | awk '{print $NF}' | head -1)"
+
+                if [[ -n "${found_db}" ]]; then
+                    db_backup="$(basename "${found_db}")"
+                    break
+                fi
+            done
+
+            # Add to JSON array
+            if [[ "${first_entry}" == "true" ]]; then
+                first_entry="false"
+            else
+                backups_json="${backups_json},"
+            fi
+
+            backups_json="${backups_json}{\"date\":\"${backup_date}\",\"files\":\"${backup_file}\",\"database\":\"${db_backup}\",\"site_bytes\":${site_size}}"
+        done
+
+        backups_json="${backups_json}]"
+
+        # Build final JSON
+        echo "{\"check_date\":\"${timestamp}\",\"backup_method\":\"dropbox\",\"domain\":\"${project_domain}\",\"backups\":${backups_json}}"
+
+    #######################################
+    # BORG BACKUPS
+    #######################################
+    elif [[ "${backup_method}" == "borg" ]]; then
+
+        source "${BROLIT_MAIN_DIR}/libs/borg_storage_controller.sh"
+        _brolit_configuration_load_backup_borg "/root/.brolit_conf.json"
+
+        local borg_configs_count
+        borg_configs_count=$(jq '.BACKUPS.methods[].borg[].config | length' "${json_config_file}")
+
+        BACKUP_BORG_GROUP=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].group")
+
+        local backup_host
+        backup_host="$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].backup_host")"
+        [[ -z "${backup_host}" ]] && backup_host="${HOSTNAME}"
+
+        # Try each Borg config
+        for (( i=0; i<"${borg_configs_count}"; i++ )); do
+
+            BACKUP_BORG_USER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[${i}].user")
+            BACKUP_BORG_SERVER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[${i}].server")
+            BACKUP_BORG_PORT=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[${i}].port")
+
+            local borg_repo="ssh://${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}/./applications/${BACKUP_BORG_GROUP}/${backup_host}/projects-online/site/${project_domain}"
+
+            # List all archives
+            local borg_archives
+            borg_archives="$(BORG_RSH="ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15" \
+                BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=yes \
+                BORG_RELOCATED_REPO_ACCESS_IS_OK=yes \
+                borg list --format '{archive}{NL}' "${borg_repo}" 2>/dev/null \
+                | sed -r "s/\x1B\[[0-9;]*[mG]//g")"
+
+            if [[ -n "${borg_archives}" ]]; then
+
+                local backups_json="["
+                local first_entry="true"
+
+                while IFS= read -r archive; do
+                    [[ -z "${archive}" ]] && continue
+
+                    local backup_date backup_size
+                    backup_date="$(echo "${archive}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')"
+                    [[ -z "${backup_date}" ]] && backup_date="unknown"
+
+                    backup_size="$(BORG_RSH="ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15" \
+                        BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=yes \
+                        BORG_RELOCATED_REPO_ACCESS_IS_OK=yes \
+                        borg info --json "${borg_repo}::${archive}" 2>/dev/null \
+                        | jq -r '.archives[0].stats.original_size // 0' 2>/dev/null)"
+                    [[ -z "${backup_size}" || ! "${backup_size}" =~ ^[0-9]+$ ]] && backup_size=0
+
+                    if [[ "${first_entry}" == "true" ]]; then
+                        first_entry="false"
+                    else
+                        backups_json="${backups_json},"
+                    fi
+
+                    backups_json="${backups_json}{\"date\":\"${backup_date}\",\"archive\":\"${archive}\",\"size_bytes\":${backup_size}}"
+
+                done <<< "${borg_archives}"
+
+                backups_json="${backups_json}]"
+
+                echo "{\"check_date\":\"${timestamp}\",\"backup_method\":\"borg\",\"domain\":\"${project_domain}\",\"backups\":${backups_json}}"
+                return 0
+            fi
+
+        done
+
+        # No backups found
+        echo "{\"check_date\":\"${timestamp}\",\"backup_method\":\"borg\",\"domain\":\"${project_domain}\",\"backups\":[]}"
+
+    else
+        echo "{\"error\": \"No backup method enabled\", \"domain\": \"${project_domain}\"}"
+        return 1
+    fi
+
+}
+
+################################################################################
 # Show firewall status
 #
 # Arguments:
