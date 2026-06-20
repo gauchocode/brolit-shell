@@ -621,32 +621,62 @@ function subtasks_restore_handler() {
   local file="${3}"
   local backup_date="${4}"
 
+  # Detect if running interactively (terminal available)
+  local is_interactive="false"
+  if [[ -t 0 ]] && [[ -t 1 ]]; then
+    is_interactive="true"
+  fi
+
   case ${subtask} in
 
   from-local)
 
-    restore_backup_from_local "${file}" "${domain}"
+    if [[ "${is_interactive}" == "true" ]]; then
+      # Interactive mode - use whiptail
+      restore_backup_from_local "${file}" "${domain}"
+    else
+      # Non-interactive mode - use CLI function
+      restore_backup_from_local_cli "${domain}" "${file}"
+    fi
 
     exit $?
     ;;
 
   from-storage)
 
-    restore_backup_from_storage "${domain}" "${backup_date}"
+    if [[ "${is_interactive}" == "true" ]]; then
+      # Interactive mode - use whiptail
+      restore_backup_from_storage "${domain}" "${backup_date}"
+    else
+      # Non-interactive mode - use CLI function
+      restore_backup_from_storage_cli "${domain}" "${backup_date}"
+    fi
 
     exit $?
     ;;
 
   from-url)
 
-    restore_backup_from_public_url "${file}" "${domain}"
+    if [[ "${is_interactive}" == "true" ]]; then
+      # Interactive mode - use whiptail
+      restore_backup_from_public_url "${file}" "${domain}"
+    else
+      # Non-interactive mode - use CLI function
+      restore_backup_from_url_cli "${domain}" "${file}"
+    fi
 
     exit $?
     ;;
 
   from-borg)
 
-    restore_backup_with_borg "${domain}" "${backup_date}"
+    if [[ "${is_interactive}" == "true" ]]; then
+      # Interactive mode - use whiptail
+      restore_backup_with_borg "${domain}" "${backup_date}"
+    else
+      # Non-interactive mode - use CLI function
+      restore_backup_with_borg_cli "${domain}" "${backup_date}"
+    fi
 
     exit $?
     ;;

@@ -2,7 +2,7 @@
 
 ## Description
 
-Reference for all brolit CLI commands (non-interactive mode). Use this skill when the user needs to run brolit operations via command line, cron jobs, scripts, or from another tool (brolit-ui, n8n, etc.).
+Reference for all brolit CLI commands (non-interactive mode). Use this skill when the user needs to run brolit operations via command line, cron jobs, scripts, or from another tool (brolit-ui, n8n, AI assistants, etc.).
 
 ## Invocation
 
@@ -29,14 +29,35 @@ brolit -t backup -st full-report                  # Full backup of everything + 
 
 ### restore
 
-Restore a project from a backup source.
+Restore a project from a backup source. Supports both interactive (whiptail) and non-interactive (CLI) modes.
 
 ```bash
-brolit -t restore -st from-local -D example.com -tf /path/to/backup.tar.gz
+# From storage (latest backup)
+brolit -t restore -st from-storage -D example.com
+
+# From storage (specific date)
 brolit -t restore -st from-storage -D example.com -tv 2026-06-09
+
+# From local file
+brolit -t restore -st from-local -D example.com -tf /path/to/backup.tar.gz
+
+# From URL
 brolit -t restore -st from-url -D example.com -tf https://example.com/backup.tar.gz
+
+# From Borg (latest)
+brolit -t restore -st from-borg -D example.com
+
+# From Borg (specific date)
 brolit -t restore -st from-borg -D example.com -tv 2026-06-09
 ```
+
+**Required parameters by subtask:**
+| Subtask | Required | Optional |
+|---------|----------|----------|
+| `from-storage` | `-D` | `-tv` (date) |
+| `from-local` | `-D`, `-tf` | — |
+| `from-url` | `-D`, `-tf` | — |
+| `from-borg` | `-D` | `-tv` (date) |
 
 ### project
 
@@ -191,9 +212,9 @@ brolit --help                                     # Show help
 | `-pn` | `--pname` | Project name |
 | `-pt` | `--ptype` | Project type (wordpress, laravel, php, etc.) |
 | `-ps` | `--pstate` | Project stage (prod, dev, test, stage) |
-| `-tf` | `--file` | File path (for import, project-install) |
+| `-tf` | `--file` | File path (for import, project-install, restore from local/url) |
 | `-tt` | `--type` | Install type: `clean`, `copy` |
-| `-tv` | `--task-value` | Generic value parameter |
+| `-tv` | `--task-value` | Generic value parameter (backup date for restore) |
 | `-dr` | `--dry-run` | Dry-run mode |
 | `-d` | `--debug` | Enable bash debug (`set -x`) |
 | `-e` | `--env` | Environment |
@@ -226,3 +247,4 @@ brolit --help                                     # Show help
 - Database operations auto-detect engine unless `-de` is specified
 - For Docker projects, brolit auto-detects containers and reads credentials from container environment
 - Notifications (Telegram, Discord, Email, ntfy) are sent automatically on errors and important events
+- Restore operations work in both interactive (terminal) and non-interactive (AI/CLI) modes
