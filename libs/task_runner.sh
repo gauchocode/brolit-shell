@@ -34,7 +34,7 @@ function show_help() {
                         backup              Subtasks: all, files, databases, server-config,
                                             project, full-report
                         restore             Subtasks: from-local, from-storage, from-url, from-borg,
-                                            download, list
+                                            download, list, list-all, search
                         project             Subtasks: delete, online, offline, regen-nginx
                         project-install     (uses -tf/-tt instead of subtask)
                         database            Subtasks: list_db, create_db, delete_db, rename_db,
@@ -466,7 +466,7 @@ function tasks_handler() {
 
   restore)
     # Validate subtask
-    validate_task_and_subtask "restore" "${STASK}" "from-local from-storage from-url from-borg download list"
+    validate_task_and_subtask "restore" "${STASK}" "from-local from-storage from-url from-borg download list list-all search"
     exit_code=$?
     [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
 
@@ -499,6 +499,16 @@ function tasks_handler() {
         ;;
       list)
         validate_required_params "restore-list" "DOMAIN"
+        exit_code=$?
+        [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
+        ;;
+      list-all)
+        validate_required_params "restore-list-all" "DOMAIN"
+        exit_code=$?
+        [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
+        ;;
+      search)
+        validate_required_params "restore-search" "DOMAIN" "TVALUE"
         exit_code=$?
         [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
         ;;
