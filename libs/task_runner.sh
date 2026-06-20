@@ -459,7 +459,7 @@ function tasks_handler() {
 
   restore)
     # Validate subtask
-    validate_task_and_subtask "restore" "${STASK}" "from-local from-storage from-url from-borg"
+    validate_task_and_subtask "restore" "${STASK}" "from-local from-storage from-url from-borg download list"
     exit_code=$?
     [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
 
@@ -482,6 +482,16 @@ function tasks_handler() {
         ;;
       from-borg)
         validate_required_params "restore-from-borg" "DOMAIN"
+        exit_code=$?
+        [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
+        ;;
+      download)
+        validate_required_params "restore-download" "DOMAIN"
+        exit_code=$?
+        [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
+        ;;
+      list)
+        validate_required_params "restore-list" "DOMAIN"
         exit_code=$?
         [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
         ;;
