@@ -33,7 +33,8 @@ function show_help() {
     -t, --task        Task to run:
                         backup              Subtasks: all, files, databases, server-config,
                                             project, full-report
-                        restore             Subtasks: from-local, from-storage, from-url, from-borg
+                        restore             Subtasks: from-local, from-storage, from-url, from-borg,
+                                            download, list
                         project             Subtasks: delete, online, offline, regen-nginx
                         project-install     (uses -tf/-tt instead of subtask)
                         database            Subtasks: list_db, create_db, delete_db, rename_db,
@@ -78,6 +79,12 @@ function show_help() {
     ./runner.sh -t backup -st project -D example.com
     ./runner.sh -t backup -st full-report
     ./runner.sh -t restore -st from-storage -D example.com -tv 2026-06-09
+    ./runner.sh -t restore -st from-local -D example.com -tf /path/to/backup.tar.gz
+    ./runner.sh -t restore -st from-url -D example.com -tf https://example.com/backup.tar.gz
+    ./runner.sh -t restore -st from-borg -D example.com
+    ./runner.sh -t restore -st download -D example.com
+    ./runner.sh -t restore -st download -D example.com -tv 2026-06-09
+    ./runner.sh -t restore -st list -D example.com
     ./runner.sh -t project -st online -D example.com
     ./runner.sh -t project -st regen-nginx -D example.com
     ./runner.sh -t database -st export_db -db mydb_prod
