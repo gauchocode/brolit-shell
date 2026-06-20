@@ -698,6 +698,35 @@ function subtasks_restore_handler() {
     exit $?
     ;;
 
+  list-all)
+
+    # Always non-interactive - list all backups across all storage methods
+    list_all_backups_cli "${domain}"
+
+    exit $?
+    ;;
+
+  search)
+
+    # Always non-interactive - search backups by date range
+    # TVALUE contains "start_date,end_date" format
+    local search_start_date
+    local search_end_date
+
+    if [[ "${backup_date}" == *","* ]]; then
+      search_start_date="$(echo "${backup_date}" | cut -d',' -f1)"
+      search_end_date="$(echo "${backup_date}" | cut -d',' -f2)"
+    else
+      # Default: last 30 days
+      search_end_date="$(date -d "today" +%Y-%m-%d)"
+      search_start_date="$(date -d "30 days ago" +%Y-%m-%d)"
+    fi
+
+    search_backups_cli "${domain}" "${search_start_date}" "${search_end_date}"
+
+    exit $?
+    ;;
+
   *)
 
     log_event "error" "INVALID SUBTASK: ${subtask}" "true"
@@ -705,6 +734,6 @@ function subtasks_restore_handler() {
     exit 1
     ;;
 
-  esac
+esac
 
 }

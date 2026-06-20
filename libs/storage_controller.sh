@@ -23,6 +23,7 @@ function storage_list_dir() {
     local remote_directory="${1}"
 
     local remote_list
+    local storage_result=1
 
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
@@ -34,7 +35,7 @@ function storage_list_dir() {
     fi
     if [[ ${BACKUP_LOCAL_STATUS} == "enabled" ]]; then
 
-        remote_list="$(ls "${remote_directory}")"
+        remote_list="$(ls "${remote_directory}" 2>/dev/null)"
 
         storage_result=$?
 
@@ -42,6 +43,21 @@ function storage_list_dir() {
         log_event "info" "Listing directory: ${remote_directory}" "false"
         log_event "info" "Remote list: ${remote_list}" "false"
         log_event "debug" "Command executed: ls ${remote_directory}" "false"
+
+    fi
+    if [[ ${BACKUP_BORG_STATUS} == "enabled" ]]; then
+
+        # Borg uses SSH-based listing
+        local borg_repo="${remote_directory}"
+        remote_list="$(BORG_RSH="ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15" \
+            BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=yes \
+            BORG_RELOCATED_REPO_ACCESS_IS_OK=yes \
+            borg list --format '{archive}{NL}' "${borg_repo}" 2>/dev/null \
+            | sed -r "s/\x1B\[[0-9;]*[mG]//g")"
+
+        storage_result=$?
+
+        log_event "info" "Listing Borg repo: ${remote_directory}" "false"
 
     fi
 
@@ -55,6 +71,165 @@ function storage_list_dir() {
         return 1
 
     fi
+
+}
+
+################################################################################
+# List backups from ALL enabled storage methods (unified)
+#
+# Arguments:
+#   ${1} = ${domain} - Project domain to search
+#
+# Outputs:
+#   JSON with backups from all enabled storage methods
+################################################################################
+
+function storage_list_all_backups() {
+
+    local domain="${1}"
+    local timestamp
+    local json_result=""
+    local dropbox_backups="[]"
+    local borg_backups="[]"
+    local local_backups="[]"
+    local total_count=0
+
+    timestamp="$(date -u +"%Y-%m-%dT%H:%M:%S")"
+
+    # DROPBOX
+    if [[ "${BACKUP_DROPBOX_STATUS}" == "enabled" && -n "${DROPBOX_UPLOADER}" && -f "${DROPBOX_UPLOADER}" ]]; then
+
+        local dropbox_site_dir="${HOSTNAME}/projects-online/site/${domain}"
+        local dropbox_db_dir="${HOSTNAME}/projects-online/database"
+
+        local site_backups
+        site_backups="$("${DROPBOX_UPLOADER}" -q list "${dropbox_site_dir}" 2>/dev/null | grep -E 'site-files|tar\.bz2|tar\.gz|\.tgz')"
+
+        if [[ -n "${site_backups}" ]]; then
+
+            local dropbox_json="["
+            local first="true"
+
+            for site_line in ${site_backups}; do
+                local backup_file backup_date
+                backup_file="$(echo "${site_line}" | awk '{print $NF;}')"
+                backup_date="$(echo "${backup_file}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')"
+                [[ -z "${backup_date}" ]] && backup_date="unknown"
+
+                if [[ "${first}" == "true" ]]; then
+                    first="false"
+                else
+                    dropbox_json="${dropbox_json},"
+                fi
+
+                dropbox_json="${dropbox_json}{\"file\":\"${backup_file}\",\"date\":\"${backup_date}\",\"method\":\"dropbox\"}"
+                ((total_count++))
+            done
+
+            dropbox_backups="${dropbox_json}]"
+        fi
+    fi
+
+    # BORG
+    if [[ "${BACKUP_BORG_STATUS}" == "enabled" ]]; then
+
+        local borg_configs_count
+        borg_configs_count=$(jq '.BACKUPS.methods[].borg[].config | length' "${BROLIT_CONFIG_FILE:-/root/.brolit_conf.json}" 2>/dev/null)
+
+        if [[ -n "${borg_configs_count}" && "${borg_configs_count}" -gt 0 ]]; then
+
+            local borg_group
+            borg_group=$(jq -r '.BACKUPS.methods[].borg[].group' "${BROLIT_CONFIG_FILE:-/root/.brolit_conf.json}" 2>/dev/null)
+
+            local backup_host="${HOSTNAME}"
+            local borg_json="["
+            local first="true"
+
+            for (( i=0; i<"${borg_configs_count}"; i++ )); do
+
+                local borg_user borg_server borg_port
+                borg_user=$(jq -r ".BACKUPS.methods[].borg[].config[${i}].user" "${BROLIT_CONFIG_FILE:-/root/.brolit_conf.json}" 2>/dev/null)
+                borg_server=$(jq -r ".BACKUPS.methods[].borg[].config[${i}].server" "${BROLIT_CONFIG_FILE:-/root/.brolit_conf.json}" 2>/dev/null)
+                borg_port=$(jq -r ".BACKUPS.methods[].borg[].config[${i}].port" "${BROLIT_CONFIG_FILE:-/root/.brolit_conf.json}" 2>/dev/null)
+
+                [[ -z "${borg_user}" || "${borg_user}" == "null" ]] && continue
+
+                local borg_repo="ssh://${borg_user}@${borg_server}:${borg_port}/./applications/${borg_group}/${backup_host}/projects-online/site/${domain}"
+
+                local borg_archives
+                borg_archives="$(BORG_RSH="ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15" \
+                    BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=yes \
+                    BORG_RELOCATED_REPO_ACCESS_IS_OK=yes \
+                    borg list --format '{archive}{NL}' "${borg_repo}" 2>/dev/null \
+                    | sed -r "s/\x1B\[[0-9;]*[mG]//g")"
+
+                if [[ -n "${borg_archives}" ]]; then
+
+                    while IFS= read -r archive; do
+                        [[ -z "${archive}" ]] && continue
+
+                        local archive_date
+                        archive_date="$(echo "${archive}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')"
+                        [[ -z "${archive_date}" ]] && archive_date="unknown"
+
+                        if [[ "${first}" == "true" ]]; then
+                            first="false"
+                        else
+                            borg_json="${borg_json},"
+                        fi
+
+                        borg_json="${borg_json}{\"archive\":\"${archive}\",\"date\":\"${archive_date}\",\"method\":\"borg\"}"
+                        ((total_count++))
+
+                    done <<< "${borg_archives}"
+
+                fi
+
+            done
+
+            borg_backups="${borg_json}]"
+
+        fi
+    fi
+
+    # LOCAL
+    if [[ "${BACKUP_LOCAL_STATUS}" == "enabled" ]]; then
+
+        local local_path="${BACKUP_LOCAL_CONFIG_BACKUP_PATH}"
+        local local_site_dir="${local_path}/${HOSTNAME}/projects-online/site/${domain}"
+
+        if [[ -d "${local_site_dir}" ]]; then
+
+            local local_files
+            local_files="$(ls -1 "${local_site_dir}" 2>/dev/null)"
+
+            if [[ -n "${local_files}" ]]; then
+
+                local local_json="["
+                local first="true"
+
+                for backup_file in ${local_files}; do
+                    local backup_date
+                    backup_date="$(echo "${backup_file}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')"
+                    [[ -z "${backup_date}" ]] && backup_date="unknown"
+
+                    if [[ "${first}" == "true" ]]; then
+                        first="false"
+                    else
+                        local_json="${local_json},"
+                    fi
+
+                    local_json="${local_json}{\"file\":\"${backup_file}\",\"date\":\"${backup_date}\",\"method\":\"local\"}"
+                    ((total_count++))
+                done
+
+                local_backups="${local_json}]"
+            fi
+        fi
+    fi
+
+    # Build final JSON
+    echo "{\"timestamp\":\"${timestamp}\",\"domain\":\"${domain}\",\"total_backups\":${total_count},\"methods\":{\"dropbox\":${dropbox_backups},\"borg\":${borg_backups},\"local\":${local_backups}}}"
 
 }
 
