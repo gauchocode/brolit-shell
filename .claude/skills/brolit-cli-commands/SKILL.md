@@ -25,6 +25,9 @@ brolit -t backup -st databases                    # Backup all databases (MySQL 
 brolit -t backup -st server-config                # Backup nginx configs, brolit configs, SSL certs
 brolit -t backup -st project -D example.com       # Backup single project (files + database)
 brolit -t backup -st full-report                  # Full backup of everything + notification
+brolit -t backup -st list -D example.com          # List available backups (JSON output)
+brolit -t backup -st list-all -D example.com      # List ALL backups across all storage methods
+brolit -t backup -st search -D example.com -tv "2026-06-01,2026-06-15"  # Search by date range
 ```
 
 ### restore
@@ -54,28 +57,19 @@ brolit -t restore -st from-borg -D example.com -tv 2026-06-09
 brolit -t restore -st download -D example.com
 brolit -t restore -st download -D example.com -tv 2026-06-09
 brolit -t restore -st download -D example.com -tf /path/to/output
-
-# List available backups (JSON output)
-brolit -t restore -st list -D example.com
-
-# List ALL backups across all storage methods (Dropbox, Borg, Local)
-brolit -t restore -st list-all -D example.com
-
-# Search backups by date range (format: YYYY-MM-DD,YYYY-MM-DD)
-brolit -t restore -st search -D example.com -tv "2026-06-01,2026-06-15"
 ```
 
 **Required parameters by subtask:**
 | Subtask | Required | Optional |
 |---------|----------|----------|
+| `list` | `-D` | — |
+| `list-all` | `-D` | — |
+| `search` | `-D`, `-tv` (start,end) | — |
 | `from-storage` | `-D` | `-tv` (date) |
 | `from-local` | `-D`, `-tf` | — |
 | `from-url` | `-D`, `-tf` | — |
 | `from-borg` | `-D` | `-tv` (date) |
 | `download` | `-D` | `-tv` (date), `-tf` (output dir) |
-| `list` | `-D` | — |
-| `list-all` | `-D` | — |
-| `search` | `-D`, `-tv` (start,end) | — |
 
 ### project
 

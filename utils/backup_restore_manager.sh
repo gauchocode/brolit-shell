@@ -515,6 +515,9 @@ function restore_manager_menu() {
 function subtasks_backup_handler() {
 
   local subtask="${1}"
+  local domain="${2}"
+  local file="${3}"
+  local backup_date="${4}"
 
   local backup_project_database_output
 
@@ -592,6 +595,43 @@ function subtasks_backup_handler() {
     backup_project "${DOMAIN}" "${project_type}"
 
     exit
+    ;;
+
+  list)
+
+    # List backups for a specific domain (single method)
+    list_backups_cli "${domain}"
+
+    exit $?
+    ;;
+
+  list-all)
+
+    # List ALL backups across all storage methods
+    list_all_backups_cli "${domain}"
+
+    exit $?
+    ;;
+
+  search)
+
+    # Search backups by date range
+    # backup_date contains "start_date,end_date" format
+    local search_start_date
+    local search_end_date
+
+    if [[ "${backup_date}" == *","* ]]; then
+      search_start_date="$(echo "${backup_date}" | cut -d',' -f1)"
+      search_end_date="$(echo "${backup_date}" | cut -d',' -f2)"
+    else
+      # Default: last 30 days
+      search_end_date="$(date -d "today" +%Y-%m-%d)"
+      search_start_date="$(date -d "30 days ago" +%Y-%m-%d)"
+    fi
+
+    search_backups_cli "${domain}" "${search_start_date}" "${search_end_date}"
+
+    exit $?
     ;;
 
   *)
@@ -686,43 +726,6 @@ function subtasks_restore_handler() {
     # Always non-interactive - download backup without restoring
     local output_dir="${FILE:-/root/backups}"
     download_backup_cli "${domain}" "${backup_date}" "${output_dir}"
-
-    exit $?
-    ;;
-
-  list)
-
-    # Always non-interactive - list available backups
-    list_backups_cli "${domain}"
-
-    exit $?
-    ;;
-
-  list-all)
-
-    # Always non-interactive - list all backups across all storage methods
-    list_all_backups_cli "${domain}"
-
-    exit $?
-    ;;
-
-  search)
-
-    # Always non-interactive - search backups by date range
-    # TVALUE contains "start_date,end_date" format
-    local search_start_date
-    local search_end_date
-
-    if [[ "${backup_date}" == *","* ]]; then
-      search_start_date="$(echo "${backup_date}" | cut -d',' -f1)"
-      search_end_date="$(echo "${backup_date}" | cut -d',' -f2)"
-    else
-      # Default: last 30 days
-      search_end_date="$(date -d "today" +%Y-%m-%d)"
-      search_start_date="$(date -d "30 days ago" +%Y-%m-%d)"
-    fi
-
-    search_backups_cli "${domain}" "${search_start_date}" "${search_end_date}"
 
     exit $?
     ;;
