@@ -48,6 +48,15 @@ find "${WEBROOT}" -name "docker-compose*.yml" 2>/dev/null | head -5
 
 # Everything with report + notification
 ./runner.sh -t backup -st full-report
+
+# List available backups (JSON)
+./runner.sh -t backup -st list -D example.com
+
+# List ALL backups (all storage methods unified)
+./runner.sh -t backup -st list-all -D example.com
+
+# Search backups by date range
+./runner.sh -t backup -st search -D example.com -tv "2026-06-01,2026-06-15"
 ```
 
 ### Restore Commands (CLI)
@@ -72,15 +81,6 @@ find "${WEBROOT}" -name "docker-compose*.yml" 2>/dev/null | head -5
 # Download backup without restoring
 ./runner.sh -t restore -st download -D example.com
 ./runner.sh -t restore -st download -D example.com -tf /path/to/output
-
-# List available backups (JSON)
-./runner.sh -t restore -st list -D example.com
-
-# List ALL backups (all storage methods unified)
-./runner.sh -t restore -st list-all -D example.com
-
-# Search backups by date range
-./runner.sh -t restore -st search -D example.com -tv "2026-06-01,2026-06-15"
 ```
 
 ## Supported Backup Methods
