@@ -32,9 +32,9 @@ function show_help() {
   Tasks:
     -t, --task        Task to run:
                         backup              Subtasks: all, files, databases, server-config,
-                                            project, full-report
+                                            project, full-report, list, list-all, search
                         restore             Subtasks: from-local, from-storage, from-url, from-borg,
-                                            download, list, list-all, search
+                                            download
                         project             Subtasks: delete, online, offline, regen-nginx
                         project-install     (uses -tf/-tt instead of subtask)
                         database            Subtasks: list_db, create_db, delete_db, rename_db,
@@ -466,7 +466,7 @@ function tasks_handler() {
 
   restore)
     # Validate subtask
-    validate_task_and_subtask "restore" "${STASK}" "from-local from-storage from-url from-borg download list list-all search"
+    validate_task_and_subtask "restore" "${STASK}" "from-local from-storage from-url from-borg download"
     exit_code=$?
     [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
 
@@ -494,21 +494,6 @@ function tasks_handler() {
         ;;
       download)
         validate_required_params "restore-download" "DOMAIN"
-        exit_code=$?
-        [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
-        ;;
-      list)
-        validate_required_params "restore-list" "DOMAIN"
-        exit_code=$?
-        [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
-        ;;
-      list-all)
-        validate_required_params "restore-list-all" "DOMAIN"
-        exit_code=$?
-        [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
-        ;;
-      search)
-        validate_required_params "restore-search" "DOMAIN" "TVALUE"
         exit_code=$?
         [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
         ;;
@@ -730,7 +715,7 @@ function tasks_handler() {
 
   backup)
     # Validate subtask
-    validate_task_and_subtask "backup" "${STASK}" "all files databases server-config project full-report"
+    validate_task_and_subtask "backup" "${STASK}" "all files databases server-config project full-report list list-all search"
     exit_code=$?
     [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
 
@@ -761,10 +746,15 @@ function tasks_handler() {
         exit_code=$?
         [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
         ;;
+      list|list-all|search)
+        validate_required_params "backup-${STASK}" "DOMAIN"
+        exit_code=$?
+        [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
+        ;;
     esac
 
     # Execute task
-    execute_task_with_error_handling "backup-${STASK}" "subtasks_backup_handler" "${STASK}"
+    execute_task_with_error_handling "backup-${STASK}" "subtasks_backup_handler" "${STASK}" "${DOMAIN}" "${FILE}" "${TVALUE}"
     exit_code=$?
     exit ${exit_code}
     ;;
