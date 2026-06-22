@@ -759,6 +759,14 @@ function tasks_handler() {
     exit ${exit_code}
     ;;
 
+  config-wizard)
+    # shellcheck source=${BROLIT_MAIN_DIR}/utils/config_wizard.sh
+    source "${BROLIT_MAIN_DIR}/utils/config_wizard.sh"
+    config_wizard_menu
+    exit_code=$?
+    exit ${exit_code}
+    ;;
+
   *)
     log_event "error" "INVALID TASK: ${TASK}" "true"
     display --indent 2 --text "- Invalid task: ${TASK}" --result "FAIL" --color RED
@@ -831,6 +839,10 @@ function flags_handler() {
     -dr | --dry-run)
       DRY_RUN="true"
       export DRY_RUN
+      ;;
+
+    -wiz | --wizard)
+      TASK="config-wizard"
       ;;
 
     -e | --env)
