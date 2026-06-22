@@ -2075,10 +2075,42 @@ function brolit_configuration_file_check() {
         brolit_release_config_version="$(json_read_field "${brolit_config_template}" "BROLIT_SETUP.config[].version")"
 
         if [[ ${brolit_installed_config_version} != "${brolit_release_config_version}" ]]; then
-            log_event "error" "Brolit config version outdated! Please regenerate config file." "false"
-            display --indent 6 --text "- Checking Brolit config version" --result "WARNING" --color YELLOW
-            display --indent 8 --text "Brolit config version outdated!"
-            exit 1
+            log_event "warning" "Brolit config version outdated" "false"
+            display --indent 6 --text "- Checking Brolit config version" --result "OUTDATED" --color YELLOW
+
+            # Offer migration
+            # shellcheck source=/root/brolit-shell/utils/config_migration.sh
+            source "${BROLIT_MAIN_DIR}/utils/config_migration.sh"
+
+            config_migration_check "${server_config_file}"
+
+            if [[ "${MIGRATION_NEEDED}" == "true" ]]; then
+
+                config_migration_show_diff "${server_config_file}" "${brolit_config_template}"
+                exitstatus=$?
+
+                if [[ ${exitstatus} -eq 0 ]]; then
+
+                    # User accepted migration
+                    config_migration_apply "${server_config_file}"
+                    exitstatus=$?
+
+                    if [[ ${exitstatus} -ne 0 ]]; then
+                        log_event "error" "Config migration failed" "false"
+                        exit 1
+                    fi
+
+                else
+
+                    # User declined migration
+                    display --indent 6 --text "- Migration declined" --result "SKIPPED" --color YELLOW
+                    display --indent 8 --text "Please update config file manually"
+                    exit 1
+
+                fi
+
+            fi
+
         fi
 
     else
@@ -2086,35 +2118,34 @@ function brolit_configuration_file_check() {
         display --indent 2 --text "- Checking Brolit config file" --result "WARNING" --color YELLOW
         display --indent 4 --text "Config file not found!"
 
-        # Creating new config file
-        while true; do
+        # Offer configuration wizard
+        # shellcheck source=/root/brolit-shell/utils/config_wizard.sh
+        source "${BROLIT_MAIN_DIR}/utils/config_wizard.sh"
 
-            echo -e "${YELLOW}${ITALIC} > Do you want to create a new config file?${ENDCOLOR}"
-            read -p "Please type 'y' or 'n'" yn
+        if whiptail_message_with_skip_option "BROLIT Setup" "Config file not found.\nDo you want to run the configuration wizard?"; then
 
-            case $yn in
+            config_wizard_menu
+            exitstatus=$?
 
-            [Yy]*)
-
-                cp "${brolit_config_template}" "${server_config_file}"
-
-                log_event "critical" "Please, edit brolit_conf.json first, and then run the script again." "true"
-
+            if [[ ${exitstatus} -ne 0 ]]; then
+                log_event "error" "Configuration wizard cancelled" "false"
                 exit 1
-                ;;
+            fi
 
-            [Nn]*)
-
-                echo -e "${YELLOW}${ITALIC} > BROLIT can not run without a config file. Exiting ...${ENDCOLOR}"
-
+            # Verify config was created
+            if [[ ! -f "${server_config_file}" ]]; then
+                log_event "error" "Config file was not created by wizard" "false"
                 exit 1
-                ;;
+            fi
 
-            *) echo " > Please answer yes or no." ;;
+        else
 
-            esac
+            # Fallback: copy template and ask to edit manually
+            cp "${brolit_config_template}" "${server_config_file}"
+            log_event "critical" "Please, edit brolit_conf.json first, and then run the script again." "true"
+            exit 1
 
-        done
+        fi
 
     fi
 
