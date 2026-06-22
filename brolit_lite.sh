@@ -2270,7 +2270,7 @@ declare -g PROJECTS_PATH
 PROJECTS_PATH="$(_json_read_field "${BROLIT_CONFIG_FILE}" "PROJECTS.path")"
 
 # Version
-BROLIT_VERSION="3.6"
+BROLIT_VERSION="3.8"
 BROLIT_LITE_VERSION="3.6-132"
 
 ################################################################################
