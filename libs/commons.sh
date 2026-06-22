@@ -1875,6 +1875,7 @@ function menu_main_options() {
     "08)" "CLOUDFLARE MANAGER"
     "09)" "IT UTILS"
     "10)" "CRON TASKS"
+    "11)" "CONFIGURATION WIZARD"
   )
 
   while true; do
@@ -1968,6 +1969,13 @@ function menu_main_options() {
 
       # CRON SCRIPT TASKS
       [[ ${chosen_type} == *"10"* ]] && menu_cron_script_tasks
+
+      # CONFIGURATION WIZARD
+      if [[ ${chosen_type} == *"11"* ]]; then
+        # shellcheck source=${BROLIT_MAIN_DIR}/utils/config_wizard.sh
+        source "${BROLIT_MAIN_DIR}/utils/config_wizard.sh"
+        config_wizard_menu
+      fi
 
     else
 
