@@ -4,22 +4,32 @@ WORKDIR "/wordpress"
 USER root
 
 RUN install-php-extensions \
-    bcmath \
-    bz2 \
-    exif \
-    gd \
-    imagick \
-    imap \
-    intl \
     mysqli \
+    pdo_mysql \
+    gd \
+    zip \
+    bcmath \
+    intl \
+    exif \
+    imagick \
+    opcache \
+    redis \
     soap \
+    yaml \
+    bz2 \
+    imap \
     xsl \
-    yaml
+    pcntl
 
 RUN apt-get update; \
     apt-get -y --no-install-recommends install \
         vim \
-        git; \
+        git \
+        libfreetype6-dev \
+        libjpeg62-turbo-dev \
+        libpng-dev \
+        libyaml-dev \
+        libzip-dev; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/*
 
