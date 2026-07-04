@@ -8,19 +8,21 @@ USER root
 # mysqli is REQUIRED by WordPress and must be installed explicitly
 RUN install-php-extensions \
     mysqli \
-    bcmath \
-    bz2 \
-    exif \
-    gd \
-    intl \
     pdo_mysql \
-    redis \
+    gd \
+    zip \
+    bcmath \
+    intl \
+    exif \
     imagick \
-    imap \
     opcache \
+    redis \
     soap \
+    yaml \
+    bz2 \
+    imap \
     xsl \
-    zip
+    pcntl
 
 # Install additional system packages if needed
 RUN apt-get update; \
@@ -30,6 +32,7 @@ RUN apt-get update; \
         libfreetype6-dev \
         libjpeg62-turbo-dev \
         libpng-dev \
+        libyaml-dev \
         libzip-dev; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/*
