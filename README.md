@@ -1,7 +1,7 @@
 # BROLIT-SHELL
 
 ## :star2: About the project
-BROLIT-SHELL is a server management tool built on **BASH**, designed to expediently set up a LEMP Stack on Ubuntu servers (versions 22.04 and 24.04). It streamlines the process of automating and restoring backups, deploying PHP projects, and executing various essential IT tasks efficiently.
+BROLIT-SHELL is a server management tool built on **BASH**, designed to expediently set up a LEMP Stack on Ubuntu servers (versions 22.04, 24.04, and 26.04). It streamlines the process of automating and restoring backups, deploying PHP projects, and executing various essential IT tasks efficiently.
 
 ![ScreenShot](./assets/screenshot.png)
 
@@ -16,7 +16,8 @@ BROLIT-SHELL is a server management tool built on **BASH**, designed to expedien
 
 ### :dart: Features
 * Fully open-source.
-* Automated LEMP stack installation (Nginx, MySQL/MariaDB, PHP).
+* Automated LEMP stack installation (Nginx or OpenResty, MySQL/MariaDB, PHP).
+* Proxmox VE support with OpenResty as reverse proxy (replaces Nginx Proxy Manager).
 * Simplified backup and restoration processes.
 * Backup upload functionality to Dropbox or an FTP server.
 * Restore backups from Dropbox, URLs, or local files.
@@ -36,23 +37,35 @@ BROLIT-SHELL is a server management tool built on **BASH**, designed to expedien
   * Facilitates backing up, restoring, and deploying new projects within Docker containers.
   * Offers WordPress-cli support specifically tailored for Docker environments.
 * Wordfence-cli scanning capabilities for WordPress sites.
+* OpenResty support with Lua API for dynamic proxy management.
+* Proxmox VE integration: manage OpenResty inside VMs via SSH.
 
 ### :warning: Supports
 
-**Ubuntu LTS** 22.04 or 24.04
+**Ubuntu LTS** 22.04, 24.04, or 26.04
 
 | Packages | Versions | BROLIT config |
 | :------------- | :----------: | :----------: |
 | **Nginx** | O.S default | `nginx.conf` + `mime.types` + server blocks |
+| **OpenResty** | Latest | `nginx.conf` + `mime.types` + Lua API (port 8080) |
 | **Lets Encrypt** | O.S default | default config |
 | **MySQL** | O.S default | `my.cnf` |
 | **MariaDB** | O.S default | `my.cnf` |
-| **PHP-FPM** | 7.4.x/8.2.x | `php.ini` + `php-fpm.conf` + `www.conf` |
+| **PHP-FPM** | 8.3.x/8.4.x/8.5.x | `php.ini` + `php-fpm.conf` + `www.conf` |
 | **Redis** | O.S default | `redis.conf` + `object-cache.php` |
 | **Monit** | O.S default | `monitrc` + `mysql` + `phpfpm` + `nginx` + `redis` + `system` |
 | **WordPress** | latest | default config |
 | **WP-CLI** | latest | default config |
 | **Docker** | latest | default config |
+
+### Proxmox VE Integration
+BROLIT-SHELL supports Proxmox VE environments with OpenResty as the reverse proxy inside VMs. This replaces Nginx Proxy Manager with a fully API-managed solution:
+
+* Install and configure OpenResty inside VMs via SSH.
+* Migrate proxy hosts from NPM via API.
+* Lua API for CRUD operations on proxy routes (port 8080).
+* Automatic SSL certificate migration from NPM.
+* brolit-shell integration: `PROXMOX_MODE=enabled` in config.
 
 ### Enhanced installation support for leading tools
 Experience streamlined setup for a range of exceptional tools including Netdata, Grafana, Loki, Promtail, Portainer, Portainer Agent, Cockpit, Zabbix, and more.

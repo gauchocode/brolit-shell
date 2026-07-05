@@ -4,7 +4,7 @@
 
 ## Project overview
 
-BASH-based server management tool (LEMP stack). Ubuntu 22.04/24.04, Docker support.
+BASH-based server management tool (LEMP stack). Ubuntu 22.04/24.04/26.04, Docker support, Proxmox VE with OpenResty.
 
 ## Canonical docs
 

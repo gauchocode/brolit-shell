@@ -2,7 +2,7 @@
 
 ## System Overview
 
-Brolit Shell is a BASH-based server management tool for LEMP stacks on Ubuntu 22.04/24.04. It provides both an interactive TUI (via whiptail) and a CLI (via flags) for managing web servers, databases, backups, security, and monitoring.
+Brolit Shell is a BASH-based server management tool for LEMP stacks on Ubuntu 22.04/24.04/26.04. It provides both an interactive TUI (via whiptail) and a CLI (via flags) for managing web servers, databases, backups, security, and monitoring. Supports both local Nginx and OpenResty on Proxmox VE VMs.
 
 ## High-Level Architecture
 
@@ -66,6 +66,8 @@ Brolit Shell is a BASH-based server management tool for LEMP stacks on Ubuntu 22
 | `mail_notification_helper.sh` | SMTP email + template engine |
 | `mail_template_engine.sh` | HTML template rendering |
 | `wordpress_installer.sh` | Interactive WordPress project creation |
+| `proxmox_helper.sh` | Proxmox VE detection, VM management |
+| `npm_migration_helper.sh` | NPM to OpenResty migration |
 
 ### 4. App Integrations (`libs/apps/`)
 
@@ -74,6 +76,7 @@ Brolit Shell is a BASH-based server management tool for LEMP stacks on Ubuntu 22
 | Docker | `docker_helper.sh` | 2625 |
 | Docker Optimizer | `docker_optimizer_helper.sh` | 1901 |
 | Nginx | `nginx_helper.sh` | 651 |
+| OpenResty | `openresty_helper.sh` | 343 |
 | MySQL/MariaDB | `mysql_helper.sh` | 1597 |
 | PostgreSQL | `postgres_helper.sh` | 1588 |
 | PHP | `php_helper.sh` | 419 |
@@ -108,7 +111,7 @@ Manager scripts provide menus (interactive) and task handlers (CLI). Both paths 
 
 ### 6. Installers (`utils/installers/`)
 
-19 individual installers: nginx, php, mysql, postgres, redis, docker, portainer, certbot, borg, netdata, monit, cockpit, promtail, nodejs, wpcli, wordfencecli, zabbix, dtop.
+20 individual installers: nginx, openresty, php, mysql, postgres, redis, docker, portainer, certbot, borg, netdata, monit, cockpit, promtail, nodejs, wpcli, wordfencecli, zabbix, dtop.
 
 ### 7. Cron Tasks (`cron/`)
 
@@ -158,13 +161,20 @@ runner.sh -t TASK -st SUBTASK -d DOMAIN ...
 
 | File | Location | Purpose |
 |------|----------|---------|
-| `brolit_conf.json` | `~/.brolit_conf.json` | Main config (server, packages, backups, notifications, DNS) |
+| `brolit_conf.json` | `~/.brolit_conf.json` | Main config (server, packages, backups, notifications, DNS, proxmox) |
 | `brolit_project.json` | `/etc/brolit/<domain>.json` | Per-project config |
 | `brolit_firewall_conf.json` | `~/.brolit_firewall_conf.json` | UFW + Fail2Ban rules |
 | `brolit_wp_defaults.json` | Config template | WordPress default settings |
 | `.my.cnf` | `~/.my.cnf` | MySQL root credentials |
 
 Config is loaded by `utils/brolit_configuration_manager.sh` at startup and stored in global variables.
+
+### Proxmox Mode
+
+When `proxmox_mode: "enabled"` in `brolit_conf.json`:
+- `OPENRESTY_VM_IP`: IP address of the VM running OpenResty
+- `OPENRESTY_VM_PASS`: SSH password for the VM (optional if SSH keys are configured)
+- All OpenResty operations are executed via SSH to the VM
 
 ## Data Storage
 
@@ -173,6 +183,7 @@ Config is loaded by `utils/brolit_configuration_manager.sh` at startup and store
 | `/var/www/` | Web project files |
 | `/etc/brolit/` | Per-project BROLIT configs |
 | `/etc/nginx/sites-available/` | Nginx virtual hosts |
+| `/usr/local/openresty/nginx/conf/` | OpenResty config (when using Proxmox mode) |
 | `/etc/letsencrypt/` | SSL certificates |
 | `log/` | Runtime logs (gitignored) |
 | `reports/` | Scan/audit reports (gitignored) |
@@ -181,7 +192,9 @@ Config is loaded by `utils/brolit_configuration_manager.sh` at startup and store
 
 **Required on host:** bash >= 4, jq, whiptail, curl, root access
 
-**Managed services:** nginx, php-fpm, mysql/mariadb/postgres, redis, docker, certbot, borg, wp-cli, cloudflare API, netdata, monit, ufw, fail2ban, promtail, grafana, portainer, cockpit, zabbix
+**Managed services:** nginx, openresty, php-fpm, mysql/mariadb/postgres, redis, docker, certbot, borg, wp-cli, cloudflare API, netdata, monit, ufw, fail2ban, promtail, grafana, portainer, cockpit, zabbix
+
+**Proxmox support:** Requires SSH access to VMs running OpenResty (configured via `OPENRESTY_VM_IP` in `brolit_conf.json`).
 
 ## Test Architecture
 
