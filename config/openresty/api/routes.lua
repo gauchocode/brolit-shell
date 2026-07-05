@@ -118,8 +118,11 @@ function _M.generate_config(data)
 
     if route_type == "proxy" then
         return [[server {
-    listen 80;
+    listen 443 ssl http2;
     server_name ]] .. domain .. [[;
+
+    ssl_certificate /etc/letsencrypt/live/]] .. domain .. [[/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/]] .. domain .. [[/privkey.pem;
 
     access_log off;
     error_log /var/log/nginx/]] .. domain .. [[.error.log;
@@ -147,14 +150,30 @@ function _M.generate_config(data)
 
         proxy_read_timeout 86400;
     }
+}
+
+server {
+    listen 80;
+    server_name ]] .. domain .. [[;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
 }]]
     elseif route_type == "wordpress" then
         local php_version = data.php_version or "8.2"
         return [[server {
-    listen 80;
+    listen 443 ssl http2;
     server_name ]] .. domain .. [[;
     root /var/www/]] .. domain .. [[;
     index index.php;
+
+    ssl_certificate /etc/letsencrypt/live/]] .. domain .. [[/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/]] .. domain .. [[/privkey.pem;
 
     access_log off;
     error_log /var/log/nginx/]] .. domain .. [[.error.log;
@@ -166,6 +185,19 @@ function _M.generate_config(data)
     location ~ \.php$ {
         include snippets/fastcgi-php.conf;
         fastcgi_pass unix:/run/php/php]] .. php_version .. [[-fpm.sock;
+    }
+}
+
+server {
+    listen 80;
+    server_name ]] .. domain .. [[;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
     }
 }]]
     end

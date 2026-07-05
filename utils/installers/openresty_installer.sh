@@ -134,6 +134,8 @@ function _openresty_install_in_vm() {
     remote_script+="mkdir -p /usr/local/openresty/nginx/conf/sites-enabled && "
     remote_script+="mkdir -p /usr/local/openresty/nginx/conf/api && "
     remote_script+="mkdir -p /usr/local/openresty/nginx/conf/globals && "
+    remote_script+="mkdir -p /var/www/certbot/.well-known/acme-challenge && "
+    remote_script+="mkdir -p /etc/letsencrypt/renewal-hooks/deploy && "
     remote_script+="echo 'OpenResty installed successfully'"
 
     # Execute remote install
@@ -282,6 +284,16 @@ http {
         }
     }
 
+    # Certbot ACME challenge server block (webroot method)
+    server {
+        listen 80 default_server;
+        server_name _;
+
+        location /.well-known/acme-challenge/ {
+            root /var/www/certbot;
+        }
+    }
+
     include /usr/local/openresty/nginx/conf/sites-enabled/*.conf;
 }
 HEREDOC
@@ -317,6 +329,18 @@ HEREDOC
             "${BROLIT_MAIN_DIR}/config/openresty/api/nginx.conf.lua" \
             "root@${vm_ip}:/usr/local/openresty/nginx/conf/api/"
     fi
+
+    # Create certbot renewal hook for OpenResty
+    local hook_tmp="/tmp/openresty_reload_hook_$$.sh"
+    cat > "${hook_tmp}" << 'HOOKEOF'
+#!/bin/bash
+# Reload OpenResty after certbot renewal
+/usr/local/openresty/bin/openresty -s reload
+HOOKEOF
+    chmod +x "${hook_tmp}"
+    scp -o ConnectTimeout=5 -o StrictHostKeyChecking=no \
+        "${hook_tmp}" "root@${vm_ip}:/etc/letsencrypt/renewal-hooks/deploy/openresty-reload.sh"
+    rm -f "${hook_tmp}"
 
 }
 
