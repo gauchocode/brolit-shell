@@ -302,6 +302,12 @@ function nginx_server_set_domain() {
     local nginx_server_file="${1}"
     local domain_name="${2}"
 
+    # Check if Proxmox mode with OpenResty
+    if [[ "${PROXMOX_MODE}" == "enabled" ]] && openresty_is_installed 2>/dev/null; then
+        openresty_server_set_domain "${nginx_server_file}" "${domain_name}"
+        return $?
+    fi
+
     # Search and replace domain.com string with correct project_domain
     sed -i "s/domain.com/${domain_name}/g" "${WSERVER}/sites-available/${nginx_server_file}"
 
@@ -325,6 +331,12 @@ function nginx_server_change_domain() {
     local domain_name_old="${2}"
     local domain_name_new="${3}"
 
+    # Check if Proxmox mode with OpenResty
+    if [[ "${PROXMOX_MODE}" == "enabled" ]] && openresty_is_installed 2>/dev/null; then
+        openresty_server_change_domain "${nginx_server_file}" "${domain_name_old}" "${domain_name_new}"
+        return $?
+    fi
+
     # Search and replace domain.com string with correct project_domain
     sed -i "s/${domain_name_old}/${domain_name_new}/g" "${WSERVER}/sites-available/${nginx_server_file}"
 
@@ -343,6 +355,12 @@ function nginx_server_change_domain() {
 function nginx_server_get_current_phpv() {
 
     local nginx_server_file="${1}"
+
+    # Check if Proxmox mode with OpenResty
+    if [[ "${PROXMOX_MODE}" == "enabled" ]] && openresty_is_installed 2>/dev/null; then
+        openresty_server_get_current_phpv "${nginx_server_file}"
+        return 0
+    fi
 
     # Replace string to match PHP version
     current_php_v_string=$(cat "${nginx_server_file}" | grep fastcgi_pass | cut -d '/' -f 4 | cut -d '-' -f 1)
@@ -372,6 +390,12 @@ function nginx_server_change_phpv() {
 
     local nginx_server_file="${1}"
     local new_php_v="${2}"
+
+    # Check if Proxmox mode with OpenResty
+    if [[ "${PROXMOX_MODE}" == "enabled" ]] && openresty_is_installed 2>/dev/null; then
+        openresty_server_change_phpv "${nginx_server_file}" "${new_php_v}"
+        return $?
+    fi
 
     # TODO: if ${new_php_v} is not set, must ask wich PHP_V
     if [[ -z ${new_php_v} ]]; then
@@ -494,6 +518,12 @@ function nginx_configuration_test() {
 
 function nginx_new_default_server() {
 
+    # Check if Proxmox mode with OpenResty
+    if [[ "${PROXMOX_MODE}" == "enabled" ]] && openresty_is_installed 2>/dev/null; then
+        openresty_new_default_server
+        return $?
+    fi
+
     # New default nginx configuration
     cat "${BROLIT_MAIN_DIR}/config/nginx/sites-available/default" >"/etc/nginx/sites-available/default"
 
@@ -514,6 +544,12 @@ function nginx_new_default_server() {
 ################################################################################
 
 function nginx_delete_default_directory() {
+
+    # Check if Proxmox mode with OpenResty
+    if [[ "${PROXMOX_MODE}" == "enabled" ]] && openresty_is_installed 2>/dev/null; then
+        openresty_delete_default_directory
+        return $?
+    fi
 
     local nginx_default_dir
 
@@ -543,6 +579,12 @@ function nginx_delete_default_directory() {
 ################################################################################
 
 function nginx_create_globals_config() {
+
+    # Check if Proxmox mode with OpenResty
+    if [[ "${PROXMOX_MODE}" == "enabled" ]] && openresty_is_installed 2>/dev/null; then
+        openresty_create_globals_config
+        return $?
+    fi
 
     local nginx_globals
 
@@ -595,6 +637,12 @@ function nginx_create_empty_nginx_conf() {
 
     local path="${1}"
 
+    # Check if Proxmox mode with OpenResty
+    if [[ "${PROXMOX_MODE}" == "enabled" ]] && openresty_is_installed 2>/dev/null; then
+        openresty_create_empty_nginx_conf "${path}"
+        return $?
+    fi
+
     if [[ -d "${path}" && ! -f "${path}/nginx.conf" ]]; then
 
         # Create empty file
@@ -623,6 +671,12 @@ function nginx_generate_encrypted_auth() {
 
     local user="${1}"
     local psw="${2}"
+
+    # Check if Proxmox mode with OpenResty
+    if [[ "${PROXMOX_MODE}" == "enabled" ]] && openresty_is_installed 2>/dev/null; then
+        openresty_generate_encrypted_auth "${user}" "${psw}"
+        return $?
+    fi
 
     local encrypted_psw
 
@@ -667,6 +721,12 @@ function nginx_server_add_http2_support() {
 
     local nginx_server_file="${1}"
 
+    # Check if Proxmox mode with OpenResty
+    if [[ "${PROXMOX_MODE}" == "enabled" ]] && openresty_is_installed 2>/dev/null; then
+        openresty_server_add_http2_support "${nginx_server_file}"
+        return $?
+    fi
+
     # Check if the file exists
     nginx_server_file="/etc/nginx/sites-available/${nginx_server_file}"
 
@@ -675,7 +735,7 @@ function nginx_server_add_http2_support() {
 
     # Add http2 to ports
     sed -i "s/listen 443 ssl;/listen 443 ssl http2;/g" "${nginx_server_file}"
-    sed -i "s/listen [::]:443 ssl;/listen [::]:443 ssl http2;/g" "${nginx_server_file}"
+    sed -i "s/listen \[::\]:443 ssl;/listen [::]:443 ssl http2;/g" "${nginx_server_file}"
 
     # Log
     log_event "info" "Adding http2 support to ${nginx_server_file}" "false"

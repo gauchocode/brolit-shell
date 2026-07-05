@@ -363,3 +363,230 @@ function openresty_api_status() {
     curl -s "${api_url}/api/status" 2>/dev/null
 
 }
+
+################################################################################
+# Set domain on OpenResty server configuration
+#
+# Arguments:
+#   ${1} = ${nginx_server_file}
+#   ${2} = ${domain_name}
+#
+# Outputs:
+#   0 if ok, 1 on error
+################################################################################
+
+function openresty_server_set_domain() {
+
+    local nginx_server_file="${1}"
+    local domain_name="${2}"
+    local conf_dir
+    conf_dir="$(openresty_get_conf_dir)"
+
+    openresty_vm_exec "sed -i 's/domain.com/${domain_name}/g' ${conf_dir}/sites-available/${nginx_server_file}"
+
+}
+
+################################################################################
+# Change domain on OpenResty server configuration
+#
+# Arguments:
+#  ${1} = ${nginx_server_file}
+#  ${2} = ${domain_name_old}
+#  ${3} = ${domain_name_new}
+#
+# Outputs:
+#   0 if ok, 1 on error
+################################################################################
+
+function openresty_server_change_domain() {
+
+    local nginx_server_file="${1}"
+    local domain_name_old="${2}"
+    local domain_name_new="${3}"
+    local conf_dir
+    conf_dir="$(openresty_get_conf_dir)"
+
+    openresty_vm_exec "sed -i 's/${domain_name_old}/${domain_name_new}/g' ${conf_dir}/sites-available/${nginx_server_file}"
+
+}
+
+################################################################################
+# Get configured PHP version on OpenResty server
+#
+# Arguments:
+#  ${1} = ${nginx_server_file}
+#
+# Outputs:
+#   ${current_php_v}
+################################################################################
+
+function openresty_server_get_current_phpv() {
+
+    local nginx_server_file="${1}"
+    local conf_dir
+    conf_dir="$(openresty_get_conf_dir)"
+    local current_php_v_string
+
+    current_php_v_string="$(openresty_vm_exec "grep fastcgi_pass ${conf_dir}/sites-available/${nginx_server_file} 2>/dev/null | cut -d '/' -f 4 | cut -d '-' -f 1")"
+    echo "${current_php_v_string#php}"
+
+}
+
+################################################################################
+# Change PHP version on OpenResty server configuration
+#
+# Arguments:
+#  ${1} = ${nginx_server_file}
+#  ${2} = ${new_php_v}
+#
+# Outputs:
+#   0 if ok, 1 on error
+################################################################################
+
+function openresty_server_change_phpv() {
+
+    local nginx_server_file="${1}"
+    local new_php_v="${2}"
+    local conf_dir
+    conf_dir="$(openresty_get_conf_dir)"
+    local current_php_v
+
+    current_php_v="$(openresty_server_get_current_phpv "${nginx_server_file}")"
+
+    log_event "info" "Changing PHP version on OpenResty server file" "false"
+    display --indent 6 --text "- Changing PHP version on openresty server file"
+
+    openresty_vm_exec "sed -i 's#${current_php_v}#${new_php_v}#' ${conf_dir}/sites-available/${nginx_server_file}"
+
+    clear_previous_lines "1"
+    display --indent 6 --text "- Changing PHP version on openresty server file" --result "DONE" --color GREEN
+    display --indent 8 --text "PHP version changed to ${new_php_v}"
+    log_event "info" "PHP version for ${nginx_server_file} changed from ${current_php_v} to ${new_php_v}" "false"
+
+    openresty_configuration_test
+
+}
+
+################################################################################
+# Create OpenResty default server
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if ok, 1 on error
+################################################################################
+
+function openresty_new_default_server() {
+
+    log_event "info" "OpenResty default server is managed in nginx.conf, skipping" "false"
+    return 0
+
+}
+
+################################################################################
+# Delete OpenResty default directory for sites
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if ok, 1 on error
+################################################################################
+
+function openresty_delete_default_directory() {
+
+    log_event "info" "Default directory deletion not applicable for OpenResty VM" "false"
+    return 0
+
+}
+
+################################################################################
+# Create globals config files for OpenResty
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if ok, 1 on error
+################################################################################
+
+function openresty_create_globals_config() {
+
+    log_event "info" "Globals config for OpenResty is managed in nginx.conf, skipping" "false"
+    return 0
+
+}
+
+################################################################################
+# Create empty nginx.conf file on OpenResty VM project path
+#
+# Arguments:
+#   ${1} = ${path}
+#
+# Outputs:
+#   0 if ok, 1 on error
+################################################################################
+
+function openresty_create_empty_nginx_conf() {
+
+    local path="${1}"
+
+    openresty_vm_exec "if [[ -d ${path} \u0026\u0026 ! -f ${path}/nginx.conf ]]; then touch ${path}/nginx.conf \u0026\u0026 exit 0; else exit 1; fi"
+
+}
+
+################################################################################
+# Generate encrypted auth for OpenResty
+#
+# Arguments:
+#   ${1} = ${user}
+#   ${2} = ${psw}
+#
+# Outputs:
+#   0 if ok, 1 on error
+################################################################################
+
+function openresty_generate_encrypted_auth() {
+
+    local user="${1}"
+    local psw="${2}"
+    local encrypted_psw
+
+    log_event "info" "Creating OpenResty encrypted authentication" "false"
+
+    if [[ -n ${psw} ]]; then
+        encrypted_psw="$(mkpasswd -m sha-512 "${psw}")"
+    fi
+
+    log_event "info" "User: ${user}" "false"
+    log_event "info" "Saving auth data on: /usr/local/openresty/nginx/.passwords" "false"
+
+    openresty_vm_exec "printf '${user}:${encrypted_psw}' > /usr/local/openresty/nginx/.passwords \u0026\u0026 chmod 640 /usr/local/openresty/nginx/.passwords \u0026\u0026 chown www-data:www-data /usr/local/openresty/nginx/.passwords"
+
+}
+
+################################################################################
+# Add http2 support to OpenResty server configuration
+#
+# Arguments:
+#   ${1} = ${nginx_server_file}
+#
+# Outputs:
+#   0 if ok, 1 on error
+################################################################################
+
+function openresty_server_add_http2_support() {
+
+    local nginx_server_file="${1}"
+    local conf_dir
+    conf_dir="$(openresty_get_conf_dir)"
+
+    log_event "info" "Adding http2 support to ${nginx_server_file}" "false"
+    display --indent 6 --text "- Adding http2 support" --result "DONE" --color GREEN
+
+    openresty_vm_exec "sed -i 's/listen 443 ssl;/listen 443 ssl http2;/g; s/listen \[::\]:443 ssl;/listen [::]:443 ssl http2;/g' ${conf_dir}/sites-available/${nginx_server_file}"
+
+    return 0
+
+}
