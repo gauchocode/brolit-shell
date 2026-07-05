@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.6
+# Author: GauchoCode - A Software Development Agent - https://gauchocode.com
+# Version: 3.9
 ################################################################################
 #
 # Certbot Helper: Certbot functions.
@@ -9,6 +9,96 @@
 # Ref: https://certbot.eff.org/docs/using.html#certbot-commands
 #
 ################################################################################
+
+################################################################################
+# Get certbot method based on environment
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  Prints certbot method: "webroot" for OpenResty/Proxmox, "nginx" otherwise.
+################################################################################
+
+function certbot_get_method() {
+
+  if [[ "${PROXMOX_MODE}" == "enabled" ]] && openresty_is_installed 2>/dev/null; then
+    echo "webroot"
+  else
+    echo "nginx"
+  fi
+
+}
+
+################################################################################
+# Get certbot webroot path
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  Prints webroot path for ACME challenges.
+################################################################################
+
+function certbot_get_webroot_path() {
+
+  echo "/var/www/certbot"
+
+}
+
+################################################################################
+# Install certbot webroot directory and OpenResty location block
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  0 if ok, 1 on error.
+################################################################################
+
+function certbot_setup_webroot() {
+
+  local webroot_path
+  webroot_path="$(certbot_get_webroot_path)"
+
+  # Create webroot directory
+  mkdir -p "${webroot_path}/.well-known/acme-challenge"
+
+  log_event "info" "Certbot webroot directory created at ${webroot_path}" "false"
+
+  return 0
+
+}
+
+################################################################################
+# Reload OpenResty after certbot renewal
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  0 if ok, 1 on error.
+################################################################################
+
+function certbot_reload_openresty() {
+
+  if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
+
+    openresty_vm_exec "/usr/local/openresty/bin/openresty -s reload"
+
+    return $?
+
+  elif openresty_is_installed 2>/dev/null; then
+
+    /usr/local/openresty/bin/openresty -s reload
+
+    return $?
+
+  fi
+
+  return 0
+
+}
 
 ################################################################################
 # Get certbot account email
@@ -156,12 +246,32 @@ function certbot_certificate_install() {
   local domains="${2}"
 
   local certbot_result
+  local certbot_method
+  certbot_method="$(certbot_get_method)"
 
-  # Log
-  log_event "debug" "Running: certbot --nginx --non-interactive --agree-tos --redirect -m ${email} -d ${domains}" "false"
+  if [[ "${certbot_method}" == "webroot" ]]; then
 
-  # Certbot command
-  certbot --nginx --non-interactive --agree-tos --redirect -m "${email}" -d "${domains}" --quiet
+    local webroot_path
+    webroot_path="$(certbot_get_webroot_path)"
+
+    # Ensure webroot directory exists
+    certbot_setup_webroot
+
+    # Log
+    log_event "debug" "Running: certbot certonly --webroot -w ${webroot_path} --non-interactive --agree-tos -m ${email} -d ${domains}" "false"
+
+    # Certbot command (webroot method for OpenResty)
+    certbot certonly --webroot -w "${webroot_path}" --non-interactive --agree-tos -m "${email}" -d "${domains}" --quiet
+
+  else
+
+    # Log
+    log_event "debug" "Running: certbot --nginx --non-interactive --agree-tos --redirect -m ${email} -d ${domains}" "false"
+
+    # Certbot command (nginx plugin)
+    certbot --nginx --non-interactive --agree-tos --redirect -m "${email}" -d "${domains}" --quiet
+
+  fi
 
   certbot_result=$?
   if [[ ${certbot_result} -eq 0 ]]; then
@@ -184,7 +294,18 @@ function certbot_certificate_install() {
     certbot_certificate_delete_old_config "${domains}"
 
     # Running certbot again
-    certbot --nginx --non-interactive --agree-tos --redirect -m "${email}" -d "${domains}" --quiet
+    if [[ "${certbot_method}" == "webroot" ]]; then
+
+      local webroot_path
+      webroot_path="$(certbot_get_webroot_path)"
+
+      certbot certonly --webroot -w "${webroot_path}" --non-interactive --agree-tos -m "${email}" -d "${domains}" --quiet
+
+    else
+
+      certbot --nginx --non-interactive --agree-tos --redirect -m "${email}" -d "${domains}" --quiet
+
+    fi
 
     certbot_result=$?
     if [[ ${certbot_result} -eq 0 ]]; then
@@ -201,7 +322,7 @@ function certbot_certificate_install() {
       log_event "error" "Certificate installation for ${domains} failed!" "false"
       display --indent 6 --text "- Installing certificate on domains" --result "FAIL" --color RED
       display --indent 8 --text "Please check and then run:" --tcolor RED
-      display --indent 8 --text "certbot --nginx -d ${domains}" --tcolor RED
+      display --indent 8 --text "certbot certonly --webroot -d ${domains}" --tcolor RED
 
       return 1
 
@@ -266,11 +387,27 @@ function certbot_certificate_expand() {
   local domains="${2}"
 
   local certbot_result
+  local certbot_method
+  certbot_method="$(certbot_get_method)"
 
-  log_event "debug" "Running: certbot --nginx --non-interactive --agree-tos --expand --redirect -m ${email} -d ${domains}" "false"
+  if [[ "${certbot_method}" == "webroot" ]]; then
 
-  # Certbot command
-  certbot --nginx --non-interactive --agree-tos --expand --redirect -m "${email}" -d "${domains}" --quiet
+    local webroot_path
+    webroot_path="$(certbot_get_webroot_path)"
+
+    certbot_setup_webroot
+
+    log_event "debug" "Running: certbot certonly --webroot -w ${webroot_path} --non-interactive --agree-tos --expand -m ${email} -d ${domains}" "false"
+
+    certbot certonly --webroot -w "${webroot_path}" --non-interactive --agree-tos --expand -m "${email}" -d "${domains}" --quiet
+
+  else
+
+    log_event "debug" "Running: certbot --nginx --non-interactive --agree-tos --expand --redirect -m ${email} -d ${domains}" "false"
+
+    certbot --nginx --non-interactive --agree-tos --expand --redirect -m "${email}" -d "${domains}" --quiet
+
+  fi
 
   certbot_result=$?
   if [[ ${certbot_result} -eq 0 ]]; then
@@ -397,11 +534,27 @@ function certbot_certificate_force_renew() {
   local domains="${1}"
 
   local certbot_result
+  local certbot_method
+  certbot_method="$(certbot_get_method)"
 
-  log_event "debug" "Running: certbot --nginx --non-interactive --agree-tos --force-renewal --redirect -m ${email} -d ${domains}" "false"
+  if [[ "${certbot_method}" == "webroot" ]]; then
 
-  # Certbot command
-  certbot --nginx --non-interactive --agree-tos --force-renewal --redirect -m "${email}" -d "${domains}"
+    local webroot_path
+    webroot_path="$(certbot_get_webroot_path)"
+
+    certbot_setup_webroot
+
+    log_event "debug" "Running: certbot certonly --webroot -w ${webroot_path} --non-interactive --agree-tos --force-renewal -d ${domains}" "false"
+
+    certbot certonly --webroot -w "${webroot_path}" --non-interactive --agree-tos --force-renewal -d "${domains}"
+
+  else
+
+    log_event "debug" "Running: certbot --nginx --non-interactive --agree-tos --force-renewal --redirect -m ${email} -d ${domains}" "false"
+
+    certbot --nginx --non-interactive --agree-tos --force-renewal --redirect -m "${email}" -d "${domains}"
+
+  fi
 
   certbot_result=$?
   if [[ ${certbot_result} -eq 0 ]]; then
@@ -418,7 +571,7 @@ function certbot_certificate_force_renew() {
     log_event "error" "Certificate renew for ${domains} failed!" "false"
     display --indent 6 --text "- Renew certificate on domains" --result "FAIL" --color RED
     display --indent 8 --text "Please check and then run:" --tcolor RED
-    display --indent 8 --text "certbot --nginx -d ${domains}" --tcolor RED
+    display --indent 8 --text "certbot certonly --webroot -d ${domains}" --tcolor RED
 
     return 1
 
@@ -845,7 +998,7 @@ function certbot_certificate_delete() {
   if [[ -z ${domains} ]]; then
 
     #Run certbot delete wizard
-    certbot --nginx delete
+    certbot delete
 
   else
 
@@ -856,7 +1009,7 @@ function certbot_certificate_delete() {
 
     if [[ -n ${certbot_result} ]]; then
 
-      certbot --nginx delete --cert-name "${domains}" --quiet
+      certbot delete --cert-name "${domains}" --quiet
 
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
