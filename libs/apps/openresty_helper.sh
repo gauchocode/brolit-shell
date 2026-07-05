@@ -186,6 +186,7 @@ function openresty_server_create() {
     local server_type="${3}"
     local redirect_domains="${4}"
     local proxy_port="${5}"
+    local upstream_url="${6:-}"
 
     local api_url
     api_url="$(openresty_get_api_url)/api/routes"
@@ -198,6 +199,10 @@ function openresty_server_create() {
 
     if [[ -n "${proxy_port}" ]]; then
         json_data="${json_data},\"proxy_port\":\"${proxy_port}\""
+    fi
+
+    if [[ -n "${upstream_url}" ]]; then
+        json_data="${json_data},\"upstream_url\":\"${upstream_url}\""
     fi
 
     if [[ -n "${redirect_domains}" ]]; then
