@@ -80,6 +80,152 @@ function certbot_setup_webroot() {
 #  0 if ok, 1 on error.
 ################################################################################
 
+################################################################################
+# Execute certbot command on local machine or OpenResty VM
+#
+# Arguments:
+#  $@ = certbot command and arguments
+#
+# Outputs:
+#  Exit code of certbot command.
+################################################################################
+
+function _certbot_exec() {
+
+  if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
+
+    # Run certbot on OpenResty VM via SSH
+    local remote_cmd
+    remote_cmd="$(printf '%q ' "$@")"
+    openresty_vm_exec "${remote_cmd}"
+
+    return $?
+
+  else
+
+    # Run certbot locally
+    "$@"
+
+    return $?
+
+  fi
+
+}
+
+################################################################################
+# Get certbot command line for a given challenge type
+#
+# Arguments:
+#  ${1} = ${challenge_type} (nginx|webroot|dns-cloudflare)
+#  ${2} = ${email}
+#  ${3} = ${domains}
+#  ${4} = ${extra_flags} (optional)
+#
+# Outputs:
+#  Prints the certbot command as a string.
+################################################################################
+
+function certbot_get_command() {
+
+  local challenge_type="${1}"
+  local email="${2}"
+  local domains="${3}"
+  local extra_flags="${4:-}"
+
+  local cmd
+
+  case "${challenge_type}" in
+
+    "dns-cloudflare")
+      local cloudflare_conf="/root/.cloudflare.conf"
+      cmd="certbot certonly --dns-cloudflare --dns-cloudflare-credentials ${cloudflare_conf} --non-interactive --agree-tos -m ${email} -d ${domains} --preferred-challenges dns-01 ${extra_flags}"
+      ;;
+
+    "webroot")
+      local webroot_path
+      webroot_path="$(certbot_get_webroot_path)"
+      cmd="certbot certonly --webroot -w ${webroot_path} --non-interactive --agree-tos -m ${email} -d ${domains} ${extra_flags}"
+      ;;
+
+    "nginx")
+      cmd="certbot --nginx --non-interactive --agree-tos --redirect -m ${email} -d ${domains} ${extra_flags}"
+      ;;
+
+  esac
+
+  echo "${cmd}"
+
+}
+
+################################################################################
+# Check if a domain uses Cloudflare DNS
+#
+# Arguments:
+#  ${1} = ${domain}
+#
+# Outputs:
+#  0 if domain is on Cloudflare, 1 otherwise.
+################################################################################
+
+function certbot_domain_is_cloudflare() {
+
+  local domain="${1}"
+
+  local root_domain
+  root_domain="$(domain_get_root "${domain}" 2>/dev/null)"
+
+  if [[ "${SUPPORT_CLOUDFLARE_STATUS}" == "enabled" ]] && [[ -n "${SUPPORT_CLOUDFLARE_EMAIL}" ]] && [[ -n "${SUPPORT_CLOUDFLARE_API_KEY}" ]]; then
+
+    if cloudflare_domain_exists "${root_domain}" 2>/dev/null; then
+      return 0
+    fi
+
+  fi
+
+  return 1
+
+}
+
+################################################################################
+# Get certbot challenge type for a domain
+#
+# Arguments:
+#  ${1} = ${domain}
+#
+# Outputs:
+#  Prints challenge type: "dns-cloudflare", "webroot", or "nginx".
+################################################################################
+
+function certbot_get_challenge_type() {
+
+  local domain="${1}"
+
+  # OpenResty/Proxmox mode
+  if [[ "${PROXMOX_MODE}" == "enabled" ]] && openresty_is_installed 2>/dev/null; then
+
+    # Check if domain is on Cloudflare → DNS challenge
+    if certbot_domain_is_cloudflare "${domain}"; then
+      echo "dns-cloudflare"
+    else
+      echo "webroot"
+    fi
+
+  else
+    echo "nginx"
+  fi
+
+}
+
+################################################################################
+# Reload OpenResty after certbot renewal
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  0 if ok, 1 on error.
+################################################################################
+
 function certbot_reload_openresty() {
 
   if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
@@ -97,6 +243,121 @@ function certbot_reload_openresty() {
   fi
 
   return 0
+
+}
+
+################################################################################
+# Setup Cloudflare credentials on OpenResty VM
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  0 if ok, 1 on error.
+################################################################################
+
+function certbot_setup_cloudflare_vm() {
+
+  if [[ "${PROXMOX_MODE}" != "enabled" ]] || [[ -z "${OPENRESTY_VM_IP}" ]]; then
+    return 0
+  fi
+
+  if [[ "${SUPPORT_CLOUDFLARE_STATUS}" != "enabled" ]] || [[ -z "${SUPPORT_CLOUDFLARE_EMAIL}" ]]; then
+    return 0
+  fi
+
+  local cloudflare_conf="/root/.cloudflare.conf"
+  local tmp_conf="/tmp/cloudflare_conf_$$.conf"
+  cat > "${tmp_conf}" << EOF
+dns_cloudflare_email=${SUPPORT_CLOUDFLARE_EMAIL}
+dns_cloudflare_api_key=${SUPPORT_CLOUDFLARE_API_KEY}
+EOF
+
+  openresty_vm_scp "${tmp_conf}" "root@${OPENRESTY_VM_IP}:${cloudflare_conf}"
+  local result=$?
+  rm -f "${tmp_conf}"
+
+  if [[ ${result} -eq 0 ]]; then
+    openresty_vm_exec "chmod 600 ${cloudflare_conf}"
+    openresty_vm_exec "apt-get install -y -qq python3-certbot-dns-cloudflare 2>/dev/null" 2>/dev/null
+    log_event "info" "Cloudflare credentials copied to OpenResty VM" "false"
+    return 0
+  else
+    log_event "error" "Failed to copy Cloudflare credentials to OpenResty VM" "false"
+    return 1
+  fi
+
+}
+
+################################################################################
+# Setup certbot webroot directory on OpenResty VM
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  0 if ok, 1 on error.
+################################################################################
+
+function certbot_setup_webroot_vm() {
+
+  if [[ "${PROXMOX_MODE}" != "enabled" ]] || [[ -z "${OPENRESTY_VM_IP}" ]]; then
+    return 0
+  fi
+
+  local webroot_path
+  webroot_path="$(certbot_get_webroot_path)"
+
+  openresty_vm_exec "mkdir -p ${webroot_path}/.well-known/acme-challenge"
+  log_event "info" "Certbot webroot directory created on OpenResty VM at ${webroot_path}" "false"
+
+  return 0
+
+}
+
+################################################################################
+# Setup Cloudflare credentials on OpenResty VM
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  0 if ok, 1 on error.
+################################################################################
+
+function certbot_setup_cloudflare_vm() {
+
+  if [[ "${PROXMOX_MODE}" != "enabled" ]] || [[ -z "${OPENRESTY_VM_IP}" ]]; then
+    return 0
+  fi
+
+  if [[ "${SUPPORT_CLOUDFLARE_STATUS}" != "enabled" ]] || [[ -z "${SUPPORT_CLOUDFLARE_EMAIL}" ]]; then
+    return 0
+  fi
+
+  local cloudflare_conf="/root/.cloudflare.ini"
+
+  # Create local temp file
+  local tmp_conf="/tmp/cloudflare_ini_$$.ini"
+  cat > "${tmp_conf}" << EOF
+dns_cloudflare_email = ${SUPPORT_CLOUDFLARE_EMAIL}
+dns_cloudflare_api_key = ${SUPPORT_CLOUDFLARE_API_KEY}
+EOF
+
+  # Copy to VM
+  openresty_vm_scp "${tmp_conf}" "root@${OPENRESTY_VM_IP}:${cloudflare_conf}"
+  local result=$?
+  rm -f "${tmp_conf}"
+
+  if [[ ${result} -eq 0 ]]; then
+    # Install certbot-dns-cloudflare on VM if not present
+    openresty_vm_exec "apt-get install -y -qq python3-certbot-dns-cloudflare 2>/dev/null" 2>/dev/null
+    log_event "info" "Cloudflare credentials copied to OpenResty VM" "false"
+    return 0
+  else
+    log_event "error" "Failed to copy Cloudflare credentials to OpenResty VM" "false"
+    return 1
+  fi
 
 }
 
@@ -249,28 +510,36 @@ function certbot_certificate_install() {
   local certbot_method
   certbot_method="$(certbot_get_method)"
 
-  if [[ "${certbot_method}" == "webroot" ]]; then
+  # Detect challenge type (use first domain)
+  local first_domain
+  first_domain="$(echo "${domains}" | awk '{print $1}')"
+  local challenge_type
+  challenge_type="$(certbot_get_challenge_type "${first_domain}")"
 
-    local webroot_path
-    webroot_path="$(certbot_get_webroot_path)"
-
-    # Ensure webroot directory exists
-    certbot_setup_webroot
-
-    # Log
-    log_event "debug" "Running: certbot certonly --webroot -w ${webroot_path} --non-interactive --agree-tos -m ${email} -d ${domains}" "false"
-
-    # Certbot command (webroot method for OpenResty)
-    certbot certonly --webroot -w "${webroot_path}" --non-interactive --agree-tos -m "${email}" -d "${domains}" --quiet
-
+  # Setup environment for OpenResty VM if needed
+  if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
+    certbot_setup_webroot_vm
+    if [[ "${challenge_type}" == "dns-cloudflare" ]]; then
+      certbot_setup_cloudflare_vm
+    fi
   else
+    if [[ "${certbot_method}" == "webroot" ]]; then
+      certbot_setup_webroot
+    fi
+  fi
 
-    # Log
-    log_event "debug" "Running: certbot --nginx --non-interactive --agree-tos --redirect -m ${email} -d ${domains}" "false"
+  # Get certbot command
+  local certbot_cmd
+  certbot_cmd="$(certbot_get_command "${challenge_type}" "${email}" "${domains}" --quiet)"
 
-    # Certbot command (nginx plugin)
-    certbot --nginx --non-interactive --agree-tos --redirect -m "${email}" -d "${domains}" --quiet
+  # Log
+  log_event "debug" "Running: ${certbot_cmd}" "false"
 
+  # Run certbot
+  if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
+    openresty_vm_exec "${certbot_cmd}"
+  else
+    ${certbot_cmd}
   fi
 
   certbot_result=$?
@@ -280,6 +549,11 @@ function certbot_certificate_install() {
     clear_previous_lines "1"
     log_event "info" "Certificate installation for ${domains} ok" "false"
     display --indent 6 --text "- Certificate installation" --result "DONE" --color GREEN
+
+    # Reload OpenResty if needed
+    if [[ "${certbot_method}" == "webroot" ]] || [[ "${challenge_type}" == "dns-cloudflare" ]]; then
+      certbot_reload_openresty
+    fi
 
     return 0
 
@@ -294,17 +568,10 @@ function certbot_certificate_install() {
     certbot_certificate_delete_old_config "${domains}"
 
     # Running certbot again
-    if [[ "${certbot_method}" == "webroot" ]]; then
-
-      local webroot_path
-      webroot_path="$(certbot_get_webroot_path)"
-
-      certbot certonly --webroot -w "${webroot_path}" --non-interactive --agree-tos -m "${email}" -d "${domains}" --quiet
-
+    if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
+      openresty_vm_exec "${certbot_cmd}"
     else
-
-      certbot --nginx --non-interactive --agree-tos --redirect -m "${email}" -d "${domains}" --quiet
-
+      ${certbot_cmd}
     fi
 
     certbot_result=$?
@@ -312,6 +579,11 @@ function certbot_certificate_install() {
 
       log_event "info" "Certificate installation for ${domains} ok" "false"
       display --indent 6 --text "- Certificate installation" --result "DONE" --color GREEN
+
+      # Reload OpenResty if needed
+      if [[ "${certbot_method}" == "webroot" ]] || [[ "${challenge_type}" == "dns-cloudflare" ]]; then
+        certbot_reload_openresty
+      fi
 
       return 0
 
@@ -322,7 +594,7 @@ function certbot_certificate_install() {
       log_event "error" "Certificate installation for ${domains} failed!" "false"
       display --indent 6 --text "- Installing certificate on domains" --result "FAIL" --color RED
       display --indent 8 --text "Please check and then run:" --tcolor RED
-      display --indent 8 --text "certbot certonly --webroot -d ${domains}" --tcolor RED
+      display --indent 8 --text "${certbot_cmd}" --tcolor RED
 
       return 1
 
@@ -390,23 +662,36 @@ function certbot_certificate_expand() {
   local certbot_method
   certbot_method="$(certbot_get_method)"
 
-  if [[ "${certbot_method}" == "webroot" ]]; then
+  # Detect challenge type (use first domain)
+  local first_domain
+  first_domain="$(echo "${domains}" | awk '{print $1}')"
+  local challenge_type
+  challenge_type="$(certbot_get_challenge_type "${first_domain}")"
 
-    local webroot_path
-    webroot_path="$(certbot_get_webroot_path)"
-
-    certbot_setup_webroot
-
-    log_event "debug" "Running: certbot certonly --webroot -w ${webroot_path} --non-interactive --agree-tos --expand -m ${email} -d ${domains}" "false"
-
-    certbot certonly --webroot -w "${webroot_path}" --non-interactive --agree-tos --expand -m "${email}" -d "${domains}" --quiet
-
+  # Setup environment for OpenResty VM if needed
+  if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
+    certbot_setup_webroot_vm
+    if [[ "${challenge_type}" == "dns-cloudflare" ]]; then
+      certbot_setup_cloudflare_vm
+    fi
   else
+    if [[ "${certbot_method}" == "webroot" ]]; then
+      certbot_setup_webroot
+    fi
+  fi
 
-    log_event "debug" "Running: certbot --nginx --non-interactive --agree-tos --expand --redirect -m ${email} -d ${domains}" "false"
+  # Get certbot command
+  local certbot_cmd
+  certbot_cmd="$(certbot_get_command "${challenge_type}" "${email}" "${domains}" "--expand --quiet")"
 
-    certbot --nginx --non-interactive --agree-tos --expand --redirect -m "${email}" -d "${domains}" --quiet
+  # Log
+  log_event "debug" "Running: ${certbot_cmd}" "false"
 
+  # Run certbot
+  if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
+    openresty_vm_exec "${certbot_cmd}"
+  else
+    ${certbot_cmd}
   fi
 
   certbot_result=$?
@@ -415,6 +700,11 @@ function certbot_certificate_expand() {
     # Log
     log_event "info" "Certificate installation for ${domains} ok" "false"
     display --indent 6 --text "- Certificate installation" --result "DONE" --color GREEN
+
+    # Reload OpenResty if needed
+    if [[ "${certbot_method}" == "webroot" ]] || [[ "${challenge_type}" == "dns-cloudflare" ]]; then
+      certbot_reload_openresty
+    fi
 
     return 0
 
@@ -537,23 +827,36 @@ function certbot_certificate_force_renew() {
   local certbot_method
   certbot_method="$(certbot_get_method)"
 
-  if [[ "${certbot_method}" == "webroot" ]]; then
+  # Detect challenge type (use first domain)
+  local first_domain
+  first_domain="$(echo "${domains}" | awk '{print $1}')"
+  local challenge_type
+  challenge_type="$(certbot_get_challenge_type "${first_domain}")"
 
-    local webroot_path
-    webroot_path="$(certbot_get_webroot_path)"
-
-    certbot_setup_webroot
-
-    log_event "debug" "Running: certbot certonly --webroot -w ${webroot_path} --non-interactive --agree-tos --force-renewal -d ${domains}" "false"
-
-    certbot certonly --webroot -w "${webroot_path}" --non-interactive --agree-tos --force-renewal -d "${domains}"
-
+  # Setup environment for OpenResty VM if needed
+  if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
+    certbot_setup_webroot_vm
+    if [[ "${challenge_type}" == "dns-cloudflare" ]]; then
+      certbot_setup_cloudflare_vm
+    fi
   else
+    if [[ "${certbot_method}" == "webroot" ]]; then
+      certbot_setup_webroot
+    fi
+  fi
 
-    log_event "debug" "Running: certbot --nginx --non-interactive --agree-tos --force-renewal --redirect -m ${email} -d ${domains}" "false"
+  # Get certbot command
+  local certbot_cmd
+  certbot_cmd="$(certbot_get_command "${challenge_type}" "${email}" "${domains}" "--force-renewal")"
 
-    certbot --nginx --non-interactive --agree-tos --force-renewal --redirect -m "${email}" -d "${domains}"
+  # Log
+  log_event "debug" "Running: ${certbot_cmd}" "false"
 
+  # Run certbot
+  if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
+    openresty_vm_exec "${certbot_cmd}"
+  else
+    ${certbot_cmd}
   fi
 
   certbot_result=$?
@@ -561,6 +864,11 @@ function certbot_certificate_force_renew() {
 
     log_event "info" "Certificate renew for ${domains} ok" "false"
     display --indent 6 --text "- Certificate renew" --result "DONE" --color GREEN
+
+    # Reload OpenResty if needed
+    if [[ "${certbot_method}" == "webroot" ]] || [[ "${challenge_type}" == "dns-cloudflare" ]]; then
+      certbot_reload_openresty
+    fi
 
     return 0
 
@@ -571,7 +879,7 @@ function certbot_certificate_force_renew() {
     log_event "error" "Certificate renew for ${domains} failed!" "false"
     display --indent 6 --text "- Renew certificate on domains" --result "FAIL" --color RED
     display --indent 8 --text "Please check and then run:" --tcolor RED
-    display --indent 8 --text "certbot certonly --webroot -d ${domains}" --tcolor RED
+    display --indent 8 --text "${certbot_cmd}" --tcolor RED
 
     return 1
 
