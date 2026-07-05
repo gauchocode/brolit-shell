@@ -129,7 +129,7 @@ function _openresty_install_in_vm() {
         remote_script+="apt-get update && "
     fi
 
-    remote_script+="apt-get install -y openresty && "
+    remote_script+="apt-get install -y openresty certbot python3-certbot-dns-cloudflare && "
     remote_script+="mkdir -p /usr/local/openresty/nginx/conf/sites-available && "
     remote_script+="mkdir -p /usr/local/openresty/nginx/conf/sites-enabled && "
     remote_script+="mkdir -p /usr/local/openresty/nginx/conf/api && "
@@ -179,7 +179,7 @@ function _openresty_copy_configs_to_vm() {
     cat > "${tmp_conf}" << 'HEREDOC'
 user www-data;
 worker_processes auto;
-pid /run/nginx.pid;
+pid /usr/local/openresty/nginx/logs/nginx.pid;
 
 worker_rlimit_nofile 65535;
 pcre_jit on;
