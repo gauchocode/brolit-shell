@@ -39,16 +39,22 @@ function server_app_setup() {
 
     "nginx")
 
-        if [[ ${PACKAGES_NGINX_STATUS} == "enabled" ]]; then
-            # Nginx Installer
-            nginx_installer
-            # Reconfigure
-            nginx_reconfigure
-            nginx_new_default_server
-            nginx_create_globals_config
-            #nginx_delete_default_directory
+        if [[ "${PROXMOX_MODE}" == "enabled" ]]; then
+            # Use OpenResty instead of nginx
+            openresty_installer
+            openresty_reconfigure
         else
-            package_purge "nginx"
+            if [[ ${PACKAGES_NGINX_STATUS} == "enabled" ]]; then
+                # Nginx Installer
+                nginx_installer
+                # Reconfigure
+                nginx_reconfigure
+                nginx_new_default_server
+                nginx_create_globals_config
+                #nginx_delete_default_directory
+            else
+                package_purge "nginx"
+            fi
         fi
 
         ;;

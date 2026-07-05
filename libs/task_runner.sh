@@ -51,6 +51,9 @@ function show_help() {
                         ssh-keygen          (no subtask)
                         disk-cleanup        Subtasks: apt, journal, docker, all
                         aliases-install     (no subtask)
+                        openresty           Subtasks: install, uninstall, reconfigure, status,
+                                            api-status, api-routes
+                        migrate-npm         Subtasks: download-configs, migrate-all, migrate-domain
 
   Options:
     -st, --subtask    Sub-task to run (see task list above)
@@ -102,6 +105,9 @@ function show_help() {
     ./runner.sh -t security-scan -st wordfence -D example.com
     ./runner.sh -t disk-cleanup -st apt -dr
     ./runner.sh -t project-install -tf /path/to/config.json -tt clean
+    ./runner.sh -t openresty -st install
+    ./runner.sh -t openresty -st api-routes
+    ./runner.sh -t migrate-npm -st migrate-all -D 10.2.0.100
 
   "
 
@@ -763,6 +769,64 @@ function tasks_handler() {
     # shellcheck source=${BROLIT_MAIN_DIR}/utils/config_wizard.sh
     source "${BROLIT_MAIN_DIR}/utils/config_wizard.sh"
     config_wizard_menu
+    exit_code=$?
+    exit ${exit_code}
+    ;;
+
+  openresty)
+    # Validate subtask
+    validate_task_and_subtask "openresty" "${STASK}" "install uninstall reconfigure status api-status api-routes"
+    exit_code=$?
+    [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
+
+    # Execute task
+    case "${STASK}" in
+      install)
+        execute_task_with_error_handling "openresty-install" "openresty_installer" "apt"
+        ;;
+      uninstall)
+        execute_task_with_error_handling "openresty-uninstall" "openresty_purge"
+        ;;
+      reconfigure)
+        execute_task_with_error_handling "openresty-reconfigure" "openresty_reconfigure"
+        ;;
+      status)
+        execute_task_with_error_handling "openresty-status" "proxy_get_status"
+        ;;
+      api-status)
+        execute_task_with_error_handling "openresty-api-status" "openresty_api_status"
+        ;;
+      api-routes)
+        execute_task_with_error_handling "openresty-api-routes" "openresty_list_routes"
+        ;;
+    esac
+    exit_code=$?
+    exit ${exit_code}
+    ;;
+
+  migrate-npm)
+    # Validate subtask
+    validate_task_and_subtask "migrate-npm" "${STASK}" "download-configs migrate-all migrate-domain"
+    exit_code=$?
+    [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
+
+    # Validate required params
+    validate_required_params "migrate-npm" "DOMAIN"
+    exit_code=$?
+    [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
+
+    # Execute task
+    case "${STASK}" in
+      download-configs)
+        execute_task_with_error_handling "migrate-npm-download" "npm_download_configs" "${DOMAIN}" "${TVALUE}"
+        ;;
+      migrate-all)
+        execute_task_with_error_handling "migrate-npm-all" "npm_migrate_all" "${DOMAIN}" "${TVALUE}"
+        ;;
+      migrate-domain)
+        execute_task_with_error_handling "migrate-npm-domain" "npm_migrate_domain" "${DOMAIN}" "${TVALUE}"
+        ;;
+    esac
     exit_code=$?
     exit ${exit_code}
     ;;
