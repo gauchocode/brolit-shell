@@ -28,6 +28,9 @@ function _brolit_configuration_load_server_config() {
     declare -g SERVER_ROLE_WEBSERVER
     declare -g SERVER_ROLE_DATABASE
     declare -g SERVER_ADDITIONAL_IPS
+    declare -g PROXMOX_MODE
+    declare -g OPENRESTY_VM_IP
+    declare -g OPENRESTY_VM_PASS
 
     # Read required vars from server config file
     SERVER_TIMEZONE="$(json_read_field "${server_config_file}" "SERVER_CONFIG.timezone")"
@@ -52,8 +55,12 @@ function _brolit_configuration_load_server_config() {
 
     # Read optional vars from server config file
     SERVER_ADDITIONAL_IPS="$(json_read_field "${server_config_file}" "SERVER_CONFIG.additional_ips")"
+    PROXMOX_MODE="$(json_read_field "${server_config_file}" "SERVER_CONFIG.proxmox_mode")"
+    [[ -z "${PROXMOX_MODE}" ]] && PROXMOX_MODE="disabled"
+    OPENRESTY_VM_IP="$(json_read_field "${server_config_file}" "SERVER_CONFIG.openresty_vm_ip")"
+    OPENRESTY_VM_PASS="$(json_read_field "${server_config_file}" "SERVER_CONFIG.openresty_vm_pass")"
 
-    export SERVER_TIMEZONE SERVER_ROLE_WEBSERVER SERVER_ROLE_DATABASE SERVER_ADDITIONAL_IPS
+    export SERVER_TIMEZONE SERVER_ROLE_WEBSERVER SERVER_ROLE_DATABASE SERVER_ADDITIONAL_IPS PROXMOX_MODE OPENRESTY_VM_IP OPENRESTY_VM_PASS
     #export UNATTENDED_UPGRADES
 
 }
