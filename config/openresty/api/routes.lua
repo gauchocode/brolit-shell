@@ -115,9 +115,9 @@ function _M.generate_config(data)
     local domain = data.domain
     local route_type = data.type or "proxy"
     local proxy_port = data.proxy_port or "80"
+    local upstream_url = data.upstream_url or "http://127.0.0.1:" .. proxy_port
 
-    if route_type == "proxy" then
-        return [[server {
+    local ssl_block = [[server {
     listen 443 ssl http2;
     server_name ]] .. domain .. [[;
 
@@ -131,7 +131,15 @@ function _M.generate_config(data)
     client_max_body_size 50m;
 
     location / {
-        proxy_pass http://127.0.0.1:]] .. proxy_port .. [[;
+        proxy_pass ]] .. upstream_url .. [[;]]
+
+    -- Add proxy_ssl_verify off for HTTPS upstreams
+    if upstream_url:match("^https://") then
+        ssl_block = ssl_block .. [[
+        proxy_ssl_verify off;]]
+    end
+
+    ssl_block = ssl_block .. [[
         proxy_http_version 1.1;
         proxy_redirect off;
 
@@ -164,6 +172,10 @@ server {
         return 301 https://$host$request_uri;
     }
 }]]
+
+    if route_type == "proxy" then
+        return ssl_block
+
     elseif route_type == "wordpress" then
         local php_version = data.php_version or "8.2"
         return [[server {
