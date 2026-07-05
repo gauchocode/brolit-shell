@@ -8,6 +8,9 @@
 #
 ################################################################################
 
+# Source Proxmox helper (for Proxmox VM detection and OpenResty support)
+source "${BROLIT_MAIN_DIR}/libs/local/proxmox_helper.sh" 2>/dev/null || true
+
 ################################################################################
 # Create nginx server config
 #
@@ -29,6 +32,12 @@ function nginx_server_create() {
     local server_type="${3}"
     local redirect_domains="${4}"
     local proxy_port="${5}"
+
+    # Check if Proxmox mode with OpenResty
+    if [[ "${PROXMOX_MODE}" == "enabled" ]] && openresty_is_installed 2>/dev/null; then
+        openresty_server_create "${project_domain}" "${project_type}" "${server_type}" "${redirect_domains}" "${proxy_port}"
+        return $?
+    fi
 
     # Ensure Brolit's nginx.conf is in place: defines $connection_upgrade (used by
     # proxy_* templates) and other shared maps. Without this, nginx -t fails with
@@ -165,6 +174,12 @@ function nginx_server_delete() {
 
     local filename="${1}"
 
+    # Check if Proxmox mode with OpenResty
+    if [[ "${PROXMOX_MODE}" == "enabled" ]] && openresty_is_installed 2>/dev/null; then
+        openresty_server_delete "${filename}"
+        return $?
+    fi
+
     if [[ -n "${filename}" ]]; then
 
         # Remove files
@@ -205,6 +220,12 @@ function nginx_server_change_status() {
 
     local project_domain="${1}"
     local project_status="${2}"
+
+    # Check if Proxmox mode with OpenResty
+    if [[ "${PROXMOX_MODE}" == "enabled" ]] && openresty_is_installed 2>/dev/null; then
+        openresty_server_change_status "${project_domain}" "${project_status}"
+        return $?
+    fi
 
     local result
     local debug
@@ -391,6 +412,13 @@ function nginx_server_change_phpv() {
 
 function nginx_reconfigure() {
 
+    # Check if Proxmox mode is enabled with OpenResty
+    if [[ "${PROXMOX_MODE}" == "enabled" ]] && openresty_is_installed 2>/dev/null; then
+        openresty_reconfigure
+        return $?
+    fi
+
+    # Default: use system nginx
     # nginx.conf gauchocode standard configuration
     cat "${BROLIT_MAIN_DIR}/config/nginx/nginx.conf" >"/etc/nginx/nginx.conf"
     display --indent 6 --text "- Updating nginx.conf" --result "DONE" --color GREEN
@@ -418,6 +446,13 @@ function nginx_configuration_test() {
 
     local result
 
+    # Check if Proxmox mode with OpenResty
+    if [[ "${PROXMOX_MODE}" == "enabled" ]] && openresty_is_installed 2>/dev/null; then
+        openresty_configuration_test
+        return $?
+    fi
+
+    # Default: use system nginx
     #Test the validity of the nginx configuration
     result="$(nginx -t 2>&1 | grep -w "test" | cut -d"." -f2 | cut -d" " -f4)"
 

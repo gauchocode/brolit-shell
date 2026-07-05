@@ -14,6 +14,9 @@
         "type": "production",
         "timezone": "America/Argentina/Buenos_Aires",
         "unattended_upgrades": "disabled",
+        "proxmox_mode": "disabled",
+        "openresty_vm_ip": "",
+        "openresty_vm_pass": "",
         "additional_ips": [
             "",
             ""
