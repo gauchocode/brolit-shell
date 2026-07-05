@@ -306,6 +306,10 @@ function npm_migrate_all() {
     local root_domains_file="/tmp/npm_root_domains_$$.txt"
     : > "${root_domains_file}"
 
+    # Get this server's public IP for DNS validation
+    local server_public_ip
+    server_public_ip="$(curl -s --connect-timeout 3 http://ipv4.icanhazip.com 2>/dev/null)"
+
     # Process each proxy host
     local i=0
     while [[ ${i} -lt ${proxy_count} ]]; do
@@ -326,6 +330,18 @@ function npm_migrate_all() {
         ssl_enabled="$(echo "${host_data}" | jq -r '.ssl_enabled')"
         websocket="$(echo "${host_data}" | jq -r '.allow_websocket_upgrade')"
         advanced="$(echo "${host_data}" | jq -r '.advanced_config')"
+
+        # Skip domains that don't point to this server
+        if [[ -n "${server_public_ip}" ]]; then
+            local domain_ip
+            domain_ip="$(dig +short "${domain}" 2>/dev/null | head -1)"
+            if [[ -n "${domain_ip}" ]] && [[ "${domain_ip}" != "${server_public_ip}" ]]; then
+                log_event "warning" "Skipping ${domain}: DNS resolves to ${domain_ip}, not this server (${server_public_ip})" "false"
+                display --indent 4 --text "- Skipped ${domain}: points to ${domain_ip}" --result "SKIPPED" --color YELLOW
+                i=$((i + 1))
+                continue
+            fi
+        fi
 
         log_event "info" "Migrating: ${domain} -> ${forward_host}:${forward_port}" "false"
 
