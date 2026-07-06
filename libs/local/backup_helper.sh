@@ -306,6 +306,21 @@ function backup_all_server_configs() {
 
   fi
 
+  # In Proxmox mode, also backup OpenResty VM config
+  if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
+
+    log_break "true"
+    log_event "info" "Backing up OpenResty VM configuration" "false"
+
+    local openresty_conf_dir
+    openresty_conf_dir="$(openresty_get_conf_dir)"
+
+    openresty_vm_exec "tar -czf /tmp/openresty-configs-\$(date +%Y%m%d-%H%M%S).tar.gz -C \$(dirname ${openresty_conf_dir}) \$(basename ${openresty_conf_dir}) /etc/letsencrypt 2>/dev/null" && \
+      display --indent 6 --text "- OpenResty VM config backup" --result "DONE" --color GREEN || \
+      display --indent 6 --text "- OpenResty VM config backup" --result "FAIL" --color RED
+
+  fi
+
   # TAR PHP config files
   if [[ -d ${PHP_CONF_DIR} ]]; then
 

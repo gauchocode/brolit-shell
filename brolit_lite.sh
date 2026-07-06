@@ -559,6 +559,16 @@ function _nginx_check_installed_version() {
 
     local nginx_installed_version
 
+    # In Proxmox mode, report OpenResty if the VM is reachable
+    if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
+        local openresty_version
+        openresty_version="$(ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no "root@${OPENRESTY_VM_IP}" "openresty -v 2>&1" 2>/dev/null | grep -o '[0-9.]\+')"
+        if [[ -n "${openresty_version}" ]]; then
+            echo "{\"name\":\"openresty\",\"version\":\"${openresty_version}\",\"default\":\"true\"} , "
+            return 0
+        fi
+    fi
+
     # Check if package is installed
     nginx_installed_pkg="$(sudo dpkg --list | grep -Eo 'nginx-core')"
     if [[ -n ${nginx_installed_pkg} ]]; then
@@ -647,7 +657,11 @@ function _certbot_certificate_get_valid_days() {
     local cert_days
     local cert_days_output
 
-    cert_days_output="$(certbot certificates --domain "${domain}" 2>&1)"
+    if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
+        cert_days_output="$(ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no "root@${OPENRESTY_VM_IP}" "certbot certificates --domain '${domain}' 2>&1" 2>/dev/null)"
+    else
+        cert_days_output="$(certbot certificates --domain "${domain}" 2>&1)"
+    fi
     cert_days="$(echo "${cert_days_output}" | grep -Eo 'VALID: [0-9]+[0-9]' | cut -d ' ' -f 2)"
 
     if [[ -n ${cert_days} ]]; then

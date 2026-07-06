@@ -147,9 +147,11 @@ function portainer_configure() {
 
     log_event "info" "Configuring Portainer ..." "false"
 
-    if [[ ${PACKAGES_NGINX_STATUS} == "enabled" && ${PACKAGES_PORTAINER_CONFIG_NGINX} == "enabled" ]]; then
+    # In Proxmox mode, the reverse proxy is OpenResty inside a VM.
+    # In standard mode, we rely on PACKAGES_NGINX_STATUS.
+    if [[ "${PROXMOX_MODE}" == "enabled" ]] || [[ ${PACKAGES_NGINX_STATUS} == "enabled" && ${PACKAGES_PORTAINER_CONFIG_NGINX} == "enabled" ]]; then
 
-        # Create nginx server block
+        # Create nginx/OpenResty server block
         nginx_server_create "${PACKAGES_PORTAINER_CONFIG_SUBDOMAIN}" "portainer" "single" "" "${PACKAGES_PORTAINER_CONFIG_PORT}"
 
         # Replace port on nginx server config

@@ -1796,7 +1796,7 @@ function restore_nginx_site_files() {
 
   else
 
-    log_event "error" "/etc/nginx/sites-available NOT exist... Skipping!" "false"
+    log_event "error" "${WSERVER}/sites-available NOT exist... Skipping!" "false"
     #echo "ERROR: nginx main dir is not present!"
     return 1
 
