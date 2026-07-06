@@ -16,6 +16,9 @@ function test_certbot_get_challenge_type_openresty() {
 
     log_subsection "Test: certbot_get_challenge_type (OpenResty mode)"
 
+    # Mock openresty_is_installed so the test does not depend on a real VM
+    function openresty_is_installed() { return 0; }
+
     # Save current state
     local old_proxmox_mode="${PROXMOX_MODE}"
     local old_openresty_vm_ip="${OPENRESTY_VM_IP}"
@@ -37,6 +40,7 @@ function test_certbot_get_challenge_type_openresty() {
     # Restore state
     PROXMOX_MODE="${old_proxmox_mode}"
     OPENRESTY_VM_IP="${old_openresty_vm_ip}"
+    unset -f openresty_is_installed 2>/dev/null || true
 
 }
 
