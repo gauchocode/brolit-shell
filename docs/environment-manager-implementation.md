@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document provides a complete implementation summary of the **Environment Manager** feature for BROLIT Shell v3.3.6.
+This document provides a complete implementation summary of the **Environment Manager** feature for BROLIT Shell v3.3.9.
 
 ---
 
@@ -391,7 +391,7 @@ Remedy: Run: docker compose ps mysql
 
 ## Migration Path (Future)
 
-### Phase 1: Coexistence (v3.3.6 - Current)
+### Phase 1: Coexistence (v3.3.9 - Current)
 - Environment Manager available as option #9
 - IT Utils still available and functional
 - Both menu systems coexist
@@ -535,7 +535,7 @@ Log location: `/var/log/brolit/brolit.log`
 
 ## Changelog
 
-### Version 3.3.6 (2024-12-06)
+### Version 3.3.9 (2024-12-06)
 - ✨ NEW: Environment Manager main menu
 - ✨ NEW: Host Environment Manager (reorganized IT Utils)
 - ✨ NEW: Docker Environment Manager
@@ -554,7 +554,7 @@ Log location: `/var/log/brolit/brolit.log`
 
 **Developed by**: GauchoCode - A Software Development Agency
 **URL**: https://gauchocode.com
-**Version**: 3.3.6
+**Version**: 3.3.9
 **License**: See project LICENSE file
 
 ---

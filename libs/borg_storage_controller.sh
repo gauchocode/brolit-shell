@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.6
+# Version: 3.9
 ################################################################################
 #
 # Storage Controller: Controller to upload and download backups.
@@ -1521,7 +1521,7 @@ function borg_update_templates() {
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.6
+# Version: 3.9
 ################################################################################
 #
 # Borg Storage Controller - Additional Functions

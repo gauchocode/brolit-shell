@@ -28,7 +28,7 @@ for arg in "$@"; do
       exit 0
       ;;
     --version)
-      echo "BROLIT Shell v3.6"
+      echo "BROLIT Shell v3.9"
       exit 0
       ;;
   esac
