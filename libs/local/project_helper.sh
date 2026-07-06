@@ -2045,13 +2045,32 @@ function project_install() {
 
   log_section "Project Installer (${project_type})"
 
-  # Check if nginx is installed
+  # Check if a webserver is available (local nginx or Proxmox mode with OpenResty)
   if [[ ! $(command -v nginx) ]]; then
-    # Log
-    log_event "error" "Nginx is not installed" "false"
-    display --indent 6 --text "- Creating ${project_type} project" --result "FAIL" --color RED
-    display --indent 8 --text "Nginx is not installed" --tcolor RED
-    return 1
+    if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
+      if ! openresty_is_installed 2>/dev/null; then
+        log_event "error" "OpenResty VM not reachable" "false"
+        display --indent 6 --text "- Creating ${project_type} project" --result "FAIL" --color RED
+        display --indent 8 --text "OpenResty VM not reachable" --tcolor RED
+        return 1
+      fi
+    else
+      # Log
+      log_event "error" "Nginx is not installed" "false"
+      display --indent 6 --text "- Creating ${project_type} project" --result "FAIL" --color RED
+      display --indent 8 --text "Nginx is not installed" --tcolor RED
+      return 1
+    fi
+  fi
+
+  # If Proxmox mode, ensure OpenResty can be reached
+  if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
+    if ! openresty_is_installed 2>/dev/null; then
+      log_event "error" "OpenResty VM not reachable" "false"
+      display --indent 6 --text "- Creating ${project_type} project" --result "FAIL" --color RED
+      display --indent 8 --text "OpenResty VM not reachable" --tcolor RED
+      return 1
+    fi
   fi
 
   # Project Type

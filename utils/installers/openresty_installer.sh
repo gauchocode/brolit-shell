@@ -79,9 +79,44 @@ function _openresty_install_local() {
     mkdir -p /usr/local/openresty/nginx/conf/api
     mkdir -p /usr/local/openresty/nginx/conf/globals
 
-    # Copy base config from brolit
-    cp "${BROLIT_MAIN_DIR}/config/nginx/nginx.conf" \
-        "/usr/local/openresty/nginx/conf/nginx.conf"
+    # Generate OpenResty-specific nginx.conf (the brolit nginx.conf uses /etc/nginx/ paths)
+    local tmp_conf="/tmp/openresty_nginx_local_$$.conf"
+    cat > "${tmp_conf}" << 'HEREDOC'
+user www-data;
+worker_processes auto;
+pid /usr/local/openresty/nginx/logs/nginx.pid;
+events {
+    worker_connections 1024;
+}
+http {
+    include /usr/local/openresty/nginx/conf/mime.types;
+    include /usr/local/openresty/nginx/conf/globals/*.conf;
+    default_type application/octet-stream;
+    sendfile on;
+    keepalive_timeout 65;
+    server_tokens off;
+
+    # Lua API
+    lua_package_path "/usr/local/openresty/nginx/conf/api/?.lua;;";
+
+    server {
+        listen 8080;
+        server_name localhost;
+        location /api {
+            default_type application/json;
+            content_by_lua_file /usr/local/openresty/nginx/conf/api/routes.lua;
+        }
+        location / {
+            return 404;
+        }
+    }
+
+    include /usr/local/openresty/nginx/conf/sites-enabled/*.conf;
+}
+HEREDOC
+    cp "${tmp_conf}" "/usr/local/openresty/nginx/conf/nginx.conf"
+    rm -f "${tmp_conf}"
+
     cp "${BROLIT_MAIN_DIR}/config/nginx/mime.types" \
         "/usr/local/openresty/nginx/conf/mime.types"
 
@@ -551,9 +586,43 @@ function openresty_reconfigure() {
         openresty_configuration_test
     else
         # Reconfigure locally
-        # Copy main config
-        cp "${BROLIT_MAIN_DIR}/config/nginx/nginx.conf" \
-            "${openresty_conf}/nginx.conf"
+        # Generate OpenResty-specific nginx.conf
+        local tmp_conf="/tmp/openresty_nginx_local_$$.conf"
+        cat > "${tmp_conf}" << 'HEREDOC'
+user www-data;
+worker_processes auto;
+pid /usr/local/openresty/nginx/logs/nginx.pid;
+events {
+    worker_connections 1024;
+}
+http {
+    include /usr/local/openresty/nginx/conf/mime.types;
+    include /usr/local/openresty/nginx/conf/globals/*.conf;
+    default_type application/octet-stream;
+    sendfile on;
+    keepalive_timeout 65;
+    server_tokens off;
+
+    # Lua API
+    lua_package_path "/usr/local/openresty/nginx/conf/api/?.lua;;";
+
+    server {
+        listen 8080;
+        server_name localhost;
+        location /api {
+            default_type application/json;
+            content_by_lua_file /usr/local/openresty/nginx/conf/api/routes.lua;
+        }
+        location / {
+            return 404;
+        }
+    }
+
+    include /usr/local/openresty/nginx/conf/sites-enabled/*.conf;
+}
+HEREDOC
+        cp "${tmp_conf}" "${openresty_conf}/nginx.conf"
+        rm -f "${tmp_conf}"
         display --indent 6 --text "- Updating openresty nginx.conf" --result "DONE" --color GREEN
 
         # Copy mime.types
