@@ -397,46 +397,6 @@
                 ]
             }
         ],
-        "grafana": [
-            {
-                "status": "disabled",
-                "version": "latest",
-                "config": [
-                    {
-                        "port": "9090",
-                        "nginx_proxy": "disabled",
-                        "subdomain": ""
-                    }
-                ]
-            }
-        ],
-        "loki": [
-            {
-                "status": "disabled",
-                "version": "latest",
-                "config": [
-                    {
-                        "port": "3100",
-                        "nginx_proxy": "disabled",
-                        "subdomain": ""
-                    }
-                ]
-            }
-        ],
-        "promtail": [
-            {
-                "status": "disabled",
-                "version": "2.8.3",
-                "config": [
-                    {
-                        "port": "9080",
-                        "hostname": "default",
-                        "loki_url": "",
-                        "loki_port": "3100"
-                    }
-                ]
-            }
-        ],
         "cockpit": [
             {
                 "status": "disabled",

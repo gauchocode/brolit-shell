@@ -195,9 +195,6 @@ function config_wizard_apply_preset() {
         # Packages
         json_write_field "${config_file}" "PACKAGES.netdata[].status" "enabled"
         json_write_field "${config_file}" "PACKAGES.netdata[].config[].web_admin" "enabled"
-        json_write_field "${config_file}" "PACKAGES.grafana[].status" "enabled"
-        json_write_field "${config_file}" "PACKAGES.loki[].status" "enabled"
-        json_write_field "${config_file}" "PACKAGES.promtail[].status" "enabled"
         ;;
 
     *)
@@ -504,7 +501,7 @@ function config_wizard_menu() {
             preset_options=(
                 "1)" "WordPress Server (nginx+php+mysql+redis+certbot)"
                 "2)" "Docker Server (docker+portainer)"
-                "3)" "Monitoring (netdata+grafana+loki)"
+                "3)" "Monitoring (netdata)"
                 "4)" "Minimal (server config only)"
             )
 

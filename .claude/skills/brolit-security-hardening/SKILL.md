@@ -113,8 +113,6 @@ Managed by `libs/apps/certbot_helper.sh`:
 |---|---|
 | Monit | Process monitoring (nginx, mysql, php-fpm, redis) |
 | Netdata | Real-time system monitoring with alerts |
-| Promtail/Loki | Log aggregation and analysis |
-| Grafana | Dashboard and alerting |
 
 ## Security Scan Commands
 

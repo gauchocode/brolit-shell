@@ -78,13 +78,11 @@ function test_config_wizard_presets() {
 
     local netdata_status
     netdata_status="$(jq -r '.PACKAGES.netdata[].status' "${test_config}")"
-    local grafana_status
-    grafana_status="$(jq -r '.PACKAGES.grafana[].status' "${test_config}")"
 
-    if [[ "${netdata_status}" == "enabled" && "${grafana_status}" == "enabled" ]]; then
+    if [[ "${netdata_status}" == "enabled" ]]; then
         echo "PASSED: Monitoring preset applied correctly"
     else
-        echo "FAILED: Monitoring preset should enable netdata, grafana"
+        echo "FAILED: Monitoring preset should enable netdata"
     fi
 
     rm -f "${test_config}"

@@ -1154,7 +1154,6 @@ docker exec -i {container} redis-cli FLUSHALL
 - [ ] MongoDB optimization
 - [ ] Kubernetes support
 - [ ] Automated A/B testing of configurations
-- [ ] Grafana integration for metrics
 - [ ] Automated rollback on performance regression
 - [ ] Machine learning-based optimization suggestions
 
@@ -1162,7 +1161,7 @@ docker exec -i {container} redis-cli FLUSHALL
 
 ## Changelog
 
-### Version 3.3.6 (Planned)
+### Version 3.3.9 (Planned)
 - ✨ New: Environment Manager implementation
 - ✨ New: Docker optimization support
 - 🔧 Refactor: IT Utils → Environment Manager
