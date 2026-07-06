@@ -2150,13 +2150,35 @@ function brolit_configuration_file_check() {
             # Fallback: copy template and ask to edit manually
             cp "${brolit_config_template}" "${server_config_file}"
 
-            # Auto-detect Proxmox VM on first run even when wizard is skipped
+            # Auto-detect server type on first run even when wizard is skipped
             # shellcheck source=/root/brolit-shell/libs/local/proxmox_helper.sh
             source "${BROLIT_MAIN_DIR}/libs/local/proxmox_helper.sh" 2>/dev/null || true
-            if proxmox_detect 2>/dev/null; then
+            local detected_server_type
+            detected_server_type="$(server_detect_type 2>/dev/null)"
+
+            case "${detected_server_type}" in
+
+            "proxmox_node")
+                log_event "info" "Proxmox VE node detected, enabling proxmox_mode in fallback config" "false"
+                json_write_field "${server_config_file}" "SERVER_CONFIG.proxmox_mode" "enabled"
+                ;;
+
+            "proxmox_vm")
                 log_event "info" "Proxmox VM detected, enabling proxmox_mode in fallback config" "false"
                 json_write_field "${server_config_file}" "SERVER_CONFIG.proxmox_mode" "enabled"
-            fi
+                ;;
+
+            "vps")
+                log_event "info" "VPS detected, using standard nginx mode in fallback config" "false"
+                json_write_field "${server_config_file}" "SERVER_CONFIG.proxmox_mode" "disabled"
+                ;;
+
+            "baremetal")
+                log_event "info" "Bare metal server detected, using standard nginx mode in fallback config" "false"
+                json_write_field "${server_config_file}" "SERVER_CONFIG.proxmox_mode" "disabled"
+                ;;
+
+            esac
 
             log_event "critical" "Please, edit brolit_conf.json first, and then run the script again." "true"
             exit 1

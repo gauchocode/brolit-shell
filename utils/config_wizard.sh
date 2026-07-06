@@ -21,36 +21,77 @@ source "${BROLIT_MAIN_DIR}/libs/local/proxmox_helper.sh" 2>/dev/null || true
 #   0 if Proxmox detected and configured, 1 otherwise
 ################################################################################
 
-function config_wizard_detect_proxmox() {
+function config_wizard_detect_server_type() {
 
     local config_file="${1}"
+    local server_type
 
-    if ! proxmox_detect 2>/dev/null; then
-        return 1
-    fi
+    server_type="$(server_detect_type 2>/dev/null)"
 
-    log_event "info" "Proxmox VM detected, enabling proxmox_mode" "false"
-    display --indent 6 --text "- Proxmox VM detected" --result "DONE" --color GREEN
+    case "${server_type}" in
 
-    json_write_field "${config_file}" "SERVER_CONFIG.proxmox_mode" "enabled"
+    "proxmox_node")
+        log_event "info" "Proxmox VE node detected" "false"
+        display --indent 6 --text "- Proxmox VE node detected" --result "DONE" --color GREEN
+        display --indent 8 --text "This is the hypervisor. OpenResty should run inside a VM." --tcolor YELLOW
 
-    # Ask for OpenResty VM IP
-    local openresty_vm_ip
-    openresty_vm_ip="$(whiptail --inputbox "Enter OpenResty VM IP (default: 10.2.0.100):" 8 78 "10.2.0.100" 3>&1 1>&2 2>&3)"
-    local exitstatus=$?
+        json_write_field "${config_file}" "SERVER_CONFIG.proxmox_mode" "enabled"
 
-    if [[ ${exitstatus} -eq 0 ]] && [[ -n "${openresty_vm_ip}" ]]; then
-        json_write_field "${config_file}" "SERVER_CONFIG.openresty_vm_ip" "${openresty_vm_ip}"
-    fi
+        # Ask for OpenResty VM IP
+        local openresty_vm_ip
+        openresty_vm_ip="$(whiptail --inputbox "Enter OpenResty VM IP (default: 10.2.0.100):" 8 78 "10.2.0.100" 3>&1 1>&2 2>&3)"
+        local exitstatus=$?
 
-    # Ask for OpenResty VM password (optional)
-    local openresty_vm_pass
-    openresty_vm_pass="$(whiptail --passwordbox "Enter OpenResty VM root password (optional, leave empty for key auth):" 8 78 "" 3>&1 1>&2 2>&3)"
-    exitstatus=$?
+        if [[ ${exitstatus} -eq 0 ]] && [[ -n "${openresty_vm_ip}" ]]; then
+            json_write_field "${config_file}" "SERVER_CONFIG.openresty_vm_ip" "${openresty_vm_ip}"
+        fi
 
-    if [[ ${exitstatus} -eq 0 ]] && [[ -n "${openresty_vm_pass}" ]]; then
-        json_write_field "${config_file}" "SERVER_CONFIG.openresty_vm_pass" "${openresty_vm_pass}"
-    fi
+        # Ask for OpenResty VM password (optional)
+        local openresty_vm_pass
+        openresty_vm_pass="$(whiptail --passwordbox "Enter OpenResty VM root password (optional, leave empty for key auth):" 8 78 "" 3>&1 1>&2 2>&3)"
+        exitstatus=$?
+
+        if [[ ${exitstatus} -eq 0 ]] && [[ -n "${openresty_vm_pass}" ]]; then
+            json_write_field "${config_file}" "SERVER_CONFIG.openresty_vm_pass" "${openresty_vm_pass}"
+        fi
+        ;;
+
+    "proxmox_vm")
+        log_event "info" "Proxmox VM detected, enabling proxmox_mode" "false"
+        display --indent 6 --text "- Proxmox VM detected" --result "DONE" --color GREEN
+
+        json_write_field "${config_file}" "SERVER_CONFIG.proxmox_mode" "enabled"
+
+        # Ask if this VM will run OpenResty
+        if whiptail_message_with_skip_option "OpenResty VM" "Is this VM the OpenResty reverse proxy?"; then
+            display --indent 6 --text "- This VM will run OpenResty" --result "DONE" --color GREEN
+            # No VM IP needed, OpenResty runs locally in this VM
+            json_write_field "${config_file}" "SERVER_CONFIG.openresty_vm_ip" "127.0.0.1"
+        else
+            # Ask for OpenResty VM IP
+            local proxmox_vm_ip
+            proxmox_vm_ip="$(whiptail --inputbox "Enter OpenResty VM IP (default: 10.2.0.100):" 8 78 "10.2.0.100" 3>&1 1>&2 2>&3)"
+            local exitstatus2=$?
+
+            if [[ ${exitstatus2} -eq 0 ]] && [[ -n "${proxmox_vm_ip}" ]]; then
+                json_write_field "${config_file}" "SERVER_CONFIG.openresty_vm_ip" "${proxmox_vm_ip}"
+            fi
+        fi
+        ;;
+
+    "vps")
+        log_event "info" "VPS detected, using standard nginx mode" "false"
+        display --indent 6 --text "- VPS detected" --result "DONE" --color GREEN
+        json_write_field "${config_file}" "SERVER_CONFIG.proxmox_mode" "disabled"
+        ;;
+
+    "baremetal")
+        log_event "info" "Bare metal server detected, using standard nginx mode" "false"
+        display --indent 6 --text "- Bare metal server detected" --result "DONE" --color GREEN
+        json_write_field "${config_file}" "SERVER_CONFIG.proxmox_mode" "disabled"
+        ;;
+
+    esac
 
     return 0
 
@@ -107,8 +148,8 @@ function config_wizard_apply_preset() {
     # Start from template
     cp "${config_template}" "${config_file}"
 
-    # Auto-detect Proxmox VM on first run
-    config_wizard_detect_proxmox "${config_file}"
+    # Auto-detect server type on first run
+    config_wizard_detect_server_type "${config_file}"
 
     case "${preset_name}" in
 
@@ -215,8 +256,8 @@ function config_wizard_advanced() {
     # Start from template
     cp "${config_template}" "${config_file}"
 
-    # Auto-detect Proxmox VM on first run
-    config_wizard_detect_proxmox "${config_file}"
+    # Auto-detect server type on first run
+    config_wizard_detect_server_type "${config_file}"
 
     log_section "Advanced Configuration"
 
