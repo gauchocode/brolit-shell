@@ -1,12 +1,60 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.6
+# Version: 3.9
 ################################################################################
 #
 # Config Wizard: Interactive configuration wizard for brolit_conf.json.
 #
 ################################################################################
+
+# shellcheck source=/root/brolit-shell/libs/local/proxmox_helper.sh
+source "${BROLIT_MAIN_DIR}/libs/local/proxmox_helper.sh" 2>/dev/null || true
+
+################################################################################
+# Detect Proxmox VM and configure proxmox_mode
+#
+# Arguments:
+#   ${1} = ${config_file}
+#
+# Outputs:
+#   0 if Proxmox detected and configured, 1 otherwise
+################################################################################
+
+function config_wizard_detect_proxmox() {
+
+    local config_file="${1}"
+
+    if ! proxmox_detect 2>/dev/null; then
+        return 1
+    fi
+
+    log_event "info" "Proxmox VM detected, enabling proxmox_mode" "false"
+    display --indent 6 --text "- Proxmox VM detected" --result "DONE" --color GREEN
+
+    json_write_field "${config_file}" "SERVER_CONFIG.proxmox_mode" "enabled"
+
+    # Ask for OpenResty VM IP
+    local openresty_vm_ip
+    openresty_vm_ip="$(whiptail --inputbox "Enter OpenResty VM IP (default: 10.2.0.100):" 8 78 "10.2.0.100" 3>&1 1>&2 2>&3)"
+    local exitstatus=$?
+
+    if [[ ${exitstatus} -eq 0 ]] && [[ -n "${openresty_vm_ip}" ]]; then
+        json_write_field "${config_file}" "SERVER_CONFIG.openresty_vm_ip" "${openresty_vm_ip}"
+    fi
+
+    # Ask for OpenResty VM password (optional)
+    local openresty_vm_pass
+    openresty_vm_pass="$(whiptail --passwordbox "Enter OpenResty VM root password (optional, leave empty for key auth):" 8 78 "" 3>&1 1>&2 2>&3)"
+    exitstatus=$?
+
+    if [[ ${exitstatus} -eq 0 ]] && [[ -n "${openresty_vm_pass}" ]]; then
+        json_write_field "${config_file}" "SERVER_CONFIG.openresty_vm_pass" "${openresty_vm_pass}"
+    fi
+
+    return 0
+
+}
 
 ################################################################################
 # Show current configuration
@@ -58,6 +106,9 @@ function config_wizard_apply_preset() {
 
     # Start from template
     cp "${config_template}" "${config_file}"
+
+    # Auto-detect Proxmox VM on first run
+    config_wizard_detect_proxmox "${config_file}"
 
     case "${preset_name}" in
 
@@ -163,6 +214,9 @@ function config_wizard_advanced() {
 
     # Start from template
     cp "${config_template}" "${config_file}"
+
+    # Auto-detect Proxmox VM on first run
+    config_wizard_detect_proxmox "${config_file}"
 
     log_section "Advanced Configuration"
 

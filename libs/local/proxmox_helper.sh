@@ -21,11 +21,37 @@
 function proxmox_detect() {
 
     local vendor
+    local virt
+    local dmi_field
 
-    # Check DMI vendor (QEMU/KVM for Proxmox)
-    if [[ -f /sys/class/dmi/id/sys_vendor ]]; then
-        vendor="$(cat /sys/class/dmi/id/sys_vendor 2>/dev/null)"
-        if [[ "${vendor}" == *"QEMU"* ]] || [[ "${vendor}" == *"Proxmox"* ]]; then
+    # Check DMI vendor fields (QEMU/KVM for Proxmox)
+    for dmi_field in /sys/class/dmi/id/sys_vendor \
+        /sys/class/dmi/id/product_name \
+        /sys/class/dmi/id/board_vendor \
+        /sys/class/dmi/id/bios_vendor \
+        /sys/class/dmi/id/chassis_vendor; do
+
+        if [[ -f "${dmi_field}" ]]; then
+            vendor="$(tr '[:upper:]' '[:lower:]' < "${dmi_field}" 2>/dev/null)"
+            if [[ "${vendor}" == *"proxmox"* ]] || [[ "${vendor}" == *"qemu"* ]] || [[ "${vendor}" == *"kvm"* ]]; then
+                return 0
+            fi
+        fi
+
+    done
+
+    # Check systemd-detect-virt if available
+    if command -v systemd-detect-virt >/dev/null 2>&1; then
+        virt="$(systemd-detect-virt 2>/dev/null | tr '[:upper:]' '[:lower:]')"
+        if [[ "${virt}" == "kvm" ]] || [[ "${virt}" == "qemu" ]]; then
+            return 0
+        fi
+    fi
+
+    # dmidecode fallback
+    if command -v dmidecode >/dev/null 2>&1; then
+        vendor="$(dmidecode -s system-manufacturer 2>/dev/null | tr '[:upper:]' '[:lower:]')"
+        if [[ "${vendor}" == *"proxmox"* ]] || [[ "${vendor}" == *"qemu"* ]] || [[ "${vendor}" == *"kvm"* ]]; then
             return 0
         fi
     fi
