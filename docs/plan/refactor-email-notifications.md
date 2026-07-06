@@ -1,213 +1,213 @@
-# Plan de Refactor: Sistema de Notificaciones por Correo
+# Refactor Plan: Email Notification System
 
-## 📋 Resumen Ejecutivo
+## 📋 Executive Summary
 
-### Contexto
-El sistema de notificaciones de brolit-shell usa un **patrón controller multi-canal** que permite enviar notificaciones a través de Email, Telegram, Discord y ntfy. El refactor se enfoca específicamente en mejorar el canal de Email, que actualmente tiene varias inconsistencias y problemas de mantenibilidad.
+### Context
+The brolit-shell notification system uses a **multi-channel controller pattern** that allows sending notifications via Email, Telegram, Discord, and ntfy. The refactor specifically focuses on improving the Email channel, which currently has several inconsistencies and maintainability issues.
 
-### Problemas Principales
+### Main Issues
 
-1. **❌ Parámetro `notification_type` ignorado**: Email no respeta el tipo de notificación (alert/warning/info/success) a diferencia de otros canales
-2. **❌ Error tipográfico en configuración**: Campo `maila` en vez de `email_to`
-3. **❌ Código duplicado masivo**: 240 líneas de sed repetidas en 4 funciones
-4. **❌ Performance**: 14 operaciones I/O cuando podría ser 1
-5. **❌ Sin manejo de errores**: Fallos silenciosos en construcción de templates
-6. **❌ Limpieza inconsistente**: Archivos temporales huérfanos si falla el envío
+1. **❌ `notification_type` parameter ignored**: Email does not respect the notification type (alert/warning/info/success) unlike other channels
+2. **❌ Typo in configuration**: Field `maila` instead of `email_to`
+3. **❌ Massive code duplication**: 240 lines of sed repeated across 4 functions
+4. **❌ Performance**: 14 I/O operations when it could be 1
+5. **❌ No error handling**: Silent failures in template construction
+6. **❌ Inconsistent cleanup**: Orphaned temporary files if sending fails
 
-### Solución Propuesta
+### Proposed Solution
 
-**5 fases** de refactor que logran:
+**5 phases** of refactoring that achieve:
 
-- ✅ **Paridad con otros canales**: Email respetará `notification_type` igual que Telegram/Discord/ntfy
-- ✅ **-80% código duplicado**: Motor de templates unificado
-- ✅ **-93% operaciones I/O**: De 14 operaciones → 1
-- ✅ **+700% cobertura de errores**: Todas las funciones con manejo robusto
-- ✅ **Templates configurables**: Soporte para múltiples sets de templates
-- ✅ **Backward compatibility**: Migración sin breaking changes
+- ✅ **Parity with other channels**: Email will respect `notification_type` just like Telegram/Discord/ntfy
+- ✅ **-80% duplicated code**: Unified template engine
+- ✅ **-93% I/O operations**: From 14 operations → 1
+- ✅ **+700% error coverage**: All functions with robust handling
+- ✅ **Configurable templates**: Support for multiple template sets
+- ✅ **Backward compatibility**: Migration without breaking changes
 
-### Cronograma
+### Schedule
 
-**Total**: 6-10 días laborales distribuidos en 5 fases
+**Total**: 6-10 business days distributed across 5 phases
 
-### Diagrama: Antes vs Después
+### Diagram: Before vs After
 
-#### ANTES: Problema del notification_type
+#### BEFORE: The notification_type problem
 
 ```text
 send_notification(title, content, "alert")
-    ├─> telegram_send_notification(title, content, "alert") → 🔴 Mensaje rojo de alerta
-    ├─> discord_send_notification(title, content, "alert")  → 🔴 Embed rojo de alerta
-    ├─> mail_send_notification(title, content)              → 📧 Email genérico (ignora tipo)
-    └─> ntfy_send_notification(title, content, "alert")    → 🔴 Notificación roja de alerta
+    ├─> telegram_send_notification(title, content, "alert") → 🔴 Red alert message
+    ├─> discord_send_notification(title, content, "alert")  → 🔴 Red alert embed
+    ├─> mail_send_notification(title, content)              → 📧 Generic email (ignores type)
+    └─> ntfy_send_notification(title, content, "alert")    → 🔴 Red alert notification
 ```
 
-#### DESPUÉS: Paridad entre canales
+#### AFTER: Parity across channels
 
 ```text
 send_notification(title, content, "alert")
-    ├─> telegram_send_notification(title, content, "alert") → 🔴 Mensaje rojo de alerta
-    ├─> discord_send_notification(title, content, "alert")  → 🔴 Embed rojo de alerta
-    ├─> mail_send_notification(title, content, "alert")    → 🔴 Email rojo de alerta
-    └─> ntfy_send_notification(title, content, "alert")    → 🔴 Notificación roja de alerta
+    ├─> telegram_send_notification(title, content, "alert") → 🔴 Red alert message
+    ├─> discord_send_notification(title, content, "alert")  → 🔴 Red alert embed
+    ├─> mail_send_notification(title, content, "alert")    → 🔴 Red alert email
+    └─> ntfy_send_notification(title, content, "alert")    → 🔴 Red alert notification
 ```
 
 ---
 
-## Análisis del Sistema Actual
+## Current System Analysis
 
-### Arquitectura Actual
+### Current Architecture
 
-#### Patrón Multi-Canal (Controller)
-El sistema usa un **patrón controller centralizado** para notificaciones multi-canal:
+#### Multi-Channel Pattern (Controller)
+The system uses a **centralized controller pattern** for multi-channel notifications:
 
 ```
 send_notification(title, content, type)
-    ├─> telegram_send_notification() [si TELEGRAM habilitado]
-    ├─> discord_send_notification()  [si DISCORD habilitado]
-    ├─> mail_send_notification()     [si EMAIL habilitado]
-    └─> ntfy_send_notification()     [si NTFY habilitado]
+    ├─> telegram_send_notification() [if TELEGRAM enabled]
+    ├─> discord_send_notification()  [if DISCORD enabled]
+    ├─> mail_send_notification()     [if EMAIL enabled]
+    └─> ntfy_send_notification()     [if NTFY enabled]
 ```
 
-**Archivos involucrados**:
-- **Controller**: [libs/notification_controller.sh](libs/notification_controller.sh) (56 líneas)
-  - `send_notification(title, content, type)` - Dispatcher principal
-  - **Nota**: `notification_type` (parámetro #3) se ignora en `mail_send_notification()`
-- **Email Core**: [libs/local/mail_notification_helper.sh](libs/local/mail_notification_helper.sh) (532 líneas, 8 funciones)
-- **Config**: [utils/brolit_configuration_manager.sh](utils/brolit_configuration_manager.sh) (líneas 414-464)
-- **Templates**: `/templates/emails/default/` (8 archivos HTML)
+**Files involved**:
+- **Controller**: [libs/notification_controller.sh](libs/notification_controller.sh) (56 lines)
+  - `send_notification(title, content, type)` - Main dispatcher
+  - **Note**: `notification_type` (parameter #3) is ignored in `mail_send_notification()`
+- **Email Core**: [libs/local/mail_notification_helper.sh](libs/local/mail_notification_helper.sh) (532 lines, 8 functions)
+- **Config**: [utils/brolit_configuration_manager.sh](utils/brolit_configuration_manager.sh) (lines 414-464)
+- **Templates**: `/templates/emails/default/` (8 HTML files)
 
-### Herramienta Utilizada
-- **sendEmail** (Perl script) para envío SMTP
-- Soporta TLS/SSL, autenticación SMTP, contenido HTML
+### Tool Used
+- **sendEmail** (Perl script) for SMTP sending
+- Supports TLS/SSL, SMTP authentication, HTML content
 
-### Tipos de Notificaciones
-1. **Reportes de Backup** (uso principal)
-2. **Estado del Servidor** (uptime, disk usage)
-3. **Estado de Paquetes** (actualizaciones disponibles)
-4. **Estado de Certificados SSL** (expiración)
-5. **Alertas y Errores** (malware, checksums, errores de borg)
-6. **Reportes Compuestos** (combinación de todas las secciones)
+### Notification Types
+1. **Backup Reports** (main use)
+2. **Server Status** (uptime, disk usage)
+3. **Package Status** (available updates)
+4. **SSL Certificate Status** (expiration)
+5. **Alerts and Errors** (malware, checksums, borg errors)
+6. **Composite Reports** (combination of all sections)
 
 ---
 
-## Problemas Identificados
+## Identified Issues
 
-### 🔴 Prioridad Alta (Críticos)
+### 🔴 High Priority (Critical)
 
-#### 1. Error tipográfico en configuración
-**Ubicación**: `utils/brolit_configuration_manager.sh:434`
+#### 1. Typo in configuration
+**Location**: `utils/brolit_configuration_manager.sh:434`
 ```bash
 NOTIFICATION_EMAIL_EMAIL_TO="$(json_read_field "${server_config_file}" "NOTIFICATIONS.email[].config[].maila")"
 ```
-**Problema**: Campo llamado `maila` (error de tipeo, debería ser `email` o `email_to`)
-**Impacto**: Inconsistencia en nomenclatura, confusión para usuarios
+**Problem**: Field named `maila` (typo, should be `email` or `email_to`)
+**Impact**: Inconsistency in naming, confusion for users
 
-#### 2. Sin manejo de errores en constructores de secciones
-**Ubicación**: Todas las funciones `mail_*_section()`
-**Problema**: No validan si los templates existen, no retornan códigos de error
-**Impacto**: Fallos silenciosos, difícil debugging
+#### 2. No error handling in section constructors
+**Location**: All `mail_*_section()` functions
+**Problem**: They do not validate whether templates exist, they do not return error codes
+**Impact**: Silent failures, difficult debugging
 
-#### 3. Limpieza de archivos temporales inconsistente
-**Ubicación**: `mail_notification_helper.sh:148`
+#### 3. Inconsistent temporary file cleanup
+**Location**: `mail_notification_helper.sh:148`
 ```bash
 _remove_mail_notifications_files() {
     rm --force "${BROLIT_TMP_DIR}"/*.mail
 }
 ```
-**Problema**: Solo se llama si el envío es exitoso, archivos quedan huérfanos si falla
-**Impacto**: Acumulación de archivos temporales, potencial leak de información
+**Problem**: Only called if sending succeeds, files are orphaned if it fails
+**Impact**: Accumulation of temporary files, potential information leak
 
-### 🟡 Prioridad Media (Performance)
+### 🟡 Medium Priority (Performance)
 
-#### 4. Ensamblado HTML ineficiente
-**Ubicación**: `cron/backups_tasks.sh:419-432`
+#### 4. Inefficient HTML assembly
+**Location**: `cron/backups_tasks.sh:419-432`
 ```bash
 grep -v "{{server_info}}" "${email_html_file}" >"${email_html_file}_tmp"
 mv "${email_html_file}_tmp" "${email_html_file}"
-# Se repite 7 veces para cada placeholder
+# Repeated 7 times for each placeholder
 ```
-**Problema**: 7 operaciones grep/sed/mv separadas
-**Impacto**: I/O excesivo, lentitud en generación de emails
-**Solución propuesta**: Usar `sed` con múltiples expresiones o `envsubst`
+**Problem**: 7 separate grep/sed/mv operations
+**Impact**: Excessive I/O, slow email generation
+**Proposed solution**: Use `sed` with multiple expressions or `envsubst`
 
-#### 5. Reemplazo de variables en templates duplicado
-**Ubicación**: Cada función `mail_*_section()` usa 7+ operaciones `sed`
-**Problema**: Patrón repetido 4 veces (240+ líneas de código duplicado)
-**Impacto**: Mantenibilidad baja, bugs duplicados
-**Solución propuesta**: Motor de templates unificado
+#### 5. Duplicated template variable replacement
+**Location**: Each `mail_*_section()` function uses 7+ `sed` operations
+**Problem**: Pattern repeated 4 times (240+ lines of duplicated code)
+**Impact**: Low maintainability, duplicated bugs
+**Proposed solution**: Unified template engine
 
-### 🟢 Prioridad Baja (Calidad de Código)
+### 🟢 Low Priority (Code Quality)
 
-#### 6. Templates hardcodeados
+#### 6. Hardcoded templates
 ```bash
 local email_template="default"
 html_server_info_details="$(cat "${BROLIT_MAIN_DIR}/templates/emails/${email_template}/server_info-tpl.html")"
 ```
-**Problema**: Nombre de template hardcodeado en 12+ ubicaciones
-**Impacto**: No configurable, no hay fallbacks
+**Problem**: Template name hardcoded in 12+ locations
+**Impact**: Not configurable, no fallbacks
 
-#### 7. Parámetro `notification_type` ignorado en emails
-**Ubicación**: `notification_controller.sh:45`
+#### 7. `notification_type` parameter ignored in emails
+**Location**: `notification_controller.sh:45`
 ```bash
-# send_notification() recibe 3 parámetros
+# send_notification() receives 3 parameters
 send_notification "${title}" "${content}" "${type}"
-    ├─> telegram_send_notification($1, $2, $3)  # ✓ Usa notification_type
-    ├─> discord_send_notification($1, $2, $3)   # ✓ Usa notification_type
-    ├─> mail_send_notification($1, $2)          # ✗ NO usa notification_type
-    └─> ntfy_send_notification($1, $2, $3)      # ✓ Usa notification_type
+    ├─> telegram_send_notification($1, $2, $3)  # ✓ Uses notification_type
+    ├─> discord_send_notification($1, $2, $3)   # ✓ Uses notification_type
+    ├─> mail_send_notification($1, $2)          # ✗ Does NOT use notification_type
+    └─> ntfy_send_notification($1, $2, $3)      # ✓ Uses notification_type
 ```
-**Problema**:
-- Telegram, Discord y ntfy pueden renderizar alertas diferentes según el tipo (alert/warning/info/success)
-- Email siempre recibe el mismo formato, ignorando el tipo de notificación
-- Inconsistencia entre canales de notificación
+**Problem**:
+- Telegram, Discord, and ntfy can render different alerts based on type (alert/warning/info/success)
+- Email always receives the same format, ignoring the notification type
+- Inconsistency across notification channels
 
-**Impacto**:
-- Emails genéricos sin contexto visual del nivel de urgencia
-- Usuario no puede diferenciar alert vs info en emails
-- UX inconsistente entre canales
+**Impact**:
+- Generic emails without visual context of urgency level
+- User cannot differentiate alert vs info in emails
+- Inconsistent UX across channels
 
-#### 8. Patrones de notificación inconsistentes
-- **Reportes de backup**: HTML estructurado complejo
-- **Alertas simples** (via `send_notification()`): Texto plano sin formato
-- **Restore operations**: Ambos formatos (duplicación)
-**Impacto**: UX inconsistente, código duplicado
+#### 8. Inconsistent notification patterns
+- **Backup reports**: Complex structured HTML
+- **Simple alerts** (via `send_notification()`): Plain text without formatting
+- **Restore operations**: Both formats (duplication)
+**Impact**: Inconsistent UX, duplicated code
 
 ---
 
-## Plan de Refactorización
+## Refactoring Plan
 
-### Fase 1: Correcciones Críticas (1-2 días)
+### Phase 1: Critical Fixes (1-2 days)
 
-#### 1.1 Corregir typo de configuración
-- [ ] Renombrar `maila` → `email_to` en schema JSON
-- [ ] Actualizar `_brolit_configuration_load_email()` en `utils/brolit_configuration_manager.sh:434`
-- [ ] Actualizar documentación de configuración
-- [ ] Mantener compatibilidad backward (leer ambos campos)
+#### 1.1 Fix configuration typo
+- [ ] Rename `maila` → `email_to` in JSON schema
+- [ ] Update `_brolit_configuration_load_email()` in `utils/brolit_configuration_manager.sh:434`
+- [ ] Update configuration documentation
+- [ ] Maintain backward compatibility (read both fields)
 
-#### 1.2 Implementar manejo de errores robusto
-- [ ] Añadir validación de existencia de templates en todas las funciones `mail_*_section()`
-- [ ] Retornar códigos de error desde funciones de construcción
-- [ ] Añadir logging de errores con contexto
-- [ ] Implementar fallback a templates genéricos si falta uno específico
+#### 1.2 Implement robust error handling
+- [ ] Add template existence validation in all `mail_*_section()` functions
+- [ ] Return error codes from construction functions
+- [ ] Add error logging with context
+- [ ] Implement fallback to generic templates if a specific one is missing
 
-#### 1.3 Mejorar gestión de archivos temporales
-- [ ] Crear función `_create_temp_mail_file()` que registre archivos creados
-- [ ] Usar array global para tracking: `MAIL_TEMP_FILES=()`
-- [ ] Implementar trap para cleanup en EXIT/ERR/INT
-- [ ] Añadir timestamp único a nombres de archivos
+#### 1.3 Improve temporary file management
+- [ ] Create `_create_temp_mail_file()` function that registers created files
+- [ ] Use global array for tracking: `MAIL_TEMP_FILES=()`
+- [ ] Implement trap for cleanup on EXIT/ERR/INT
+- [ ] Add unique timestamp to filenames
 
-**Archivos afectados**:
+**Affected files**:
 - `libs/local/mail_notification_helper.sh`
 - `utils/brolit_configuration_manager.sh`
 - `config/brolit/brolit_conf.json`
 
 ---
 
-### Fase 2: Motor de Templates Unificado (2-3 días)
+### Phase 2: Unified Template Engine (2-3 days)
 
-#### 2.1 Crear motor de templates centralizado
+#### 2.1 Create centralized template engine
 
-**Nuevo archivo**: `libs/local/mail_template_engine.sh`
+**New file**: `libs/local/mail_template_engine.sh`
 
 ```bash
 #!/usr/bin/env bash
@@ -335,9 +335,9 @@ mail_template_assemble() {
 }
 ```
 
-#### 2.2 Refactorizar funciones de sección
+#### 2.2 Refactor section functions
 
-**Antes** (`mail_server_status_section()` - 44 líneas):
+**Before** (`mail_server_status_section()` - 44 lines):
 ```bash
 mail_server_status_section() {
     local email_template="default"
@@ -351,7 +351,7 @@ mail_server_status_section() {
 }
 ```
 
-**Después** (8 líneas):
+**After** (8 lines):
 ```bash
 mail_server_status_section() {
     local mail_file="${1}"
@@ -366,18 +366,18 @@ mail_server_status_section() {
 }
 ```
 
-**Reducción de código**: ~80% (de 240 líneas → 48 líneas)
+**Code reduction**: ~80% (from 240 lines → 48 lines)
 
-#### 2.3 Optimizar ensamblado HTML
+#### 2.3 Optimize HTML assembly
 
-**Antes** (backups_tasks.sh):
+**Before** (backups_tasks.sh):
 ```bash
 grep -v "{{server_info}}" "${email_html_file}" >"${email_html_file}_tmp"
 mv "${email_html_file}_tmp" "${email_html_file}"
-# x7 repeticiones
+# x7 repetitions
 ```
 
-**Después**:
+**After**:
 ```bash
 mail_template_assemble "${email_html_file}" "main" \
     "${server_info_mail}" \
@@ -389,26 +389,26 @@ mail_template_assemble "${email_html_file}" "main" \
     "${footer_mail}"
 ```
 
-**Beneficios**:
-- 1 operación de I/O en lugar de 14
-- Código más legible
-- Fácil de extender
+**Benefits**:
+- 1 I/O operation instead of 14
+- More readable code
+- Easy to extend
 
-**Archivos a crear**:
+**Files to create**:
 - `libs/local/mail_template_engine.sh`
 
-**Archivos a modificar**:
-- `libs/local/mail_notification_helper.sh` (refactorizar 4 funciones)
-- `cron/backups_tasks.sh` (simplificar ensamblado)
-- `libs/local/backup_helper.sh` (actualizar llamadas)
+**Files to modify**:
+- `libs/local/mail_notification_helper.sh` (refactor 4 functions)
+- `cron/backups_tasks.sh` (simplify assembly)
+- `libs/local/backup_helper.sh` (update calls)
 
 ---
 
-### Fase 3: Estandarización de Patrones (1-2 días)
+### Phase 3: Pattern Standardization (1-2 days)
 
-#### 3.1 Soportar `notification_type` en `mail_send_notification()`
+#### 3.1 Support `notification_type` in `mail_send_notification()`
 
-**Modificar firma de función** en `libs/local/mail_notification_helper.sh`:
+**Modify function signature** in `libs/local/mail_notification_helper.sh`:
 
 ```bash
 ################################################################################
@@ -426,21 +426,21 @@ function mail_send_notification() {
 
     local email_subject="${1}"
     local email_content="${2}"
-    local notification_type="${3:-info}"  # Default a 'info' si no se especifica
+    local notification_type="${3:-info}"  # Default to 'info' if not specified
 
-    # Si el contenido NO es HTML completo, envolver en template según tipo
+    # If content is NOT complete HTML, wrap in template based on type
     if [[ ! "${email_content}" =~ ^[[:space:]]*\< ]]; then
-        # Es texto plano, usar template según notification_type
+        # It is plain text, use template based on notification_type
         email_content="$(mail_template_render "notification-${notification_type}" \
             "title=${email_subject}" \
             "content=${email_content}")"
     fi
 
-    # ... resto de la función (sin cambios)
+    # ... rest of the function (unchanged)
 }
 ```
 
-**Actualizar controller** en `libs/notification_controller.sh:45`:
+**Update controller** in `libs/notification_controller.sh:45`:
 
 ```bash
 if [[ ${NOTIFICATION_EMAIL_STATUS} == "enabled" ]]; then
@@ -448,18 +448,18 @@ if [[ ${NOTIFICATION_EMAIL_STATUS} == "enabled" ]]; then
 fi
 ```
 
-**Crear templates por tipo** en `/templates/emails/default/`:
-- `notification-alert-tpl.html` (rojo, iconos de error)
-- `notification-warning-tpl.html` (amarillo, iconos de advertencia)
-- `notification-info-tpl.html` (azul, iconos informativos)
-- `notification-success-tpl.html` (verde, iconos de éxito)
+**Create templates by type** in `/templates/emails/default/`:
+- `notification-alert-tpl.html` (red, error icons)
+- `notification-warning-tpl.html` (yellow, warning icons)
+- `notification-info-tpl.html` (blue, informational icons)
+- `notification-success-tpl.html` (green, success icons)
 
-#### 3.2 Unificar formato de notificaciones con funciones helper
+#### 3.2 Unify notification format with helper functions
 
-**Crear helpers de alto nivel** (opcional, para mayor ergonomía):
+**Create high-level helpers** (optional, for better ergonomics):
 
 ```bash
-# Nuevo archivo: libs/local/mail_notification_helpers.sh
+# New file: libs/local/mail_notification_helpers.sh
 
 ################################################################################
 # Send formatted alert email (wrapper for common use case)
@@ -509,18 +509,18 @@ mail_send_report() {
 }
 ```
 
-**Templates nuevos**:
-- `templates/emails/default/alert-tpl.html` (para alertas)
-- `templates/emails/default/report-tpl.html` (para reportes)
+**New templates**:
+- `templates/emails/default/alert-tpl.html` (for alerts)
+- `templates/emails/default/report-tpl.html` (for reports)
 
-#### 3.2 Actualizar llamadas en todo el codebase
+#### 3.2 Update calls across the codebase
 
-**Antes**:
+**Before**:
 ```bash
 send_notification "${SERVER_NAME}" "Website ${project_name} is offline" ""
 ```
 
-**Después**:
+**After**:
 ```bash
 mail_send_alert \
     "${SERVER_NAME} - Website Offline" \
@@ -529,7 +529,7 @@ mail_send_alert \
     "<p>Last check: ${timestamp}</p><p>URL: ${project_url}</p>"
 ```
 
-**Archivos a modificar**:
+**Files to modify**:
 - `cron/uptime_tasks.sh`
 - `cron/security_tasks.sh`
 - `cron/wordpress_tasks.sh`
@@ -537,9 +537,9 @@ mail_send_alert \
 
 ---
 
-### Fase 4: Configuración Mejorada (1 día)
+### Phase 4: Improved Configuration (1 day)
 
-#### 4.1 Esquema de configuración mejorado
+#### 4.1 Improved configuration schema
 
 ```json
 {
@@ -558,7 +558,7 @@ mail_send_alert \
             "smtp_user": "brolit@gmail.com",
             "smtp_user_pass": "app_password_here",
 
-            // Nuevos campos opcionales
+            // New optional fields
             "email_cc": "",
             "email_bcc": "",
             "email_reply_to": "",
@@ -572,10 +572,10 @@ mail_send_alert \
 }
 ```
 
-#### 4.2 Compatibilidad hacia atrás
+#### 4.2 Backward compatibility
 
 ```bash
-# En _brolit_configuration_load_email()
+# In _brolit_configuration_load_email()
 
 # Try new field name first, fallback to old typo
 NOTIFICATION_EMAIL_EMAIL_TO="$(json_read_field "${server_config_file}" "NOTIFICATIONS.email[].config[].email_to")"
@@ -590,17 +590,17 @@ EMAIL_TEMPLATE_SET="${EMAIL_TEMPLATE_SET:-default}"
 export EMAIL_TEMPLATE_SET
 ```
 
-**Archivos a modificar**:
+**Files to modify**:
 - `utils/brolit_configuration_manager.sh`
 - `config/brolit/brolit_conf.json`
 
 ---
 
-### Fase 5: Testing y Documentación (1-2 días)
+### Phase 5: Testing and Documentation (1-2 days)
 
-#### 5.1 Tests unitarios
+#### 5.1 Unit tests
 
-**Nuevo archivo**: `tests/mail_notification_test.sh`
+**New file**: `tests/mail_notification_test.sh`
 
 ```bash
 #!/usr/bin/env bash
@@ -658,16 +658,16 @@ test_email_assembly
 test_config_loading
 ```
 
-#### 5.2 Documentación
+#### 5.2 Documentation
 
-**Nuevo archivo**: `docs/EMAIL_NOTIFICATIONS.md`
+**New file**: `docs/EMAIL_NOTIFICATIONS.md`
 
 ```markdown
 # Email Notifications System
 
 ## Architecture
 
-[Diagrama de arquitectura]
+[Architecture diagram]
 
 ## Configuration
 
@@ -677,7 +677,7 @@ test_config_loading
 2. Configure SMTP settings
 3. Enable notifications
 
-[Ejemplos de configuración para Gmail, SendGrid, Mailgun, etc.]
+[Configuration examples for Gmail, SendGrid, Mailgun, etc.]
 
 ## Custom Templates
 
@@ -702,7 +702,7 @@ test_config_loading
 **Problem**: Emails not sending
 **Solution**: Check SMTP credentials, test with `sendEmail` directly
 
-[Más ejemplos...]
+[More examples...]
 
 ## API Reference
 
@@ -711,10 +711,10 @@ test_config_loading
 #### `mail_send_notification(subject, html_content)`
 Sends an email notification...
 
-[Documentación completa de funciones...]
+[Complete function documentation...]
 ```
 
-**Archivos a crear**:
+**Files to create**:
 - `tests/mail_notification_test.sh`
 - `docs/EMAIL_NOTIFICATIONS.md`
 - `docs/EMAIL_TEMPLATES.md`
@@ -722,44 +722,44 @@ Sends an email notification...
 
 ---
 
-## Métricas de Mejora
+## Improvement Metrics
 
-| Métrica | Antes | Después | Mejora |
+| Metric | Before | After | Improvement |
 |---------|-------|---------|--------|
-| Líneas de código (core) | 532 | ~350 | -34% |
-| Código duplicado | 240 líneas | 48 líneas | -80% |
-| Operaciones I/O (assembly) | 14 | 1 | -93% |
-| Funciones con error handling | 1/8 | 8/8 | +700% |
-| Templates configurables | No | Sí | ∞ |
-| Archivos temp limpiados | Parcial | Siempre | 100% |
-| Cobertura de tests | 0% | 80% | +80% |
+| Lines of code (core) | 532 | ~350 | -34% |
+| Duplicated code | 240 lines | 48 lines | -80% |
+| I/O operations (assembly) | 14 | 1 | -93% |
+| Functions with error handling | 1/8 | 8/8 | +700% |
+| Configurable templates | No | Yes | ∞ |
+| Temp files cleaned up | Partial | Always | 100% |
+| Test coverage | 0% | 80% | +80% |
 
 ---
 
-## Cronograma
+## Schedule
 
-| Fase | Duración | Dependencias |
+| Phase | Duration | Dependencies |
 |------|----------|--------------|
-| Fase 1: Correcciones críticas | 1-2 días | - |
-| Fase 2: Motor de templates | 2-3 días | Fase 1 |
-| Fase 3: Estandarización | 1-2 días | Fase 2 |
-| Fase 4: Configuración mejorada | 1 día | Fase 1 |
-| Fase 5: Testing y docs | 1-2 días | Fases 1-4 |
+| Phase 1: Critical fixes | 1-2 days | - |
+| Phase 2: Template engine | 2-3 days | Phase 1 |
+| Phase 3: Standardization | 1-2 days | Phase 2 |
+| Phase 4: Improved configuration | 1 day | Phase 1 |
+| Phase 5: Testing and docs | 1-2 days | Phases 1-4 |
 
-**Total estimado**: 6-10 días laborales
+**Estimated total**: 6-10 business days
 
 ---
 
-## Estrategia de Migración
+## Migration Strategy
 
-### 1. Compatibilidad hacia atrás
-- Mantener funciones antiguas como deprecated pero funcionales
-- Añadir warnings cuando se usen funciones antiguas
-- Período de transición: 3 meses
+### 1. Backward compatibility
+- Keep old functions as deprecated but functional
+- Add warnings when old functions are used
+- Transition period: 3 months
 
-### 2. Migración gradual
+### 2. Gradual migration
 ```bash
-# Añadir al inicio de mail_notification_helper.sh
+# Add at the beginning of mail_notification_helper.sh
 if [[ "${USE_NEW_EMAIL_SYSTEM:-true}" == "true" ]]; then
     source "${BROLIT_MAIN_DIR}/libs/local/mail_template_engine.sh"
     source "${BROLIT_MAIN_DIR}/libs/local/mail_notification_types.sh"
@@ -767,138 +767,138 @@ fi
 ```
 
 ### 3. Rollback plan
-- Mantener código antiguo comentado
+- Keep old code commented out
 - Feature flag `USE_NEW_EMAIL_SYSTEM`
-- Backup de configuración antes de migración
+- Configuration backup before migration
 
 ---
 
-## Riesgos y Mitigaciones
+## Risks and Mitigations
 
-| Riesgo | Probabilidad | Impacto | Mitigación |
+| Risk | Probability | Impact | Mitigation |
 |--------|--------------|---------|------------|
-| Breaking changes en producción | Media | Alto | Feature flags, testing exhaustivo |
-| Pérdida de notificaciones durante migración | Baja | Alto | Dual sending (old + new) temporalmente |
-| Templates incompatibles | Media | Medio | Validación de templates en startup |
-| Dependencia de envsubst | Baja | Bajo | Fallback a sed manual |
-| Config antigua incompatible | Alta | Medio | Auto-migración + backward compatibility |
+| Breaking changes in production | Medium | High | Feature flags, exhaustive testing |
+| Lost notifications during migration | Low | High | Dual sending (old + new) temporarily |
+| Incompatible templates | Medium | Medium | Template validation on startup |
+| envsubst dependency | Low | Low | Fallback to manual sed |
+| Old incompatible config | High | Medium | Auto-migration + backward compatibility |
 
 ---
 
-## Checklist de Implementación
+## Implementation Checklist
 
-### Fase 1
-- [ ] Corregir typo `maila` → `email_to` con backward compatibility
-- [ ] Añadir validación de templates en todas las funciones
-- [ ] Implementar códigos de retorno de error
-- [ ] Crear sistema de tracking de archivos temporales
-- [ ] Implementar trap para cleanup automático
-- [ ] Testing manual de correcciones
+### Phase 1
+- [ ] Fix typo `maila` → `email_to` with backward compatibility
+- [ ] Add template validation in all functions
+- [ ] Implement error return codes
+- [ ] Create temporary file tracking system
+- [ ] Implement trap for automatic cleanup
+- [ ] Manual testing of fixes
 
-### Fase 2
-- [ ] Crear `libs/local/mail_template_engine.sh`
-- [ ] Implementar `mail_template_render()`
-- [ ] Implementar `mail_template_assemble()`
-- [ ] Refactorizar `mail_server_status_section()`
-- [ ] Refactorizar `mail_package_status_section()`
-- [ ] Refactorizar `mail_certificates_section()`
-- [ ] Refactorizar `mail_backup_section()`
-- [ ] Actualizar `backups_tasks.sh` para usar nuevo ensamblado
-- [ ] Testing de generación de emails
+### Phase 2
+- [ ] Create `libs/local/mail_template_engine.sh`
+- [ ] Implement `mail_template_render()`
+- [ ] Implement `mail_template_assemble()`
+- [ ] Refactor `mail_server_status_section()`
+- [ ] Refactor `mail_package_status_section()`
+- [ ] Refactor `mail_certificates_section()`
+- [ ] Refactor `mail_backup_section()`
+- [ ] Update `backups_tasks.sh` to use new assembly
+- [ ] Test email generation
 
-### Fase 3
-- [ ] Crear `libs/local/mail_notification_types.sh`
-- [ ] Implementar `mail_send_alert()`
-- [ ] Implementar `mail_send_report()`
-- [ ] Crear template `alert-tpl.html`
-- [ ] Crear template `report-tpl.html`
-- [ ] Actualizar `uptime_tasks.sh`
-- [ ] Actualizar `security_tasks.sh`
-- [ ] Actualizar `wordpress_tasks.sh`
-- [ ] Actualizar `restore_backup_helper.sh`
-- [ ] Testing de todos los tipos de notificaciones
+### Phase 3
+- [ ] Create `libs/local/mail_notification_types.sh`
+- [ ] Implement `mail_send_alert()`
+- [ ] Implement `mail_send_report()`
+- [ ] Create template `alert-tpl.html`
+- [ ] Create template `report-tpl.html`
+- [ ] Update `uptime_tasks.sh`
+- [ ] Update `security_tasks.sh`
+- [ ] Update `wordpress_tasks.sh`
+- [ ] Update `restore_backup_helper.sh`
+- [ ] Test all notification types
 
-### Fase 4
-- [ ] Actualizar schema JSON con nuevos campos
-- [ ] Implementar carga de `template_set` configurable
-- [ ] Añadir campos opcionales (CC, BCC, Reply-To)
-- [ ] Script de migración de configuración
-- [ ] Testing de configuración
+### Phase 4
+- [ ] Update JSON schema with new fields
+- [ ] Implement configurable `template_set` loading
+- [ ] Add optional fields (CC, BCC, Reply-To)
+- [ ] Configuration migration script
+- [ ] Test configuration
 
-### Fase 5
-- [ ] Escribir tests unitarios
-- [ ] Escribir documentación de arquitectura
-- [ ] Documentar configuración SMTP para proveedores comunes
-- [ ] Documentar sistema de templates
-- [ ] Crear guía de troubleshooting
-- [ ] Crear ejemplos de uso
-- [ ] Code review completo
-- [ ] Testing de integración end-to-end
+### Phase 5
+- [ ] Write unit tests
+- [ ] Write architecture documentation
+- [ ] Document SMTP configuration for common providers
+- [ ] Document template system
+- [ ] Create troubleshooting guide
+- [ ] Create usage examples
+- [ ] Complete code review
+- [ ] End-to-end integration testing
 
 ---
 
-## Referencias
+## References
 
-### Archivos Clave del Sistema Actual
+### Key Files of the Current System
 - [libs/local/mail_notification_helper.sh](libs/local/mail_notification_helper.sh) - Core email system
 - [libs/notification_controller.sh](libs/notification_controller.sh) - Notification dispatcher
 - [utils/brolit_configuration_manager.sh](utils/brolit_configuration_manager.sh) - Config loader
 - [cron/backups_tasks.sh](cron/backups_tasks.sh) - Main email usage
 
-### Herramientas Externas
+### External Tools
 - sendEmail: https://github.com/mogaal/sendemail
 - envsubst: gettext package
 - jq: JSON processor
 
-### Mejores Prácticas
+### Best Practices
 - HTML Email Design: https://www.campaignmonitor.com/dev-resources/guides/
 - SMTP Best Practices: https://www.socketlabs.com/blog/smtp-best-practices/
 - Email Template Security: https://cheatsheetseries.owasp.org/cheatsheets/Email_Security_Cheat_Sheet.html
 
 ---
 
-## 💡 Ejemplo de Uso: Antes vs Después
+## 💡 Usage Example: Before vs After
 
-### Escenario: Alerta de malware detectado
+### Scenario: Malware alert detected
 
-#### ANTES del refactor
+#### BEFORE refactor
 
 ```bash
-# En cron/security_tasks.sh
+# In cron/security_tasks.sh
 send_notification "${SERVER_NAME}" "Malware detected in ${project_name}" ""
 ```
 
-**Resultado actual**:
+**Current result**:
 
-- Telegram: 🔴 Mensaje rojo con emoji de alerta
-- Discord: 🔴 Embed rojo con icono de peligro
-- Email: 📧 Email de texto plano genérico sin formato
-- ntfy: 🔴 Notificación con prioridad alta
+- Telegram: 🔴 Red message with alert emoji
+- Discord: 🔴 Red embed with danger icon
+- Email: 📧 Generic plain text email without formatting
+- ntfy: 🔴 Notification with high priority
 
-**Problema**: El email no comunica visualmente la urgencia.
+**Problem**: The email does not visually communicate the urgency.
 
-#### DESPUÉS del refactor
+#### AFTER refactor
 
 ```bash
-# En cron/security_tasks.sh (sin cambios en el código!)
+# In cron/security_tasks.sh (no changes to the code!)
 send_notification "${SERVER_NAME}" "Malware detected in ${project_name}" "alert"
 ```
 
-**Resultado mejorado**:
+**Improved result**:
 
-- Telegram: 🔴 Mensaje rojo con emoji de alerta
-- Discord: 🔴 Embed rojo con icono de peligro
-- **Email**: 🔴 **Email HTML rojo con icono de alerta y estilos de urgencia**
-- ntfy: 🔴 Notificación con prioridad alta
+- Telegram: 🔴 Red message with alert emoji
+- Discord: 🔴 Red embed with danger icon
+- **Email**: 🔴 **Red HTML email with alert icon and urgency styles**
+- ntfy: 🔴 Notification with high priority
 
-**Beneficio**: Consistencia visual en todos los canales, sin cambiar código existente.
+**Benefit**: Visual consistency across all channels, without changing existing code.
 
-### Escenario: Reporte de backup con múltiples secciones
+### Scenario: Backup report with multiple sections
 
-#### ANTES del refactor
+#### BEFORE refactor
 
 ```bash
-# En cron/backups_tasks.sh (líneas 419-432)
+# In cron/backups_tasks.sh (lines 419-432)
 grep -v "{{server_info}}" "${email_html_file}" >"${email_html_file}_tmp"
 mv "${email_html_file}_tmp" "${email_html_file}"
 
@@ -921,12 +921,12 @@ grep -v "{{footer}}" "${email_html_file}" >"${email_html_file}_tmp"
 mv "${email_html_file}_tmp" "${email_html_file}"
 ```
 
-**Problemas**: 14 operaciones I/O, 7 archivos temporales, lento, difícil de mantener.
+**Problems**: 14 I/O operations, 7 temporary files, slow, difficult to maintain.
 
-#### DESPUÉS del refactor
+#### AFTER refactor
 
 ```bash
-# En cron/backups_tasks.sh
+# In cron/backups_tasks.sh
 mail_template_assemble "${email_html_file}" "main" \
     "${server_info_mail}" \
     "${packages_mail}" \
@@ -937,20 +937,20 @@ mail_template_assemble "${email_html_file}" "main" \
     "${footer_mail}"
 ```
 
-**Beneficios**: 1 operación I/O, más rápido, más legible, fácil de extender.
+**Benefits**: 1 I/O operation, faster, more readable, easy to extend.
 
 ---
 
-## 🎯 Próximos Pasos
+## 🎯 Next Steps
 
-1. **Revisar este plan** y aprobar/ajustar según sea necesario
-2. **Priorizar fases** (¿todas o solo críticas?)
-3. **Asignar recursos** (¿quién implementará?)
-4. **Definir testing** (¿manual, automatizado, ambos?)
-5. **Planificar deployment** (¿staged rollout, feature flags?)
+1. **Review this plan** and approve/adjust as necessary
+2. **Prioritize phases** (all or only critical?)
+3. **Assign resources** (who will implement?)
+4. **Define testing** (manual, automated, both?)
+5. **Plan deployment** (staged rollout, feature flags?)
 
 ---
 
-**Última actualización**: 2025-11-26
-**Autor**: Claude (Anthropic)
-**Estado**: Plan propuesto - Pendiente de aprobación
+**Last updated**: 2025-11-26
+**Author**: Claude (Anthropic)
+**Status**: Proposed plan - Pending approval
