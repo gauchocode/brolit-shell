@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.6
+# Version: 3.9
 #############################################################################
 
 function test_config_wizard_presets() {
