@@ -68,7 +68,7 @@ BROLIT-SHELL supports Proxmox VE environments with OpenResty as the reverse prox
 * brolit-shell integration: `PROXMOX_MODE=enabled` in config.
 
 ### Enhanced installation support for leading tools
-Experience streamlined setup for a range of exceptional tools including Netdata, Grafana, Loki, Promtail, Portainer, Portainer Agent, Cockpit, Zabbix, and more.
+Experience streamlined setup for a range of exceptional tools including Netdata, Portainer, Portainer Agent, Cockpit, Zabbix, and more.
 
 ### Third party utils
 BROLIT Shell uses some third-party tools:

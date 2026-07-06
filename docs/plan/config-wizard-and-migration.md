@@ -34,7 +34,7 @@ Aplicar preset predefinido. Cada preset es un script que genera valores para las
 | `wordpress` | Servidor WordPress completo | nginx, php, mysql/mariadb, redis, certbot |
 | `docker` | Servidor Docker | docker, portainer |
 | `minimal` | Solo configuración base | Ninguno (solo SERVER_CONFIG) |
-| `monitoring` | Stack de monitoreo | netdata, grafana, loki, promtail |
+| `monitoring` | Stack de monitoreo | netdata |
 
 Flujo:
 1. Mostrar menú de presets
@@ -52,7 +52,7 @@ Configuración sección por sección usando whiptail.
 4. **Notificaciones** - email, telegram, discord, ntfy
 5. **DNS** - Cloudflare
 6. **Seguridad** - firewall (ufw), fail2ban
-7. **Monitoreo** - netdata, grafana, loki, promtail, cockpit
+7. **Monitoreo** - netdata, cockpit
 8. **Docker** - docker, portainer, portainer-agent
 
 Cada sección:
