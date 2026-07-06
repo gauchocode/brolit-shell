@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.3.6
+# Version: 3.3.9
 ################################################################################
 #
 # DEPRECATED: This file has been replaced by Environment Manager.
-# Kept for reference only. Will be removed in version 3.6.0.
+# Kept for reference only. Will be removed in version 3.9.0.
 #
 # Migration:
 #   it_utils_menu() -> environment_manager_menu()

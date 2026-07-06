@@ -26,7 +26,7 @@ VM 101 (10.2.0.101) - OpenResty + API
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.6
+# Version: 3.9
 ################################################################################
 #
 # Proxmox Helper: Detection and utilities for Proxmox VE environments.
@@ -186,7 +186,7 @@ function proxy_get_status() {
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.6
+# Version: 3.9
 ################################################################################
 #
 # OpenResty Installer: Install and configure OpenResty with Lua API.
@@ -439,7 +439,7 @@ function openresty_reconfigure() {
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.6
+# Version: 3.9
 ################################################################################
 #
 # OpenResty Helper: Perform openresty actions via Lua API.
@@ -695,7 +695,7 @@ function openresty_api_status() {
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.6
+# Version: 3.9
 ################################################################################
 #
 # NPM Migration Helper: Migrate from Nginx Proxy Manager to OpenResty.
@@ -1609,7 +1609,7 @@ The `_source_all_scripts()` function auto-sources from `libs/apps/` and `libs/lo
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.6
+# Version: 3.9
 #############################################################################
 
 function test_proxmox_helper_functions() {
@@ -1691,7 +1691,7 @@ function test_proxy_get_status() {
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.6
+# Version: 3.9
 #############################################################################
 
 function test_openresty_helper_functions() {
@@ -1779,7 +1779,7 @@ function test_openresty_api_status() {
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.6
+# Version: 3.9
 #############################################################################
 
 function test_openresty_server_functions() {
@@ -1858,7 +1858,7 @@ function test_openresty_server_delete() {
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.6
+# Version: 3.9
 #############################################################################
 
 function test_npm_migration_functions() {

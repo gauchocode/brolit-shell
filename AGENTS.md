@@ -40,7 +40,7 @@ Full reference: `docs/naming-conventions.md` and `docs/CODE.md`
 
 ## File conventions
 
-- **Header**: `#!/usr/bin/env bash`, then `# Author: GauchoCode`, `# Version: 3.6`, then `# Description` + `################################################################################`
+- **Header**: `#!/usr/bin/env bash`, then `# Author: GauchoCode`, `# Version: 3.9`, then `# Description` + `################################################################################`
 - **Function docs** (required before every function):
   ```bash
   ################################################################################

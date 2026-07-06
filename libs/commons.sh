@@ -59,7 +59,7 @@ function _setup_globals_and_options() {
 
   # Script
   declare -g SCRIPT_N="BROLIT SHELL"
-  declare -g SCRIPT_V="3.8"
+  declare -g SCRIPT_V="3.9"
 
   # Hostname
   declare -g SERVER_NAME="$HOSTNAME"

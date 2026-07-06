@@ -73,7 +73,7 @@
 - [ ] SFTP: Option to create a user jail on sftp_create_user.
         Important:https://www.electricmonk.nl/log/2015/07/13/ssh-chrootdirectory-sftponly-not-working-fixed/
 
-## For release 3.6
+## For release 3.9
 
 - [ ] Core: Extend ufw support.
 - [ ] Core: Extend fail2ban support.
