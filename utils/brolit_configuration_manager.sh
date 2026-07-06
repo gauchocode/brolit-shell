@@ -752,7 +752,12 @@ function _brolit_configuration_load_nginx() {
     declare -g PACKAGES_NGINX_STATUS
     #declare -g PACKAGES_NGINX_CONFIG_PORTS
 
-    declare -g WSERVER="/etc/nginx" # Webserver config files location
+    # Webserver config files location. In Proxmox mode, nginx is not local.
+    if [[ "${PROXMOX_MODE}" == "enabled" ]]; then
+        declare -g WSERVER="/usr/local/openresty/nginx/conf"
+    else
+        declare -g WSERVER="/etc/nginx"
+    fi
 
     # NGINX
     nginx_bin="$(package_is_installed "nginx")"
