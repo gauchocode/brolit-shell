@@ -2149,6 +2149,15 @@ function brolit_configuration_file_check() {
 
             # Fallback: copy template and ask to edit manually
             cp "${brolit_config_template}" "${server_config_file}"
+
+            # Auto-detect Proxmox VM on first run even when wizard is skipped
+            # shellcheck source=/root/brolit-shell/libs/local/proxmox_helper.sh
+            source "${BROLIT_MAIN_DIR}/libs/local/proxmox_helper.sh" 2>/dev/null || true
+            if proxmox_detect 2>/dev/null; then
+                log_event "info" "Proxmox VM detected, enabling proxmox_mode in fallback config" "false"
+                json_write_field "${server_config_file}" "SERVER_CONFIG.proxmox_mode" "enabled"
+            fi
+
             log_event "critical" "Please, edit brolit_conf.json first, and then run the script again." "true"
             exit 1
 
