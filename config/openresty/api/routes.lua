@@ -10,6 +10,10 @@ local _M = {}
 -- Config paths
 local SITES_AVAILABLE = "/usr/local/openresty/nginx/conf/sites-available"
 local SITES_ENABLED = "/usr/local/openresty/nginx/conf/sites-enabled"
+local LOG_DIR = "/var/log/openresty"
+local WEBROOT_DIR = "/var/www/certbot"
+local SNIPPETS_DIR = "/usr/local/openresty/nginx/conf/snippets"
+local LETSENCRYPT_DIR = "/etc/letsencrypt/live"
 
 -- Execute shell command and return output
 local function shell(cmd)
@@ -121,11 +125,11 @@ function _M.generate_config(data)
     listen 443 ssl http2;
     server_name ]] .. domain .. [[;
 
-    ssl_certificate /etc/letsencrypt/live/]] .. domain .. [[/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/]] .. domain .. [[/privkey.pem;
+    ssl_certificate ]] .. LETSENCRYPT_DIR .. [[/]] .. domain .. [[/fullchain.pem;
+    ssl_certificate_key ]] .. LETSENCRYPT_DIR .. [[/]] .. domain .. [[/privkey.pem;
 
     access_log off;
-    error_log /var/log/nginx/]] .. domain .. [[.error.log;
+    error_log ]] .. LOG_DIR .. [[/]] .. domain .. [[.error.log;
 
     keepalive_timeout 70;
     client_max_body_size 50m;
@@ -165,7 +169,7 @@ server {
     server_name ]] .. domain .. [[;
 
     location /.well-known/acme-challenge/ {
-        root /var/www/certbot;
+        root ]] .. WEBROOT_DIR .. [[;
     }
 
     location / {
@@ -178,25 +182,26 @@ server {
 
     elseif route_type == "wordpress" then
         local php_version = data.php_version or "8.2"
+        local php_upstream = data.php_upstream or "unix:/run/php/php" .. php_version .. "-fpm.sock"
         return [[server {
     listen 443 ssl http2;
     server_name ]] .. domain .. [[;
     root /var/www/]] .. domain .. [[;
     index index.php;
 
-    ssl_certificate /etc/letsencrypt/live/]] .. domain .. [[/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/]] .. domain .. [[/privkey.pem;
+    ssl_certificate ]] .. LETSENCRYPT_DIR .. [[/]] .. domain .. [[/fullchain.pem;
+    ssl_certificate_key ]] .. LETSENCRYPT_DIR .. [[/]] .. domain .. [[/privkey.pem;
 
     access_log off;
-    error_log /var/log/nginx/]] .. domain .. [[.error.log;
+    error_log ]] .. LOG_DIR .. [[/]] .. domain .. [[.error.log;
 
     location / {
         try_files $uri $uri/ /index.php?q=$uri&$args;
     }
 
     location ~ \.php$ {
-        include snippets/fastcgi-php.conf;
-        fastcgi_pass unix:/run/php/php]] .. php_version .. [[-fpm.sock;
+        include ]] .. SNIPPETS_DIR .. [[/fastcgi-php.conf;
+        fastcgi_pass ]] .. php_upstream .. [[;
     }
 }
 
@@ -205,7 +210,7 @@ server {
     server_name ]] .. domain .. [[;
 
     location /.well-known/acme-challenge/ {
-        root /var/www/certbot;
+        root ]] .. WEBROOT_DIR .. [[;
     }
 
     location / {
