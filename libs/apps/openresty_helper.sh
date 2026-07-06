@@ -532,7 +532,7 @@ function openresty_create_empty_nginx_conf() {
 
     local path="${1}"
 
-    openresty_vm_exec "if [[ -d ${path} \u0026\u0026 ! -f ${path}/nginx.conf ]]; then touch ${path}/nginx.conf \u0026\u0026 exit 0; else exit 1; fi"
+    openresty_vm_exec "if [[ -d ${path} && ! -f ${path}/nginx.conf ]]; then touch ${path}/nginx.conf && exit 0; else exit 1; fi"
 
 }
 
@@ -562,7 +562,7 @@ function openresty_generate_encrypted_auth() {
     log_event "info" "User: ${user}" "false"
     log_event "info" "Saving auth data on: /usr/local/openresty/nginx/.passwords" "false"
 
-    openresty_vm_exec "printf '${user}:${encrypted_psw}' > /usr/local/openresty/nginx/.passwords \u0026\u0026 chmod 640 /usr/local/openresty/nginx/.passwords \u0026\u0026 chown www-data:www-data /usr/local/openresty/nginx/.passwords"
+    openresty_vm_exec "printf '${user}:${encrypted_psw}' > /usr/local/openresty/nginx/.passwords && chmod 640 /usr/local/openresty/nginx/.passwords && chown www-data:www-data /usr/local/openresty/nginx/.passwords"
 
 }
 

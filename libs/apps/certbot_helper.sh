@@ -316,52 +316,6 @@ function certbot_setup_webroot_vm() {
 }
 
 ################################################################################
-# Setup Cloudflare credentials on OpenResty VM
-#
-# Arguments:
-#  none
-#
-# Outputs:
-#  0 if ok, 1 on error.
-################################################################################
-
-function certbot_setup_cloudflare_vm() {
-
-  if [[ "${PROXMOX_MODE}" != "enabled" ]] || [[ -z "${OPENRESTY_VM_IP}" ]]; then
-    return 0
-  fi
-
-  if [[ "${SUPPORT_CLOUDFLARE_STATUS}" != "enabled" ]] || [[ -z "${SUPPORT_CLOUDFLARE_EMAIL}" ]]; then
-    return 0
-  fi
-
-  local cloudflare_conf="/root/.cloudflare.ini"
-
-  # Create local temp file
-  local tmp_conf="/tmp/cloudflare_ini_$$.ini"
-  cat > "${tmp_conf}" << EOF
-dns_cloudflare_email = ${SUPPORT_CLOUDFLARE_EMAIL}
-dns_cloudflare_api_key = ${SUPPORT_CLOUDFLARE_API_KEY}
-EOF
-
-  # Copy to VM
-  openresty_vm_scp "${tmp_conf}" "root@${OPENRESTY_VM_IP}:${cloudflare_conf}"
-  local result=$?
-  rm -f "${tmp_conf}"
-
-  if [[ ${result} -eq 0 ]]; then
-    # Install certbot-dns-cloudflare on VM if not present
-    openresty_vm_exec "apt-get install -y -qq python3-certbot-dns-cloudflare 2>/dev/null" 2>/dev/null
-    log_event "info" "Cloudflare credentials copied to OpenResty VM" "false"
-    return 0
-  else
-    log_event "error" "Failed to copy Cloudflare credentials to OpenResty VM" "false"
-    return 1
-  fi
-
-}
-
-################################################################################
 # Get certbot account email
 #
 # Arguments:
@@ -822,6 +776,7 @@ function certbot_certificate_renew_test() {
 function certbot_certificate_force_renew() {
 
   local domains="${1}"
+  local email="${2:-}"
 
   local certbot_result
   local certbot_method
@@ -832,6 +787,14 @@ function certbot_certificate_force_renew() {
   first_domain="$(echo "${domains}" | awk '{print $1}')"
   local challenge_type
   challenge_type="$(certbot_get_challenge_type "${first_domain}")"
+
+  # Fallback email
+  if [[ -z "${email}" ]]; then
+    email="$(certbot_get_account_email)"
+  fi
+  if [[ -z "${email}" ]]; then
+    email="${SUPPORT_CLOUDFLARE_EMAIL:-admin@example.com}"
+  fi
 
   # Setup environment for OpenResty VM if needed
   if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
