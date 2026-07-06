@@ -313,11 +313,44 @@ function backup_all_server_configs() {
     log_event "info" "Backing up OpenResty VM configuration" "false"
 
     local openresty_conf_dir
+    local openresty_backup_file
+    local openresty_backup_path
+    local openresty_backup_size
     openresty_conf_dir="$(openresty_get_conf_dir)"
+    openresty_backup_file="openresty-vm-configs-${NOW}.${BACKUP_CONFIG_COMPRESSION_EXTENSION}"
+    openresty_backup_path="${BROLIT_TMP_DIR}/${NOW}/${openresty_backup_file}"
 
-    openresty_vm_exec "tar -czf /tmp/openresty-configs-\$(date +%Y%m%d-%H%M%S).tar.gz -C \$(dirname ${openresty_conf_dir}) \$(basename ${openresty_conf_dir}) /etc/letsencrypt 2>/dev/null" && \
-      display --indent 6 --text "- OpenResty VM config backup" --result "DONE" --color GREEN || \
+    if openresty_vm_exec "tar -czf /tmp/${openresty_backup_file} -C \$(dirname ${openresty_conf_dir}) \$(basename ${openresty_conf_dir}) /etc/letsencrypt 2>/dev/null"; then
+
+      # Copy backup from VM to local temp
+      openresty_vm_scp "root@${OPENRESTY_VM_IP}:/tmp/${openresty_backup_file}" "${openresty_backup_path}"
+      # Cleanup VM temp file
+      openresty_vm_exec "rm -f /tmp/${openresty_backup_file}"
+
+      if [[ -f "${openresty_backup_path}" ]]; then
+        openresty_backup_size="$(du -h "${openresty_backup_path}" | cut -f1)"
+        storage_path="${SERVER_NAME}/server-config/openresty-vm"
+        storage_create_dir "${SERVER_NAME}"
+        storage_create_dir "${SERVER_NAME}/server-config"
+        storage_create_dir "${storage_path}"
+        storage_upload_backup "${openresty_backup_path}" "${storage_path}" "${openresty_backup_size}"
+        if [[ $? -eq 0 ]]; then
+          storage_delete_old_backups "${storage_path}"
+          rm --force "${openresty_backup_path}"
+          backuped_config_list[$backuped_config_index]="openresty-vm;${openresty_backup_size}"
+          backuped_config_index=$((backuped_config_index + 1))
+          display --indent 6 --text "- OpenResty VM config backup" --result "DONE" --color GREEN
+        else
+          rm --force "${openresty_backup_path}"
+          display --indent 6 --text "- OpenResty VM config backup upload" --result "FAIL" --color RED
+        fi
+      else
+        display --indent 6 --text "- OpenResty VM config backup copy" --result "FAIL" --color RED
+      fi
+
+    else
       display --indent 6 --text "- OpenResty VM config backup" --result "FAIL" --color RED
+    fi
 
   fi
 

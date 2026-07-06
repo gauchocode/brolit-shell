@@ -14,15 +14,17 @@ function test_php_helper_funtions() {
 function test_php_set_version_on_config() {
 
     local current_phpv
+    local test_config_file
 
     log_subsection "Test: php_set_version_on_config"
 
     # test file
-    cp "${BROLIT_MAIN_DIR}/config/nginx/sites-available/wordpress_single" "/etc/nginx/sites-available/domain.com.conf"
+    test_config_file="${BROLIT_MAIN_DIR}/tmp/domain.com.conf"
+    cp "${BROLIT_MAIN_DIR}/config/nginx/sites-available/wordpress_single" "${test_config_file}"
 
-    php_set_version_on_config "7.4" "/etc/nginx/sites-available/domain.com.conf"
+    php_set_version_on_config "7.4" "${test_config_file}"
 
-    current_phpv=$(nginx_server_get_current_phpv "/etc/nginx/sites-available/domain.com.conf")
+    current_phpv=$(nginx_server_get_current_phpv "${test_config_file}")
     if [[ ${current_phpv} = "7.4" ]]; then
         display --indent 6 --text "- php_set_version_on_config result ${current_phpv}" --result "PASS" --color WHITE
     else
@@ -31,7 +33,7 @@ function test_php_set_version_on_config() {
     fi
 
     # Clean
-    rm "/etc/nginx/sites-available/domain.com.conf"
+    rm "${test_config_file}"
 
 }
 
