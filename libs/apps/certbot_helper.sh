@@ -690,17 +690,42 @@ function certbot_certificate_renew() {
   local domains="${1}"
 
   local certbot_result
+  local certbot_method
+  certbot_method="$(certbot_get_method)"
+
+  # Detect challenge type (use first domain)
+  local first_domain
+  first_domain="$(echo "${domains}" | awk '{print $1}')"
+  local challenge_type
+  challenge_type="$(certbot_get_challenge_type "${first_domain}")"
+
+  # Setup environment for OpenResty VM if needed
+  if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
+    certbot_setup_webroot_vm
+    if [[ "${challenge_type}" == "dns-cloudflare" ]]; then
+      certbot_setup_cloudflare_vm
+    fi
+  fi
 
   log_event "debug" "Running: certbot renew -d ${domains}" "false"
 
   # Certbot command
-  certbot renew -d "${domains}"
+  if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
+    openresty_vm_exec "certbot renew -d ${domains}"
+  else
+    certbot renew -d "${domains}"
+  fi
 
   certbot_result=$?
   if [[ ${certbot_result} -eq 0 ]]; then
 
     log_event "info" "Certificate renew for ${domains} ok" "false"
     display --indent 6 --text "- Certificate renew" --result "DONE" --color GREEN
+
+    # Reload OpenResty if needed
+    if [[ "${certbot_method}" == "webroot" ]] || [[ "${challenge_type}" == "dns-cloudflare" ]]; then
+      certbot_reload_openresty
+    fi
 
     return 0
 
@@ -735,10 +760,28 @@ function certbot_certificate_renew_test() {
 
   local certbot_result
 
+  # Detect challenge type (use first domain)
+  local first_domain
+  first_domain="$(echo "${domains}" | awk '{print $1}')"
+  local challenge_type
+  challenge_type="$(certbot_get_challenge_type "${first_domain}")"
+
+  # Setup environment for OpenResty VM if needed
+  if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
+    certbot_setup_webroot_vm
+    if [[ "${challenge_type}" == "dns-cloudflare" ]]; then
+      certbot_setup_cloudflare_vm
+    fi
+  fi
+
   log_event "debug" "Running: certbot renew --dry-run -d ${domains}" "false"
 
   # Certbot command
-  certbot renew --dry-run -d "${domains}"
+  if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
+    openresty_vm_exec "certbot renew --dry-run -d ${domains}"
+  else
+    certbot renew --dry-run -d "${domains}"
+  fi
 
   certbot_result=$?
   if [[ ${certbot_result} -eq 0 ]]; then
@@ -1067,11 +1110,25 @@ function certbot_certonly_cloudflare() {
   local email="${1}"
   local domains="${2}"
 
-  log_event "debug" "Running: certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf --non-interactive --agree-tos -m ${email} -d ${domains} --preferred-challenges dns-01" "false"
+  local certbot_cmd
+  local certbot_result
+  local cloudflare_conf="/root/.cloudflare.conf"
 
-  certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf --non-interactive --agree-tos -m "${email}" -d "${domains}" --preferred-challenges dns-01
+  certbot_cmd="certbot certonly --dns-cloudflare --dns-cloudflare-credentials ${cloudflare_conf} --non-interactive --agree-tos -m ${email} -d ${domains} --preferred-challenges dns-01"
 
-  certbot_result=$?
+  log_event "debug" "Running: ${certbot_cmd}" "false"
+
+  if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
+    # Ensure Cloudflare credentials are present on the OpenResty VM
+    certbot_setup_cloudflare_vm
+
+    openresty_vm_exec "${certbot_cmd}"
+    certbot_result=$?
+  else
+    certbot certonly --dns-cloudflare --dns-cloudflare-credentials "${cloudflare_conf}" --non-interactive --agree-tos -m "${email}" -d "${domains}" --preferred-challenges dns-01
+    certbot_result=$?
+  fi
+
   if [[ ${certbot_result} -eq 0 ]]; then
 
     # Log
@@ -1092,7 +1149,11 @@ function certbot_certonly_cloudflare() {
     certbot_certificate_delete_old_config "${domains}"
 
     # Running certbot again
-    certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf -m "${email}" -d "${domains}" --preferred-challenges dns-01
+    if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
+      openresty_vm_exec "${certbot_cmd}"
+    else
+      certbot certonly --dns-cloudflare --dns-cloudflare-credentials "${cloudflare_conf}" -m "${email}" -d "${domains}" --preferred-challenges dns-01
+    fi
 
     certbot_result=$?
     if [[ ${certbot_result} -eq 0 ]]; then
@@ -1111,12 +1172,32 @@ function certbot_certonly_cloudflare() {
       log_event "error" "Certificate installation for ${domains} failed!" "false"
       display --indent 6 --text "- Installing certificate on domains" --result "FAIL" --color RED
       display --indent 8 --text "Please check and then run:" --tcolor RED
-      display --indent 8 --text "certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/.cloudflare.conf -d ${domains}" --tcolor RED
+      display --indent 8 --text "${certbot_cmd}" --tcolor RED
 
       return 1
 
     fi
 
+  fi
+
+}
+
+################################################################################
+# Run certbot certificates command on the right target
+#
+# Arguments:
+#  ${@} = arguments to pass to certbot certificates
+#
+# Outputs:
+#  certbot certificates output.
+################################################################################
+
+function certbot_certificates_output() {
+
+  if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
+    openresty_vm_exec "certbot certificates ${*}"
+  else
+    certbot certificates "${@}"
   fi
 
 }
@@ -1135,7 +1216,7 @@ function certbot_show_certificates_info() {
 
   log_event "debug" "Running: certbot certificates" "false"
 
-  certbot certificates
+  certbot_certificates_output
 
 }
 
@@ -1155,7 +1236,7 @@ function certbot_show_domain_certificates_expiration_date() {
 
   log_event "debug" "Running: certbot certificates --cert-name ${domains}" "false"
 
-  certbot certificates --cert-name "${domains}" | grep 'Expiry' | cut -d ':' -f2 | cut -d ' ' -f2
+  certbot_certificates_output --cert-name "${domains}" | grep 'Expiry' | cut -d ':' -f2 | cut -d ' ' -f2
 
 }
 
@@ -1181,26 +1262,26 @@ function certbot_certificate_valid_days() {
   root_domain="$(domain_get_root "${domain}")"
   subdomain_part="$(domain_get_subdomain_part "${domain}")"
 
-  cert_days="$(certbot certificates --cert-name "${domain}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)"
+  cert_days="$(certbot_certificates_output --cert-name "${domain}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)"
 
   if [[ -z ${cert_days} ]]; then
 
     if [[ ${subdomain_part} == "www" ]]; then
 
-      cert_days="$(certbot certificates --cert-name "${root_domain}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)"
+      cert_days="$(certbot_certificates_output --cert-name "${root_domain}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)"
 
       if [[ -z "${cert_days}" ]]; then
         # New try with -0001
-        cert_days="$(certbot certificates --cert-name "${root_domain}-0001" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)"
+        cert_days="$(certbot_certificates_output --cert-name "${root_domain}-0001" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)"
 
       fi
 
     else
 
-      cert_days="$(certbot certificates --cert-name "www.${root_domain}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)"
+      cert_days="$(certbot_certificates_output --cert-name "www.${root_domain}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)"
 
       if [[ -z ${cert_days} ]]; then
-        cert_days="$(certbot certificates --cert-name "${domain}-0001" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)"
+        cert_days="$(certbot_certificates_output --cert-name "${domain}-0001" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)"
 
       fi
 
@@ -1231,7 +1312,7 @@ function certbot_certificate_get_valid_days() {
 
   local cert_days
 
-  cert_days_output="$(certbot certificates --domain "${domain}" 2>&1)"
+  cert_days_output="$(certbot_certificates_output --domain "${domain}" 2>&1)"
   cert_days="$(echo "${cert_days_output}" | grep -Eo 'VALID: [0-9]+[0-9]' | cut -d ' ' -f 2)"
 
   if [[ -z ${cert_days} ]]; then
@@ -1269,18 +1350,30 @@ function certbot_certificate_delete() {
   if [[ -z ${domains} ]]; then
 
     #Run certbot delete wizard
-    certbot delete
+    if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
+      openresty_vm_exec "certbot delete"
+    else
+      certbot delete
+    fi
 
   else
 
     local certbot_result
 
     # Check if certificate exist
-    certbot_result="$(certbot certificates | grep "${domains}")"
+    if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
+      certbot_result="$(openresty_vm_exec "certbot certificates | grep '${domains}'")"
+    else
+      certbot_result="$(certbot certificates | grep "${domains}")"
+    fi
 
     if [[ -n ${certbot_result} ]]; then
 
-      certbot delete --cert-name "${domains}" --quiet
+      if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
+        openresty_vm_exec "certbot delete --cert-name ${domains} --quiet"
+      else
+        certbot delete --cert-name "${domains}" --quiet
+      fi
 
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then

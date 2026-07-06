@@ -6,7 +6,7 @@ server {
     ssl_certificate_key /etc/letsencrypt/live/domain.com/privkey.pem;
 
     access_log off;
-    error_log /var/log/nginx/domain.com.error.log;
+    error_log /var/log/openresty/domain.com.error.log;
 
     keepalive_timeout 70;
     client_max_body_size 50m;

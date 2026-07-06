@@ -317,11 +317,23 @@ function server_setup() {
     # Configuring server roles
     if [[ ${SERVER_ROLE_WEBSERVER} == "enabled" ]]; then
 
-        if [[ ${PACKAGES_NGINX_STATUS} == "enabled" ]]; then
+        if [[ "${PROXMOX_MODE}" == "enabled" ]]; then
 
-            # Nginx Installer
-            nginx_installer
-            nginx_reconfigure
+            # In Proxmox mode, OpenResty runs inside a VM
+            openresty_installer
+            openresty_reconfigure
+            openresty_new_default_server
+            openresty_create_globals_config
+
+        else
+
+            if [[ ${PACKAGES_NGINX_STATUS} == "enabled" ]]; then
+
+                # Nginx Installer
+                nginx_installer
+                nginx_reconfigure
+
+            fi
 
         fi
 

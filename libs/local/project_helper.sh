@@ -3197,13 +3197,9 @@ function project_update_domain_config() {
         # Enable HTTP/2 only if not already enabled
         # Use nginx_config_file (redirect_domain) for root_domain type, project_domain for single
         if [[ -n "${nginx_config_file}" ]]; then
-          if ! grep -q "listen.*http2" "/etc/nginx/sites-available/${nginx_config_file}"; then
-            nginx_server_add_http2_support "${nginx_config_file}"
-          fi
+          nginx_server_add_http2_support "${nginx_config_file}"
         else
-          if ! grep -q "listen.*http2" "/etc/nginx/sites-available/${project_domain}"; then
-            nginx_server_add_http2_support "${project_domain}"
-          fi
+          nginx_server_add_http2_support "${project_domain}"
         fi
         project_https_enable="true"
       else
@@ -3242,9 +3238,7 @@ function project_update_domain_config() {
       # Use non-interactive mode (true) to avoid prompts during automated restoration
       if certbot_certificate_install_auto "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_domain}" "true"; then
         # Enable HTTP/2 only if not already enabled
-        if ! grep -q "listen.*http2" "/etc/nginx/sites-available/${project_domain}"; then
-          nginx_server_add_http2_support "${project_domain}"
-        fi
+        nginx_server_add_http2_support "${project_domain}"
         project_https_enable="true"
       else
         log_event "warning" "Certbot failed, proceeding with HTTP configuration" "false"
