@@ -67,8 +67,29 @@ function zabbix_installer() {
 
         # Add mysql database user password on Zabbix config file
         sed_output="$(sed -i "s/^DBPassword\=.*/DBPassword=\"zabbix\"/" "/etc/zabbix/zabbix_server.conf")"
-        
-        if [[ ${PACKAGES_NGINX_STATUS} == "enabled" ]]; then
+
+        if [[ "${PROXMOX_MODE}" == "enabled" ]]; then
+
+            # In Proxmox mode, the reverse proxy is OpenResty inside a VM.
+            nginx_server_create "${PACKAGES_ZABBIX_CONFIG_SUBDOMAIN}" "zabbix" "single" "" ""
+
+            if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
+
+                # Extract root domain
+                root_domain="$(domain_get_root "${PACKAGES_ZABBIX_CONFIG_SUBDOMAIN}")"
+
+                cloudflare_set_record "${root_domain}" "${PACKAGES_ZABBIX_CONFIG_SUBDOMAIN}" "A" "false" "${SERVER_IP}"
+
+                if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" ]]; then
+                    # Wait 2 seconds for DNS update
+                    sleep 2
+                    # Let's Encrypt
+                    certbot_certificate_install_auto "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${PACKAGES_ZABBIX_CONFIG_SUBDOMAIN}"
+                fi
+
+            fi
+
+        elif [[ ${PACKAGES_NGINX_STATUS} == "enabled" ]]; then
 
             # Ref: https://github.com/cockpit-project/cockpit/wiki/Proxying-Cockpit-over-NGINX
             nginx_server_create "${PACKAGES_ZABBIX_CONFIG_SUBDOMAIN}" "zabbix" "single" "" ""

@@ -871,7 +871,7 @@ function project_generate_brolit_config() {
   fi
 
   ## Check if file exists
-  project_nginx_conf="/etc/nginx/sites-available/${project_domain}"
+  project_nginx_conf="${WSERVER}/sites-available/${project_domain}"
 
   # TODO: certbot, cloudflare and backup retention options
 
@@ -2295,7 +2295,7 @@ function project_install() {
   [[ -d "/etc/letsencrypt/live/www.${project_domain}" ]] && cert_path="/etc/letsencrypt/live/www.${project_domain}"
 
   # Create project config file
-  project_update_brolit_config "${project_path}" "${project_name}" "${project_stage}" "${project_type} " "enabled" "mysql" "${database_name}" "localhost" "${database_user}" "${database_user_passw}" "${project_domain}" "${project_secondary_subdomain}" "/etc/nginx/sites-available/${project_domain}" "" "${cert_path}"
+  project_update_brolit_config "${project_path}" "${project_name}" "${project_stage}" "${project_type} " "enabled" "mysql" "${database_name}" "localhost" "${database_user}" "${database_user_passw}" "${project_domain}" "${project_secondary_subdomain}" "${WSERVER}/sites-available/${project_domain}" "" "${cert_path}"
 
   # Log
   log_event "info" "New ${project_type} project installation for '${project_domain}' finished ok." "false"
@@ -2374,7 +2374,7 @@ function project_delete_files() {
       display --indent 6 --text "- Deleting project files on server" --result "DONE" --color GREEN
 
       # Make a copy of nginx configuration file
-      copy_files "/etc/nginx/sites-available/${project_domain}" "${BROLIT_TMP_DIR}"
+      copy_files "${WSERVER}/sites-available/${project_domain}" "${BROLIT_TMP_DIR}"
 
       return 0
 

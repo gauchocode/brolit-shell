@@ -1428,7 +1428,7 @@ define('WP_REDIS_HOST','redis');\n" "${project_path}/wordpress/wp-config.php"
     #  $13 = ${project_override_nginx_conf}
     #  $14 = ${project_use_http2}
     #  $15 = ${project_certbot_mode}
-    project_update_brolit_config "${project_path}" "${project_name}" "${project_stage}" "${project_type}" "enabled" "mysql" "${project_database}" "localhost" "${project_database_user}" "${project_database_user_passw}" "${project_domain}" "${project_secondary_subdomain}" "/etc/nginx/sites-available/${project_domain}" "" "${cert_path}"
+    project_update_brolit_config "${project_path}" "${project_name}" "${project_stage}" "${project_type}" "enabled" "mysql" "${project_database}" "localhost" "${project_database_user}" "${project_database_user_passw}" "${project_domain}" "${project_secondary_subdomain}" "${WSERVER}/sites-available/${project_domain}" "" "${cert_path}"
 
     # Log
     log_event "info" "New ${project_type} project installation for '${project_domain}' finished ok." "false"
@@ -2172,7 +2172,7 @@ function docker_project_install_from_git() {
     #  $13 = ${project_override_nginx_conf}
     #  $14 = ${project_use_http2}
     #  $15 = ${project_certbot_mode}
-    project_update_brolit_config "${project_path}" "${project_name}" "${project_stage}" "${project_type}" "enabled" "mysql" "${project_database}" "localhost" "${project_database_user}" "${project_database_user_passw:-}" "${project_domain}" "${project_secondary_subdomain}" "/etc/nginx/sites-available/${project_domain}" "" "${cert_path}"
+    project_update_brolit_config "${project_path}" "${project_name}" "${project_stage}" "${project_type}" "enabled" "mysql" "${project_database}" "localhost" "${project_database_user}" "${project_database_user_passw:-}" "${project_domain}" "${project_secondary_subdomain}" "${WSERVER}/sites-available/${project_domain}" "" "${cert_path}"
 
     # Save Git information in project config
     if [[ -f "${project_path}/project-config.json" ]]; then
