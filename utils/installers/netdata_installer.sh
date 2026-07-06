@@ -422,10 +422,14 @@ function netdata_uninstaller() {
   fi
 
   # Deleting nginx server files
-  if [[ ${PACKAGES_NGINX_STATUS} == "enabled" ]]; then
+  if [[ "${PROXMOX_MODE}" == "enabled" ]] || [[ ${PACKAGES_NGINX_STATUS} == "enabled" ]]; then
 
     ## Search for netdata nginx server file
-    netdata_server_file="$(grep "proxy_pass http://127.0.0.1:19999/" /etc/nginx/sites-available/* | cut -d ":" -f1)"
+    if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
+      netdata_server_file="$(openresty_vm_exec "grep -l 'proxy_pass http://127.0.0.1:19999/' ${WSERVER}/sites-available/* 2>/dev/null | head -1")"
+    else
+      netdata_server_file="$(grep "proxy_pass http://127.0.0.1:19999/" /etc/nginx/sites-available/* | cut -d ":" -f1)"
+    fi
     netdata_server_file_name="$(basename "${netdata_server_file}")"
 
     nginx_server_delete "${netdata_server_file_name}"

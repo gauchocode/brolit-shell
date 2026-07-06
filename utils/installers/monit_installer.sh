@@ -199,7 +199,11 @@ function monit_configure() {
   log_event "info" "Restarting services ..." "false"
 
   # Service restart
-  systemctl restart nginx.service
+  if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
+    openresty_vm_exec "openresty -s reload" || true
+  elif command -v nginx &>/dev/null; then
+    systemctl restart nginx.service
+  fi
   service monit restart
 
   # Log
