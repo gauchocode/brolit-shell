@@ -141,7 +141,7 @@ Choose ONE database engine:
 ```json
 "docker": [{ "status": "enabled" }]
 ```
-- Required for Portainer, Grafana, Loki
+- Required for Portainer
 
 **Portainer (Docker management UI):**
 ```json
@@ -217,32 +217,6 @@ Choose ONE database engine:
         "port": "9090",
         "nginx_proxy": "enabled",
         "subdomain": "cockpit.example.com"
-    }]
-}]
-```
-
-**Promtail (log shipping):**
-```json
-"promtail": [{
-    "status": "enabled",
-    "version": "2.8.3",
-    "config": [{
-        "port": "9080",
-        "hostname": "server-hostname",
-        "loki_url": "http://loki-server-ip",
-        "loki_port": "3100"
-    }]
-}]
-```
-
-**Grafana:**
-```json
-"grafana": [{
-    "status": "enabled",
-    "config": [{
-        "port": "9090",
-        "nginx_proxy": "enabled",
-        "subdomain": "grafana.example.com"
     }]
 }]
 ```
@@ -573,7 +547,6 @@ The `server_setup()` function in `utils/server_setup.sh` handles:
     "PACKAGES": {
         "docker": [{ "status": "enabled" }],
         "nginx": [{ "status": "enabled" }],
-        "grafana": [{ "status": "enabled", "config": [{ "port": "9090", "nginx_proxy": "enabled", "subdomain": "grafana.example.com" }] }],
         "netdata": [{ "status": "enabled", "config": [{ "web_admin": "enabled", "subdomain": "netdata.example.com", "user": "admin", "user_pass": "CHANGE_ME" }] }],
         "certbot": [{ "status": "enabled", "config": [{ "email": "admin@example.com" }] }]
     }
@@ -586,7 +559,7 @@ The `server_setup()` function in `utils/server_setup.sh` handles:
 - **"No server role enabled"**: At least one of `webserver` or `database` should be `"enabled"` in `SERVER_CONFIG.config`.
 - **"No backup method enabled"**: Enable at least one backup method under `BACKUPS.methods`.
 - **Package conflicts**: Do not enable both `mysql` and `mariadb` simultaneously.
-- **Docker-dependent packages**: Portainer, Grafana, Loki require Docker to be enabled.
+- **Docker-dependent packages**: Portainer requires Docker to be enabled.
 - **MySQL root password**: If `/root/.my.cnf` doesn't exist, the script will prompt for the root password.
 
 ## Key Files and Locations

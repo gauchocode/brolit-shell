@@ -25,7 +25,7 @@ Replace manual server management with a single, repeatable tool that handles the
 | WordPress management | WP-CLI wrapper for plugin/theme updates, cache ops, search-replace, security scans |
 | SSL certificate lifecycle | Certbot integration with automatic creation, renewal, and expansion |
 | Security hardening | UFW firewall, Fail2Ban, ClamAV, Wordfence CLI, Lynis audits |
-| Monitoring | Netdata, Monit, Promtail/Loki/Grafana integrations |
+| Monitoring | Netdata, Monit |
 | DNS management | Cloudflare API for DNS records, cache purge, WAF rules |
 | Notifications | Multi-channel alerts (Email, Telegram, Discord, Ntfy) for backup results, security scans, uptime checks |
 
@@ -52,4 +52,4 @@ Configuration is stored in `~/.brolit_conf.json` on each server, managed via the
 
 ## Version
 
-Current version: **3.6**. Maintained by GauchoCode.
+Current version: **3.9**. Maintained by GauchoCode.

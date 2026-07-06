@@ -228,28 +228,6 @@ function server_app_setup() {
 
         ;;
 
-    "promtail")
-
-        if [[ ${PACKAGES_PROMTAIL_STATUS} == "enabled" ]]; then
-            promtail_installer
-        else
-            promtail_purge
-        fi
-
-        ;;
-
-    "loki")
-
-        if [[ ${PACKAGES_LOKI_STATUS} == "enabled" ]]; then
-            #loki_installer
-            echo "Loki installer not implemented yet"
-        else
-            #loki_purge
-            echo "Loki purge not implemented yet"
-        fi
-
-        ;;
-
     "netdata")
 
         if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then

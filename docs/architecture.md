@@ -111,7 +111,7 @@ Manager scripts provide menus (interactive) and task handlers (CLI). Both paths 
 
 ### 6. Installers (`utils/installers/`)
 
-20 individual installers: nginx, openresty, php, mysql, postgres, redis, docker, portainer, certbot, borg, netdata, monit, cockpit, promtail, nodejs, wpcli, wordfencecli, zabbix, dtop.
+19 individual installers: nginx, openresty, php, mysql, postgres, redis, docker, portainer, certbot, borg, netdata, monit, cockpit, nodejs, wpcli, wordfencecli, zabbix, dtop.
 
 ### 7. Cron Tasks (`cron/`)
 
@@ -192,7 +192,7 @@ When `proxmox_mode: "enabled"` in `brolit_conf.json`:
 
 **Required on host:** bash >= 4, jq, whiptail, curl, root access
 
-**Managed services:** nginx, openresty, php-fpm, mysql/mariadb/postgres, redis, docker, certbot, borg, wp-cli, cloudflare API, netdata, monit, ufw, fail2ban, promtail, grafana, portainer, cockpit, zabbix
+**Managed services:** nginx, openresty, php-fpm, mysql/mariadb/postgres, redis, docker, certbot, borg, wp-cli, cloudflare API, netdata, monit, ufw, fail2ban, portainer, cockpit, zabbix
 
 **Proxmox support:** Requires SSH access to VMs running OpenResty (configured via `OPENRESTY_VM_IP` in `brolit_conf.json`).
 

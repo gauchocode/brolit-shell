@@ -1282,7 +1282,7 @@ function borg_update_templates() {
                 local ntfy_password=$(yq -r '.NOTIFICATIONS.ntfy[].config[].password // ""' /root/.brolit_conf.json)
                 local ntfy_server=$(yq -r '.NOTIFICATIONS.ntfy[].config[].server // ""' /root/.brolit_conf.json)
                 local ntfy_topic=$(yq -r '.NOTIFICATIONS.ntfy[].config[].topic // ""' /root/.brolit_conf.json)
-                local loki_url=$(yq -r '.constants.loki_url // ""' "${config_file}")
+
                 
                 # Usar hostname del sistema
                 local hostname=$(hostname)
@@ -1295,7 +1295,7 @@ function borg_update_templates() {
                 log_event "debug" "Using system hostname: $(hostname)" "false"
                 
                 # Mostrar valores leídos
-                log_event "debug" "Final values: project='${project}', group='${group}', hostname='${hostname}', ntfy_server='${ntfy_server}', ntfy_username='${ntfy_username}', loki_url='${loki_url}'" "false"
+                log_event "debug" "Final values: project='${project}', group='${group}', hostname='${hostname}', ntfy_server='${ntfy_server}', ntfy_username='${ntfy_username}'" "false"
                 
                 declare -A server_user
                 declare -A server_server
@@ -1395,21 +1395,7 @@ function borg_update_templates() {
                         log_event "error" "Failed to update ntfy_topic constant" "false"
                     fi
                 fi
-                
-                if [[ -n "${loki_url}" && "${loki_url}" != "null" ]]; then
-                    if yq -i ".constants.loki_url = \"${loki_url}\"" "${temp_file}"; then
-                        log_event "info" "Successfully updated loki_url constant" "false"
-                    else
-                        display --indent 10 --text "loki_url: ${loki_url} [FAIL]" --tcolor RED
-                        log_event "error" "Failed to update loki_url constant" "false"
-                    fi
-                fi
-                
-                # Remove loki section if loki_url is not set
-                if [[ -z "${loki_url}" || "${loki_url}" == "null" ]]; then
-                    yq -i 'del(.loki)' "${temp_file}"
-                fi
-                
+
                 # Restore server-specific constants
                 for i in $(seq 1 "${number_of_servers}"); do
 
