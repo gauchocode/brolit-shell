@@ -1,184 +1,184 @@
-# Plan: Wizard de Configuración + Migración Inteligente de Config
+# Plan: Configuration Wizard + Smart Config Migration
 
-## Contexto
+## Context
 
-Actualmente, brolit-shell tiene un archivo de configuración (`~/.brolit_conf.json`) que se carga desde `config/brolit/brolit_conf.json` como template. Cuando el archivo no existe, se copia el template y se le dice al usuario que lo edite manualmente. Cuando la versión no coincide, simplemente falla con un error. No existe forma de migrar configuraciones entre versiones.
+Currently, brolit-shell has a configuration file (`~/.brolit_conf.json`) that is loaded from `config/brolit/brolit_conf.json` as a template. When the file does not exist, the template is copied and the user is told to edit it manually. When the version does not match, it simply fails with an error. There is no way to migrate configurations between versions.
 
-**Problemas actuales:**
-- `brolit_configuration_file_check()` en `utils/brolit_configuration_manager.sh:2063` solo copia el template y falla
-- No hay wizard interactivo para generar la configuración
-- No hay forma de migrar entre versiones sin perder valores existentes
+**Current problems:**
+- `brolit_configuration_file_check()` in `utils/brolit_configuration_manager.sh:2063` only copies the template and fails
+- There is no interactive wizard to generate the configuration
+- There is no way to migrate between versions without losing existing values
 
-## Feature 1: Wizard de Configuración Rápida
+## Feature 1: Quick Configuration Wizard
 
-### Archivo nuevo: `utils/config_wizard.sh`
+### New file: `utils/config_wizard.sh`
 
-### Funciones
+### Functions
 
 #### 1. `config_wizard_menu()`
-Menú principal del wizard con whiptail.
+Main wizard menu using whiptail.
 
-Opciones:
-- 1: Configuración rápida (preset)
-- 2: Configuración avanzada (sección por sección)
-- 3: Ver configuración actual
-- 4: Salir
+Options:
+- 1: Quick configuration (preset)
+- 2: Advanced configuration (section by section)
+- 3: View current configuration
+- 4: Exit
 
 #### 2. `config_wizard_apply_preset()`
-Aplicar preset predefinido. Cada preset es un script que genera valores para las secciones del template.
+Apply a predefined preset. Each preset is a script that generates values for the template sections.
 
-**Presets disponibles:**
+**Available presets:**
 
-| Preset | Descripción | Paquetes habilitados |
-|--------|-------------|---------------------|
-| `wordpress` | Servidor WordPress completo | nginx, php, mysql/mariadb, redis, certbot |
-| `docker` | Servidor Docker | docker, portainer |
-| `minimal` | Solo configuración base | Ninguno (solo SERVER_CONFIG) |
-| `monitoring` | Stack de monitoreo | netdata |
+| Preset | Description | Enabled packages |
+|--------|-------------|------------------|
+| `wordpress` | Complete WordPress server | nginx, php, mysql/mariadb, redis, certbot |
+| `docker` | Docker server | docker, portainer |
+| `minimal` | Base configuration only | None (only SERVER_CONFIG) |
+| `monitoring` | Monitoring stack | netdata |
 
-Flujo:
-1. Mostrar menú de presets
-2. Pedir datos mínimos (timezone, email certbot si aplica)
-3. Generar config basada en template + valores del preset
-4. Guardar en `~/.brolit_conf.json`
+Flow:
+1. Show preset menu
+2. Ask for minimal data (timezone, certbot email if applicable)
+3. Generate config based on template + preset values
+4. Save to `~/.brolit_conf.json`
 
 #### 3. `config_wizard_advanced()`
-Configuración sección por sección usando whiptail.
+Section-by-section configuration using whiptail.
 
-**Secciones:**
-1. **Servidor** - timezone, roles (webserver/database)
-2. **Paquetes base** - nginx, php (version, extensions), mysql/mariadb/postgres, redis
-3. **Backups** - método (sftp/borg/local/dropbox), retención, compresión
-4. **Notificaciones** - email, telegram, discord, ntfy
+**Sections:**
+1. **Server** - timezone, roles (webserver/database)
+2. **Base packages** - nginx, php (version, extensions), mysql/mariadb/postgres, redis
+3. **Backups** - method (sftp/borg/local/dropbox), retention, compression
+4. **Notifications** - email, telegram, discord, ntfy
 5. **DNS** - Cloudflare
-6. **Seguridad** - firewall (ufw), fail2ban
-7. **Monitoreo** - netdata, cockpit
+6. **Security** - firewall (ufw), fail2ban
+7. **Monitoring** - netdata, cockpit
 8. **Docker** - docker, portainer, portainer-agent
 
-Cada sección:
-- Muestra whiptail_input para campos de texto
-- Muestra whiptail_selection_menu para opciones
-- Valida campos requeridos antes de continuar
-- Permite saltar secciones
+Each section:
+- Shows whiptail_input for text fields
+- Shows whiptail_selection_menu for options
+- Validates required fields before continuing
+- Allows skipping sections
 
 #### 4. `config_wizard_show_current()`
-Muestra la configuración actual de forma legible (formateada con `jq .`).
+Shows the current configuration in a readable format (formatted with `jq .`).
 
-### Template base
+### Base template
 
-Se usa `config/brolit/brolit_conf.json` como base. El wizard:
-1. Copia el template
-2. Sobrescribe valores según preset o input del usuario
-3. Actualiza la versión en `BROLIT_SETUP.config[].version`
+`config/brolit/brolit_conf.json` is used as the base. The wizard:
+1. Copies the template
+2. Overwrites values according to preset or user input
+3. Updates the version in `BROLIT_SETUP.config[].version`
 
-## Feature 2: Migración Inteligente de Config
+## Feature 2: Smart Config Migration
 
-### Archivo nuevo: `utils/config_migration.sh`
+### New file: `utils/config_migration.sh`
 
-### Funciones
+### Functions
 
 #### 1. `config_migration_check()`
-Detecta si migración es necesaria.
+Detects whether migration is necessary.
 
 ```
 Arguments:
-  ${1} = config_file (path al config instalado)
+  ${1} = config_file (path to installed config)
 
 Returns:
-  0 = necesita migración
-  1 = no necesita migración
+  0 = migration needed
+  1 = no migration needed
   Sets globals: MIGRATION_NEEDED, CURRENT_VERSION, TARGET_VERSION
 ```
 
-Compara `BROLIT_SETUP.config[].version` del config instalado vs template.
+Compares `BROLIT_SETUP.config[].version` of the installed config vs template.
 
 #### 2. `config_migration_diff()`
-Calcula diferencias entre config actual y template.
+Calculates differences between current config and template.
 
 ```
 Arguments:
-  ${1} = config_file (actual)
-  ${2} = config_template (nuevo)
+  ${1} = config_file (current)
+  ${2} = config_template (new)
 
 Outputs:
-  Arrays globales:
-  - MIGRATION_FIELDS_ADDED: campos nuevos en template
-  - MIGRATION_FIELDS_REMOVED: campos eliminados del template
-  - MIGRATION_FIELDS_RENAMED: campos renombrados (legacy mapping)
+  Global arrays:
+  - MIGRATION_FIELDS_ADDED: new fields in template
+  - MIGRATION_FIELDS_REMOVED: fields removed from template
+  - MIGRATION_FIELDS_RENAMED: renamed fields (legacy mapping)
 ```
 
-Usa `jq` para comparar estructuras JSON recursivamente.
+Uses `jq` to compare JSON structures recursively.
 
 #### 3. `config_migration_merge()`
-Merge inteligente de configuraciones.
+Smart merge of configurations.
 
 ```
 Arguments:
-  ${1} = config_file (actual)
-  ${2} = config_template (nuevo)
+  ${1} = config_file (current)
+  ${2} = config_template (new)
 
 Outputs:
-  Config resultante (actualiza config_file in-place)
+  Resulting config (updates config_file in-place)
 ```
 
-Algoritmo:
-1. Copia config actual como base
-2. Para cada campo en template:
-   - Si existe en actual: preservar valor
-   - Si es nuevo: agregar con valor del template
-   - Si fue renombrado (legacy mapping): migrar valor
-3. Actualizar versión
+Algorithm:
+1. Copy current config as base
+2. For each field in template:
+   - If it exists in current: preserve value
+   - If it is new: add with template value
+   - If it was renamed (legacy mapping): migrate value
+3. Update version
 
 #### 4. `config_migration_apply()`
-Aplica la migración completa.
+Applies the complete migration.
 
 ```
 Arguments:
   ${1} = config_file
 
 Steps:
-  1. Crear backup: ${config_file}.bak.$(date +%Y%m%d)
-  2. Ejecutar config_migration_merge()
-  3. Validar resultado con jq
-  4. Actualizar versión
+  1. Create backup: ${config_file}.bak.$(date +%Y%m%d)
+  2. Run config_migration_merge()
+  3. Validate result with jq
+  4. Update version
 ```
 
 #### 5. `config_migration_show_diff()`
-Muestra diferencias al usuario con whiptail.
+Shows differences to the user with whiptail.
 
 ```
 Arguments:
-  ${1} = config_file (actual)
-  ${2} = config_template (nuevo)
+  ${1} = config_file (current)
+  ${2} = config_template (new)
 
 Outputs:
-  Whiptail mostrando:
-  - Campos nuevos (agregados automáticamente)
-  - Campos eliminados (se mantienen por compatibilidad)
-  - Campos renombrados (migrados)
+  Whiptail showing:
+  - New fields (added automatically)
+  - Removed fields (kept for compatibility)
+  - Renamed fields (migrated)
 ```
 
 ### Legacy Mapping
 
-Para manejar campos renombrados entre versiones:
+To handle renamed fields between versions:
 
 ```bash
 declare -A CONFIG_FIELD_MIGRATIONS=(
     ["NOTIFICATIONS.email[].config[].maila"]="NOTIFICATIONS.email[].config[].email_to"
-    # Agregar más migraciones aquí según sea necesario
+    # Add more migrations here as needed
 )
 ```
 
-La función `config_migration_merge()` consulta este array para migrar valores automáticamente.
+The `config_migration_merge()` function queries this array to migrate values automatically.
 
-## Archivos a Modificar
+## Files to Modify
 
 ### `utils/brolit_configuration_manager.sh`
 
-Modificar `brolit_configuration_file_check()` (línea 2063):
+Modify `brolit_configuration_file_check()` (line 2063):
 
 ```bash
-# ANTES:
+# BEFORE:
 if [[ ${brolit_installed_config_version} != "${brolit_release_config_version}" ]]; then
     log_event "error" "Brolit config version outdated! Please regenerate config file." "false"
     display --indent 6 --text "- Checking Brolit config version" --result "WARNING" --color YELLOW
@@ -186,12 +186,12 @@ if [[ ${brolit_installed_config_version} != "${brolit_release_config_version}" ]
     exit 1
 fi
 
-# DESPUÉS:
+# AFTER:
 if [[ ${brolit_installed_config_version} != "${brolit_release_config_version}" ]]; then
     log_event "warning" "Brolit config version outdated" "false"
     display --indent 6 --text "- Checking Brolit config version" --result "OUTDATED" --color YELLOW
     
-    # Ofrecer migración
+    # Offer migration
     source "${BROLIT_MAIN_DIR}/utils/config_migration.sh"
     config_migration_check "${server_config_file}"
     
@@ -209,20 +209,20 @@ if [[ ${brolit_installed_config_version} != "${brolit_release_config_version}" ]
 fi
 ```
 
-También modificar la sección donde no existe el config (línea 2084):
+Also modify the section where the config does not exist (line 2084):
 
 ```bash
-# ANTES: solo copia template
+# BEFORE: only copy template
 cp "${brolit_config_template}" "${server_config_file}"
 log_event "critical" "Please, edit brolit_conf.json first, and then run the script again." "true"
 exit 1
 
-# DESPUÉS: ofrecer wizard
+# AFTER: offer wizard
 source "${BROLIT_MAIN_DIR}/utils/config_wizard.sh"
 if whiptail_message_with_skip_option "BROLIT Setup" "Config file not found. Do you want to run the configuration wizard?"; then
     config_wizard_menu
 else
-    # Fallback: copiar template
+    # Fallback: copy template
     cp "${brolit_config_template}" "${server_config_file}"
     log_event "critical" "Please, edit brolit_conf.json first, and then run the script again." "true"
     exit 1
@@ -231,7 +231,7 @@ fi
 
 ### `libs/commons.sh`
 
-Agregar opción al menú principal en `menu_main_options()` (línea 1867):
+Add option to main menu in `menu_main_options()` (line 1867):
 
 ```bash
 runner_options=(
@@ -245,11 +245,11 @@ runner_options=(
     "08)" "CLOUDFLARE MANAGER"
     "09)" "IT UTILS"
     "10)" "CRON TASKS"
-    "11)" "CONFIGURATION WIZARD"    # NUEVO
+    "11)" "CONFIGURATION WIZARD"    # NEW
 )
 ```
 
-Y el handler correspondiente:
+And the corresponding handler:
 
 ```bash
 # CONFIGURATION WIZARD
@@ -261,7 +261,7 @@ fi
 
 ### `libs/task_runner.sh`
 
-Agregar flag `--wizard` en `flags_handler()` (después de línea 833):
+Add `--wizard` flag in `flags_handler()` (after line 833):
 
 ```bash
 -wiz | --wizard)
@@ -269,7 +269,7 @@ Agregar flag `--wizard` en `flags_handler()` (después de línea 833):
     ;;
 ```
 
-Agregar caso en `tasks_handler()`:
+Add case in `tasks_handler()`:
 
 ```bash
 config-wizard)
@@ -279,22 +279,22 @@ config-wizard)
     ;;
 ```
 
-## Estructura de Archivos
+## File Structure
 
 ```
 utils/
-├── config_wizard.sh              # NUEVO - Wizard de configuración
-├── config_migration.sh           # NUEVO - Sistema de migración
-└── brolit_configuration_manager.sh  # MODIFICADO - integrar migración
+├── config_wizard.sh              # NEW - Configuration wizard
+├── config_migration.sh           # NEW - Migration system
+└── brolit_configuration_manager.sh  # MODIFIED - integrate migration
 
 libs/
-├── commons.sh                    # MODIFICADO - agregar opción al menú
-└── task_runner.sh                # MODIFICADO - agregar flag --wizard
+├── commons.sh                    # MODIFIED - add menu option
+└── task_runner.sh                # MODIFIED - add --wizard flag
 ```
 
-## Orden de Implementación
+## Implementation Order
 
-1. **`utils/config_migration.sh`** (prioridad alta - se necesita antes del wizard)
+1. **`utils/config_migration.sh`** (high priority - needed before the wizard)
    - `config_migration_check()`
    - `config_migration_diff()`
    - `config_migration_merge()`
@@ -307,44 +307,44 @@ libs/
    - `config_wizard_advanced()`
    - `config_wizard_show_current()`
 
-3. **Integración**
-   - Modificar `brolit_configuration_file_check()` en `utils/brolit_configuration_manager.sh`
-   - Agregar opción "11) CONFIGURATION WIZARD" al menú en `libs/commons.sh`
-   - Agregar flag `--wizard` al CLI en `libs/task_runner.sh`
+3. **Integration**
+   - Modify `brolit_configuration_file_check()` in `utils/brolit_configuration_manager.sh`
+   - Add "11) CONFIGURATION WIZARD" option to menu in `libs/commons.sh`
+   - Add `--wizard` flag to CLI in `libs/task_runner.sh`
 
 4. **Tests**
    - `tests/test_config_migration.sh`
    - `tests/test_config_wizard.sh`
 
-## Validación
+## Validation
 
-- Verificar que configs generadas son válidas: `jq . ~/.brolit_conf.json`
-- Test de migración: crear config versión vieja, migrar, verificar resultado
-- Test de presets: generar config con cada preset, verificar campos requeridos
-- Test de legacy mapping: verificar que campos renombrados se migran correctamente
+- Verify that generated configs are valid: `jq . ~/.brolit_conf.json`
+- Migration test: create old version config, migrate, verify result
+- Preset test: generate config with each preset, verify required fields
+- Legacy mapping test: verify that renamed fields are migrated correctly
 
-## Flujo de Uso
+## Usage Flow
 
-### Nuevo usuario
-1. Ejecuta `./runner.sh`
-2. No existe config → se ofrece wizard
-3. Elige preset o avanzado
-4. Se genera config con valores correctos
-5. Brolit inicia normalmente
+### New user
+1. Runs `./runner.sh`
+2. No config exists → wizard is offered
+3. Chooses preset or advanced
+4. Config is generated with correct values
+5. Brolit starts normally
 
-### Actualización de versión
-1. Ejecuta `./runner.sh` (o `./runner.sh --wizard`)
-2. Detecta versión desactualizada
-3. Muestra diff entre config actual y nuevo template
-4. Usuario acepta migración
-5. Se crea backup y se aplica merge
-6. Brolit inicia con config actualizada
+### Version update
+1. Runs `./runner.sh` (or `./runner.sh --wizard`)
+2. Detects outdated version
+3. Shows diff between current config and new template
+4. User accepts migration
+5. Backup is created and merge is applied
+6. Brolit starts with updated config
 
-### Uso CLI
+### CLI usage
 ```bash
-# Abrir wizard directamente
+# Open wizard directly
 ./runner.sh --wizard
 
-# O via task
+# Or via task
 ./runner.sh -t config-wizard
 ```

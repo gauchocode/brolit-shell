@@ -1,50 +1,50 @@
 # Fix CLI Parameters — Execution Plan
 
-**Fecha:** 2026-06-09
-**Reporte base:** `docs/reports/2026-06-09-cli-parameter-review.md`
-**Estado:** Pending
+**Date:** 2026-06-09
+**Base report:** `docs/reports/2026-06-09-cli-parameter-review.md`
+**Status:** Pending
 
 ---
 
 ## Overview
 
-Corregir bugs criticos y mejorar robustez del sistema de parametros CLI de brolit-shell. 13 tareas en 4 fases, ~6-7hs estimadas.
+Fix critical bugs and improve robustness of the brolit-shell CLI parameter system. 13 tasks in 4 phases, ~6-7h estimated.
 
 ---
 
-## Fase 1: Bugs Criticos (C1-C4)
+## Phase 1: Critical Bugs (C1-C4)
 
-### T1. Fix flag `-d` duplicado (C1)
+### T1. Fix duplicate `-d` flag (C1)
 
-**Archivo:** `libs/task_runner.sh`
+**File:** `libs/task_runner.sh`
 
-- Linea 45 (`show_help`): cambiar `-d --domain` a `-D --domain` (coincidir con `-do` ya usado en parser)
-- Lineas 49-50: eliminar `-q, --quiet` y `-v, --verbose` del help (no implementados)
-- Linea 53: implementar case `--version` en `flags_handler`
-- Actualizar `show_help()` con lista completa de tasks: `backup`, `restore`, `project`, `project-install`, `database`, `cloudflare-api`, `wpcli`, `ssh-keygen`, `disk-cleanup`, `aliases-install`
-- Linea 597: cambiar `exit` por `exit 1` en `*)` catch-all
+- Line 45 (`show_help`): change `-d --domain` to `-D --domain` (match `-do` already used in parser)
+- Lines 49-50: remove `-q, --quiet` and `-v, --verbose` from help (not implemented)
+- Line 53: implement `--version` case in `flags_handler`
+- Update `show_help()` with complete task list: `backup`, `restore`, `project`, `project-install`, `database`, `cloudflare-api`, `wpcli`, `ssh-keygen`, `disk-cleanup`, `aliases-install`
+- Line 597: change `exit` to `exit 1` in the `*)` catch-all
 
-**Verificacion:** `bash -n libs/task_runner.sh`, `./runner.sh --help`, `./runner.sh --version`
+**Verification:** `bash -n libs/task_runner.sh`, `./runner.sh --help`, `./runner.sh --version`
 
-### T2. Fix word-splitting en `$*` (C2)
+### T2. Fix word-splitting in `$*` (C2)
 
-**Archivo:** `runner.sh:38`
+**File:** `runner.sh:38`
 
 ```bash
-# Antes:
+# Before:
 flags_handler $*
 
-# Despues:
+# After:
 flags_handler "$@"
 ```
 
-**Verificacion:** `bash -n runner.sh`
+**Verification:** `bash -n runner.sh`
 
-### T3. Agregar validacion de DBNAME para backup databases (C3)
+### T3. Add DBNAME validation for backup databases (C3)
 
-**Archivo:** `libs/task_runner.sh` — case `backup)`, antes del `databases)` handler
+**File:** `libs/task_runner.sh` — `backup)` case, before the `databases)` handler
 
-Agregar validacion:
+Add validation:
 
 ```bash
 databases)
@@ -53,46 +53,46 @@ databases)
     [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
 ```
 
-**Verificacion:** `./runner.sh -t backup -st databases` sin `-db` → debe fallar con error de missing params
+**Verification:** `./runner.sh -t backup -st databases` without `-db` → should fail with missing params error
 
-### T4. Quitar `install` de subtasks validos de project (C4)
+### T4. Remove `install` from valid project subtasks (C4)
 
-**Archivo:** `libs/task_runner.sh:266`
+**File:** `libs/task_runner.sh:266`
 
 ```bash
-# Antes:
+# Before:
 validate_task_and_subtask "project" "${STASK}" "delete install"
 
-# Despues:
+# After:
 validate_task_and_subtask "project" "${STASK}" "delete"
 ```
 
-**Verificacion:** `./runner.sh -t project -st install` → error de subtask invalido
+**Verification:** `./runner.sh -t project -st install` → invalid subtask error
 
 ---
 
-## Fase 2: Fixes de Parameters Routing (S2, S3, S4)
+## Phase 2: Parameter Routing Fixes (S2, S3, S4)
 
-### T5. Unificar nombres de subtasks en database_manager (S3)
+### T5. Unify subtask names in database_manager (S3)
 
-**Archivos:** `libs/task_runner.sh:303`, `utils/database_manager.sh:762-840`
+**Files:** `libs/task_runner.sh:303`, `utils/database_manager.sh:762-840`
 
-Opcion recomendada: alinear handler con validador.
+Recommended option: align handler with validator.
 
-En `task_runner.sh` actualizar lista:
+In `task_runner.sh` update the list:
 ```bash
 validate_task_and_subtask "database" "${STASK}" \
     "list_db create_db delete_db rename_db import_db export_db \
      list_db_user create_db_user delete_db_user change_db_user_psw"
 ```
 
-En `database_tasks_handler` renombrar cases para coincidir:
-- `create_db_user` → ya existe, solo agregar a validacion
-- `delete_db_user` → ya existe, solo agregar a validacion
-- `change_db_user_psw` → ya existe, solo agregar a validacion
-- `list_db_user` → ya existe, solo agregar a validacion
+In `database_tasks_handler` rename cases to match:
+- `create_db_user` → already exists, just add to validation
+- `delete_db_user` → already exists, just add to validation
+- `change_db_user_psw` → already exists, just add to validation
+- `list_db_user` → already exists, just add to validation
 
-Agregar validaciones de params para los subtasks nuevos:
+Add param validations for the new subtasks:
 ```bash
 list_db_user)
     # no params needed
@@ -108,153 +108,153 @@ change_db_user_psw)
     ;;
 ```
 
-**Verificacion:** Probar cada subtask por CLI
+**Verification:** Test each subtask via CLI
 
-### T6. Pasar DOMAIN explicitamente a cloudflare_tasks_handler (S2)
+### T6. Pass DOMAIN explicitly to cloudflare_tasks_handler (S2)
 
-**Archivo:** `libs/task_runner.sh:357`
+**File:** `libs/task_runner.sh:357`
 
 ```bash
-# Antes:
+# Before:
 execute_task_with_error_handling "cloudflare-${STASK}" "cloudflare_tasks_handler" "${STASK}" "${TVALUE}"
 
-# Despues:
+# After:
 execute_task_with_error_handling "cloudflare-${STASK}" "cloudflare_tasks_handler" "${STASK}" "${DOMAIN}" "${TVALUE}"
 ```
 
-**Archivo:** `utils/cloudflare_manager.sh:761`
+**File:** `utils/cloudflare_manager.sh:761`
 
 ```bash
 function cloudflare_tasks_handler() {
     local subtask="${1}"
     local domain="${2}"
     local tvalue="${3}"
-    # usar ${domain} y ${tvalue} en vez de globals
+    # use ${domain} and ${tvalue} instead of globals
 }
 ```
 
-**Verificacion:** `./runner.sh -t cloudflare-api -st clear_cache -do example.com`
+**Verification:** `./runner.sh -t cloudflare-api -st clear_cache -do example.com`
 
-### T7. Pasar parametros completos a project_tasks_handler (S4)
+### T7. Pass full parameters to project_tasks_handler (S4)
 
-**Archivo:** `libs/task_runner.sh:284`
+**File:** `libs/task_runner.sh:284`
 
 ```bash
-# Antes:
+# Before:
 execute_task_with_error_handling "project-${STASK}" "project_tasks_handler" "${STASK}" "${PROJECTS_PATH}"
 
-# Despues:
+# After:
 execute_task_with_error_handling "project-${STASK}" "project_tasks_handler" "${STASK}" "${PROJECTS_PATH}" "${PTYPE}" "${DOMAIN}" "${PNAME}" "${PSTATE}"
 ```
 
-**Verificacion:** `./runner.sh -t project -st delete -do example.com` → DOMAIN llega al handler
+**Verification:** `./runner.sh -t project -st delete -do example.com` → DOMAIN reaches the handler
 
 ---
 
-## Fase 3: Mejoras de Robustez (S1, S5, S7, S8)
+## Phase 3: Robustness Improvements (S1, S5, S7, S8)
 
-### T8. Implementar `--version` y limpiar help (S5)
+### T8. Implement `--version` and clean up help (S5)
 
-**Archivo:** `libs/task_runner.sh`
+**File:** `libs/task_runner.sh`
 
-- Agregar en `flags_handler` case:
+- Add to `flags_handler` case:
   ```bash
   --version)
       echo "BROLIT Shell v${SCRIPT_V}"
       exit 0
       ;;
   ```
-- Actualizar `show_help()` con lista completa de tasks y subtasks
+- Update `show_help()` with complete list of tasks and subtasks
 
-**Verificacion:** `./runner.sh --version`, `./runner.sh --help`
+**Verification:** `./runner.sh --version`, `./runner.sh --help`
 
-### T9. Explicitar tasks sin subtask (S1)
+### T9. Make tasks without subtask explicit (S1)
 
-**Archivo:** `libs/task_runner.sh`
+**File:** `libs/task_runner.sh`
 
-Agregar comentario en cada task que no requiere subtask en `tasks_handler`:
+Add a comment on each task that does not require a subtask in `tasks_handler`:
 ```bash
 aliases-install)
     # No subtask required
     ...
 ```
 
-### T10. Mover chmod fuera del hot path (S7)
+### T10. Move chmod out of the hot path (S7)
 
-**Archivo:** `runner.sh:21`
+**File:** `runner.sh:21`
 
-Mover `chmod +x ...` dentro de `_check_scripts_permissions()` en `commons.sh`.
+Move `chmod +x ...` inside `_check_scripts_permissions()` in `commons.sh`.
 
-**Verificacion:** `bash -n runner.sh`
+**Verification:** `bash -n runner.sh`
 
-### T11. Reemplazar recursion por loop en menu_main_options (S8)
+### T11. Replace recursion with loop in menu_main_options (S8)
 
-**Archivo:** `libs/commons.sh:1830`
+**File:** `libs/commons.sh:1830`
 
-Envolver en `while true; do ... done` con break en el else (cancel).
+Wrap in `while true; do ... done` with a break in the else (cancel).
 
-**Verificacion:** Ejecutar `./runner.sh` sin args, navegar menus, cancelar.
+**Verification:** Run `./runner.sh` without args, navigate menus, cancel.
 
 ---
 
-## Fase 4: Tech Debt (S6, S9)
+## Phase 4: Tech Debt (S6, S9)
 
-### T12. Dinamizar BROLIT_MAIN_DIR en brolit_lite.sh (S6)
+### T12. Make BROLIT_MAIN_DIR dynamic in brolit_lite.sh (S6)
 
-**Archivo:** `brolit_lite.sh:2229`
+**File:** `brolit_lite.sh:2229`
 
 ```bash
-# Antes:
+# Before:
 declare -g BROLIT_MAIN_DIR="/root/brolit-shell"
 
-# Despues:
+# After:
 declare -g BROLIT_MAIN_DIR
 BROLIT_MAIN_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
 ```
 
-**Verificacion:** `bash -n brolit_lite.sh`
+**Verification:** `bash -n brolit_lite.sh`
 
-### T13. Crear tests de CLI (S9)
+### T13. Create CLI tests (S9)
 
-**Archivo nuevo:** `tests/test_task_runner.sh`
+**New file:** `tests/test_task_runner.sh`
 
-Contenido:
-- Test cada combinacion task/subtask valida (mock)
-- Test rechazo de tasks/subtasks invalidos
-- Test validacion de parametros requeridos
-- Test word-splitting con valores con espacios
-- Test `--help`, `--version`, flags invalidos
+Contents:
+- Test each valid task/subtask combination (mock)
+- Test rejection of invalid tasks/subtasks
+- Test validation of required parameters
+- Test word-splitting with values containing spaces
+- Test `--help`, `--version`, invalid flags
 
-**Verificacion:** `./tests/tests_suite.sh`
+**Verification:** `./tests/tests_suite.sh`
 
 ---
 
-## Dependencias
+## Dependencies
 
 ```
-Fase 1:  T1  T2  T3  T4          (paralelos, sin dependencias)
-Fase 2:  T5  →  T6  →  T7        (secuenciales)
-Fase 3:  T8  T9  T10  T11        (paralelos)
-Fase 4:  T12 → T13               (T13 al final, valida todo)
+Phase 1:  T1  T2  T3  T4          (parallel, no dependencies)
+Phase 2:  T5  →  T6  →  T7        (sequential)
+Phase 3:  T8  T9  T10  T11        (parallel)
+Phase 4:  T12 → T13               (T13 at the end, validates everything)
 ```
 
-## Estimacion
+## Estimate
 
-| Fase | Tareas | Tiempo |
+| Phase | Tasks | Time |
 |---|---|---|
-| Fase 1 (Criticos) | T1-T4 | 2-3hs |
-| Fase 2 (Routing) | T5-T7 | 1.5hs |
-| Fase 3 (Robustez) | T8-T11 | 1.5hs |
-| Fase 4 (Tech Debt) | T12-T13 | 1.5hs |
-| **Total** | **13 tareas** | **~6-7hs** |
+| Phase 1 (Critical) | T1-T4 | 2-3h |
+| Phase 2 (Routing) | T5-T7 | 1.5h |
+| Phase 3 (Robustness) | T8-T11 | 1.5h |
+| Phase 4 (Tech Debt) | T12-T13 | 1.5h |
+| **Total** | **13 tasks** | **~6-7h** |
 
-## Verificacion general post-implementacion
+## General verification post-implementation
 
-1. `bash -n` sobre todos los archivos modificados
-2. `./runner.sh --help` — verificar salida completa y correcta
-3. `./runner.sh --version` — verificar output
-4. `./runner.sh -t backup -st databases` — debe fallar sin `-db`
-5. `./runner.sh -t project -st install` — debe rechazar subtask
-6. `./runner.sh -t cloudflare-api -st clear_cache -do example.com` — verificar routing
-7. `./runner.sh -t project -st delete -do example.com` — verificar DOMAIN llega al handler
-8. `./tests/tests_suite.sh` — suite completa
+1. `bash -n` on all modified files
+2. `./runner.sh --help` — verify complete and correct output
+3. `./runner.sh --version` — verify output
+4. `./runner.sh -t backup -st databases` — should fail without `-db`
+5. `./runner.sh -t project -st install` — should reject subtask
+6. `./runner.sh -t cloudflare-api -st clear_cache -do example.com` — verify routing
+7. `./runner.sh -t project -st delete -do example.com` — verify DOMAIN reaches the handler
+8. `./tests/tests_suite.sh` — full suite
