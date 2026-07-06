@@ -563,6 +563,9 @@ function _nginx_check_installed_version() {
     if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
         local openresty_version
         openresty_version="$(ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no "root@${OPENRESTY_VM_IP}" "openresty -v 2>&1" 2>/dev/null | grep -o '[0-9.]\+')"
+        if [[ -z "${openresty_version}" && -n "${OPENRESTY_VM_PASS}" ]] && command -v sshpass &>/dev/null; then
+            openresty_version="$(sshpass -p "${OPENRESTY_VM_PASS}" ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no "root@${OPENRESTY_VM_IP}" "openresty -v 2>&1" 2>/dev/null | grep -o '[0-9.]\+')"
+        fi
         if [[ -n "${openresty_version}" ]]; then
             echo "{\"name\":\"openresty\",\"version\":\"${openresty_version}\",\"default\":\"true\"} , "
             return 0
@@ -659,6 +662,9 @@ function _certbot_certificate_get_valid_days() {
 
     if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
         cert_days_output="$(ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no "root@${OPENRESTY_VM_IP}" "certbot certificates --domain '${domain}' 2>&1" 2>/dev/null)"
+        if [[ -z "${cert_days_output}" && -n "${OPENRESTY_VM_PASS}" ]] && command -v sshpass &>/dev/null; then
+            cert_days_output="$(sshpass -p "${OPENRESTY_VM_PASS}" ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no "root@${OPENRESTY_VM_IP}" "certbot certificates --domain '${domain}' 2>&1" 2>/dev/null)"
+        fi
     else
         cert_days_output="$(certbot certificates --domain "${domain}" 2>&1)"
     fi
