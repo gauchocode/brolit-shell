@@ -644,10 +644,62 @@ function _backup_get_date() {
 }
 
 ################################################################################
-# Private: Get date from backup file
+# Private: Get all certbot certificates valid days (cached, runs once)
+#
+# Runs `certbot certificates` ONCE and caches the output for 6 hours.
+# Returns the cached output text.
+#
+# Outputs:
+#   ${certbot_output} - full output of certbot certificates
+################################################################################
+
+declare -g _CERTBOT_CACHE_FILE="${BROLIT_LITE_OUTPUT_DIR}/.certbot_all_certs.cache"
+declare -g _CERTBOT_CACHE_TIME_FILE="${BROLIT_LITE_OUTPUT_DIR}/.certbot_all_certs.cache_time"
+declare -gi _CERTBOT_CACHE_TTL=21600  # 6 hours
+
+function _certbot_all_certs_cache() {
+
+    local cache_age=999999
+    local now
+
+    # Check cache validity
+    if [[ -f "${_CERTBOT_CACHE_TIME_FILE}" ]]; then
+        local cache_time
+        cache_time="$(cat "${_CERTBOT_CACHE_TIME_FILE}" 2>/dev/null)"
+        now="$(date +%s)"
+        cache_age=$(( now - cache_time ))
+    fi
+
+    # Return cached output if still valid
+    if [[ -f "${_CERTBOT_CACHE_FILE}" && ${cache_age} -lt ${_CERTBOT_CACHE_TTL} ]]; then
+        cat "${_CERTBOT_CACHE_FILE}"
+        return 0
+    fi
+
+    # Run certbot certificates ONCE (all domains)
+    local certbot_output
+    if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
+        certbot_output="$(ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no "root@${OPENRESTY_VM_IP}" "certbot certificates 2>&1" 2>/dev/null)"
+        if [[ -z "${certbot_output}" && -n "${OPENRESTY_VM_PASS}" ]] && command -v sshpass &>/dev/null; then
+            certbot_output="$(sshpass -p "${OPENRESTY_VM_PASS}" ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no "root@${OPENRESTY_VM_IP}" "certbot certificates 2>&1" 2>/dev/null)"
+        fi
+    else
+        certbot_output="$(certbot certificates 2>&1)"
+    fi
+
+    # Cache the output
+    echo "${certbot_output}" > "${_CERTBOT_CACHE_FILE}"
+    date +%s > "${_CERTBOT_CACHE_TIME_FILE}"
+
+    echo "${certbot_output}"
+
+}
+
+################################################################################
+# Private: Get certbot certificate valid days for a domain (uses cache)
 #
 # Arguments:
-#  ${1} = ${domains} - (domain.com,www.domain.com)
+#  ${1} - ${domain}
 #
 # Outputs:
 #   ${cert_days}.
@@ -658,17 +710,25 @@ function _certbot_certificate_get_valid_days() {
     local domain="${1}"
 
     local cert_days
-    local cert_days_output
+    local certbot_output
 
-    if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
-        cert_days_output="$(ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no "root@${OPENRESTY_VM_IP}" "certbot certificates --domain '${domain}' 2>&1" 2>/dev/null)"
-        if [[ -z "${cert_days_output}" && -n "${OPENRESTY_VM_PASS}" ]] && command -v sshpass &>/dev/null; then
-            cert_days_output="$(sshpass -p "${OPENRESTY_VM_PASS}" ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no "root@${OPENRESTY_VM_IP}" "certbot certificates --domain '${domain}' 2>&1" 2>/dev/null)"
-        fi
-    else
-        cert_days_output="$(certbot certificates --domain "${domain}" 2>&1)"
+    # Use cached certbot output (runs certbot ONCE per invocation, not per domain)
+    certbot_output="$(_certbot_all_certs_cache)"
+
+    # Extract VALID: N days for this domain from the cached output
+    cert_days="$(echo "${certbot_output}" | awk -v domain="${domain}" '
+    /^Certificate Name:/ { current_cert = $0; sub(/^Certificate Name: /, "", current_cert) }
+    /Domains:/ { current_domains = $0; sub(/^  Domains: /, "", current_domains) }
+    /VALID:/ && (current_cert == domain || index(current_domains, domain) > 0) {
+        match($0, /VALID: [0-9]+/, arr)
+        if (arr[0] != "") { print substr(arr[0], 8); exit }
+    }
+    ')"
+
+    # Fallback: try grep if awk didn't find it
+    if [[ -z "${cert_days}" ]]; then
+        cert_days="$(echo "${certbot_output}" | grep -A5 -E "Certificate Name: ${domain}|Domains:.*${domain}" | grep -Eo 'VALID: [0-9]+' | head -1 | cut -d ' ' -f 2)"
     fi
-    cert_days="$(echo "${cert_days_output}" | grep -Eo 'VALID: [0-9]+[0-9]' | cut -d ' ' -f 2)"
 
     if [[ -n ${cert_days} ]]; then
 
@@ -2849,10 +2909,20 @@ function list_packages_ready_to_upgrade() {
     local force="${1}"
 
     local timestamp
+    local file_age=999999
+    local now
 
     local json_output_file="${BROLIT_LITE_OUTPUT_DIR}/list_packages_ready_to_upgrade.json"
 
-    if [[ ${force} == "true" || ! -f "${json_output_file}" ]]; then
+    # Check file age for TTL (re-run apt only if older than 2 hours)
+    if [[ -f "${json_output_file}" ]]; then
+        local file_mtime
+        file_mtime="$(stat -c %Y "${json_output_file}" 2>/dev/null)"
+        now="$(date +%s)"
+        file_age=$(( now - file_mtime ))
+    fi
+
+    if [[ ${force} == "true" || ! -f "${json_output_file}" ]] && [[ ${file_age} -gt 7200 ]]; then
 
         # apt commands
         pkgs="$(apt list --upgradable 2>/dev/null | awk -F/ "{print \$1}" | sed -e '1,/.../ d')"
