@@ -545,6 +545,21 @@ function _configure_restored_project() {
     
     local project_install_path="${PROJECTS_PATH}/${project_domain_new}"
 
+    # For Docker projects, extract DB info from .env since variables are not passed by caller
+    local project_db_status="disabled"
+    local db_engine=""
+    local db_user=""
+
+    if [[ "${project_install_type}" == "docker"* ]]; then
+        local env_file="${project_install_path}/.env"
+        if [[ -f "${env_file}" ]]; then
+            db_engine="mysql"
+            db_user="$(grep -oP '^MYSQL_USER=\K.*' "${env_file}" 2>/dev/null)"
+            db_pass="$(grep -oP '^MYSQL_PASSWORD=\K.*' "${env_file}" 2>/dev/null)"
+            project_db_status="enabled"
+        fi
+    fi
+
     # Detect www pattern from backup's wp-config.php and align both old and new domains
     # This ensures nginx canonical domain matches WordPress WP_HOME, preventing infinite redirects
     local www_prefix=""
@@ -583,10 +598,16 @@ function _configure_restored_project() {
     root_domain_old="$(domain_get_root "${project_domain}")"
     root_domain_new="$(domain_get_root "${project_domain_new}")"
 
+    # Detect if original or new domain is a subdomain
+    local old_is_subdomain=false
+    local new_is_subdomain=false
+    [[ "${project_domain}" != "${root_domain_old}" && "${project_domain}" != "www.${root_domain_old}" ]] && old_is_subdomain=true
+    [[ "${project_domain_new}" != "${root_domain_new}" && "${project_domain_new}" != "www.${root_domain_new}" ]] && new_is_subdomain=true
+
+    # Only preserve original domains if BOTH are subdomains of DIFFERENT roots
+    # If they share the same root (e.g., dev.X.com.ar -> X.com.ar), allow alignment
     local is_subdomain=false
-    if [[ "${project_domain}" != "${root_domain_old}" && "${project_domain}" != "www.${root_domain_old}" ]]; then
-        is_subdomain=true
-    elif [[ "${project_domain_new}" != "${root_domain_new}" && "${project_domain_new}" != "www.${root_domain_new}" ]]; then
+    if [[ ${old_is_subdomain} == true && ${new_is_subdomain} == true && "${root_domain_old}" != "${root_domain_new}" ]]; then
         is_subdomain=true
     fi
 
@@ -721,12 +742,15 @@ function restore_project_backup() {
         # Restore database if configured
         if [[ -n "${db_name}" && "${db_name}" != "no-database" ]]; then
             # Read .env file for database credentials
-            if [[ -f "${project_install_path}/.env" ]]; then
-                export $(grep -v '^#' "${project_install_path}/.env" | xargs)
-                container_name="${PROJECT_NAME}_mysql"
-                db_name="${MYSQL_DATABASE}"
-                mysql_user="${MYSQL_USER}"
-                mysql_user_passw="${MYSQL_PASSWORD}"
+            local env_file="${project_install_path}/.env"
+            if [[ -f "${env_file}" ]]; then
+                local compose_project_name
+                compose_project_name="$(grep -oP '^COMPOSE_PROJECT_NAME=\K.*' "${env_file}" 2>/dev/null)"
+                container_name="${compose_project_name}_mysql"
+                db_engine="mysql"
+                mysql_user="$(grep -oP '^MYSQL_USER=\K.*' "${env_file}" 2>/dev/null)"
+                mysql_user_passw="$(grep -oP '^MYSQL_PASSWORD=\K.*' "${env_file}" 2>/dev/null)"
+                db_user="${mysql_user}"
             else
                 _handle_restore_error 6 "Docker .env file not found"
                 return 1
