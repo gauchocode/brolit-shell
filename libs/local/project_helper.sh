@@ -3145,12 +3145,15 @@ function project_update_domain_config() {
     if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
       ## Nginx redirects: www.root_domain.com -> root_domain.com
       ## So Cloudflare must point: root -> server IP (A), www -> root (CNAME)
+
+      # Delete conflicting record types before creating new ones (Cloudflare rejects A if CNAME exists for same host)
+      cloudflare_delete_record "${project_root_domain}" "${project_root_domain}" "CNAME" 2>/dev/null || true
       cloudflare_delete_record "${project_root_domain}" "www.${project_root_domain}" "A" 2>/dev/null || true
+
       cloudflare_set_record "${project_root_domain}" "${project_root_domain}" "A" "false" "${SERVER_IP}"
       exitstatus=$?
       [[ ${exitstatus} -ne 0 ]] && cloudflare_exitstatus=${exitstatus}
 
-      cloudflare_delete_record "${project_root_domain}" "${project_root_domain}" "CNAME" 2>/dev/null || true
       cloudflare_set_record "${project_root_domain}" "www.${project_root_domain}" "CNAME" "false" "${project_root_domain}"
       exitstatus=$?
       [[ ${exitstatus} -ne 0 ]] && cloudflare_exitstatus=${exitstatus}
