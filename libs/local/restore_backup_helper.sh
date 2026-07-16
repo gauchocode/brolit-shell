@@ -455,6 +455,19 @@ function _restore_project_database() {
         return 0
     fi
 
+    # For dockerized backups that bundle the mysql_data volume, skip the separate dump import.
+    # The volume IS the database — no separate .sql dump is needed.
+    local docker_env_file="${project_install_path}/.env"
+    if [[ -f "${docker_env_file}" ]]; then
+        local mysql_data_dir
+        mysql_data_dir="$(grep -oP '^MYSQL_DATA_DIR=\K.*' "${docker_env_file}" 2>/dev/null)"
+        mysql_data_dir="${mysql_data_dir:-./mysql_data}"
+        if [[ -d "${project_install_path}/${mysql_data_dir}" ]]; then
+            log_event "info" "MySQL volume present in backup (${mysql_data_dir}); skipping separate DB dump import" "false"
+            return 0
+        fi
+    fi
+
     # Get backup rotation type and date
     local backup_rotation_type="$(backup_get_rotation_type "${project_backup_file}")"
     local project_backup_date="$(backup_get_date "${project_backup_file}")"
@@ -745,7 +758,7 @@ function restore_project_backup() {
             local env_file="${project_install_path}/.env"
             if [[ -f "${env_file}" ]]; then
                 local compose_project_name
-                compose_project_name="$(grep -oP '^COMPOSE_PROJECT_NAME=\K.*' "${env_file}" 2>/dev/null)"
+                compose_project_name="$(grep -oP '^PROJECT_NAME=\K.*' "${env_file}" 2>/dev/null)"
                 container_name="${compose_project_name}_mysql"
                 db_engine="mysql"
                 mysql_user="$(grep -oP '^MYSQL_USER=\K.*' "${env_file}" 2>/dev/null)"
