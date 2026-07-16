@@ -611,25 +611,19 @@ function _configure_restored_project() {
     root_domain_old="$(domain_get_root "${project_domain}")"
     root_domain_new="$(domain_get_root "${project_domain_new}")"
 
-    # Detect if original or new domain is a subdomain
+    # Detect if original domain is a subdomain (e.g., tim.br.goseries.tv)
     local old_is_subdomain=false
-    local new_is_subdomain=false
     [[ "${project_domain}" != "${root_domain_old}" && "${project_domain}" != "www.${root_domain_old}" ]] && old_is_subdomain=true
-    [[ "${project_domain_new}" != "${root_domain_new}" && "${project_domain_new}" != "www.${root_domain_new}" ]] && new_is_subdomain=true
 
-    # Only preserve original domains if BOTH are subdomains of DIFFERENT roots
-    # If they share the same root (e.g., dev.X.com.ar -> X.com.ar), allow alignment
-    local is_subdomain=false
-    if [[ ${old_is_subdomain} == true && ${new_is_subdomain} == true && "${root_domain_old}" != "${root_domain_new}" ]]; then
-        is_subdomain=true
-    fi
-
-    if [[ ${is_subdomain} == false ]]; then
+    if [[ ${old_is_subdomain} == true ]]; then
+        # Subdomain: always preserve original domain as-is
+        # The www_prefix from backup only applies to root-level domains
+        log_event "debug" "Subdomain detected, preserving original: old=${project_domain}, new=${project_domain_new}" "false"
+    else
+        # Root-level domain: apply the www prefix pattern detected from the backup's WP_HOME
         project_domain="${www_prefix}${root_domain_old}"
         project_domain_new="${www_prefix}${root_domain_new}"
         log_event "debug" "Domains aligned with backup pattern: old=${project_domain}, new=${project_domain_new}" "false"
-    else
-        log_event "debug" "Subdomain-level domains detected, preserving original: old=${project_domain}, new=${project_domain_new}" "false"
     fi
 
     # Project domain configuration (webserver+certbot+DNS)
