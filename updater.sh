@@ -31,7 +31,7 @@ function _self_update() {
         git pull --ff-only --force --quiet
 
         echo -e "${GREEN}Running chmod ...${ENDCOLOR}"
-        find ./ -name "*.sh" -exec chmod +x {} \;
+        find ./ -name "*.sh" ! -perm /u+x -exec chmod +x {} \;
 
         echo -e "${CYAN}Now you can run the runner.sh, enjoy!${ENDCOLOR}"
 
