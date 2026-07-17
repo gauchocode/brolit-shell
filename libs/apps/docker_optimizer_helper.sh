@@ -375,26 +375,73 @@ EOF
     missing_mounts=true
   fi
 
-  # Check opcache-prod.ini mount
+  # Check opcache-prod.ini - create from template if missing
   local opcache_file="${php_docker_dir}/php-fpm/opcache-prod.ini"
-  if [[ -f "${opcache_file}" ]]; then
-    local opcache_mount_src="./php-${php_version}_docker/php-fpm/opcache-prod.ini"
-    local opcache_mount_dst
-    if [[ "${project_type}" == "wordpress" ]]; then
-      opcache_mount_dst="/usr/local/etc/php/conf.d/z-opcache.ini"
+  if [[ ! -f "${opcache_file}" ]]; then
+    log_event "warning" "opcache-prod.ini not found, creating from template" "false"
+    display --indent 6 --text "- opcache-prod.ini not found, creating from template" --result "WARNING" --color YELLOW
+
+    # Find template from brolit config
+    local opcache_template="${BROLIT_MAIN_DIR}/config/docker-compose/${project_type}/production-stack-proxy/php-${php_version}_docker/php-fpm/opcache-prod.ini"
+    if [[ -f "${opcache_template}" ]]; then
+      mkdir -p "${php_docker_dir}/php-fpm"
+      cp "${opcache_template}" "${opcache_file}"
+      log_event "info" "opcache-prod.ini created from template: ${opcache_template}" "false"
+      display --indent 8 --text "Created: ${opcache_file}" --result "DONE" --color GREEN
     else
-      opcache_mount_dst="/etc/php/${php_version}/fpm/conf.d/10-opcache.ini"
-    fi
+      log_event "warning" "Template not found: ${opcache_template}" "false"
+      display --indent 8 --text "Template not found, creating default" --result "WARNING" --color YELLOW
 
-    if ! grep -q "opcache-prod.ini" "${compose_file}"; then
-      log_event "warning" "opcache-prod.ini not mounted in docker-compose.yml" "false"
-      display --indent 6 --text "- Volume mount missing for opcache-prod.ini" --result "WARNING" --color YELLOW
+      # Create default opcache-prod.ini
+      cat > "${opcache_file}" <<'OPCACHE_EOF'
+; OPcache Configuration - Production (PHP 8.3-8.5)
+; Based on best practices 2025-2026
 
-      # Auto-add the volume mount
-      local opcache_mount="${opcache_mount_src}:${opcache_mount_dst}"
-      display --indent 8 --text "Attempting to add: ${opcache_mount}" --tcolor YELLOW
-      missing_mounts=true
+; --- Core ---
+opcache.enable=1
+opcache.enable_cli=0
+
+; --- Memory ---
+opcache.memory_consumption=128
+opcache.interned_strings_buffer=16
+opcache.max_accelerated_files=20000
+
+; --- Validation ---
+opcache.validate_timestamps=0
+opcache.consistency_checks=0
+opcache.revalidate_path=0
+opcache.revalidate_freq=0
+
+; --- Correctness ---
+opcache.save_comments=1
+opcache.enable_file_override=1
+
+; --- JIT (optional, PHP 8.0+) ---
+;opcache.jit=tracing
+;opcache.jit_buffer_size=64M
+OPCACHE_EOF
+      log_event "info" "Default opcache-prod.ini created" "false"
+      display --indent 8 --text "Default opcache-prod.ini created" --result "DONE" --color GREEN
     fi
+  fi
+
+  # Check opcache-prod.ini mount
+  local opcache_mount_src="./php-${php_version}_docker/php-fpm/opcache-prod.ini"
+  local opcache_mount_dst
+  if [[ "${project_type}" == "wordpress" ]]; then
+    opcache_mount_dst="/usr/local/etc/php/conf.d/z-opcache.ini"
+  else
+    opcache_mount_dst="/etc/php/${php_version}/fpm/conf.d/10-opcache.ini"
+  fi
+
+  if ! grep -q "opcache-prod.ini" "${compose_file}"; then
+    log_event "warning" "opcache-prod.ini not mounted in docker-compose.yml" "false"
+    display --indent 6 --text "- Volume mount missing for opcache-prod.ini" --result "WARNING" --color YELLOW
+
+    # Auto-add the volume mount
+    local opcache_mount="${opcache_mount_src}:${opcache_mount_dst}"
+    display --indent 8 --text "Attempting to add: ${opcache_mount}" --tcolor YELLOW
+    missing_mounts=true
   fi
 
   if [[ "${missing_mounts}" == true ]]; then
