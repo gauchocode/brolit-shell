@@ -975,15 +975,22 @@ function certbot_helper_installer_menu() {
 
             root_domain=$(domain_get_root "${domain}")
 
-            # Enable cf proxy on record
-            [[ $? -eq 0 ]] && cloudflare_update_record "${root_domain}" "${domain}" "A" "true" "${SERVER_IP}"
-            [[ $? -eq 1 ]] && cloudflare_update_record "${root_domain}" "${domain}" "CNAME" "true" "${root_domain}"
-            [[ $? -eq 1 ]] && error=true
+            # Skip proxy for nested subdomains (e.g., own.cl.goseries.tv)
+            # Cloudflare Free plan *.domain only covers single-level subdomains
+            if [[ "${domain}" != "${root_domain}" && "${domain}" != "www.${root_domain}" ]]; then
+              log_event "info" "Skipping proxy for nested subdomain: ${domain}" "false"
+              display --indent 6 --text "- Skipping proxy for nested subdomain: ${domain}" --tcolor CYAN
+            else
+              # Enable cf proxy on record
+              [[ $? -eq 0 ]] && cloudflare_update_record "${root_domain}" "${domain}" "A" "true" "${SERVER_IP}"
+              [[ $? -eq 1 ]] && cloudflare_update_record "${root_domain}" "${domain}" "CNAME" "true" "${root_domain}"
+              [[ $? -eq 1 ]] && error=true
+            fi
 
           done
 
-          # Changing SSL Mode flor Cloudflare record
-          [[ ${error} != true ]] && cloudflare_set_ssl_mode "${root_domain}" "full"
+          # Changing SSL Mode for Cloudflare record
+          [[ ${error} != true ]] && cloudflare_set_ssl_mode "${domain}" "full"
 
         else
 
@@ -1058,15 +1065,21 @@ function certbot_certificate_install_auto() {
 
         if [[ ${exitstatus} -eq 0 ]]; then
 
-          # Enable Cloudflare proxy on records
+          # Enable Cloudflare proxy on records (skip nested subdomains)
           for domain in ${domains//,/ }; do
             root_domain=$(domain_get_root "${domain}")
-            [[ $? -eq 0 ]] && cloudflare_update_record "${root_domain}" "${domain}" "A" "true" "${SERVER_IP}"
-            [[ $? -eq 1 ]] && cloudflare_update_record "${root_domain}" "${domain}" "CNAME" "true" "${root_domain}"
+            # Skip proxy for nested subdomains - Cloudflare Free *.domain only covers single-level
+            if [[ "${domain}" != "${root_domain}" && "${domain}" != "www.${root_domain}" ]]; then
+              log_event "info" "Skipping proxy for nested subdomain: ${domain}" "false"
+              display --indent 6 --text "- Skipping proxy for nested subdomain: ${domain}" --tcolor CYAN
+            else
+              [[ $? -eq 0 ]] && cloudflare_update_record "${root_domain}" "${domain}" "A" "true" "${SERVER_IP}"
+              [[ $? -eq 1 ]] && cloudflare_update_record "${root_domain}" "${domain}" "CNAME" "true" "${root_domain}"
+            fi
           done
 
           # Set SSL mode to full
-          cloudflare_set_ssl_mode "${root_domain}" "full"
+          cloudflare_set_ssl_mode "${domain}" "full"
 
         fi
 
