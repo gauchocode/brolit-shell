@@ -982,8 +982,8 @@ function certbot_helper_installer_menu() {
 
           done
 
-          # Changing SSL Mode flor Cloudflare record
-          [[ ${error} != true ]] && cloudflare_set_ssl_mode "${root_domain}" "full"
+          # Changing SSL Mode for Cloudflare record
+          [[ ${error} != true ]] && cloudflare_set_ssl_mode "${domain}" "full"
 
         else
 
@@ -1066,7 +1066,7 @@ function certbot_certificate_install_auto() {
           done
 
           # Set SSL mode to full
-          cloudflare_set_ssl_mode "${root_domain}" "full"
+          cloudflare_set_ssl_mode "${domain}" "full"
 
         fi
 
