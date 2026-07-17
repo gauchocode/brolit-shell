@@ -113,16 +113,6 @@ function php_opcode_config() {
 
     val=1
 
-    # Settings needed:
-    #   opcache.enable=1
-    #   opcache.memory_consumption=128
-    #   opcache.max_accelerated_files=200
-    #   opcache_revalidate_freq = 240
-    #   opcache.error_log= /var/log/nginx/opcahce_error.log
-    #   opcache.file_cache=/var/www/html/.opcache;
-    #
-    # More info: https://raazkumar.com/tutorials/php/opcache-settings/
-
     # Uncomment "opcache.enable" from fpm configuration
     log_event "debug" "Uncommenting opcache.enable from fpm configuration ..."
     sed -i '/opcache.enable/s/^;//g' "${config_file}"
@@ -133,30 +123,30 @@ function php_opcode_config() {
     # Uncomment "opcache.memory_consumption" from fpm configuration
     log_event "debug" "Uncommenting opcache.memory_consumption from fpm configuration ..."
     sed -i '/opcache.memory_consumption/s/^;//g' "${config_file}"
-    # Setting memory_consumption.enable=128
+    # Setting opcache.memory_consumption=128
     opcode_mem="128"
     sed -i "s/^\(opcache\.memory_consumption\s*=\s*\).*\$/\1$opcode_mem/" "${config_file}"
+
+    # Uncomment "opcache.interned_strings_buffer" from fpm configuration
+    log_event "debug" "Uncommenting opcache.interned_strings_buffer from fpm configuration ..."
+    sed -i '/opcache.interned_strings_buffer/s/^;//g' "${config_file}"
+    # Setting opcache.interned_strings_buffer=16
+    opcode_isb="16"
+    sed -i "s/^\(opcache\.interned_strings_buffer\s*=\s*\).*\$/\1$opcode_isb/" "${config_file}"
 
     # Uncomment "opcache.max_accelerated_files" from fpm configuration
     log_event "debug" "Uncommenting opcache.max_accelerated_files from fpm configuration ..."
     sed -i '/opcache.max_accelerated_files/s/^;//g' "${config_file}"
-    # Setting opcache.max_accelerated_files=200
-    opcode_maf="200"
+    # Setting opcache.max_accelerated_files=20000
+    opcode_maf="20000"
     sed -i "s/^\(opcache\.max_accelerated_files\s*=\s*\).*\$/\1$opcode_maf/" "${config_file}"
 
     # Uncomment "opcache.revalidate_freq" from fpm configuration
     log_event "debug" "Uncommenting opcache.revalidate_freq from fpm configuration ..."
     sed -i '/opcache.revalidate_freq/s/^;//g' "${config_file}"
-    # Setting opcache.revalidate_freq=240
-    opcode_rf="240"
+    # Setting opcache.revalidate_freq=0
+    opcode_rf="0"
     sed -i "s/^\(opcache\.revalidate_freq\s*=\s*\).*\$/\1$opcode_rf/" "${config_file}"
-
-    # Uncomment "opcache.error_log" from fpm configuration
-    #log_event "debug" "Uncommenting opcache.error_log from fpm configuration ..."
-    #sed -i '/opcache.error_log/s/^;//g' "${config_file}"
-    # Setting opcache.error_log
-    #opcode_log="/var/log/nginx/opcache_error.log"
-    #sed -i "s/^\(opcache\.error_log\s*=\s*\).*\$/\1$opcode_log/" "${config_file}"
 
     display --indent 6 --text "- Enabling Opcode" --result "DONE" --color GREEN
 
