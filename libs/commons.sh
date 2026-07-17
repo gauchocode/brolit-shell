@@ -232,8 +232,8 @@ function _check_scripts_permissions() {
   log_event "info" "Checking scripts permissions" "false"
   log_event "debug" "Executing chmod +x on *.sh" "false"
 
-  ### chmod
-  find ./ -name "*.sh" -exec chmod +x {} \;
+  ### chmod (only if not already executable, avoids git noise)
+  find ./ -name "*.sh" ! -perm /u+x -exec chmod +x {} \;
 
   # Check errors
   if [[ $? -ne 0 ]]; then
