@@ -975,10 +975,14 @@ function certbot_helper_installer_menu() {
 
             root_domain=$(domain_get_root "${domain}")
 
-            # Skip proxy for nested subdomains (e.g., own.cl.goseries.tv)
+            # Check if this is a nested subdomain (2+ levels deep)
             # Cloudflare Free plan *.domain only covers single-level subdomains
-            if [[ "${domain}" != "${root_domain}" && "${domain}" != "www.${root_domain}" ]]; then
-              log_event "info" "Skipping proxy for nested subdomain: ${domain}" "false"
+            local domain_prefix="${domain%."${root_domain}"}"
+            local dot_count="${domain_prefix//[^.]}"
+            local prefix_dots="${#dot_count}"
+
+            if [[ ${prefix_dots} -ge 2 ]]; then
+              log_event "info" "Skipping proxy for nested subdomain: ${domain} (${prefix_dots} levels deep)" "false"
               display --indent 6 --text "- Skipping proxy for nested subdomain: ${domain}" --tcolor CYAN
             else
               # Enable cf proxy on record
@@ -1068,9 +1072,14 @@ function certbot_certificate_install_auto() {
           # Enable Cloudflare proxy on records (skip nested subdomains)
           for domain in ${domains//,/ }; do
             root_domain=$(domain_get_root "${domain}")
-            # Skip proxy for nested subdomains - Cloudflare Free *.domain only covers single-level
-            if [[ "${domain}" != "${root_domain}" && "${domain}" != "www.${root_domain}" ]]; then
-              log_event "info" "Skipping proxy for nested subdomain: ${domain}" "false"
+
+            # Check if this is a nested subdomain (2+ levels deep)
+            local domain_prefix="${domain%."${root_domain}"}"
+            local dot_count="${domain_prefix//[^.]}"
+            local prefix_dots="${#dot_count}"
+
+            if [[ ${prefix_dots} -ge 2 ]]; then
+              log_event "info" "Skipping proxy for nested subdomain: ${domain} (${prefix_dots} levels deep)" "false"
               display --indent 6 --text "- Skipping proxy for nested subdomain: ${domain}" --tcolor CYAN
             else
               [[ $? -eq 0 ]] && cloudflare_update_record "${root_domain}" "${domain}" "A" "true" "${SERVER_IP}"
