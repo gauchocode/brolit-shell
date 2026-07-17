@@ -172,6 +172,22 @@ function docker_php_fpm_optimize() {
 
   log_event "debug" "PHP docker directory found: ${php_docker_dir}" "false"
 
+  # Detect project type (wordpress vs php) for correct config paths
+  local project_type="php"
+  local env_file="${project_path}/.env"
+  if [[ -f "${env_file}" ]] && grep -q '^WP_PORT=' "${env_file}" 2>/dev/null; then
+    project_type="wordpress"
+  fi
+  log_event "info" "Project type detected: ${project_type}" "false"
+
+  # Define paths based on project type
+  local fpm_pool_dir
+  if [[ "${project_type}" == "wordpress" ]]; then
+    fpm_pool_dir="/usr/local/etc/php-fpm.d"
+  else
+    fpm_pool_dir="/etc/php/${php_version}/fpm/pool.d"
+  fi
+
   # Read current settings from existing config file (if exists)
   config_file="${php_docker_dir}/php-fpm/z-optimised.conf"
 
@@ -187,14 +203,14 @@ function docker_php_fpm_optimize() {
     log_event "debug" "Current settings read: pm.max_children=${current_pm_max_children}, pm.start_servers=${current_pm_start_servers}" "false"
   else
     log_event "info" "No existing config file found, reading from container" "false"
-    log_event "debug" "Running: docker exec -i ${container_name} grep -E '^pm\\.max_children' /etc/php/${php_version}/fpm/pool.d/www.conf" "false"
+    log_event "debug" "Running: docker exec -i ${container_name} grep -E '^pm\\.max_children' ${fpm_pool_dir}/www.conf" "false"
     # Try to read from container's default config
-    current_pm_max_children="$(docker exec -i "${container_name}" grep -E "^pm\.max_children" /etc/php/${php_version}/fpm/pool.d/www.conf 2>/dev/null | awk '{print $3}' || echo "5")"
-    current_pm_start_servers="$(docker exec -i "${container_name}" grep -E "^pm\.start_servers" /etc/php/${php_version}/fpm/pool.d/www.conf 2>/dev/null | awk '{print $3}' || echo "2")"
-    current_pm_min_spare_servers="$(docker exec -i "${container_name}" grep -E "^pm\.min_spare_servers" /etc/php/${php_version}/fpm/pool.d/www.conf 2>/dev/null | awk '{print $3}' || echo "1")"
-    current_pm_max_spare_servers="$(docker exec -i "${container_name}" grep -E "^pm\.max_spare_servers" /etc/php/${php_version}/fpm/pool.d/www.conf 2>/dev/null | awk '{print $3}' || echo "3")"
-    current_pm_max_requests="$(docker exec -i "${container_name}" grep -E "^pm\.max_requests" /etc/php/${php_version}/fpm/pool.d/www.conf 2>/dev/null | awk '{print $3}' || echo "500")"
-    current_pm_process_idle_timeout="$(docker exec -i "${container_name}" grep -E "^pm\.process_idle_timeout" /etc/php/${php_version}/fpm/pool.d/www.conf 2>/dev/null | awk '{print $3}' || echo "10s")"
+    current_pm_max_children="$(docker exec -i "${container_name}" grep -E "^pm\.max_children" "${fpm_pool_dir}/www.conf" 2>/dev/null | awk '{print $3}' || echo "5")"
+    current_pm_start_servers="$(docker exec -i "${container_name}" grep -E "^pm\.start_servers" "${fpm_pool_dir}/www.conf" 2>/dev/null | awk '{print $3}' || echo "2")"
+    current_pm_min_spare_servers="$(docker exec -i "${container_name}" grep -E "^pm\.min_spare_servers" "${fpm_pool_dir}/www.conf" 2>/dev/null | awk '{print $3}' || echo "1")"
+    current_pm_max_spare_servers="$(docker exec -i "${container_name}" grep -E "^pm\.max_spare_servers" "${fpm_pool_dir}/www.conf" 2>/dev/null | awk '{print $3}' || echo "3")"
+    current_pm_max_requests="$(docker exec -i "${container_name}" grep -E "^pm\.max_requests" "${fpm_pool_dir}/www.conf" 2>/dev/null | awk '{print $3}' || echo "500")"
+    current_pm_process_idle_timeout="$(docker exec -i "${container_name}" grep -E "^pm\.process_idle_timeout" "${fpm_pool_dir}/www.conf" 2>/dev/null | awk '{print $3}' || echo "10s")"
     log_event "debug" "Container settings read: pm.max_children=${current_pm_max_children}, pm.start_servers=${current_pm_start_servers}" "false"
   fi
 
@@ -337,17 +353,56 @@ EOF
   log_event "info" "Configuration written to: ${config_file}" "false"
   display --indent 6 --text "- Writing configuration" --result "DONE" --color GREEN
 
-  # Check if volume mount exists in docker-compose.yml
-  log_event "debug" "Checking if z-optimised.conf is mounted in docker-compose.yml" "false"
+  # Check and add missing volume mounts
+  log_event "debug" "Checking volume mounts in docker-compose.yml" "false"
+
+  local missing_mounts=false
+
+  # Check z-optimised.conf mount
   if ! grep -q "z-optimised.conf" "${compose_file}"; then
     log_event "warning" "z-optimised.conf not mounted in docker-compose.yml" "false"
-    display --indent 6 --text "- Volume mount missing" --result "WARNING" --color YELLOW
-    display --indent 8 --text "Add this to php-fpm volumes:" --tcolor YELLOW
-    display --indent 8 --text "- ./php-${php_version}_docker/php-fpm/z-optimised.conf:/etc/php/${php_version}/fpm/pool.d/z-optimised.conf" --tcolor YELLOW
-    return 1
+    display --indent 6 --text "- Volume mount missing for z-optimised.conf" --result "WARNING" --color YELLOW
+
+    # Auto-add the volume mount
+    local z_optimised_mount="./php-${php_version}_docker/php-fpm/z-optimised.conf:${fpm_pool_dir}/z-optimised.conf"
+    if [[ "${project_type}" == "wordpress" ]]; then
+      # WordPress: mount after existing php-fpm volumes
+      sed -i "/ volumes:/,/^[[:space:]]*-[[:space:]]*\.\//{
+        / php-fpm volumes/a\\        - ${z_optimised_mount}
+      }" "${compose_file}" 2>/dev/null
+    fi
+    display --indent 8 --text "Attempting to add: ${z_optimised_mount}" --tcolor YELLOW
+    missing_mounts=true
   fi
 
-  log_event "debug" "Volume mount verified in docker-compose.yml" "false"
+  # Check opcache-prod.ini mount
+  local opcache_file="${php_docker_dir}/php-fpm/opcache-prod.ini"
+  if [[ -f "${opcache_file}" ]]; then
+    local opcache_mount_src="./php-${php_version}_docker/php-fpm/opcache-prod.ini"
+    local opcache_mount_dst
+    if [[ "${project_type}" == "wordpress" ]]; then
+      opcache_mount_dst="/usr/local/etc/php/conf.d/z-opcache.ini"
+    else
+      opcache_mount_dst="/etc/php/${php_version}/fpm/conf.d/10-opcache.ini"
+    fi
+
+    if ! grep -q "opcache-prod.ini" "${compose_file}"; then
+      log_event "warning" "opcache-prod.ini not mounted in docker-compose.yml" "false"
+      display --indent 6 --text "- Volume mount missing for opcache-prod.ini" --result "WARNING" --color YELLOW
+
+      # Auto-add the volume mount
+      local opcache_mount="${opcache_mount_src}:${opcache_mount_dst}"
+      display --indent 8 --text "Attempting to add: ${opcache_mount}" --tcolor YELLOW
+      missing_mounts=true
+    fi
+  fi
+
+  if [[ "${missing_mounts}" == true ]]; then
+    display --indent 6 --text "- Note: You may need to manually add volume mounts to docker-compose.yml" --tcolor YELLOW
+    display --indent 8 --text "if auto-add failed. Check docker-compose.yml and rebuild containers." --tcolor YELLOW
+  fi
+
+  log_event "debug" "Volume mount check completed" "false"
 
   # Enable OPcache
   log_event "debug" "Enabling OPcache configuration" "false"
@@ -495,11 +550,10 @@ function docker_php_opcode_config() {
   sed -i 's/^opcache.enable=0/opcache.enable=1/' "${opcache_file}"
   sed -i 's/^opcache.enable_cli=0/opcache.enable_cli=1/' "${opcache_file}"
 
-  # Increase memory consumption
+  # Memory settings
   sed -i 's/^opcache.memory_consumption=.*/opcache.memory_consumption=128/' "${opcache_file}"
-
-  # Increase max accelerated files
-  sed -i 's/^opcache.max_accelerated_files=.*/opcache.max_accelerated_files=10000/' "${opcache_file}"
+  sed -i 's/^opcache.interned_strings_buffer=.*/opcache.interned_strings_buffer=16/' "${opcache_file}"
+  sed -i 's/^opcache.max_accelerated_files=.*/opcache.max_accelerated_files=20000/' "${opcache_file}"
 
   log_event "info" "OPcache enabled in: ${opcache_file}" "false"
   display --indent 6 --text "- Enabling OPcache" --result "DONE" --color GREEN

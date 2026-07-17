@@ -1178,6 +1178,9 @@ function docker_project_install() {
           if [[ -f "${opcache_file}" ]]; then
             sed -i "s/^opcache\.enable=0/opcache.enable=1/" "${opcache_file}"
             sed -i "s/^opcache\.enable_cli=0/opcache.enable_cli=1/" "${opcache_file}"
+            sed -i "s/^opcache\.memory_consumption=.*/opcache.memory_consumption=128/" "${opcache_file}"
+            sed -i "s/^opcache\.interned_strings_buffer=.*/opcache.interned_strings_buffer=16/" "${opcache_file}"
+            sed -i "s/^opcache\.max_accelerated_files=.*/opcache.max_accelerated_files=20000/" "${opcache_file}"
             display --indent 6 --text "- OPCache enabled" --result "DONE" --color GREEN
           fi
         fi
@@ -1366,6 +1369,9 @@ define('WP_REDIS_HOST','redis');\n" "${project_path}/wordpress/wp-config.php"
           if [[ -f "${opcache_file}" ]]; then
             sed -i "s/^opcache\.enable=0/opcache.enable=1/" "${opcache_file}"
             sed -i "s/^opcache\.enable_cli=0/opcache.enable_cli=1/" "${opcache_file}"
+            sed -i "s/^opcache\.memory_consumption=.*/opcache.memory_consumption=128/" "${opcache_file}"
+            sed -i "s/^opcache\.interned_strings_buffer=.*/opcache.interned_strings_buffer=16/" "${opcache_file}"
+            sed -i "s/^opcache\.max_accelerated_files=.*/opcache.max_accelerated_files=20000/" "${opcache_file}"
             display --indent 6 --text "- OPCache enabled" --result "DONE" --color GREEN
           fi
         fi
