@@ -388,6 +388,30 @@ function project_ask_install_type() {
 }
 
 ################################################################################
+# Find project .env file (checks .env, then .env.production)
+#
+# Arguments:
+#   ${1} - ${project_path}
+#
+# Outputs:
+#   Path to env file if found, empty string otherwise
+################################################################################
+
+function project_find_env_file() {
+
+  local project_path="${1}"
+
+  if [[ -f "${project_path}/.env" ]]; then
+    echo "${project_path}/.env"
+  elif [[ -f "${project_path}/.env.production" ]]; then
+    echo "${project_path}/.env.production"
+  else
+    return 1
+  fi
+
+}
+
+################################################################################
 # Extract port from project .env file
 #
 # Arguments:
@@ -400,11 +424,12 @@ function project_ask_install_type() {
 function project_get_port_from_env() {
 
   local project_path="${1}"
-  local env_file="${project_path}/.env"
+  local env_file
+  env_file="$(project_find_env_file "${project_path}")"
   local port=""
 
   # Check if .env file exists
-  if [[ ! -f "${env_file}" ]]; then
+  if [[ -z "${env_file}" ]]; then
     return 0
   fi
 

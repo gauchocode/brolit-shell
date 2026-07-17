@@ -457,8 +457,9 @@ function _restore_project_database() {
 
     # For dockerized backups that bundle the mysql_data volume, skip the separate dump import.
     # The volume IS the database — no separate .sql dump is needed.
-    local docker_env_file="${project_install_path}/.env"
-    if [[ -f "${docker_env_file}" ]]; then
+    local docker_env_file
+    docker_env_file="$(project_find_env_file "${project_install_path}")"
+    if [[ -n "${docker_env_file}" && -f "${docker_env_file}" ]]; then
         local mysql_data_dir
         mysql_data_dir="$(grep -oP '^MYSQL_DATA_DIR=\K.*' "${docker_env_file}" 2>/dev/null)"
         mysql_data_dir="${mysql_data_dir:-./mysql_data}"
@@ -564,8 +565,9 @@ function _configure_restored_project() {
     local db_user=""
 
     if [[ "${project_install_type}" == "docker"* ]]; then
-        local env_file="${project_install_path}/.env"
-        if [[ -f "${env_file}" ]]; then
+        local env_file
+        env_file="$(project_find_env_file "${project_install_path}")"
+        if [[ -n "${env_file}" && -f "${env_file}" ]]; then
             db_engine="mysql"
             db_user="$(grep -oP '^MYSQL_USER=\K.*' "${env_file}" 2>/dev/null)"
             db_pass="$(grep -oP '^MYSQL_PASSWORD=\K.*' "${env_file}" 2>/dev/null)"
@@ -714,8 +716,9 @@ function restore_project_backup() {
             display --indent 6 --text "- Using port ${project_port}" --result "DONE" --color GREEN
 
             # CRITICAL: Write port to .env BEFORE docker_setup_configuration
-            local env_file="${project_install_path}/.env"
-            if [[ -f "${env_file}" ]]; then
+            local env_file
+            env_file="$(project_find_env_file "${project_install_path}")"
+            if [[ -n "${env_file}" && -f "${env_file}" ]]; then
                 # Try to update any of the common port variables
                 project_set_config_var "${env_file}" "WP_PORT" "${project_port}" "none" "true"
                 project_set_config_var "${env_file}" "APP_PORT" "${project_port}" "none" "true"
@@ -749,8 +752,9 @@ function restore_project_backup() {
         # Restore database if configured
         if [[ -n "${db_name}" && "${db_name}" != "no-database" ]]; then
             # Read .env file for database credentials
-            local env_file="${project_install_path}/.env"
-            if [[ -f "${env_file}" ]]; then
+            local env_file
+            env_file="$(project_find_env_file "${project_install_path}")"
+            if [[ -n "${env_file}" && -f "${env_file}" ]]; then
                 local compose_project_name
                 compose_project_name="$(grep -oP '^PROJECT_NAME=\K.*' "${env_file}" 2>/dev/null)"
                 container_name="${compose_project_name}_mysql"
@@ -2312,7 +2316,13 @@ function docker_setup_configuration() {
   if [[ "${mode}" == "restore" ]]; then
     log_event "debug" "Docker restore mode: preserving original .env values, only updating domain" "false"
 
-    local env_file="${project_install_path}/.env"
+    local env_file
+    env_file="$(project_find_env_file "${project_install_path}")"
+
+    if [[ -z "${env_file}" || ! -f "${env_file}" ]]; then
+        log_event "error" "No .env or .env.production found in ${project_install_path}" "false"
+        return 1
+    fi
 
     # Update PROJECT_DOMAIN
     project_set_config_var "${env_file}" "PROJECT_DOMAIN" "${project_domain_new}" "none"
