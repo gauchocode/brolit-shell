@@ -660,11 +660,17 @@ function subtasks_restore_handler() {
   local domain="${2}"
   local file="${3}"
   local backup_date="${4}"
+  local new_domain="${5:-}"
 
   # Detect if running interactively (terminal available)
   local is_interactive="false"
   if [[ -t 0 ]] && [[ -t 1 ]]; then
     is_interactive="true"
+  fi
+
+  # Warn if new_domain is used with a subtask that doesn't support it yet
+  if [[ -n "${new_domain}" && "${subtask}" != "from-storage" ]]; then
+    log_event "warning" "--new-domain is only supported with from-storage subtask, ignoring" "false"
   fi
 
   case ${subtask} in
@@ -688,8 +694,8 @@ function subtasks_restore_handler() {
       # Interactive mode - use whiptail
       restore_backup_from_storage "${domain}" "${backup_date}"
     else
-      # Non-interactive mode - use CLI function
-      restore_backup_from_storage_cli "${domain}" "${backup_date}"
+      # Non-interactive mode - use CLI function (supports new_domain for clone)
+      restore_backup_from_storage_cli "${domain}" "${backup_date}" "${new_domain}"
     fi
 
     exit $?
