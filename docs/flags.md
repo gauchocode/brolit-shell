@@ -11,6 +11,7 @@ Options:
                          for backup: all, files, databases
                          for cloudflare-api: clear_cache, dev_mode
     -tv, --tvalue      Task aditional value
+    -nd, --new-domain  New domain (for restore with clone to different domain)
     -s,  --site        Site path for tasks execution
     -d,  --domain      Domain for tasks execution
     -pn, --pname       Project Name
@@ -87,6 +88,12 @@ Options:
 
 ```
 ./runner.sh --task "restore" --subtask "project" --domain "example.domain.com" --pname "project_name" --pstate "prod"
+```
+
+#### Restore a Project Backup from Storage (clone to new domain)
+
+```
+./runner.sh --task "restore" --subtask "from-storage" --domain "example.domain.com" --task-value "2026-06-09" --new-domain "staging.example.com"
 ```
 
 ### Database Manager

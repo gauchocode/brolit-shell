@@ -71,6 +71,7 @@ function show_help() {
     -tf, --file       Config file path (for project-install)
     -tt, --type       Install type: clean, copy (for project-install)
     -tv, --task-value Value parameter for tasks that need it
+    -nd, --new-domain New domain (for restore with clone to different domain)
     -dr, --dry-run    Dry-run mode (show what would be freed, no changes)
     -e,  --env        Environment
     -sl, --slog       Script log name
@@ -82,6 +83,7 @@ function show_help() {
     ./runner.sh -t backup -st project -D example.com
     ./runner.sh -t backup -st full-report
     ./runner.sh -t restore -st from-storage -D example.com -tv 2026-06-09
+    ./runner.sh -t restore -st from-storage -D example.com -tv 2026-06-09 -nd newdomain.com
     ./runner.sh -t restore -st from-local -D example.com -tf /path/to/backup.tar.gz
     ./runner.sh -t restore -st from-url -D example.com -tf https://example.com/backup.tar.gz
     ./runner.sh -t restore -st from-borg -D example.com
@@ -506,7 +508,7 @@ function tasks_handler() {
     esac
 
     # Execute task
-    execute_task_with_error_handling "restore-${STASK}" "subtasks_restore_handler" "${STASK}" "${DOMAIN}" "${FILE}" "${TVALUE}"
+    execute_task_with_error_handling "restore-${STASK}" "subtasks_restore_handler" "${STASK}" "${DOMAIN}" "${FILE}" "${TVALUE}" "${NDOMAIN}"
     exit_code=$?
     exit ${exit_code}
     ;;
@@ -871,6 +873,7 @@ function flags_handler() {
   declare -g PNAME=""
   declare -g PTYPE=""
   declare -g PSTATE=""
+  declare -g NDOMAIN=""
 
   ## DATABASE
   declare -g DBNAME=""
@@ -980,6 +983,12 @@ function flags_handler() {
       shift
       DOMAIN="${1}"
       export DOMAIN
+      ;;
+
+    -nd | --new-domain)
+      shift
+      NDOMAIN="${1}"
+      export NDOMAIN
       ;;
 
     # DATABASE
