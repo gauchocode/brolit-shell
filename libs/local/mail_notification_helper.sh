@@ -190,6 +190,8 @@ function mail_send_notification() {
 #   ${3} = ${status_s} // Server status
 #   ${4} = ${status_c} // Certificates status
 #   ${5} = ${outdated} // System Packages status
+#   ${6} = ${status_b} // Borg backup status
+#   ${7} = ${status_r} // Retention/storage cleanup status
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -203,11 +205,12 @@ function mail_subject_status() {
     local status_c="${4}"
     local outdated="${5}"
     local status_b="${6}"  # Borg backup status
+    local status_r="${7}"  # Retention/storage cleanup status (e.g. old backups not deleted)
 
     local status
 
     # Check for errors in any backup method
-    if [[ ${status_d} == 1 ]] || [[ ${status_f} == 1 ]] || [[ ${status_s} == 1 ]] || [[ ${status_c} == 1 ]] || [[ ${status_b} == 1 ]]; then
+    if [[ ${status_d} == 1 ]] || [[ ${status_f} == 1 ]] || [[ ${status_s} == 1 ]] || [[ ${status_c} == 1 ]] || [[ ${status_b} == 1 ]] || [[ ${status_r} == 1 ]]; then
         status="⛔ ERROR"
 
     else

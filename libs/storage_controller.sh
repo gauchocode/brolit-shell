@@ -556,6 +556,12 @@ function storage_delete_old_backups() {
     local keep_weekly=${BACKUP_RETENTION_KEEP_WEEKLY}
     local keep_monthly=${BACKUP_RETENTION_KEEP_MONTHLY}
 
+    # Track deletion failures so callers (and the cron report) can surface them
+    # instead of silently accumulating orphaned backups on remote storage.
+    local delete_errors=0
+    declare -g -i STORAGE_DELETE_ERRORS
+    STORAGE_DELETE_ERRORS="${STORAGE_DELETE_ERRORS:-0}"
+
     # List all storage backups
     backup_list="$(storage_list_dir "${storage_path}")"
 
@@ -604,6 +610,7 @@ function storage_delete_old_backups() {
         to_delete_daily=("${sorted_daily[@]:$keep_daily}")
         for i in "${to_delete_daily[@]}"; do
             storage_delete_backup "${storage_path}/${i}"
+            [[ $? -ne 0 ]] && delete_errors=$((delete_errors + 1))
         done
     fi
 
@@ -612,6 +619,7 @@ function storage_delete_old_backups() {
         to_delete_weekly=("${sorted_weekly[@]:$keep_weekly}")
         for i in "${to_delete_weekly[@]}"; do
             storage_delete_backup "${storage_path}/${i}"
+            [[ $? -ne 0 ]] && delete_errors=$((delete_errors + 1))
         done
     fi
 
@@ -620,12 +628,33 @@ function storage_delete_old_backups() {
         to_delete_monthly=("${sorted_monthly[@]:$keep_monthly}")
         for i in "${to_delete_monthly[@]}"; do
             storage_delete_backup "${storage_path}/${i}"
+            [[ $? -ne 0 ]] && delete_errors=$((delete_errors + 1))
         done
     fi
 
     # Log
     clear_previous_lines "1"
-    display --indent 6 --text "- Deleting old files from storage" --result "DONE" --color GREEN
+
+    if [[ ${delete_errors} -eq 0 ]]; then
+
+        display --indent 6 --text "- Deleting old files from storage" --result "DONE" --color GREEN
+
+        return 0
+
+    else
+
+        # Accumulate into the global counter so the calling script (e.g.
+        # cron/backups_tasks.sh) can include it in the final report/alert.
+        STORAGE_DELETE_ERRORS=$((STORAGE_DELETE_ERRORS + delete_errors))
+
+        display --indent 6 --text "- Deleting old files from storage" --result "WARNING" --color YELLOW
+        display --indent 8 --text "${delete_errors} backup(s) could not be deleted, check logs" --tcolor YELLOW
+
+        log_event "error" "storage_delete_old_backups: ${delete_errors} backup(s) failed to delete on ${storage_path}. Old backups may pile up and fill remote storage quota." "false"
+
+        return 1
+
+    fi
 
 }
 
