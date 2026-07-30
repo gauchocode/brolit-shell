@@ -1323,14 +1323,14 @@ function _project_get_brolit_config_file() {
     local project_path="${1}"
 
     local project_domain
-    local project_name
     local project_config_file
 
     project_domain="$(basename "${project_path}")"
 
-    project_name="$(_project_get_name_from_domain "${project_domain}")"
-
-    project_config_file="${BROLIT_CONFIG_PATH}/${project_name}_conf.json"
+    # Project config files are named after the full domain (e.g. dashboard.goseries.tv_conf.json),
+    # not the mangled name from _project_get_name_from_domain(). BROLIT_CONFIG_PATH (no "PROJECT")
+    # is never defined in this file - the declared global is BROLIT_PROJECT_CONFIG_PATH.
+    project_config_file="${BROLIT_PROJECT_CONFIG_PATH}/${project_domain}_conf.json"
 
     if [[ -e ${project_config_file} ]]; then
 
@@ -1439,7 +1439,7 @@ function _project_get_config_var() {
 
     local content
 
-    [[ ! -f ${file} ]] && exit 1
+    [[ ! -f ${file} ]] && return 1
 
     # Read "${file}"/.env to extract ${variable}
     content="$(grep -oP "^${variable}=\K.*" "${file}")"
@@ -2133,7 +2133,10 @@ function dropbox_get_site_backups() {
 
     # Get dropbox backup list
     dropbox_chosen_backup_path="${SERVER_NAME}/projects-${backup_status}/${backup_type}/${chosen_project}"
-    dropbox_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}")"
+    # "-hq list" output is columnar ([F]/[D], size, date, filename); keep only the
+    # last column (filename) per line instead of word-splitting the whole blob,
+    # which would mix size/date/marker tokens in with the filenames.
+    dropbox_backup_list="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_chosen_backup_path}" | awk '{print $NF}')"
 
     for backup_file in ${dropbox_backup_list}; do
         # Append
@@ -2142,7 +2145,7 @@ function dropbox_get_site_backups() {
 
     if [[ -n ${backup_files} ]]; then
         # Remove 3 last chars
-        backup_files="${backup_files::3}"
+        backup_files="${backup_files::-3}"
     else
         backup_files="\"empty-response\""
     fi
@@ -2840,7 +2843,8 @@ function read_project_config() {
 
     timestamp="$(_timestamp)"
 
-    project_config_file="${BROLIT_PROJECT_CONFIG_PATH}/${project_name}_conf.json"
+    # Project config files are named after the full domain (e.g. dashboard.goseries.tv_conf.json)
+    project_config_file="${BROLIT_PROJECT_CONFIG_PATH}/${project_domain}_conf.json"
 
     if [[ -f ${project_config_file} ]]; then
 
@@ -2855,7 +2859,7 @@ function read_project_config() {
     else
 
         # Write JSON file
-        echo "{ \"${timestamp}\" : { no-site-config } }" >"${BROLIT_LITE_OUTPUT_DIR}/firewall_app_list.json"
+        echo "{ \"${timestamp}\" : \"no-site-config\" }" >"${BROLIT_LITE_OUTPUT_DIR}/read_project_config.json"
 
         # Return JSON
         cat "${BROLIT_LITE_OUTPUT_DIR}/read_project_config.json"
