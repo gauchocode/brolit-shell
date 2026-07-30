@@ -321,6 +321,11 @@ script_init "true"
 # Running from cron
 log_event "info" "Running backups_tasks.sh ..." "false"
 
+# Global counter incremented by storage_delete_old_backups() every time it
+# fails to remove an old backup from a remote storage (e.g. Dropbox). Reset
+# here so this run's report only reflects this run's failures.
+declare -g -i STORAGE_DELETE_ERRORS=0
+
 # If NETDATA is installed, disabled alarms
 [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]] && netdata_alerts_disable
 
@@ -418,8 +423,14 @@ fi
 # Send html to a var
 mail_html="$(cat "${email_html_file}")"
 
+# Retention/storage cleanup status: were there old backups that could not be
+# deleted from remote storage (e.g. Dropbox)? Left unattended this fills up
+# the storage quota and causes every subsequent backup upload to fail.
+retention_backup_result=0
+[[ ${STORAGE_DELETE_ERRORS} -gt 0 ]] && retention_backup_result=1
+
 # Checking result status for mail subject (including borg backup status)
-email_status="$(mail_subject_status "${database_backup_result}" "${files_backup_result}" "${STATUS_SERVER}" "${STATUS_CERTS}" "${OUTDATED_PACKAGES}" "${borg_backup_result}")"
+email_status="$(mail_subject_status "${database_backup_result}" "${files_backup_result}" "${STATUS_SERVER}" "${STATUS_CERTS}" "${OUTDATED_PACKAGES}" "${borg_backup_result}" "${retention_backup_result}")"
 
 # Preparing email to send
 email_subject="${email_status} [${NOWDISPLAY}] - Complete Backup on ${SERVER_NAME}"
@@ -431,6 +442,9 @@ notification_message="Complete backup completed successfully."
 if [[ ${database_backup_result} -eq 1 ]] || [[ ${files_backup_result} -eq 1 ]] || [[ ${borg_backup_result} -eq 1 ]]; then
     notification_status="alert"
     notification_message="Complete backup completed with errors. Check logs for details."
+elif [[ ${retention_backup_result} -eq 1 ]]; then
+    notification_status="alert"
+    notification_message="Backup completed, but ${STORAGE_DELETE_ERRORS} old backup(s) could not be deleted from remote storage. Check logs to avoid filling up storage quota."
 fi
 
 # Sending email notification

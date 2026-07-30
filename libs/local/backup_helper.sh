@@ -206,6 +206,7 @@ function backup_server_config() {
 
         # Deleting old backup file
         storage_delete_old_backups "${storage_path}"
+        [[ $? -ne 0 ]] && log_event "error" "Retention cleanup failed for server config backup: ${bk_sup_type} (${storage_path})" "false"
 
         # Deleting tmp backup file
         rm --force "${BROLIT_TMP_DIR}/${NOW}/${backup_file}"
@@ -336,6 +337,7 @@ function backup_all_server_configs() {
         storage_upload_backup "${openresty_backup_path}" "${storage_path}" "${openresty_backup_size}"
         if [[ $? -eq 0 ]]; then
           storage_delete_old_backups "${storage_path}"
+          [[ $? -ne 0 ]] && log_event "error" "Retention cleanup failed for openresty-vm backup (${storage_path})" "false"
           rm --force "${openresty_backup_path}"
           backuped_config_list[$backuped_config_index]="openresty-vm;${openresty_backup_size}"
           backuped_config_index=$((backuped_config_index + 1))
@@ -760,6 +762,7 @@ function backup_project_files() {
 
         # Delete old backups
         storage_delete_old_backups "${storage_path}"
+        [[ $? -ne 0 ]] && log_event "error" "Retention cleanup failed for project files backup: ${directory_to_backup} (${storage_path})" "false"
 
         # Delete temp backup
         rm --force "${BROLIT_TMP_DIR}/${NOW}/${backup_file}"
@@ -1143,6 +1146,7 @@ function backup_project_database() {
 
         # Delete old backup from storage
         storage_delete_old_backups "${storage_path}"
+        [[ $? -ne 0 ]] && log_event "error" "Retention cleanup failed for database backup: ${database} (${storage_path})" "false"
 
         # Delete local temp files
         rm --force "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"

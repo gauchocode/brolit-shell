@@ -299,6 +299,9 @@ function dropbox_delete() {
     local search_file
     local search_result
     local dropbox_remove_result
+    local attempt
+    local max_attempts=3
+    local wait_seconds
 
     # TODO: implements dropbox_check_if_file_exists
 
@@ -318,10 +321,34 @@ function dropbox_delete() {
     # Check if not empty
     if [[ -n ${search_result} || ${force_delete} == "true" ]]; then
 
-        # Command
-        output="$("${DROPBOX_UPLOADER}" remove "${to_delete}")"
+        # Retry with backoff: the Dropbox API can return transient errors
+        # (timeouts, rate limiting) that make a single attempt unreliable.
+        for ((attempt = 1; attempt <= max_attempts; attempt++)); do
 
-        dropbox_remove_result=$?
+            # Command
+            output="$("${DROPBOX_UPLOADER}" remove "${to_delete}" 2>&1)"
+            dropbox_remove_result=$?
+
+            [[ ${dropbox_remove_result} -eq 0 ]] && break
+
+            if [[ ${attempt} -lt ${max_attempts} ]]; then
+
+                # Back off longer if it looks like a rate-limit response
+                if echo "${output}" | grep -qi "429\|too_many_requests\|rate limit"; then
+                    wait_seconds=$((attempt * 10))
+                else
+                    wait_seconds=$((attempt * 3))
+                fi
+
+                log_event "warning" "Attempt ${attempt}/${max_attempts} failed removing ${to_delete} from Dropbox, retrying in ${wait_seconds}s..." "false"
+                log_event "debug" "Last command output: ${output}" "false"
+
+                sleep "${wait_seconds}"
+
+            fi
+
+        done
+
         if [[ ${dropbox_remove_result} -eq 0 ]]; then
 
             # Log
@@ -336,7 +363,7 @@ function dropbox_delete() {
             display --indent 6 --text "- Deleting old files from Dropbox" --result "WARNING" --color YELLOW
             display --indent 8 --text "Can't remove backup from Dropbox." --tcolor YELLOW
 
-            log_event "warning" "Can't remove ${to_delete} from Dropbox." "false"
+            log_event "error" "Can't remove ${to_delete} from Dropbox after ${max_attempts} attempts." "false"
             log_event "warning" "Last command executed: ${DROPBOX_UPLOADER} remove ${to_delete}" "false"
             log_event "debug" "Last command output: ${output}" "false"
 
