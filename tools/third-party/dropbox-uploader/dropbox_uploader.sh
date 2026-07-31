@@ -1144,6 +1144,10 @@ function db_list_outfile
     fi
 
     OUT_FILE="$TMP_DIR/du_tmp_out_$RANDOM"
+    # Create the file up front: if the listed directory has zero entries, the
+    # loop below never writes to it, and callers (db_list) still read from it
+    # unconditionally 3 times, which would otherwise fail with "No such file".
+    : > "$OUT_FILE"
 
     while (true); do
 

@@ -2398,8 +2398,8 @@ function project_delete_files() {
       log_event "info" "Project files deleted for ${project_domain}" "false"
       display --indent 6 --text "- Deleting project files on server" --result "DONE" --color GREEN
 
-      # Make a copy of nginx configuration file
-      copy_files "${WSERVER}/sites-available/${project_domain}" "${BROLIT_TMP_DIR}"
+      # Make a copy of nginx configuration file, if it was ever configured as a site
+      [[ -f "${WSERVER}/sites-available/${project_domain}" ]] && copy_files "${WSERVER}/sites-available/${project_domain}" "${BROLIT_TMP_DIR}"
 
       return 0
 
@@ -2684,6 +2684,16 @@ function project_delete() {
     log_subsection "DNS Cleanup"
 
     project_root_domain="$(domain_get_root "${project_domain}")"
+
+    if [[ -z ${project_root_domain} ]]; then
+
+      # Log
+      log_event "info" "Cloudflare entries not deleted. '${project_domain}' is not a valid domain/subdomain." "false"
+      display --indent 6 --text "- Deleting Cloudflare entries" --result "SKIPPED" --color YELLOW
+      display --indent 8 --text "'${project_domain}' is not a valid domain/subdomain." --tcolor YELLOW
+
+    else
+
     project_actual_ip="$(cloudflare_get_record_details "${project_root_domain}" "${project_domain}" "content")"
 
     if [[ ${project_actual_ip} == "${SERVER_IP}" ]]; then
@@ -2720,6 +2730,8 @@ function project_delete() {
       log_event "info" "Cloudflare entries not deleted. The Cloudflare entry's IP address differs from the server's IP address." "false"
       display --indent 6 --text "- Deleting Cloudflare entries" --result "SKIPPED" --color YELLOW
       display --indent 8 --text "The Cloudflare entry's IP address differs from the server's IP address." --tcolor YELLOW
+
+    fi
 
     fi
 
