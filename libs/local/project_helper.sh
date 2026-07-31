@@ -1055,12 +1055,21 @@ function project_get_configured_docker_data_dir() {
 
   local project_dir
 
+  if [[ ! -f "${project_path}/.env" ]]; then
+
+    # Log
+    log_event "debug" "No .env file at ${project_path}, can't get WWW_DATA_DIR value" "false"
+
+    return 1
+
+  fi
+
   # Get WWW_DATA_DIR value from .env file
-  project_dir="$(cat "${project_path}/.env" | grep WWW_DATA_DIR | cut -d "=" -f 2)"
+  project_dir="$(grep WWW_DATA_DIR "${project_path}/.env" | cut -d "=" -f 2)"
 
   # Check exitstatus
   exitstatus=$?
-  if [[ ${exitstatus} -eq 0 ]]; then
+  if [[ ${exitstatus} -eq 0 && -n ${project_dir} ]]; then
 
     # Overwrite ${project_path}, remove "." if exists at the beginning
     project_path="${project_path}${project_dir#.}"
