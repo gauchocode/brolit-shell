@@ -78,7 +78,8 @@ function _openresty_install_local() {
     mkdir -p /usr/local/openresty/nginx/conf/sites-enabled
     mkdir -p /usr/local/openresty/nginx/conf/api
     mkdir -p /usr/local/openresty/nginx/conf/globals
-    mkdir -p /var/www/certbot/.well-known/acme-challenge
+    mkdir -p /etc/brolit/certbot-webroot/.well-known/acme-challenge
+    chmod -R 755 /etc/brolit/certbot-webroot
     mkdir -p /etc/letsencrypt/renewal-hooks/deploy
 
     # Generate OpenResty-specific nginx.conf (the brolit nginx.conf uses /etc/nginx/ paths)
@@ -119,7 +120,7 @@ http {
         server_name _;
 
         location /.well-known/acme-challenge/ {
-            root /var/www/certbot;
+            root /etc/brolit/certbot-webroot;
         }
     }
 
@@ -189,7 +190,8 @@ function _openresty_install_in_vm() {
     remote_script+="mkdir -p /usr/local/openresty/nginx/conf/sites-enabled && "
     remote_script+="mkdir -p /usr/local/openresty/nginx/conf/api && "
     remote_script+="mkdir -p /usr/local/openresty/nginx/conf/globals && "
-    remote_script+="mkdir -p /var/www/certbot/.well-known/acme-challenge && "
+    remote_script+="mkdir -p /etc/brolit/certbot-webroot/.well-known/acme-challenge && "
+    remote_script+="chmod -R 755 /etc/brolit/certbot-webroot && "
     remote_script+="mkdir -p /etc/letsencrypt/renewal-hooks/deploy && "
     remote_script+="echo 'OpenResty installed successfully'"
 
@@ -345,7 +347,7 @@ http {
         server_name _;
 
         location /.well-known/acme-challenge/ {
-            root /var/www/certbot;
+            root /etc/brolit/certbot-webroot;
         }
     }
 
@@ -644,7 +646,7 @@ http {
         server_name _;
 
         location /.well-known/acme-challenge/ {
-            root /var/www/certbot;
+            root /etc/brolit/certbot-webroot;
         }
     }
 
@@ -664,7 +666,8 @@ HEREDOC
         mkdir -p "${openresty_conf}/sites-available"
         mkdir -p "${openresty_conf}/sites-enabled"
         mkdir -p "${openresty_conf}/globals"
-        mkdir -p /var/www/certbot/.well-known/acme-challenge
+        mkdir -p /etc/brolit/certbot-webroot/.well-known/acme-challenge
+        chmod -R 755 /etc/brolit/certbot-webroot
 
         # Copy globals (only http-safe ones)
         for f in logs.conf security.conf; do

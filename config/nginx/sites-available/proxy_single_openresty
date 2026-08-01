@@ -45,7 +45,7 @@ server {
     server_name domain.com;
 
     location /.well-known/acme-challenge/ {
-        root /var/www/certbot;
+        root /etc/brolit/certbot-webroot;
     }
 
     location / {
