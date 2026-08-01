@@ -27,7 +27,9 @@ function json_read_field() {
 
     local json_field_value
 
-    json_field_value="$(cat "${json_file}" | jq -r ".${json_field}" 2>/dev/null)"
+    # "// empty" turns a missing/null field into an empty string instead of
+    # the literal text "null", which callers' "-z" checks can't catch.
+    json_field_value="$(cat "${json_file}" | jq -r ".${json_field} // empty" 2>/dev/null)"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
