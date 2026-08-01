@@ -52,7 +52,7 @@ function show_help() {
                         disk-cleanup        Subtasks: apt, journal, docker, all
                         aliases-install     (no subtask)
                         openresty           Subtasks: install, uninstall, reconfigure, status,
-                                            api-status, api-routes
+                                            api-status, api-routes, create-route, delete-route
                         migrate-npm         Subtasks: download-configs, migrate-all, migrate-domain
 
   Options:
@@ -72,6 +72,7 @@ function show_help() {
     -tt, --type       Install type: clean, copy (for project-install)
     -tv, --task-value Value parameter for tasks that need it
     -nd, --new-domain New domain (for restore with clone to different domain)
+    -rd, --redirect-domains  Comma-separated redirect domains (for openresty create-route)
     -dr, --dry-run    Dry-run mode (show what would be freed, no changes)
     -e,  --env        Environment
     -sl, --slog       Script log name
@@ -109,6 +110,9 @@ function show_help() {
     ./runner.sh -t project-install -tf /path/to/config.json -tt clean
     ./runner.sh -t openresty -st install
     ./runner.sh -t openresty -st api-routes
+    ./runner.sh -t openresty -st create-route -D example.com -tv http://10.2.0.104:80
+    ./runner.sh -t openresty -st create-route -D example.com -tv http://10.2.0.104:80 -rd www.example.com
+    ./runner.sh -t openresty -st delete-route -D example.com
     ./runner.sh -t migrate-npm -st migrate-all -D 10.2.0.100
 
   "
@@ -777,9 +781,23 @@ function tasks_handler() {
 
   openresty)
     # Validate subtask
-    validate_task_and_subtask "openresty" "${STASK}" "install uninstall reconfigure status api-status api-routes"
+    validate_task_and_subtask "openresty" "${STASK}" "install uninstall reconfigure status api-status api-routes create-route delete-route"
     exit_code=$?
     [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
+
+    # Validate required params based on subtask
+    case "${STASK}" in
+      create-route)
+        validate_required_params "openresty-${STASK}" "DOMAIN" "TVALUE"
+        exit_code=$?
+        [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
+        ;;
+      delete-route)
+        validate_required_params "openresty-${STASK}" "DOMAIN"
+        exit_code=$?
+        [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
+        ;;
+    esac
 
     # Execute task
     case "${STASK}" in
@@ -800,6 +818,13 @@ function tasks_handler() {
         ;;
       api-routes)
         execute_task_with_error_handling "openresty-api-routes" "openresty_list_routes"
+        ;;
+      create-route)
+        # -tt (project type: proxy|wordpress, default proxy), -tv (upstream_url), -rd (redirect_domains)
+        execute_task_with_error_handling "openresty-create-route" "openresty_server_create" "${DOMAIN}" "${TYPE:-proxy}" "proxy" "${RDOMAINS}" "" "${TVALUE}"
+        ;;
+      delete-route)
+        execute_task_with_error_handling "openresty-delete-route" "openresty_server_delete" "${DOMAIN}"
         ;;
     esac
     exit_code=$?
@@ -874,6 +899,7 @@ function flags_handler() {
   declare -g PTYPE=""
   declare -g PSTATE=""
   declare -g NDOMAIN=""
+  declare -g RDOMAINS=""
 
   ## DATABASE
   declare -g DBNAME=""
@@ -989,6 +1015,12 @@ function flags_handler() {
       shift
       NDOMAIN="${1}"
       export NDOMAIN
+      ;;
+
+    -rd | --redirect-domains)
+      shift
+      RDOMAINS="${1}"
+      export RDOMAINS
       ;;
 
     # DATABASE
