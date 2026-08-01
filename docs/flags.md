@@ -12,6 +12,7 @@ Options:
                          for cloudflare-api: clear_cache, dev_mode
     -tv, --tvalue      Task aditional value
     -nd, --new-domain  New domain (for restore with clone to different domain)
+    -rd, --redirect-domains  Comma-separated redirect domains (for openresty create-route)
     -s,  --site        Site path for tasks execution
     -d,  --domain      Domain for tasks execution
     -pn, --pname       Project Name
