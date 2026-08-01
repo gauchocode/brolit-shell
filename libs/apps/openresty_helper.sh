@@ -341,6 +341,8 @@ function openresty_configuration_test() {
 #   ${3} = ${server_type} (single, root_domain)
 #   ${4} = ${redirect_domains} (optional)
 #   ${5} = ${proxy_port} (optional)
+#   ${6} = ${upstream_url} (optional)
+#   ${7} = ${cert_name} (optional; defaults to project_domain)
 #
 # Outputs:
 #   0 if ok, 1 on error
@@ -354,6 +356,11 @@ function openresty_server_create() {
     local redirect_domains="${4}"
     local proxy_port="${5}"
     local upstream_url="${6:-}"
+    # Optional: certbot's certificate directory name to use, when it
+    # differs from project_domain (e.g. this domain was issued as an
+    # additional SAN on another domain's certificate, so it has no
+    # /etc/letsencrypt/live/<project_domain>/ of its own).
+    local cert_name="${7:-}"
 
     local api_url
     api_url="$(openresty_get_api_url)/api/routes"
@@ -385,6 +392,10 @@ function openresty_server_create() {
 
     if [[ -n "${redirect_domains}" ]]; then
         json_data="$(echo "${json_data}" | jq --arg redirect_domains "${redirect_domains}" '. + {redirect_domains: $redirect_domains}')"
+    fi
+
+    if [[ -n "${cert_name}" ]]; then
+        json_data="$(echo "${json_data}" | jq --arg cert_name "${cert_name}" '. + {cert_name: $cert_name}')"
     fi
 
     # Call Lua API

@@ -73,6 +73,8 @@ function show_help() {
     -tv, --task-value Value parameter for tasks that need it
     -nd, --new-domain New domain (for restore with clone to different domain)
     -rd, --redirect-domains  Comma-separated redirect domains (for openresty create-route)
+    -cn, --cert-name  Certificate directory name to use, when it differs from
+                      the domain (for openresty create-route)
     -dr, --dry-run    Dry-run mode (show what would be freed, no changes)
     -e,  --env        Environment
     -sl, --slog       Script log name
@@ -113,6 +115,7 @@ function show_help() {
     ./runner.sh -t openresty -st api-routes
     ./runner.sh -t openresty -st create-route -D example.com -tv http://10.2.0.104:80
     ./runner.sh -t openresty -st create-route -D example.com -tv http://10.2.0.104:80 -rd www.example.com
+    ./runner.sh -t openresty -st create-route -D www.example.com -tv http://10.2.0.104:80 -cn example.com
     ./runner.sh -t openresty -st delete-route -D example.com
     ./runner.sh -t migrate-npm -st migrate-all -D 10.2.0.100
 
@@ -823,8 +826,9 @@ function tasks_handler() {
         execute_task_with_error_handling "openresty-api-routes" "openresty_list_routes"
         ;;
       create-route)
-        # -tt (project type: proxy|wordpress, default proxy), -tv (upstream_url), -rd (redirect_domains)
-        execute_task_with_error_handling "openresty-create-route" "openresty_server_create" "${DOMAIN}" "${TYPE:-proxy}" "proxy" "${RDOMAINS}" "" "${TVALUE}"
+        # -tt (project type: proxy|wordpress, default proxy), -tv (upstream_url),
+        # -rd (redirect_domains), -cn (cert_name, when it differs from DOMAIN)
+        execute_task_with_error_handling "openresty-create-route" "openresty_server_create" "${DOMAIN}" "${TYPE:-proxy}" "proxy" "${RDOMAINS}" "" "${TVALUE}" "${CERTNAME}"
         ;;
       delete-route)
         execute_task_with_error_handling "openresty-delete-route" "openresty_server_delete" "${DOMAIN}"
@@ -903,6 +907,7 @@ function flags_handler() {
   declare -g PSTATE=""
   declare -g NDOMAIN=""
   declare -g RDOMAINS=""
+  declare -g CERTNAME=""
 
   ## DATABASE
   declare -g DBNAME=""
@@ -1024,6 +1029,12 @@ function flags_handler() {
       shift
       RDOMAINS="${1}"
       export RDOMAINS
+      ;;
+
+    -cn | --cert-name)
+      shift
+      CERTNAME="${1}"
+      export CERTNAME
       ;;
 
     # DATABASE
