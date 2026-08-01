@@ -99,6 +99,10 @@ function certbot_tasks_handler() {
 
     local subtask="${1}"
     local domain="${2}"
+    # Optional: overrides NOTIFICATION_EMAIL_EMAIL_TO for this call. Needed
+    # when email notifications are disabled (NOTIFICATION_EMAIL_EMAIL_TO is
+    # then empty, and certbot requires a contact email with -m).
+    local email="${3:-${NOTIFICATION_EMAIL_EMAIL_TO}}"
 
     log_subsection "Certbot Manager"
 
@@ -106,14 +110,14 @@ function certbot_tasks_handler() {
 
     install)
 
-        certbot_certificate_install "${NOTIFICATION_EMAIL_EMAIL_TO}" "${domain}"
+        certbot_certificate_install "${email}" "${domain}"
 
         exit $?
         ;;
 
     expand)
 
-        certbot_certificate_expand "${NOTIFICATION_EMAIL_EMAIL_TO}" "${domain}"
+        certbot_certificate_expand "${email}" "${domain}"
 
         exit $?
         ;;
