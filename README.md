@@ -61,11 +61,13 @@ BROLIT-SHELL is a server management tool built on **BASH**, designed to expedien
 ### Proxmox VE Integration
 BROLIT-SHELL supports Proxmox VE environments with OpenResty as the reverse proxy inside VMs. This replaces Nginx Proxy Manager with a fully API-managed solution:
 
-* Install and configure OpenResty inside VMs via SSH.
-* Migrate proxy hosts from NPM via API.
-* Lua API for CRUD operations on proxy routes (port 8080).
-* Automatic SSL certificate migration from NPM.
-* brolit-shell integration: `PROXMOX_MODE=enabled` in config.
+* **Runs directly on the Proxmox VE node** (hypervisor) to provision a dedicated OpenResty gateway VM from scratch: creates the VM via `qm`, waits for it to come up, installs brolit-shell + OpenResty on it over SSH, registers a persistent SSH NAT rule, and points the node's own `brolit_conf.json` at the new VM — one call (`proxmox_provision_openresty_vm`), reachable from the main menu as **PROXMOX TOOLS** whenever `brolit-shell` detects it's running on a Proxmox node.
+* SSH-key-based authentication to the gateway VM (dedicated `ed25519` keypair, injected via cloud-init) — no passwords stored or prompted for routine operations.
+* Install and configure OpenResty inside the VM via SSH.
+* Lua API for CRUD operations on proxy routes (port 8080, bearer-token authenticated, network-ACL restricted to the private subnet).
+* Certbot integration aware of Proxmox mode: DNS-01 challenges via Cloudflare for Cloudflare-managed domains, webroot challenges otherwise — both executed on the gateway VM, not the orchestrating node.
+* Migrate proxy hosts from an existing Nginx Proxy Manager via its API (optional; routes can also be created directly when NPM's API isn't reachable).
+* brolit-shell integration: `PROXMOX_MODE=enabled` + `SERVER_CONFIG.openresty_vm_ip` in config, set automatically by the provisioning flow.
 
 ### Enhanced installation support for leading tools
 Experience streamlined setup for a range of exceptional tools including Netdata, Portainer, Portainer Agent, Cockpit, Zabbix, and more.

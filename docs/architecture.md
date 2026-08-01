@@ -108,6 +108,7 @@ Manager scripts provide menus (interactive) and task handlers (CLI). Both paths 
 | `certbot_manager.sh` | Menu 07 | — |
 | `cloudflare_manager.sh` | Menu 08 | `-t cloudflare-api` |
 | `it_utils_manager.sh` | Menu 09 | — |
+| `proxmox_manager.sh` | Menu 11 (Proxmox node only) | — |
 
 ### 6. Installers (`utils/installers/`)
 
@@ -171,10 +172,35 @@ Config is loaded by `utils/brolit_configuration_manager.sh` at startup and store
 
 ### Proxmox Mode
 
-When `proxmox_mode: "enabled"` in `brolit_conf.json`:
-- `OPENRESTY_VM_IP`: IP address of the VM running OpenResty
-- `OPENRESTY_VM_PASS`: SSH password for the VM (optional if SSH keys are configured)
-- All OpenResty operations are executed via SSH to the VM
+Two distinct things happen on a Proxmox VE hypervisor, detected separately:
+
+**1. Running on the Proxmox node itself** (`proxmox_node_detect()` in
+`libs/local/proxmox_helper.sh`, checks for `pveversion`/`pvedaemon`/`/etc/pve`)
+gates the **PROXMOX TOOLS** menu entry (menu 11) and hides the
+project-oriented menu entries (backup/restore/project/database/environment/
+wp-cli — all operate on `PROJECTS_PATH`, which is meaningless on a bare
+hypervisor). From this menu, `proxmox_provision_openresty_vm()` creates a
+new guest VM end to end: allocates the next free VMID/private IP/NAT port
+(`proxmox_get_next_vmid`, `proxmox_get_next_vm_ip`,
+`proxmox_get_next_nat_port`), creates it via `qm` with a cloud-init image
+(`proxmox_create_vm`), injects a dedicated `ed25519` keypair
+(`~/.ssh/brolit_openresty_vm`, generated on first use) so no password auth
+is ever needed, waits for SSH (`proxmox_wait_for_vm_ssh`), installs
+brolit-shell + OpenResty on it over SSH, registers a persistent SSH NAT
+rule (`proxmox_add_ssh_nat_rule`), and finally writes
+`SERVER_CONFIG.proxmox_mode`/`openresty_vm_ip`/`openresty_api_token` back
+into the *node's own* `brolit_conf.json` — which is what turns on mode 2
+below for this node going forward.
+
+**2. `PROXMOX_MODE=enabled` in `brolit_conf.json`** (set automatically by
+the provisioning flow above, or manually) turns this machine into an
+orchestrator for a remote OpenResty gateway VM:
+- `OPENRESTY_VM_IP`: private IP of the VM running OpenResty
+- `OPENRESTY_API_TOKEN`: bearer token for the VM's Lua management API (port 8080)
+- `OPENRESTY_VM_PASS`: SSH password fallback (unused once the dedicated SSH key is set up — see `openresty_vm_ssh_prerequisite`)
+- All OpenResty operations (`openresty_vm_exec`/`openresty_vm_scp` in `libs/apps/openresty_helper.sh`) are executed via SSH to the VM using the dedicated key, not locally
+- `certbot_helper.sh` is Proxmox-aware: `certbot_get_challenge_type()` picks `dns-cloudflare` for Cloudflare-managed domains and `webroot` otherwise, and `certbot_certificate_install()` runs certbot *on the gateway VM* via `openresty_vm_exec`, never on the orchestrating node
+- Routes are created/listed/deleted via the VM's Lua API (`config/openresty/api/routes.lua`) through `openresty_server_create`/`openresty_server_delete`/`openresty_server_list` — the API writes `sites-available/<domain>` + a `sites-enabled/<domain>.conf` symlink (the `.conf` suffix matters: `nginx.conf`'s `include sites-enabled/*.conf` only picks up symlinks with that extension) and reloads OpenResty through a narrowly-scoped `sudoers.d` rule (`config/openresty/sudoers-openresty-reload`), since the worker runs as `www-data` but the master's pid/log files are root-owned
 
 ## Data Storage
 
@@ -183,8 +209,9 @@ When `proxmox_mode: "enabled"` in `brolit_conf.json`:
 | `/var/www/` | Web project files |
 | `/etc/brolit/` | Per-project BROLIT configs |
 | `/etc/nginx/sites-available/` | Nginx virtual hosts |
-| `/usr/local/openresty/nginx/conf/` | OpenResty config (when using Proxmox mode) |
-| `/etc/letsencrypt/` | SSL certificates |
+| `/usr/local/openresty/nginx/conf/` | OpenResty config (when using Proxmox mode; `sites-available/`, `sites-enabled/`, `api/`, `custom.d/` live under here on the gateway VM) |
+| `/etc/brolit/certbot-webroot/` | ACME HTTP-01 webroot (deliberately outside `/var/www`/`PROJECTS.path`, since it isn't a project) |
+| `/etc/letsencrypt/` | SSL certificates (on the gateway VM in Proxmox mode, not the orchestrating node) |
 | `log/` | Runtime logs (gitignored) |
 | `reports/` | Scan/audit reports (gitignored) |
 
