@@ -525,6 +525,12 @@ function certbot_certificate_install() {
     # Deleting old config
     certbot_certificate_delete_old_config "${domains}"
 
+    # Retry with --expand too: a common reason the first attempt fails is
+    # an existing cert that already covers a subset of ${domains} (e.g.
+    # adding "www.example.com" to a cert that only had "example.com"),
+    # which certbot refuses to touch without this flag.
+    certbot_cmd="$(certbot_get_command "${challenge_type}" "${email}" "${domains}" "--quiet --expand")"
+
     # Running certbot again
     if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
       openresty_vm_exec "${certbot_cmd}"
