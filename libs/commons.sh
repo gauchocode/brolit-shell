@@ -1925,18 +1925,33 @@ function menu_main_options() {
   whip_title="BROLIT-SHELL MAIN MENU"
   whip_description=" "
 
-  runner_options=(
-    "01)" "BACKUP OPTIONS"
-    "02)" "RESTORE OPTIONS"
-    "03)" "PROJECT MANAGER"
-    "04)" "DATABASE MANAGER"
-    "05)" "ENVIRONMENT MANAGER"
-    "06)" "WP-CLI MANAGER"
+  runner_options=()
+
+  # Project-oriented options (backup/restore/project/database/environment/
+  # wp-cli) all operate on PROJECTS_PATH (/var/www), which doesn't exist on
+  # a bare Proxmox VE hypervisor - only inside its guest VMs. Hide them there
+  # instead of offering options that can only ever find nothing to act on.
+  if ! proxmox_node_detect; then
+    runner_options+=(
+      "01)" "BACKUP OPTIONS"
+      "02)" "RESTORE OPTIONS"
+      "03)" "PROJECT MANAGER"
+      "04)" "DATABASE MANAGER"
+      "05)" "ENVIRONMENT MANAGER"
+      "06)" "WP-CLI MANAGER"
+    )
+  fi
+
+  runner_options+=(
     "07)" "CERTBOT MANAGER"
     "08)" "CLOUDFLARE MANAGER"
     "09)" "IT UTILS"
     "10)" "BROLIT CONFIG"
   )
+
+  # Only offer Proxmox node tasks (e.g. provisioning an OpenResty gateway VM)
+  # when actually running on a Proxmox VE hypervisor, not inside a guest VM.
+  proxmox_node_detect && runner_options+=("11)" "PROXMOX TOOLS")
 
   while true; do
 
@@ -2030,6 +2045,14 @@ function menu_main_options() {
       # BROLIT CONFIG
       if [[ ${chosen_type} == *"10"* ]]; then
         brolit_config_menu
+      fi
+
+      # PROXMOX TOOLS
+      if [[ ${chosen_type} == *"11"* ]]; then
+        # shellcheck source=${BROLIT_MAIN_DIR}/utils/proxmox_manager.sh
+        source "${BROLIT_MAIN_DIR}/utils/proxmox_manager.sh"
+
+        proxmox_manager_menu
       fi
 
     else
