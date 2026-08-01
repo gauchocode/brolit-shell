@@ -51,6 +51,156 @@ function openresty_get_api_url() {
 }
 
 ################################################################################
+# Get default SSH private key path for OpenResty VM
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   SSH private key path
+################################################################################
+
+function openresty_get_ssh_key() {
+
+    echo "${HOME}/.ssh/brolit_openresty_vm"
+
+}
+
+################################################################################
+# Check if SSH key authentication to OpenResty VM is available
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if key auth works, 1 otherwise
+################################################################################
+
+function openresty_vm_ssh_key_is_configured() {
+
+    local ssh_key
+    ssh_key="$(openresty_get_ssh_key)"
+
+    if [[ ! -f "${ssh_key}" ]]; then
+        return 1
+    fi
+
+    if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
+        ssh -o ConnectTimeout=5 -o BatchMode=yes -o StrictHostKeyChecking=accept-new \
+            -i "${ssh_key}" "root@${OPENRESTY_VM_IP}" "true" >/dev/null 2>&1
+        return $?
+    fi
+
+    return 1
+
+}
+
+################################################################################
+# Ensure SSH key-based access to OpenResty VM is configured
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if ok, 1 on error
+################################################################################
+
+function openresty_vm_ssh_key_setup() {
+
+    local ssh_key
+    local ssh_pub
+    local vm_ip="${OPENRESTY_VM_IP}"
+
+    ssh_key="$(openresty_get_ssh_key)"
+    ssh_pub="${ssh_key}.pub"
+
+    if [[ -z "${vm_ip}" ]]; then
+        log_event "error" "OPENRESTY_VM_IP is not set" "false"
+        return 1
+    fi
+
+    log_event "info" "Setting up SSH key authentication for OpenResty VM ${vm_ip}" "false"
+
+    if [[ ! -f "${ssh_key}" ]]; then
+        mkdir -p "$(dirname "${ssh_key}")"
+        chmod 700 "$(dirname "${ssh_key}")"
+        ssh-keygen -t ed25519 -N "" -f "${ssh_key}" -C "brolit-openresty-${vm_ip}" >/dev/null 2>&1
+        chmod 600 "${ssh_key}"
+        chmod 644 "${ssh_pub}"
+    fi
+
+    if openresty_vm_ssh_key_is_configured; then
+        log_event "info" "SSH key authentication already works for ${vm_ip}" "false"
+        return 0
+    fi
+
+    # One-time password prompt to copy key
+    local vm_pass="${OPENRESTY_VM_PASS}"
+    if [[ -z "${vm_pass}" ]]; then
+        log_event "info" "Please enter root password for ${vm_ip} to copy SSH key (one-time)" "false"
+        read -rsp "root@${vm_ip} password: " vm_pass
+        echo
+    fi
+
+    if [[ -z "${vm_pass}" ]]; then
+        log_event "error" "No password provided for ${vm_ip}" "false"
+        return 1
+    fi
+
+    sshpass -p "${vm_pass}" ssh-copy-id \
+        -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new \
+        -i "${ssh_pub}" "root@${vm_ip}" >/dev/null 2>&1
+
+    local exitstatus=$?
+    if [[ ${exitstatus} -ne 0 ]]; then
+        log_event "error" "Failed to copy SSH key to ${vm_ip}" "false"
+        return 1
+    fi
+
+    # Verify key auth works
+    if ! openresty_vm_ssh_key_is_configured; then
+        log_event "error" "SSH key authentication still not working for ${vm_ip}" "false"
+        return 1
+    fi
+
+    # Remove password from config once key auth works
+    if [[ -n "${OPENRESTY_VM_PASS}" ]] && [[ -f "${BROLIT_CONFIG_FILE}" ]]; then
+        json_write_field "${BROLIT_CONFIG_FILE}" "SERVER_CONFIG.openresty_vm_pass" ""
+        OPENRESTY_VM_PASS=""
+    fi
+
+    log_event "info" "SSH key authentication configured for ${vm_ip}" "false"
+    return 0
+
+}
+
+################################################################################
+# Ensure OpenResty VM is reachable via SSH before running operations
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if reachable, 1 otherwise
+################################################################################
+
+function openresty_vm_ssh_prerequisite() {
+
+    if [[ "${PROXMOX_MODE}" != "enabled" ]] || [[ -z "${OPENRESTY_VM_IP}" ]]; then
+        return 0
+    fi
+
+    if ! openresty_vm_ssh_key_is_configured; then
+        display --indent 6 --text "- OpenResty VM SSH key not configured" --result "WARNING" --color YELLOW
+        log_event "warning" "OpenResty VM SSH key not configured. Run openresty_vm_ssh_key_setup." "false"
+        return 1
+    fi
+
+    return 0
+
+}
+
+################################################################################
 # Execute a command on the OpenResty VM via SSH
 #
 # In local mode (PROXMOX_MODE != enabled), runs the command locally.
@@ -67,19 +217,14 @@ function openresty_get_api_url() {
 function openresty_vm_exec() {
 
     local cmd="${1}"
+    local ssh_key
+    ssh_key="$(openresty_get_ssh_key)"
 
     if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
-        # Try key-based first, then password if OPENRESTY_VM_PASS is set
-        if ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no \
-            "root@${OPENRESTY_VM_IP}" "${cmd}" 2>/dev/null; then
-            return 0
-        fi
-        if [[ -n "${OPENRESTY_VM_PASS}" ]]; then
-            sshpass -p "${OPENRESTY_VM_PASS}" ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no \
-                "root@${OPENRESTY_VM_IP}" "${cmd}"
-            return $?
-        fi
-        return 1
+        openresty_vm_ssh_prerequisite >/dev/null 2>&1 || return 1
+        ssh -o ConnectTimeout=5 -o BatchMode=yes -o StrictHostKeyChecking=accept-new \
+            -i "${ssh_key}" "root@${OPENRESTY_VM_IP}" "${cmd}"
+        return $?
     else
         eval "${cmd}"
     fi
@@ -101,21 +246,45 @@ function openresty_vm_scp() {
 
     local local_path="${1}"
     local remote_path="${2}"
+    local ssh_key
+    ssh_key="$(openresty_get_ssh_key)"
 
     if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
-        # Try key-based first, then password if OPENRESTY_VM_PASS is set
-        if scp -o ConnectTimeout=5 -o StrictHostKeyChecking=no \
-            "${local_path}" "root@${OPENRESTY_VM_IP}:${remote_path}" 2>/dev/null; then
-            return 0
-        fi
-        if [[ -n "${OPENRESTY_VM_PASS}" ]]; then
-            sshpass -p "${OPENRESTY_VM_PASS}" scp -o ConnectTimeout=5 -o StrictHostKeyChecking=no \
-                "${local_path}" "root@${OPENRESTY_VM_IP}:${remote_path}"
-            return $?
-        fi
-        return 1
+        openresty_vm_ssh_prerequisite >/dev/null 2>&1 || return 1
+        scp -o ConnectTimeout=5 -o BatchMode=yes -o StrictHostKeyChecking=accept-new \
+            -i "${ssh_key}" "${local_path}" "root@${OPENRESTY_VM_IP}:${remote_path}"
+        return $?
     else
         cp "${local_path}" "${remote_path}"
+    fi
+
+}
+
+################################################################################
+# Copy a file from the OpenResty VM via SCP (download direction)
+#
+# Arguments:
+#   ${1} = remote path on VM
+#   ${2} = local file path
+#
+# Outputs:
+#   0 if ok, 1 on error
+################################################################################
+
+function openresty_vm_scp_download() {
+
+    local remote_path="${1}"
+    local local_path="${2}"
+    local ssh_key
+    ssh_key="$(openresty_get_ssh_key)"
+
+    if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
+        openresty_vm_ssh_prerequisite >/dev/null 2>&1 || return 1
+        scp -o ConnectTimeout=5 -o BatchMode=yes -o StrictHostKeyChecking=accept-new \
+            -i "${ssh_key}" "root@${OPENRESTY_VM_IP}:${remote_path}" "${local_path}"
+        return $?
+    else
+        cp "${remote_path}" "${local_path}"
     fi
 
 }
@@ -132,13 +301,13 @@ function openresty_vm_scp() {
 
 function openresty_configuration_test() {
 
-    local result
     local test_output
+    local exitstatus
 
     test_output="$(openresty_vm_exec "openresty -t 2>&1")"
-    result="$(echo "${test_output}" | grep -w "test" | cut -d"." -f2 | cut -d" " -f4)"
+    exitstatus=$?
 
-    if [[ "${result}" == "successful" ]]; then
+    if [[ ${exitstatus} -eq 0 ]]; then
 
         # Reload webserver
         openresty_vm_exec "openresty -s reload"
@@ -151,12 +320,10 @@ function openresty_configuration_test() {
 
     else
 
-        local debug
-        debug="${test_output}"
         whiptail_message "WARNING" "Something went wrong changing OpenResty configuration. Please check manually."
 
         # Log
-        log_event "error" "OpenResty configuration test failed. Debug: ${debug}"
+        log_event "error" "OpenResty configuration test failed. Debug: ${test_output}"
         display --indent 6 --text "- Testing openresty configuration" --result "FAIL" --color RED
 
         return 1
@@ -191,30 +358,40 @@ function openresty_server_create() {
     local api_url
     api_url="$(openresty_get_api_url)/api/routes"
     local json_data
+    local token="${OPENRESTY_API_TOKEN}"
 
     log_event "info" "Creating openresty config for domain: ${project_domain}" "false"
 
-    # Build JSON payload
-    json_data="{\"domain\":\"${project_domain}\",\"type\":\"${project_type}\""
+    if [[ -z "${token}" ]]; then
+        log_event "error" "OPENRESTY_API_TOKEN is not set" "false"
+        display --indent 6 --text "- Creating openresty server config" --result "FAIL" --color RED
+        return 1
+    fi
+
+    # Build JSON payload with jq
+    json_data="$(jq -n \
+        --arg domain "${project_domain}" \
+        --arg type "${project_type}" \
+        --arg server_type "${server_type}" \
+        '{domain: $domain, type: $type, server_type: $server_type}')"
 
     if [[ -n "${proxy_port}" ]]; then
-        json_data="${json_data},\"proxy_port\":\"${proxy_port}\""
+        json_data="$(echo "${json_data}" | jq --arg proxy_port "${proxy_port}" '. + {proxy_port: $proxy_port}')"
     fi
 
     if [[ -n "${upstream_url}" ]]; then
-        json_data="${json_data},\"upstream_url\":\"${upstream_url}\""
+        json_data="$(echo "${json_data}" | jq --arg upstream_url "${upstream_url}" '. + {upstream_url: $upstream_url}')"
     fi
 
     if [[ -n "${redirect_domains}" ]]; then
-        json_data="${json_data},\"redirect_domains\":\"${redirect_domains}\""
+        json_data="$(echo "${json_data}" | jq --arg redirect_domains "${redirect_domains}" '. + {redirect_domains: $redirect_domains}')"
     fi
-
-    json_data="${json_data}}"
 
     # Call Lua API
     local result
     result="$(curl -s -X POST "${api_url}" \
         -H "Content-Type: application/json" \
+        -H "Authorization: Bearer ${token}" \
         -d "${json_data}" 2>/dev/null)"
 
     if echo "${result}" | grep -q '"success":true'; then
@@ -241,14 +418,22 @@ function openresty_server_create() {
 function openresty_server_delete() {
 
     local project_domain="${1}"
+    local token="${OPENRESTY_API_TOKEN}"
 
     local api_url
     api_url="$(openresty_get_api_url)/api/routes/${project_domain}"
 
     log_event "info" "Deleting openresty config for domain: ${project_domain}" "false"
 
+    if [[ -z "${token}" ]]; then
+        log_event "error" "OPENRESTY_API_TOKEN is not set" "false"
+        display --indent 6 --text "- Deleting openresty server config" --result "FAIL" --color RED
+        return 1
+    fi
+
     local result
-    result="$(curl -s -X DELETE "${api_url}" 2>/dev/null)"
+    result="$(curl -s -X DELETE "${api_url}" \
+        -H "Authorization: Bearer ${token}" 2>/dev/null)"
 
     if echo "${result}" | grep -q '"success":true'; then
         display --indent 6 --text "- Deleting openresty server config" --result "DONE" --color GREEN
@@ -341,8 +526,16 @@ function openresty_server_change_status() {
 function openresty_list_routes() {
 
     local api_url
+    local token="${OPENRESTY_API_TOKEN}"
     api_url="$(openresty_get_api_url)"
-    curl -s "${api_url}/api/routes" 2>/dev/null
+
+    if [[ -z "${token}" ]]; then
+        log_event "error" "OPENRESTY_API_TOKEN is not set" "false"
+        return 1
+    fi
+
+    curl -s "${api_url}/api/routes" \
+        -H "Authorization: Bearer ${token}" 2>/dev/null
 
 }
 
@@ -359,8 +552,16 @@ function openresty_list_routes() {
 function openresty_api_status() {
 
     local api_url
+    local token="${OPENRESTY_API_TOKEN}"
     api_url="$(openresty_get_api_url)"
-    curl -s "${api_url}/api/status" 2>/dev/null
+
+    if [[ -z "${token}" ]]; then
+        log_event "error" "OPENRESTY_API_TOKEN is not set" "false"
+        return 1
+    fi
+
+    curl -s "${api_url}/api/status" \
+        -H "Authorization: Bearer ${token}" 2>/dev/null
 
 }
 

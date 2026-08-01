@@ -7,9 +7,45 @@
 function test_openresty_helper_functions() {
 
     test_openresty_get_conf_dir
+    test_openresty_get_ssh_key
+    test_openresty_vm_ssh_key_is_configured
     test_openresty_configuration_test
     test_openresty_list_routes
     test_openresty_api_status
+
+}
+
+function test_openresty_get_ssh_key() {
+
+    log_subsection "Test: test_openresty_get_ssh_key"
+
+    local ssh_key
+    ssh_key="$(openresty_get_ssh_key)"
+
+    if [[ "${ssh_key}" == "${HOME}/.ssh/brolit_openresty_vm" ]]; then
+        display --indent 6 --text "- test_openresty_get_ssh_key" --result "PASS" --color WHITE
+    else
+        display --indent 6 --text "- test_openresty_get_ssh_key: got '${ssh_key}'" --result "FAIL" --color RED
+    fi
+
+}
+
+function test_openresty_vm_ssh_key_is_configured() {
+
+    log_subsection "Test: test_openresty_vm_ssh_key_is_configured"
+
+    # In non-Proxmox mode should return 1 (no VM configured)
+    if [[ "${PROXMOX_MODE}" != "enabled" ]] || [[ -z "${OPENRESTY_VM_IP}" ]]; then
+        openresty_vm_ssh_key_is_configured
+        exitstatus=$?
+        if [[ ${exitstatus} -eq 1 ]]; then
+            display --indent 6 --text "- test_openresty_vm_ssh_key_is_configured (not in proxmox mode)" --result "PASS" --color WHITE
+        else
+            display --indent 6 --text "- test_openresty_vm_ssh_key_is_configured: expected 1, got ${exitstatus}" --result "FAIL" --color RED
+        fi
+    else
+        display --indent 6 --text "- test_openresty_vm_ssh_key_is_configured (skipped in proxmox mode)" --result "SKIP" --color YELLOW
+    fi
 
 }
 

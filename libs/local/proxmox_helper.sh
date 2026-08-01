@@ -235,14 +235,7 @@ function proxmox_get_public_ip() {
 
 function proxmox_get_openresty_vm_ip() {
 
-    local config_file="${BROLIT_CONFIG_FILE}"
-    local vm_ip=""
-
-    if [[ -f "${config_file}" ]]; then
-        vm_ip="$(jq -r '.server_config.openresty_vm_ip // empty' "${config_file}" 2>/dev/null)"
-    fi
-
-    echo "${vm_ip}"
+    echo "${OPENRESTY_VM_IP}"
 
 }
 
@@ -285,19 +278,9 @@ function proxmox_npm_detect() {
 function openresty_is_installed() {
 
     if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
-        # Check on the VM via SSH (try key-based first, then password)
-        if ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no \
-            "root@${OPENRESTY_VM_IP}" "command -v openresty &>/dev/null" 2>/dev/null; then
-            return 0
-        fi
-        # Try with sshpass if OPENRESTY_VM_PASS is set
-        if [[ -n "${OPENRESTY_VM_PASS}" ]]; then
-            if sshpass -p "${OPENRESTY_VM_PASS}" ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no \
-                "root@${OPENRESTY_VM_IP}" "command -v openresty &>/dev/null" 2>/dev/null; then
-                return 0
-            fi
-        fi
-        return 1
+        # Check on the VM via SSH key auth
+        openresty_vm_exec "command -v openresty &>/dev/null"
+        return $?
     else
         command -v openresty &>/dev/null
     fi

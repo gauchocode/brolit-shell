@@ -17,6 +17,8 @@
         "proxmox_mode": "disabled",
         "openresty_vm_ip": "",
         "openresty_vm_pass": "",
+        "openresty_api_token": "",
+        "openresty_api_allow_network": "10.2.0.0/24",
         "additional_ips": [
             "",
             ""
