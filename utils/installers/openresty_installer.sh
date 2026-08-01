@@ -422,6 +422,7 @@ function _openresty_copy_configs_to_vm() {
     local tmp_conf="/tmp/openresty_nginx_$$.conf"
     _openresty_generate_nginx_conf "vm" "${api_token}" > "${tmp_conf}"
 
+    openresty_vm_exec "mkdir -p /usr/local/openresty/nginx/conf/stream-map.d && chown www-data:www-data /usr/local/openresty/nginx/conf/stream-map.d"
     openresty_vm_exec "if [[ -f /usr/local/openresty/nginx/conf/nginx.conf ]]; then cp /usr/local/openresty/nginx/conf/nginx.conf /usr/local/openresty/nginx/conf/nginx.conf.bak.\$(date +%Y%m%d_%H%M%S); fi"
     openresty_vm_scp "${tmp_conf}" "/usr/local/openresty/nginx/conf/nginx.conf"
     rm -f "${tmp_conf}"
