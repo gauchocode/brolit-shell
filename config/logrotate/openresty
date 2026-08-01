@@ -1,0 +1,13 @@
+/var/log/openresty/*.log {
+    daily
+    missingok
+    rotate 14
+    compress
+    delaycompress
+    notifempty
+    create 0640 www-data www-data
+    sharedscripts
+    postrotate
+        /usr/local/openresty/bin/openresty -s reopen 2>/dev/null || true
+    endscript
+}

@@ -324,7 +324,7 @@ function backup_all_server_configs() {
     if openresty_vm_exec "tar -czf /tmp/${openresty_backup_file} -C \$(dirname ${openresty_conf_dir}) \$(basename ${openresty_conf_dir}) /etc/letsencrypt 2>/dev/null"; then
 
       # Copy backup from VM to local temp
-      openresty_vm_scp "root@${OPENRESTY_VM_IP}:/tmp/${openresty_backup_file}" "${openresty_backup_path}"
+      openresty_vm_scp_download "/tmp/${openresty_backup_file}" "${openresty_backup_path}"
       # Cleanup VM temp file
       openresty_vm_exec "rm -f /tmp/${openresty_backup_file}"
 

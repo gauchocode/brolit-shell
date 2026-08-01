@@ -75,14 +75,11 @@ function _npm_write_config_to_target() {
         # Write config locally then SCP to VM
         local tmp_config="/tmp/openresty_migration_${domain}.conf"
         echo "${config}" > "${tmp_config}"
-        scp -o ConnectTimeout=5 -o StrictHostKeyChecking=no \
-            "${tmp_config}" "root@${OPENRESTY_VM_IP}:${config_file}"
+        openresty_vm_scp "${tmp_config}" "${config_file}"
         rm -f "${tmp_config}"
 
         # Create symlink on VM
-        ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no \
-            "root@${OPENRESTY_VM_IP}" \
-            "ln -sf ${config_file} ${conf_dir}/sites-enabled/${domain}"
+        openresty_vm_exec "ln -sf ${config_file} ${conf_dir}/sites-enabled/${domain}"
     else
         echo "${config}" > "${config_file}"
         ln -sf "${config_file}" "${conf_dir}/sites-enabled/${domain}"
@@ -294,9 +291,7 @@ function npm_migrate_all() {
 
     # In Proxmox mode, ensure remote directories exist
     if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
-        ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no \
-            "root@${OPENRESTY_VM_IP}" \
-            "mkdir -p ${conf_dir}/sites-available ${conf_dir}/sites-enabled" 2>/dev/null
+        openresty_vm_exec "mkdir -p ${conf_dir}/sites-available ${conf_dir}/sites-enabled"
     fi
 
     # Track root domains for certificate regeneration
@@ -427,15 +422,11 @@ function _npm_migrate_ssl_certificate() {
             local cert_dir="/etc/letsencrypt/live/${domain}"
 
             if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
-                # Create dir on VM, then stream cert/key over stdin instead of
-                # embedding their content in the SSH command string (safe
-                # regardless of what characters the PEM content contains).
-                ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no \
-                    "root@${OPENRESTY_VM_IP}" "mkdir -p ${cert_dir}"
-                printf '%s' "${cert}" | ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no \
-                    "root@${OPENRESTY_VM_IP}" "cat > ${cert_dir}/fullchain.pem"
-                printf '%s' "${key}" | ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no \
-                    "root@${OPENRESTY_VM_IP}" "cat > ${cert_dir}/privkey.pem"
+                # Create dir and write certs on VM using base64 to avoid shell escaping issues
+                local cert_b64 key_b64
+                cert_b64="$(printf '%s' "${cert}" | base64 -w0)"
+                key_b64="$(printf '%s' "${key}" | base64 -w0)"
+                openresty_vm_exec "mkdir -p ${cert_dir} && printf '%s' '${cert_b64}' | base64 -d > ${cert_dir}/fullchain.pem && printf '%s' '${key_b64}' | base64 -d > ${cert_dir}/privkey.pem && chmod 600 ${cert_dir}/*.pem"
             else
                 mkdir -p "${cert_dir}"
                 echo "${cert}" > "${cert_dir}/fullchain.pem"
@@ -500,9 +491,7 @@ function npm_migrate_domain() {
 
     # In Proxmox mode, ensure remote directories exist
     if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
-        ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no \
-            "root@${OPENRESTY_VM_IP}" \
-            "mkdir -p ${conf_dir}/sites-available ${conf_dir}/sites-enabled" 2>/dev/null
+        openresty_vm_exec "mkdir -p ${conf_dir}/sites-available ${conf_dir}/sites-enabled"
     fi
 
     # Generate config
@@ -515,18 +504,19 @@ function npm_migrate_domain() {
     local config_file="${conf_dir}/sites-available/${domain}"
 
     if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
+        # Ensure remote directories exist
+        openresty_vm_exec "mkdir -p ${conf_dir}/sites-available ${conf_dir}/sites-enabled"
+
         # Write config locally then SCP to VM
         local tmp_config="/tmp/openresty_migration_${domain}.conf"
         echo "${config}" > "${tmp_config}"
-        scp -o ConnectTimeout=5 -o StrictHostKeyChecking=no \
-            "${tmp_config}" "root@${OPENRESTY_VM_IP}:${config_file}"
+        openresty_vm_scp "${tmp_config}" "${config_file}"
         rm -f "${tmp_config}"
 
         # Create symlink on VM
-        ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no \
-            "root@${OPENRESTY_VM_IP}" \
-            "ln -sf ${config_file} ${conf_dir}/sites-enabled/${domain}"
+        openresty_vm_exec "ln -sf ${config_file} ${conf_dir}/sites-enabled/${domain}"
     else
+        mkdir -p "${conf_dir}/sites-available" "${conf_dir}/sites-enabled"
         echo "${config}" > "${config_file}"
         ln -sf "${config_file}" "${conf_dir}/sites-enabled/${domain}"
     fi

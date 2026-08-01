@@ -277,7 +277,7 @@ dns_cloudflare_email=${SUPPORT_CLOUDFLARE_EMAIL}
 dns_cloudflare_api_key=${SUPPORT_CLOUDFLARE_API_KEY}
 EOF
 
-  openresty_vm_scp "${tmp_conf}" "root@${OPENRESTY_VM_IP}:${cloudflare_conf}"
+  openresty_vm_scp "${tmp_conf}" "${cloudflare_conf}"
   local result=$?
   rm -f "${tmp_conf}"
 
@@ -578,22 +578,25 @@ function certbot_certificate_delete_old_config() {
 
   for domain in ${domains}; do
 
-    # Check if directories exist
-    if [[ -d "/etc/letsencrypt/archive/${domain}" ]]; then
-      # Delete
-      rm --recursive --force "/etc/letsencrypt/archive/${domain}"
-      display --indent 6 --text "- Deleting /etc/letsencrypt/archive/${domain}" --result "DONE" --color GREEN
-
-    fi
-    if [[ -d "/etc/letsencrypt/live/${domain}" ]]; then
-      # Delete
-      rm --recursive --force "/etc/letsencrypt/live/${domain}"
-      display --indent 6 --text "- Deleting /etc/letsencrypt/live/${domain}" --result "DONE" --color GREEN
-    fi
-    if [[ -f "/etc/letsencrypt/renewal/${domain}.conf" ]]; then
-      # Delete
-      rm --force "/etc/letsencrypt/renewal/${domain}.conf"
-      display --indent 6 --text "- Deleting /etc/letsencrypt/renewal/${domain}.conf" --result "DONE" --color GREEN
+    if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
+      # Delete on OpenResty VM
+      openresty_vm_exec "rm --recursive --force /etc/letsencrypt/archive/${domain}"
+      openresty_vm_exec "rm --recursive --force /etc/letsencrypt/live/${domain}"
+      openresty_vm_exec "rm --force /etc/letsencrypt/renewal/${domain}.conf"
+    else
+      # Delete locally
+      if [[ -d "/etc/letsencrypt/archive/${domain}" ]]; then
+        rm --recursive --force "/etc/letsencrypt/archive/${domain}"
+        display --indent 6 --text "- Deleting /etc/letsencrypt/archive/${domain}" --result "DONE" --color GREEN
+      fi
+      if [[ -d "/etc/letsencrypt/live/${domain}" ]]; then
+        rm --recursive --force "/etc/letsencrypt/live/${domain}"
+        display --indent 6 --text "- Deleting /etc/letsencrypt/live/${domain}" --result "DONE" --color GREEN
+      fi
+      if [[ -f "/etc/letsencrypt/renewal/${domain}.conf" ]]; then
+        rm --force "/etc/letsencrypt/renewal/${domain}.conf"
+        display --indent 6 --text "- Deleting /etc/letsencrypt/renewal/${domain}.conf" --result "DONE" --color GREEN
+      fi
     fi
 
   done
@@ -1386,11 +1389,11 @@ function certbot_certificate_delete() {
 
     local certbot_result
 
-    # Check if certificate exist
+    # Check if certificate exist (use exact cert-name grep)
     if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
-      certbot_result="$(openresty_vm_exec "certbot certificates | grep '${domains}'")"
+      certbot_result="$(openresty_vm_exec "certbot certificates 2>/dev/null | grep -E \"Certificate Name|Domains:.*\\b${domains}\\b\"")"
     else
-      certbot_result="$(certbot certificates | grep "${domains}")"
+      certbot_result="$(certbot certificates 2>/dev/null | grep -E "Certificate Name|Domains:.*\b${domains}\b")"
     fi
 
     if [[ -n ${certbot_result} ]]; then
