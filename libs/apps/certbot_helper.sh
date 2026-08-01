@@ -42,7 +42,10 @@ function certbot_get_method() {
 
 function certbot_get_webroot_path() {
 
-  echo "/var/www/certbot"
+  # Deliberately outside PROJECTS.path (/var/www): everything under /var/www
+  # is treated as a project/domain directory by the rest of brolit (site
+  # listing, backups, project delete, ...), and this is neither.
+  echo "/etc/brolit/certbot-webroot"
 
 }
 
@@ -61,8 +64,9 @@ function certbot_setup_webroot() {
   local webroot_path
   webroot_path="$(certbot_get_webroot_path)"
 
-  # Create webroot directory
+  # Create webroot directory (0755 so the webserver user can traverse/read it)
   mkdir -p "${webroot_path}/.well-known/acme-challenge"
+  chmod -R 755 "${webroot_path}"
 
   log_event "info" "Certbot webroot directory created at ${webroot_path}" "false"
 
@@ -308,7 +312,7 @@ function certbot_setup_webroot_vm() {
   local webroot_path
   webroot_path="$(certbot_get_webroot_path)"
 
-  openresty_vm_exec "mkdir -p ${webroot_path}/.well-known/acme-challenge"
+  openresty_vm_exec "mkdir -p ${webroot_path}/.well-known/acme-challenge && chmod -R 755 ${webroot_path}"
   log_event "info" "Certbot webroot directory created on OpenResty VM at ${webroot_path}" "false"
 
   return 0

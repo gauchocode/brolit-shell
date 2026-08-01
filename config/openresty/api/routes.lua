@@ -11,7 +11,7 @@ local _M = {}
 local SITES_AVAILABLE = "/usr/local/openresty/nginx/conf/sites-available"
 local SITES_ENABLED = "/usr/local/openresty/nginx/conf/sites-enabled"
 local LOG_DIR = "/var/log/openresty"
-local WEBROOT_DIR = "/var/www/certbot"
+local WEBROOT_DIR = "/etc/brolit/certbot-webroot"
 local SNIPPETS_DIR = "/usr/local/openresty/nginx/conf/snippets"
 local LETSENCRYPT_DIR = "/etc/letsencrypt/live"
 
