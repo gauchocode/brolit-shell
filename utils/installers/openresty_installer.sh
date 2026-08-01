@@ -78,6 +78,8 @@ function _openresty_install_local() {
     mkdir -p /usr/local/openresty/nginx/conf/sites-enabled
     mkdir -p /usr/local/openresty/nginx/conf/api
     mkdir -p /usr/local/openresty/nginx/conf/globals
+    mkdir -p /var/www/certbot/.well-known/acme-challenge
+    mkdir -p /etc/letsencrypt/renewal-hooks/deploy
 
     # Generate OpenResty-specific nginx.conf (the brolit nginx.conf uses /etc/nginx/ paths)
     local tmp_conf="/tmp/openresty_nginx_local_$$.conf"
@@ -111,6 +113,16 @@ http {
         }
     }
 
+    # Certbot ACME challenge server block (webroot method)
+    server {
+        listen 80 default_server;
+        server_name _;
+
+        location /.well-known/acme-challenge/ {
+            root /var/www/certbot;
+        }
+    }
+
     include /usr/local/openresty/nginx/conf/sites-enabled/*.conf;
 }
 HEREDOC
@@ -130,6 +142,14 @@ HEREDOC
         "/usr/local/openresty/nginx/conf/api/"
     cp "${BROLIT_MAIN_DIR}/config/openresty/api/nginx.conf.lua" \
         "/usr/local/openresty/nginx/conf/api/"
+
+    # Create certbot renewal hook for OpenResty
+    cat > /etc/letsencrypt/renewal-hooks/deploy/openresty-reload.sh << 'HOOKEOF'
+#!/bin/bash
+# Reload OpenResty after certbot renewal
+/usr/local/openresty/bin/openresty -s reload
+HOOKEOF
+    chmod +x /etc/letsencrypt/renewal-hooks/deploy/openresty-reload.sh
 
     # Create systemd service
     _openresty_create_systemd_service
@@ -618,6 +638,16 @@ http {
         }
     }
 
+    # Certbot ACME challenge server block (webroot method)
+    server {
+        listen 80 default_server;
+        server_name _;
+
+        location /.well-known/acme-challenge/ {
+            root /var/www/certbot;
+        }
+    }
+
     include /usr/local/openresty/nginx/conf/sites-enabled/*.conf;
 }
 HEREDOC
@@ -634,6 +664,7 @@ HEREDOC
         mkdir -p "${openresty_conf}/sites-available"
         mkdir -p "${openresty_conf}/sites-enabled"
         mkdir -p "${openresty_conf}/globals"
+        mkdir -p /var/www/certbot/.well-known/acme-challenge
 
         # Copy globals (only http-safe ones)
         for f in logs.conf security.conf; do

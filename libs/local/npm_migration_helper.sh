@@ -26,27 +26,24 @@ function npm_download_configs() {
     local npm_port="${2:-81}"
     local npm_token="${3:-}"
 
-    local auth_header=""
-
-    if [[ -n "${npm_token}" ]]; then
-        auth_header="-H \"Authorization: Bearer ${npm_token}\""
-    fi
+    local -a auth_args=()
+    [[ -n "${npm_token}" ]] && auth_args=(-H "Authorization: Bearer ${npm_token}")
 
     log_event "info" "Downloading configs from NPM at ${npm_host}:${npm_port}" "false"
 
     # Get proxy hosts
-    eval curl -s "http://${npm_host}:${npm_port}/api/nginx/proxy-hosts" \
-        ${auth_header} \
+    curl -s "http://${npm_host}:${npm_port}/api/nginx/proxy-hosts" \
+        "${auth_args[@]}" \
         -o /tmp/npm_proxy_hosts.json
 
     # Get certificates
-    eval curl -s "http://${npm_host}:${npm_port}/api/nginx/certificates" \
-        ${auth_header} \
+    curl -s "http://${npm_host}:${npm_port}/api/nginx/certificates" \
+        "${auth_args[@]}" \
         -o /tmp/npm_certificates.json
 
     # Get redirection hosts
-    eval curl -s "http://${npm_host}:${npm_port}/api/nginx/redirection-hosts" \
-        ${auth_header} \
+    curl -s "http://${npm_host}:${npm_port}/api/nginx/redirection-hosts" \
+        "${auth_args[@]}" \
         -o /tmp/npm_redirections.json
 
     log_event "info" "NPM configs downloaded" "false"
@@ -208,8 +205,8 @@ function npm_generate_nginx_config() {
     local config
     local upstream_url
 
-    # Determine upstream protocol (HTTPS for Proxmox web UI on port 8006)
-    if [[ "${forward_port}" == "8006" ]] || [[ "${forward_host}" == "213.199.58.220" ]]; then
+    # Determine upstream protocol (HTTPS for Proxmox web UI, always on port 8006)
+    if [[ "${forward_port}" == "8006" ]]; then
         upstream_url="https://${forward_host}:${forward_port}"
     else
         upstream_url="http://${forward_host}:${forward_port}"
@@ -412,16 +409,14 @@ function _npm_migrate_ssl_certificate() {
         local npm_port="${NPM_PORT:-81}"
         local npm_token="${NPM_TOKEN:-}"
 
-        local auth_header=""
-        if [[ -n "${npm_token}" ]]; then
-            auth_header="-H \"Authorization: Bearer ${npm_token}\""
-        fi
+        local -a auth_args=()
+        [[ -n "${npm_token}" ]] && auth_args=(-H "Authorization: Bearer ${npm_token}")
 
         # Get certificate from NPM
         local cert_data
-        eval cert_data="$(curl -s \
+        cert_data="$(curl -s \
             "http://${npm_host}:${npm_port}/api/nginx/certificates/${cert_id}" \
-            ${auth_header})"
+            "${auth_args[@]}")"
 
         local cert
         local key
@@ -432,10 +427,15 @@ function _npm_migrate_ssl_certificate() {
             local cert_dir="/etc/letsencrypt/live/${domain}"
 
             if [[ "${PROXMOX_MODE}" == "enabled" ]] && [[ -n "${OPENRESTY_VM_IP}" ]]; then
-                # Create dir and write certs on VM
+                # Create dir on VM, then stream cert/key over stdin instead of
+                # embedding their content in the SSH command string (safe
+                # regardless of what characters the PEM content contains).
                 ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no \
-                    "root@${OPENRESTY_VM_IP}" \
-                    "mkdir -p ${cert_dir} && echo '${cert}' > ${cert_dir}/fullchain.pem && echo '${key}' > ${cert_dir}/privkey.pem"
+                    "root@${OPENRESTY_VM_IP}" "mkdir -p ${cert_dir}"
+                printf '%s' "${cert}" | ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no \
+                    "root@${OPENRESTY_VM_IP}" "cat > ${cert_dir}/fullchain.pem"
+                printf '%s' "${key}" | ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no \
+                    "root@${OPENRESTY_VM_IP}" "cat > ${cert_dir}/privkey.pem"
             else
                 mkdir -p "${cert_dir}"
                 echo "${cert}" > "${cert_dir}/fullchain.pem"
