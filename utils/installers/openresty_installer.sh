@@ -55,8 +55,16 @@ function _openresty_install_local() {
 
     local install_method="${1}"
 
+    # Non-interactive apt: a leftover nginx.conf from a previous partial
+    # install (or the package's own default) would otherwise make dpkg
+    # block on a conffile prompt with no TTY to answer it. We always
+    # regenerate nginx.conf ourselves right after, so keeping whatever
+    # dpkg already has on disk (--force-confold) is fine either way.
+    export DEBIAN_FRONTEND=noninteractive
+    local apt_opts=(-o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold)
+
     if [[ "${install_method}" == "official" ]]; then
-        apt-get install -y --no-install-recommends \
+        apt-get install -y --no-install-recommends "${apt_opts[@]}" \
             gnupg2 ca-certificates lsb-release debian-archive-keyring
 
         curl -1sLf 'https://openresty.org/package/pubkey.gpg' | \
@@ -67,18 +75,23 @@ function _openresty_install_local() {
             tee /etc/apt/sources.list.d/openresty.list
 
         apt-get update
-        apt-get install -y openresty
+        apt-get install -y "${apt_opts[@]}" openresty certbot python3-certbot-dns-cloudflare
     else
         apt-get update
-        apt-get install -y openresty
+        apt-get install -y "${apt_opts[@]}" openresty certbot python3-certbot-dns-cloudflare
     fi
 
-    # Create required directories
+    # Create required directories. sites-available/sites-enabled/custom.d are
+    # owned by www-data: the Lua API runs in the worker process (user
+    # www-data) and writes/symlinks route configs there directly.
     mkdir -p /usr/local/openresty/nginx/conf/sites-available
     mkdir -p /usr/local/openresty/nginx/conf/sites-enabled
     mkdir -p /usr/local/openresty/nginx/conf/api
-    mkdir -p /usr/local/openresty/nginx/conf/globals
     mkdir -p /usr/local/openresty/nginx/conf/custom.d
+    chown www-data:www-data \
+        /usr/local/openresty/nginx/conf/sites-available \
+        /usr/local/openresty/nginx/conf/sites-enabled \
+        /usr/local/openresty/nginx/conf/custom.d
     mkdir -p /var/log/openresty
     mkdir -p /etc/brolit/certbot-webroot/.well-known/acme-challenge
     chmod -R 755 /etc/brolit/certbot-webroot
@@ -97,10 +110,6 @@ function _openresty_install_local() {
     cp "${BROLIT_MAIN_DIR}/config/nginx/mime.types" \
         "/usr/local/openresty/nginx/conf/mime.types"
 
-    # Copy globals
-    cp -r "${BROLIT_MAIN_DIR}/config/nginx/globals/"* \
-        "/usr/local/openresty/nginx/conf/globals/" 2>/dev/null || true
-
     # Copy Lua API module
     mkdir -p "${BROLIT_MAIN_DIR}/config/openresty/api"
     cp "${BROLIT_MAIN_DIR}/config/openresty/api/routes.lua" \
@@ -109,8 +118,19 @@ function _openresty_install_local() {
         "/usr/local/openresty/nginx/conf/api/"
 
     # Write API token on disk
+    # www-data (the worker process user) needs to read this to check auth
     echo "${api_token}" > "/usr/local/openresty/nginx/conf/.api_token"
-    chmod 600 "/usr/local/openresty/nginx/conf/.api_token"
+    chown root:www-data "/usr/local/openresty/nginx/conf/.api_token"
+    chmod 640 "/usr/local/openresty/nginx/conf/.api_token"
+
+    # Let www-data test/reload the config without a password (validated
+    # with visudo before it's ever placed in /etc/sudoers.d).
+    if visudo -c -f "${BROLIT_MAIN_DIR}/config/openresty/sudoers-openresty-reload" &>/dev/null; then
+        cp "${BROLIT_MAIN_DIR}/config/openresty/sudoers-openresty-reload" /etc/sudoers.d/openresty-reload
+        chmod 440 /etc/sudoers.d/openresty-reload
+    else
+        log_event "error" "Generated sudoers-openresty-reload failed visudo validation, not installing it" "false"
+    fi
 
     # Create certbot renewal hook for OpenResty
     cat > /etc/letsencrypt/renewal-hooks/deploy/openresty-reload.sh << 'HOOKEOF'
@@ -192,8 +212,6 @@ http {
     gzip on;
     gzip_types text/plain text/css application/json application/javascript text/xml application/xml;
 
-    include /usr/local/openresty/nginx/conf/globals/*.conf;
-
     # Lua API Server (internal management)
     server {
         listen 8080;
@@ -203,7 +221,9 @@ http {
         deny all;
 
         location /api/ {
-            content_by_lua_file /usr/local/openresty/nginx/conf/api/routes.lua;
+            content_by_lua_block {
+                require("routes").handle()
+            }
         }
 
         location / {
@@ -259,9 +279,14 @@ function _openresty_install_in_vm() {
     fi
 
     # Build remote install script
+    # Non-interactive apt: without this, a leftover/default nginx.conf makes
+    # dpkg block on a conffile prompt with no TTY to answer it over SSH.
+    local apt_noninteractive="export DEBIAN_FRONTEND=noninteractive"
+    local apt_opts="-o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold"
     local remote_script=""
+    remote_script+="${apt_noninteractive} && "
     remote_script+="apt-get update && "
-    remote_script+="apt-get install -y --no-install-recommends gnupg2 ca-certificates lsb-release debian-archive-keyring openssl && "
+    remote_script+="apt-get install -y --no-install-recommends ${apt_opts} gnupg2 ca-certificates lsb-release debian-archive-keyring openssl && "
 
     if [[ "${install_method}" == "official" ]]; then
         remote_script+="curl -1sLf 'https://openresty.org/package/pubkey.gpg' | gpg --dearmor -o /usr/share/keyrings/openresty.gpg && "
@@ -269,12 +294,12 @@ function _openresty_install_in_vm() {
         remote_script+="apt-get update && "
     fi
 
-    remote_script+="apt-get install -y openresty certbot python3-certbot-dns-cloudflare && "
+    remote_script+="apt-get install -y ${apt_opts} openresty certbot python3-certbot-dns-cloudflare && "
     remote_script+="mkdir -p /usr/local/openresty/nginx/conf/sites-available && "
     remote_script+="mkdir -p /usr/local/openresty/nginx/conf/sites-enabled && "
     remote_script+="mkdir -p /usr/local/openresty/nginx/conf/api && "
-    remote_script+="mkdir -p /usr/local/openresty/nginx/conf/globals && "
     remote_script+="mkdir -p /usr/local/openresty/nginx/conf/custom.d && "
+    remote_script+="chown www-data:www-data /usr/local/openresty/nginx/conf/sites-available /usr/local/openresty/nginx/conf/sites-enabled /usr/local/openresty/nginx/conf/custom.d && "
     remote_script+="mkdir -p /var/log/openresty && "
     remote_script+="mkdir -p /etc/brolit/certbot-webroot/.well-known/acme-challenge && "
     remote_script+="chmod -R 755 /etc/brolit/certbot-webroot && "
@@ -333,14 +358,6 @@ function _openresty_copy_configs_to_vm() {
     openresty_vm_scp "${BROLIT_MAIN_DIR}/config/nginx/mime.types" \
         "/usr/local/openresty/nginx/conf/mime.types"
 
-    # Copy globals (only http-safe ones, skip those with location directives)
-    for f in logs.conf security.conf; do
-        if [[ -f "${BROLIT_MAIN_DIR}/config/nginx/globals/${f}" ]]; then
-            openresty_vm_scp "${BROLIT_MAIN_DIR}/config/nginx/globals/${f}" \
-                "/usr/local/openresty/nginx/conf/globals/"
-        fi
-    done
-
     # Copy Lua API files
     mkdir -p "${BROLIT_MAIN_DIR}/config/openresty/api"
     if [[ -f "${BROLIT_MAIN_DIR}/config/openresty/api/routes.lua" ]]; then
@@ -359,7 +376,14 @@ function _openresty_copy_configs_to_vm() {
     fi
 
     # Write API token on VM
-    openresty_vm_exec "printf '%s' '${api_token}' > /usr/local/openresty/nginx/conf/.api_token && chmod 600 /usr/local/openresty/nginx/conf/.api_token"
+    openresty_vm_exec "printf '%s' '${api_token}' > /usr/local/openresty/nginx/conf/.api_token && chown root:www-data /usr/local/openresty/nginx/conf/.api_token && chmod 640 /usr/local/openresty/nginx/conf/.api_token"
+
+    # Let www-data test/reload the config without a password on the VM too
+    if [[ -f "${BROLIT_MAIN_DIR}/config/openresty/sudoers-openresty-reload" ]]; then
+        openresty_vm_scp "${BROLIT_MAIN_DIR}/config/openresty/sudoers-openresty-reload" \
+            "/tmp/sudoers-openresty-reload"
+        openresty_vm_exec "visudo -c -f /tmp/sudoers-openresty-reload && cp /tmp/sudoers-openresty-reload /etc/sudoers.d/openresty-reload && chmod 440 /etc/sudoers.d/openresty-reload; rm -f /tmp/sudoers-openresty-reload"
+    fi
 
     # Create certbot renewal hook for OpenResty
     local hook_tmp="/tmp/openresty_reload_hook_$$.sh"
@@ -584,19 +608,11 @@ function openresty_reconfigure() {
         # Ensure directories exist
         mkdir -p "${openresty_conf}/sites-available"
         mkdir -p "${openresty_conf}/sites-enabled"
-        mkdir -p "${openresty_conf}/globals"
         mkdir -p "${openresty_conf}/custom.d"
+        chown www-data:www-data "${openresty_conf}/sites-available" "${openresty_conf}/sites-enabled" "${openresty_conf}/custom.d"
         mkdir -p "/var/log/openresty"
         mkdir -p /etc/brolit/certbot-webroot/.well-known/acme-challenge
         chmod -R 755 /etc/brolit/certbot-webroot
-
-        # Copy globals (only http-safe ones)
-        for f in logs.conf security.conf; do
-            if [[ -f "${BROLIT_MAIN_DIR}/config/nginx/globals/${f}" ]]; then
-                cp "${BROLIT_MAIN_DIR}/config/nginx/globals/${f}" \
-                    "${openresty_conf}/globals/"
-            fi
-        done
 
     # Copy Lua API files
     if [[ -f "${BROLIT_MAIN_DIR}/config/openresty/api/routes.lua" ]]; then
@@ -617,7 +633,13 @@ function openresty_reconfigure() {
     # Ensure token file exists
     if [[ -n "${api_token}" ]]; then
         echo "${api_token}" > "${openresty_conf}/.api_token"
-        chmod 600 "${openresty_conf}/.api_token"
+        chown root:www-data "${openresty_conf}/.api_token"
+        chmod 640 "${openresty_conf}/.api_token"
+    fi
+
+    if [[ ! -f /etc/sudoers.d/openresty-reload ]] && visudo -c -f "${BROLIT_MAIN_DIR}/config/openresty/sudoers-openresty-reload" &>/dev/null; then
+        cp "${BROLIT_MAIN_DIR}/config/openresty/sudoers-openresty-reload" /etc/sudoers.d/openresty-reload
+        chmod 440 /etc/sudoers.d/openresty-reload
     fi
 
         # Test and reload

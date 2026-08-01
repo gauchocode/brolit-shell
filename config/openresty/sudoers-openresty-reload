@@ -1,0 +1,5 @@
+# Lets the OpenResty worker process (www-data) test and reload its own
+# config without a password. Scoped to these exact two invocations only -
+# not a general sudo grant. Installed to /etc/sudoers.d/openresty-reload.
+www-data ALL=(root) NOPASSWD: /usr/local/openresty/bin/openresty -t
+www-data ALL=(root) NOPASSWD: /usr/local/openresty/bin/openresty -s reload

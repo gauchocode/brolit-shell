@@ -186,10 +186,16 @@ function _M.delete_route(domain)
 end
 
 -- Internal reload that returns true/false
+--
+-- The worker process runs as www-data, but the running master's pid/log
+-- files are root-owned (nginx starts as root, drops privileges per-worker).
+-- "openresty -t" run directly as www-data can't open those paths to
+-- validate config, so it's invoked through a narrowly-scoped sudoers rule
+-- (see the openresty-reload sudoers file installed alongside this API).
 function _M._reload()
-    local result = shell("openresty -t 2>&1")
+    local result = shell("sudo -n /usr/local/openresty/bin/openresty -t 2>&1")
     if result:find("successful") then
-        os.execute("openresty -s reload")
+        os.execute("sudo -n /usr/local/openresty/bin/openresty -s reload")
         return true, nil
     else
         return false, result
