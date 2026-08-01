@@ -17,6 +17,12 @@ local WEBROOT_DIR = "/etc/brolit/certbot-webroot"
 local SNIPPETS_DIR = "/usr/local/openresty/nginx/conf/snippets"
 local LETSENCRYPT_DIR = "/etc/letsencrypt/live"
 local TOKEN_FILE = "/usr/local/openresty/nginx/conf/.api_token"
+-- Per-domain SNI -> backend map fed into the "stream" layer's map{} via
+-- "include stream-map.d/*.conf" (see _openresty_generate_nginx_conf). Only
+-- populated/consulted when a fallback upstream is configured.
+local STREAM_MAP_DIR = "/usr/local/openresty/nginx/conf/stream-map.d"
+local SSL_LISTEN_FILE = "/usr/local/openresty/nginx/conf/.ssl_listen"
+local DEFAULT_SSL_LISTEN = "443"
 
 -- Marker for brolit-managed configs
 local BROLIT_MARKER = "# BROLIT-MANAGED"
@@ -50,6 +56,23 @@ local function get_api_token()
         token = token:gsub("%s+", "")
     end
     return token
+end
+
+-- Read the address (port, or ip:port) OpenResty's own HTTPS server blocks
+-- should listen on. "443" normally; an internal-only address when a
+-- fallback upstream is configured and the "stream" layer owns the public
+-- 443 instead (see _openresty_ssl_listen_addr in openresty_installer.sh).
+local function get_ssl_listen()
+    local f = io.open(SSL_LISTEN_FILE, "r")
+    if not f then
+        return DEFAULT_SSL_LISTEN
+    end
+    local listen = f:read("*l")
+    f:close()
+    if not listen or listen == "" then
+        return DEFAULT_SSL_LISTEN
+    end
+    return listen:gsub("%s+", "")
 end
 
 -- Check request Authorization header
@@ -87,6 +110,7 @@ local function ensure_directories()
     os.execute("mkdir -p " .. shell_escape(CUSTOM_DIR))
     os.execute("mkdir -p " .. shell_escape(LOG_DIR))
     os.execute("mkdir -p " .. shell_escape(WEBROOT_DIR .. "/.well-known/acme-challenge"))
+    os.execute("mkdir -p " .. shell_escape(STREAM_MAP_DIR))
 end
 
 -- List all routes
@@ -158,6 +182,32 @@ function _M.create_route(data)
     -- Create symlink (".conf" suffix required: nginx.conf includes sites-enabled/*.conf)
     os.execute("ln -sf " .. shell_escape(config_path) .. " " .. shell_escape(SITES_ENABLED .. "/" .. domain .. ".conf"))
 
+    -- When a fallback upstream is active, OpenResty's HTTPS server blocks
+    -- listen on an internal-only port (see get_ssl_listen) and the public
+    -- 443 is owned by the stream/SNI-preread layer instead - so every
+    -- domain this route answers for (main + redirects) needs an entry in
+    -- its map, or SNI-preread would send them to the fallback instead.
+    local ssl_listen = get_ssl_listen()
+    if ssl_listen ~= DEFAULT_SSL_LISTEN then
+        local map_domains = { domain }
+        local redirect_domains = data.redirect_domains or ""
+        for rd in redirect_domains:gmatch("[^,]+") do
+            rd = rd:gsub("^%s+", ""):gsub("%s+$", "")
+            if is_valid_domain(rd) then
+                table.insert(map_domains, rd)
+            end
+        end
+        local map_lines = {}
+        for _, d in ipairs(map_domains) do
+            table.insert(map_lines, d .. " " .. ssl_listen .. ";")
+        end
+        local map_f = io.open(STREAM_MAP_DIR .. "/" .. domain .. ".conf", "w")
+        if map_f then
+            map_f:write(table.concat(map_lines, "\n") .. "\n")
+            map_f:close()
+        end
+    end
+
     -- Reload nginx (test first)
     local reload_result, reload_err = _M._reload()
     if not reload_result then
@@ -175,6 +225,7 @@ function _M.delete_route(domain)
     ensure_directories()
 
     os.execute("rm -f " .. shell_escape(SITES_ENABLED .. "/" .. domain .. ".conf"))
+    os.execute("rm -f " .. shell_escape(STREAM_MAP_DIR .. "/" .. domain .. ".conf"))
     os.execute("mv " .. shell_escape(SITES_AVAILABLE .. "/" .. domain) .. " " .. shell_escape(SITES_AVAILABLE .. "/" .. domain .. ".backup") .. " 2>/dev/null")
 
     local reload_result, reload_err = _M._reload()
@@ -224,7 +275,7 @@ function _M.status()
 end
 
 -- Generate redirect server block for additional domains
-local function generate_redirect_block(main_domain, redirect_domains)
+local function generate_redirect_block(main_domain, redirect_domains, ssl_listen)
     if not redirect_domains or redirect_domains == "" then
         return ""
     end
@@ -235,7 +286,7 @@ local function generate_redirect_block(main_domain, redirect_domains)
             block = block .. [[
 
 server {
-    listen 443 ssl http2;
+    listen ]] .. ssl_listen .. [[ ssl http2;
     server_name ]] .. domain .. [[;
 
     ssl_certificate ]] .. LETSENCRYPT_DIR .. [[/]] .. main_domain .. [[/fullchain.pem;
@@ -269,11 +320,12 @@ function _M.generate_config(data)
     local upstream_url = data.upstream_url or "http://127.0.0.1:" .. proxy_port
     local cert_name = data.cert_name or domain
     local redirect_domains = data.redirect_domains or ""
+    local ssl_listen = get_ssl_listen()
 
     local ssl_block = BROLIT_MARKER .. [[
 
 server {
-    listen 443 ssl http2;
+    listen ]] .. ssl_listen .. [[ ssl http2;
     server_name ]] .. domain .. [[;
 
     ssl_certificate ]] .. LETSENCRYPT_DIR .. [[/]] .. cert_name .. [[/fullchain.pem;
@@ -328,7 +380,7 @@ server {
     }
 }]]
 
-    ssl_block = ssl_block .. generate_redirect_block(domain, redirect_domains)
+    ssl_block = ssl_block .. generate_redirect_block(domain, redirect_domains, ssl_listen)
 
     if route_type == "proxy" then
         return ssl_block
@@ -339,7 +391,7 @@ server {
         return BROLIT_MARKER .. [[
 
 server {
-    listen 443 ssl http2;
+    listen ]] .. ssl_listen .. [[ ssl http2;
     server_name ]] .. domain .. [[;
     root /var/www/]] .. domain .. [[;
     index index.php;
