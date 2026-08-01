@@ -96,7 +96,7 @@ function _M.list_routes()
     local output = shell("ls " .. shell_escape(SITES_AVAILABLE) .. " 2>/dev/null")
     for domain in output:gmatch("[^\r\n]+") do
         if domain ~= "" and not domain:match("%.backup$") then
-            local enabled = shell("test -L " .. shell_escape(SITES_ENABLED .. "/" .. domain) .. " && echo true || echo false")
+            local enabled = shell("test -L " .. shell_escape(SITES_ENABLED .. "/" .. domain .. ".conf") .. " && echo true || echo false")
             table.insert(routes, {
                 domain = domain,
                 enabled = enabled:gsub("%s+", "") == "true"
@@ -120,7 +120,7 @@ function _M.get_route(domain)
     local config = f:read("*a")
     f:close()
 
-    local enabled = shell("test -L " .. shell_escape(SITES_ENABLED .. "/" .. domain) .. " && echo true || echo false")
+    local enabled = shell("test -L " .. shell_escape(SITES_ENABLED .. "/" .. domain .. ".conf") .. " && echo true || echo false")
     return cjson.encode({
         domain = domain,
         enabled = enabled:gsub("%s+", "") == "true",
@@ -155,8 +155,8 @@ function _M.create_route(data)
     f:write(config)
     f:close()
 
-    -- Create symlink
-    os.execute("ln -sf " .. shell_escape(config_path) .. " " .. shell_escape(SITES_ENABLED .. "/" .. domain))
+    -- Create symlink (".conf" suffix required: nginx.conf includes sites-enabled/*.conf)
+    os.execute("ln -sf " .. shell_escape(config_path) .. " " .. shell_escape(SITES_ENABLED .. "/" .. domain .. ".conf"))
 
     -- Reload nginx (test first)
     local reload_result, reload_err = _M._reload()
@@ -174,7 +174,7 @@ function _M.delete_route(domain)
     end
     ensure_directories()
 
-    os.execute("rm -f " .. shell_escape(SITES_ENABLED .. "/" .. domain))
+    os.execute("rm -f " .. shell_escape(SITES_ENABLED .. "/" .. domain .. ".conf"))
     os.execute("mv " .. shell_escape(SITES_AVAILABLE .. "/" .. domain) .. " " .. shell_escape(SITES_AVAILABLE .. "/" .. domain .. ".backup") .. " 2>/dev/null")
 
     local reload_result, reload_err = _M._reload()
