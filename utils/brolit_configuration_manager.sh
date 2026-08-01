@@ -33,6 +33,7 @@ function _brolit_configuration_load_server_config() {
     declare -g OPENRESTY_VM_PASS
     declare -g OPENRESTY_API_TOKEN
     declare -g OPENRESTY_API_ALLOW_NETWORK
+    declare -g OPENRESTY_FALLBACK_UPSTREAM
 
     # Read required vars from server config file
     SERVER_TIMEZONE="$(json_read_field "${server_config_file}" "SERVER_CONFIG.timezone")"
@@ -65,8 +66,13 @@ function _brolit_configuration_load_server_config() {
     [[ -z "${OPENRESTY_API_TOKEN}" ]] && OPENRESTY_API_TOKEN=""
     OPENRESTY_API_ALLOW_NETWORK="$(json_read_field "${server_config_file}" "SERVER_CONFIG.openresty_api_allow_network")"
     [[ -z "${OPENRESTY_API_ALLOW_NETWORK}" ]] && OPENRESTY_API_ALLOW_NETWORK="10.2.0.0/24"
+    # Optional: address (ip[:port]) of a legacy reverse proxy (e.g. an
+    # existing Nginx Proxy Manager) that OpenResty should transparently pass
+    # through to for any domain it doesn't have a route for. Empty = off,
+    # unrouted domains just get a 404 (today's default behavior).
+    OPENRESTY_FALLBACK_UPSTREAM="$(json_read_field "${server_config_file}" "SERVER_CONFIG.openresty_fallback_upstream")"
 
-    export SERVER_TIMEZONE SERVER_ROLE_WEBSERVER SERVER_ROLE_DATABASE SERVER_ADDITIONAL_IPS PROXMOX_MODE OPENRESTY_VM_IP OPENRESTY_VM_PASS OPENRESTY_API_TOKEN OPENRESTY_API_ALLOW_NETWORK
+    export SERVER_TIMEZONE SERVER_ROLE_WEBSERVER SERVER_ROLE_DATABASE SERVER_ADDITIONAL_IPS PROXMOX_MODE OPENRESTY_VM_IP OPENRESTY_VM_PASS OPENRESTY_API_TOKEN OPENRESTY_API_ALLOW_NETWORK OPENRESTY_FALLBACK_UPSTREAM
     #export UNATTENDED_UPGRADES
 
 }
