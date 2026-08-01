@@ -98,6 +98,7 @@ function show_help() {
     ./runner.sh -t database -st import_db -db mydb_prod -tf /path/to/dump.sql
     ./runner.sh -t database -st search-string -db mydb -tv 'suspicious_string'
     ./runner.sh -t certbot -st install -D example.com
+    ./runner.sh -t certbot -st expand -D example.com,www.example.com -tv contact@example.com
     ./runner.sh -t cloudflare-api -st clear_cache -D example.com
     ./runner.sh -t wpcli -t search-replace -D example.com -tv \"http://old.com,https://new.com\"
     ./runner.sh -t server-status
@@ -655,7 +656,9 @@ function tasks_handler() {
     esac
 
     # Execute task
-    execute_task_with_error_handling "certbot-${STASK}" "certbot_tasks_handler" "${STASK}" "${DOMAIN}"
+    # -tv (optional): contact email override, for install/expand, when
+    # NOTIFICATION_EMAIL_EMAIL_TO isn't configured
+    execute_task_with_error_handling "certbot-${STASK}" "certbot_tasks_handler" "${STASK}" "${DOMAIN}" "${TVALUE}"
     exit_code=$?
     exit ${exit_code}
     ;;
