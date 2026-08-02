@@ -2165,7 +2165,12 @@ function wpcli_get_wpcore_version() {
     [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site}"
     ## -u 33 -e HOME=/tmp to avoid permission denied error: https://github.com/docker-library/wordpress/issues/417
     ## --no-color added to avoid unwanted wp-cli output
-    [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose --progress=quiet -f ${wp_site}/../docker-compose.yml run -T -u "$(grep '^APP_USER_ID=' "${wp_site}/../.env" 2>/dev/null | cut -d= -f2 | head -1)" -e HOME=/tmp --rm wordpress-cli wp --no-color"
+    if [[ ${install_type} == "docker"* ]]; then
+        local app_user_id
+        app_user_id="$(grep '^APP_USER_ID=' "${wp_site}/../.env" 2>/dev/null | cut -d= -f2 | head -1)"
+        [[ -z "${app_user_id}" ]] && app_user_id="33"
+        wpcli_cmd="docker compose --progress=quiet -f ${wp_site}/../docker-compose.yml run -T -u ${app_user_id} -e HOME=/tmp --rm wordpress-cli wp --no-color"
+    fi
 
     # Log
     log_event "debug" "Running: ${wpcli_cmd} core version" "false"
