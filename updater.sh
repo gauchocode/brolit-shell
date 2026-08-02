@@ -4,9 +4,6 @@
 # Version: 3.9
 #############################################################################
 
-SCRIPT="$(readlink -f "$0")"
-SCRIPTFILE="$(basename "${SCRIPT}")"
-#SCRIPTPATH="$(dirname "${SCRIPT}")"
 BRANCH="master"
 
 # Foreground/Text Colours
@@ -22,7 +19,18 @@ function _self_update() {
 
     git fetch
 
-    if git diff --name-only "origin/${BRANCH}" | grep -q "${SCRIPTFILE}"; then
+    # A detached HEAD (e.g. left over from a manual "git checkout <sha>") is
+    # itself a reason to update: it's never on ${BRANCH}, so it would never
+    # self-correct on its own. Otherwise, only update when the working tree
+    # actually differs from origin/${BRANCH} - not just when updater.sh
+    # itself changed (the previous check filtered the diff down to only
+    # this file's own name, so it essentially never fired and servers
+    # silently drifted arbitrarily far behind while this printed "latest
+    # version").
+    local is_detached="false"
+    git symbolic-ref -q HEAD >/dev/null || is_detached="true"
+
+    if [[ "${is_detached}" == "true" ]] || [[ -n "$(git diff --name-only "origin/${BRANCH}")" ]]; then
 
         echo -e "${GREEN}Found a new version of BROLIT Shell, updating ...${ENDCOLOR}"
 
