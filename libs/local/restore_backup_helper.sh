@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.9
+# Version: 3.10
 ################################################################################
 #
 # Backup/Restore Helper: Backup and restore funtions.
@@ -1418,8 +1418,10 @@ function restore_backup_from_storage() {
 
       # Download backup
       storage_download_backup "${backup_to_dowload}" "${BROLIT_TMP_DIR}"
+      exitstatus=$?
 
-      [[ $? -eq 1 ]] && display --indent 6 --text "- Downloading Project Backup" --result "ERROR" --color RED && return 1
+      [[ ${exitstatus} -eq 2 ]] && display --indent 6 --text "- Downloading Project Backup" --result "SKIPPED" --color YELLOW && return 1
+      [[ ${exitstatus} -ne 0 ]] && display --indent 6 --text "- Downloading Project Backup" --result "ERROR" --color RED && return 1
 
       # Detail of backup_to_dowload:
       #   "${chosen_server}/projects-${chosen_status}/${chosen_restore_type}/${project_domain}/${backup_file}"
@@ -1454,7 +1456,10 @@ function restore_backup_from_storage() {
 
       # Download backup
       storage_download_backup "${backup_to_dowload}" "${BROLIT_TMP_DIR}"
-      [[ $? -eq 1 ]] && display --indent 6 --text "- Downloading Project Backup" --result "ERROR" --color RED && return 1
+      exitstatus=$?
+
+      [[ ${exitstatus} -eq 2 ]] && display --indent 6 --text "- Downloading Project Backup" --result "SKIPPED" --color YELLOW && return 1
+      [[ ${exitstatus} -ne 0 ]] && display --indent 6 --text "- Downloading Project Backup" --result "ERROR" --color RED && return 1
 
       # Get project backup file
       project_backup_file="$(basename "${backup_to_dowload}")"
@@ -1486,8 +1491,10 @@ function restore_backup_from_storage() {
 
       # Download backup
       storage_download_backup "${backup_to_dowload}" "${BROLIT_TMP_DIR}"
+      exitstatus=$?
 
-      [[ $? -eq 1 ]] && display --indent 6 --text "- Downloading Project Backup" --result "ERROR" --color RED && return 1
+      [[ ${exitstatus} -eq 2 ]] && display --indent 6 --text "- Downloading Project Backup" --result "SKIPPED" --color YELLOW && return 1
+      [[ ${exitstatus} -ne 0 ]] && display --indent 6 --text "- Downloading Project Backup" --result "ERROR" --color RED && return 1
 
       # Detail of backup_to_dowload:
       #   "${chosen_server}/projects-${chosen_status}/${chosen_restore_type}/${project_name}/${backup_file}"
@@ -1509,8 +1516,10 @@ function restore_backup_from_storage() {
   
         # Download backup
         storage_download_backup "${backup_to_dowload}" "${BROLIT_TMP_DIR}"
-  
-        [[ $? -eq 1 ]] && display --indent 6 --text "- Downloading Volume Backup" --result "ERROR" --color RED && return 1
+        exitstatus=$?
+
+        [[ ${exitstatus} -eq 2 ]] && display --indent 6 --text "- Downloading Volume Backup" --result "SKIPPED" --color YELLOW && return 1
+        [[ ${exitstatus} -ne 0 ]] && display --indent 6 --text "- Downloading Volume Backup" --result "ERROR" --color RED && return 1
   
         # Detail of backup_to_dowload:
         #   "${chosen_server}/projects-${chosen_status}/${chosen_restore_type}/${project_name}/${backup_file}"
@@ -1711,6 +1720,21 @@ function restore_config_files_from_storage() {
   if [[ ${exitstatus} -eq 0 ]]; then
     #Restore file list
     storage_file_list="$(storage_list_dir "${chosen_type_path}/${chosen_config_type}")"
+
+    if [[ -z ${storage_file_list} ]]; then
+      log_event "error" "No config backups found in ${chosen_type_path}/${chosen_config_type}" "false"
+      display --indent 6 --text "No config backups found for this type" --result "ERROR" --color RED
+      return 1
+    fi
+
+  else
+
+    # Log
+    display --indent 6 --text "- Selecting config backup type" --result "SKIPPED" --color YELLOW
+
+    # Return
+    return 1
+
   fi
 
   chosen_config_bk="$(whiptail --title "RESTORE CONFIGS BACKUPS" --menu "Choose a config backup file to restore." 20 78 10 $(for x in ${storage_file_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)"
@@ -1722,6 +1746,7 @@ function restore_config_files_from_storage() {
 
     #dropbox_download "${chosen_type_path}/${chosen_config_type}/${chosen_config_bk}" "${BROLIT_MAIN_DIR}/tmp"
     storage_download_backup "${chosen_type_path}/${chosen_config_type}/${chosen_config_bk}" "${BROLIT_MAIN_DIR}/tmp"
+    [[ $? -ne 0 ]] && display --indent 6 --text "- Downloading config backup" --result "ERROR" --color RED && return 1
 
     #clear_previous_lines "1"
     #display --indent 6 --text "- Downloading config backup from dropbox" --result "DONE" --color GREEN
@@ -1741,6 +1766,14 @@ function restore_config_files_from_storage() {
 
     log_event "info" "${CHOSEN_CONFIG} Config backup downloaded and uncompressed on  ${BROLIT_MAIN_DIR}/tmp/${chosen_config_type}"
     whiptail_message "IMPORTANT!" "${CHOSEN_CONFIG} config files were downloaded on this temp directory: ${BROLIT_MAIN_DIR}/tmp/${chosen_config_type}."
+
+  else
+
+    # Log
+    display --indent 6 --text "- Selecting config backup file" --result "SKIPPED" --color YELLOW
+
+    # Return
+    return 1
 
   fi
 
@@ -1776,7 +1809,7 @@ function restore_nginx_site_files() {
 
   # Downloading Config Backup
   storage_download_backup "${bk_to_download}" "${BROLIT_TMP_DIR}"
-  [[ $? -eq 1 ]] && return 1
+  [[ $? -ne 0 ]] && return 1
 
   # Extract
   mkdir -p "${BROLIT_MAIN_DIR}/tmp/nginx"

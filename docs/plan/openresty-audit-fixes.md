@@ -2,7 +2,7 @@
 
 ## Context
 
-brolit-shell 3.9 now supports Proxmox VE deployments where OpenResty runs inside
+brolit-shell 3.10 now supports Proxmox VE deployments where OpenResty runs inside
 a dedicated VM (VM 100, 10.2.0.100) instead of on the Proxmox host. The initial
 migration was successful, but a code audit revealed that several certbot,
 setup, project and OpenResty helper paths still assume nginx is local.

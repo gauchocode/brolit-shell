@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.9
+# Version: 3.10
 ################################################################################
 
 ################################################################################
@@ -85,6 +85,7 @@ function dropbox_check_if_file_exists() {
 function dropbox_check_if_directory_exists() {
 
     local directory="${1}"
+    local api_directory="/${directory#/}"
     local path="${2}"
 
     local output
@@ -503,5 +504,243 @@ function dropbox_get_modified_date() {
         return 1
 
     fi
+
+}
+
+################################################################################
+# Get a Dropbox access token using the configured refresh token.
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   Access token on stdout, 1 on error.
+################################################################################
+function _dropbox_get_access_token() {
+
+    local config_file="${BACKUP_DROPBOX_CONFIG_FILE:-}"
+    local curl_bin="${CURL_BIN:-curl}"
+    local response
+    local access_token
+
+    if [[ -z "${config_file}" || ! -f "${config_file}" ]]; then
+        log_event "error" "Dropbox config file not found: ${config_file}" "false"
+        return 1
+    fi
+
+    # shellcheck source=/dev/null
+    source "${config_file}"
+
+    if [[ -z "${OAUTH_APP_KEY:-}" || -z "${OAUTH_APP_SECRET:-}" || -z "${OAUTH_REFRESH_TOKEN:-}" ]]; then
+        log_event "error" "Dropbox OAuth refresh credentials are incomplete" "false"
+        return 1
+    fi
+
+    response="$("${curl_bin}" --silent --show-error --location \
+        --user "${OAUTH_APP_KEY}:${OAUTH_APP_SECRET}" \
+        --data "grant_type=refresh_token" \
+        --data "refresh_token=${OAUTH_REFRESH_TOKEN}" \
+        "https://api.dropbox.com/oauth2/token")"
+    exitstatus=$?
+    if [[ ${exitstatus} -ne 0 ]]; then
+        log_event "error" "Unable to refresh Dropbox access token" "false"
+        return 1
+    fi
+
+    access_token="$(jq -r '.access_token // empty' <<< "${response}" 2>/dev/null)"
+    if [[ -n "${access_token}" ]]; then
+        echo "${access_token}"
+        return 0
+    fi
+
+    log_event "error" "Dropbox access token refresh returned no token" "false"
+    return 1
+
+}
+
+################################################################################
+# List deleted files from a Dropbox directory.
+#
+# Arguments:
+#   ${1} = ${directory}
+#
+# Outputs:
+#   Newline-separated file names, 1 on error or when no files are found.
+################################################################################
+function dropbox_list_deleted() {
+
+    local directory="${1}"
+    local api_directory="/${directory#/}"
+    local curl_bin="${CURL_BIN:-curl}"
+    local access_token
+    local response
+    local cursor=""
+    local has_more="true"
+    local request_body
+    local deleted_files=""
+    local page_files
+    local exitstatus
+
+    access_token="$(_dropbox_get_access_token)"
+    exitstatus=$?
+    [[ ${exitstatus} -ne 0 ]] && return 1
+
+    while [[ ${has_more} == "true" ]]; do
+
+        if [[ -n "${cursor}" ]]; then
+            request_body="$(jq -cn --arg cursor "${cursor}" '{cursor: $cursor}')"
+        else
+            request_body="$(jq -cn --arg path "${api_directory}" '{path: $path, recursive: false, include_media_info: false, include_deleted: true, include_has_explicit_shared_members: false}')"
+        fi
+
+        if [[ -z "${request_body}" ]]; then
+            log_event "error" "Unable to build Dropbox deleted-file request" "false"
+            return 1
+        fi
+
+        if [[ -n "${cursor}" ]]; then
+            response="$("${curl_bin}" --silent --show-error --location \
+                --request POST \
+                --header "Authorization: Bearer ${access_token}" \
+                --header "Content-Type: application/json" \
+                --data "${request_body}" \
+                "https://api.dropboxapi.com/2/files/list_folder/continue")"
+        else
+            response="$("${curl_bin}" --silent --show-error --location \
+                --request POST \
+                --header "Authorization: Bearer ${access_token}" \
+                --header "Content-Type: application/json" \
+                --data "${request_body}" \
+                "https://api.dropboxapi.com/2/files/list_folder")"
+        fi
+        exitstatus=$?
+        if [[ ${exitstatus} -ne 0 ]]; then
+            log_event "error" "Unable to list deleted Dropbox files in ${directory}" "false"
+            return 1
+        fi
+
+        if jq -e '.error_summary? // empty' <<< "${response}" >/dev/null 2>&1; then
+            log_event "error" "Dropbox rejected deleted-file listing for ${directory}" "false"
+            return 1
+        fi
+
+        page_files="$(jq -r '.entries[]? | select(.[".tag"] == "deleted") | .name' <<< "${response}" 2>/dev/null)"
+        if [[ -n "${page_files}" ]]; then
+            if [[ -n "${deleted_files}" ]]; then
+                deleted_files+=$'\n'
+            fi
+            deleted_files+="${page_files}"
+        fi
+
+        has_more="$(jq -r '.has_more // false' <<< "${response}" 2>/dev/null)"
+        cursor="$(jq -r '.cursor // empty' <<< "${response}" 2>/dev/null)"
+        if [[ ${has_more} == "true" && -z "${cursor}" ]]; then
+            log_event "error" "Dropbox deleted-file listing returned no cursor" "false"
+            return 1
+        fi
+
+    done
+
+    if [[ -n "${deleted_files}" ]]; then
+        echo "${deleted_files}"
+        return 0
+    fi
+
+    return 1
+
+}
+
+################################################################################
+# Get the latest revision ID for a Dropbox file.
+#
+# Arguments:
+#   ${1} = ${file_path}
+#
+# Outputs:
+#   Revision ID on stdout, 1 on error.
+################################################################################
+function dropbox_get_latest_rev() {
+
+    local file_path="${1}"
+    local api_file_path="/${file_path#/}"
+    local curl_bin="${CURL_BIN:-curl}"
+    local access_token
+    local request_body
+    local response
+    local revision
+    local exitstatus
+
+    access_token="$(_dropbox_get_access_token)"
+    exitstatus=$?
+    [[ ${exitstatus} -ne 0 ]] && return 1
+
+    request_body="$(jq -cn --arg path "${api_file_path}" '{path: $path, mode: "path", limit: 1}')"
+    response="$("${curl_bin}" --silent --show-error --location \
+        --request POST \
+        --header "Authorization: Bearer ${access_token}" \
+        --header "Content-Type: application/json" \
+        --data "${request_body}" \
+        "https://api.dropboxapi.com/2/files/list_revisions")"
+    exitstatus=$?
+    if [[ ${exitstatus} -ne 0 ]]; then
+        log_event "error" "Unable to list Dropbox revisions for ${file_path}" "false"
+        return 1
+    fi
+
+    revision="$(jq -r '.entries[0].rev // empty' <<< "${response}" 2>/dev/null)"
+    if [[ -n "${revision}" ]]; then
+        echo "${revision}"
+        return 0
+    fi
+
+    log_event "error" "No Dropbox revision found for ${file_path}" "false"
+    return 1
+
+}
+
+################################################################################
+# Restore a deleted Dropbox file to a selected revision.
+#
+# Arguments:
+#   ${1} = ${file_path}
+#   ${2} = ${revision}
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+function dropbox_restore_file() {
+
+    local file_path="${1}"
+    local api_file_path="/${file_path#/}"
+    local revision="${2}"
+    local curl_bin="${CURL_BIN:-curl}"
+    local access_token
+    local request_body
+    local response
+    local exitstatus
+
+    access_token="$(_dropbox_get_access_token)"
+    exitstatus=$?
+    [[ ${exitstatus} -ne 0 ]] && return 1
+
+    request_body="$(jq -cn --arg path "${api_file_path}" --arg rev "${revision}" '{path: $path, rev: $rev}')"
+    response="$("${curl_bin}" --silent --show-error --location \
+        --request POST \
+        --header "Authorization: Bearer ${access_token}" \
+        --header "Content-Type: application/json" \
+        --data "${request_body}" \
+        "https://api.dropboxapi.com/2/files/restore")"
+    exitstatus=$?
+    if [[ ${exitstatus} -ne 0 ]]; then
+        log_event "error" "Unable to restore deleted Dropbox file ${file_path}" "false"
+        return 1
+    fi
+
+    if jq -e '.error_summary? // empty' <<< "${response}" >/dev/null 2>&1; then
+        log_event "error" "Dropbox rejected restore for ${file_path}" "false"
+        return 1
+    fi
+
+    return 0
 
 }

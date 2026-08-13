@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.9
+# Version: 3.10
 ################################################################################
 #
 # Project Manager: Perform project actions.
@@ -625,7 +625,7 @@ function project_dockerize_from_backup() {
 
   # Download backup
   storage_download_backup "${backup_to_download}" "${BROLIT_TMP_DIR}"
-  if [[ $? -eq 1 ]]; then
+  if [[ $? -ne 0 ]]; then
     log_event "error" "Failed to download backup: ${backup_to_download}" "true"
     display --indent 6 --text "- Downloading Project Backup" --result "ERROR" --color RED
     return 1

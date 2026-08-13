@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.9
+# Version: 3.10
 ################################################################################
 
 # Version
-SCRIPT_VERSION="3.9"
-ALIASES_VERSION="3.9-100"
+SCRIPT_VERSION="3.10"
+ALIASES_VERSION="3.10-100"
 
 ################################################################################
 # NAVIGATION ALIASES
