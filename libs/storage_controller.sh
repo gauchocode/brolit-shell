@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.9
+# Version: 3.10
 ################################################################################
 #
 # Storage Controller: Controller to upload and download backups.
@@ -447,7 +447,7 @@ function storage_upload_backup() {
 #   ${2} = {local_directory}
 #
 # Outputs:
-#   0 if it utils were installed, 1 on error.
+#   0 if ok, 1 on error, 2 if skipped by user.
 ################################################################################
 
 function storage_download_backup() {
@@ -457,7 +457,8 @@ function storage_download_backup() {
     local skip_confirm="${3:-false}"
 
     local got_error=0
-    local error_type
+    local error_type="none"
+    local backup_date
     #local local_space_free
 
     # TODO: add option to skip download if local file already exists?
@@ -474,7 +475,7 @@ function storage_download_backup() {
         if [[ "${skip_confirm}" != "true" ]]; then
             # Show whiptail message
             whiptail_message_with_skip_option "Backup date" "\n\nThis backup date is: ${backup_date}\n\nDo you want to continue?"
-            [[ $? -eq 1 ]] && error_type="dropbox_skipped" && return 1
+            [[ $? -eq 1 ]] && error_type="dropbox_skipped" && return 2
         else
             display --indent 6 --text "- Backup date: ${backup_date}"
         fi
@@ -833,6 +834,12 @@ function storage_backup_selection() {
     local remote_backup_path
     local remote_backup_list
     local chosen_backup_file
+    local deleted_backup_list
+    local chosen_deleted_backup
+    local deleted_backup_path
+    local deleted_backup_rev
+    local backup_menu_options=()
+    local deleted_backup_menu_options=()
 
     # Log
     log_event "info" "Running backup selection menu" "false"
@@ -883,11 +890,72 @@ function storage_backup_selection() {
     # Re-order Backup files by date
     remote_backup_list="$(sort_files_by_date "${remote_backup_list}")"
 
-    # Select Backup File
-    chosen_backup_file="$(whiptail --title "BACKUP SELECTION" --menu "Choose Backup to download" 20 78 10 $(for x in ${remote_backup_list}; do echo "$x [F]"; done) 3>&1 1>&2 2>&3)"
+    while true; do
 
-    exitstatus=$?
-    if [[ ${exitstatus} -eq 0 ]]; then
+        # Select Backup File
+        backup_menu_options=()
+        for x in ${remote_backup_list}; do
+            backup_menu_options+=("${x}" "[F]")
+        done
+
+        if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
+            backup_menu_options+=("__SHOW_DELETED__" "Show deleted backups")
+        fi
+
+        chosen_backup_file="$(whiptail --title "BACKUP SELECTION" --menu "Choose Backup to download" 20 78 10 "${backup_menu_options[@]}" 3>&1 1>&2 2>&3)"
+
+        exitstatus=$?
+        if [[ ${exitstatus} -ne 0 ]]; then
+
+            # Log
+            display --indent 6 --text "- Selecting Project Backup" --result "SKIPPED" --color YELLOW
+
+            # Return
+            return 1
+
+        fi
+
+        if [[ ${chosen_backup_file} == "__SHOW_DELETED__" ]]; then
+
+            deleted_backup_list="$(dropbox_list_deleted "${remote_backup_path}")"
+            exitstatus=$?
+            if [[ ${exitstatus} -ne 0 || -z "${deleted_backup_list}" ]]; then
+                display --indent 6 --text "No deleted backups found for this project" --result "WARNING" --color YELLOW
+                continue
+            fi
+
+            deleted_backup_list="$(sort_array_alphabetically "${deleted_backup_list}")"
+            deleted_backup_menu_options=()
+            for x in ${deleted_backup_list}; do
+                deleted_backup_menu_options+=("${x}" "[-]")
+            done
+
+            chosen_deleted_backup="$(whiptail --title "BACKUP SELECTION" --menu "Choose a deleted backup to restore" 20 78 10 "${deleted_backup_menu_options[@]}" 3>&1 1>&2 2>&3)"
+            exitstatus=$?
+            if [[ ${exitstatus} -ne 0 ]]; then
+                display --indent 6 --text "- Selecting deleted backup" --result "SKIPPED" --color YELLOW
+                continue
+            fi
+
+            deleted_backup_path="${remote_backup_path}/${chosen_deleted_backup}"
+            deleted_backup_rev="$(dropbox_get_latest_rev "${deleted_backup_path}")"
+            exitstatus=$?
+            if [[ ${exitstatus} -ne 0 || -z "${deleted_backup_rev}" ]]; then
+                display --indent 6 --text "- Getting deleted backup revision" --result "ERROR" --color RED
+                return 1
+            fi
+
+            display --indent 6 --text "- Restoring deleted backup from Dropbox"
+            dropbox_restore_file "${deleted_backup_path}" "${deleted_backup_rev}"
+            exitstatus=$?
+            if [[ ${exitstatus} -ne 0 ]]; then
+                display --indent 6 --text "- Restoring deleted backup from Dropbox" --result "ERROR" --color RED
+                return 1
+            fi
+
+            display --indent 6 --text "- Restoring deleted backup from Dropbox" --result "DONE" --color GREEN
+            chosen_backup_file="${chosen_deleted_backup}"
+        fi
 
         # Log
         display --indent 6 --text "- Selecting project Backup" --result "DONE" --color GREEN
@@ -899,15 +967,7 @@ function storage_backup_selection() {
         # Return
         echo "${chosen_backup_file}" && return 0
 
-    else
-
-        # Log
-        display --indent 6 --text "- Selecting Project Backup" --result "SKIPPED" --color YELLOW
-
-        # Return
-        return 1
-
-    fi
+    done
 
 }
 
@@ -993,7 +1053,7 @@ function storage_backup_multi_project_selection() {
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.9
+# Version: 3.10
 ################################################################################
 #
 # Storage Controller - Additional Functions
