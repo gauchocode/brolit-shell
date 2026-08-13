@@ -139,6 +139,38 @@ function test_config_migration_apply() {
 
 }
 
+################################################################################
+# Test automatic migration mode used by CLI executions.
+################################################################################
+function test_config_migration_cli_mode() {
+
+    echo "=== Test: config migration CLI mode ==="
+
+    local test_config
+    local template="${BROLIT_MAIN_DIR}/config/brolit/brolit_conf.json"
+    local original_exec_mode="${BROLIT_EXEC_MODE:-}"
+    local target_version
+    test_config="$(mktemp)"
+
+    cp "${template}" "${test_config}"
+    jq '.BROLIT_SETUP.config[0].version = "0.0.0"' "${test_config}" > "${test_config}.tmp" && mv "${test_config}.tmp" "${test_config}"
+    target_version="$(jq -r '.BROLIT_SETUP.config[0].version' "${template}")"
+
+    BROLIT_EXEC_MODE="cli"
+    brolit_configuration_file_check "${test_config}"
+    exitstatus=$?
+
+    if [[ ${exitstatus} -eq 0 && "$(jq -r '.BROLIT_SETUP.config[0].version' "${test_config}")" == "${target_version}" ]]; then
+        echo "PASSED: CLI migration applies without interactive prompt"
+    else
+        echo "FAILED: CLI migration should apply automatically"
+    fi
+
+    rm -f "${test_config}" "${test_config}.tmp" "${test_config}".bak.*
+    BROLIT_EXEC_MODE="${original_exec_mode}"
+
+}
+
 # Run all tests
 echo ""
 echo "========================================="
@@ -152,6 +184,8 @@ echo ""
 test_config_migration_merge
 echo ""
 test_config_migration_apply
+echo ""
+test_config_migration_cli_mode
 echo ""
 
 echo "========================================="

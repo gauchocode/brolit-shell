@@ -1906,12 +1906,10 @@ function brolit_configuration_file_check() {
 
             if [[ "${MIGRATION_NEEDED}" == "true" ]]; then
 
-                config_migration_show_diff "${server_config_file}" "${brolit_config_template}"
-                exitstatus=$?
+                if [[ "${BROLIT_EXEC_MODE:-interactive}" == "cli" ]]; then
 
-                if [[ ${exitstatus} -eq 0 ]]; then
-
-                    # User accepted migration
+                    # CLI runs must not block waiting for a whiptail response.
+                    display --indent 6 --text "- Applying config migration automatically" --tcolor YELLOW
                     config_migration_apply "${server_config_file}"
                     exitstatus=$?
 
@@ -1922,10 +1920,29 @@ function brolit_configuration_file_check() {
 
                 else
 
-                    # User declined migration
-                    display --indent 6 --text "- Migration declined" --result "SKIPPED" --color YELLOW
-                    display --indent 8 --text "Please update config file manually"
-                    exit 1
+                    # Show diff and ask user in interactive mode
+                    config_migration_show_diff "${server_config_file}" "${brolit_config_template}"
+                    exitstatus=$?
+
+                    if [[ ${exitstatus} -eq 0 ]]; then
+
+                        # User accepted migration
+                        config_migration_apply "${server_config_file}"
+                        exitstatus=$?
+
+                        if [[ ${exitstatus} -ne 0 ]]; then
+                            log_event "error" "Config migration failed" "false"
+                            exit 1
+                        fi
+
+                    else
+
+                        # User declined migration
+                        display --indent 6 --text "- Migration declined" --result "SKIPPED" --color YELLOW
+                        display --indent 8 --text "Please update config file manually"
+                        exit 1
+
+                    fi
 
                 fi
 

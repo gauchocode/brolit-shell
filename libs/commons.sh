@@ -375,6 +375,8 @@ function script_init() {
   # Parameters
   declare -g SKIPTESTS="${1}"
   local exec_mode="${2:-interactive}"
+  declare -g BROLIT_EXEC_MODE="${exec_mode}"
+  export BROLIT_EXEC_MODE
 
   # Define log name
   declare -g BROLIT_LOG_FILE
@@ -2314,4 +2316,3 @@ function menu_cron_script_tasks() {
 # have been moved to libs/task_runner.sh for better code organization.
 # See libs/task_runner.sh for all task execution and validation logic.
 ################################################################################
-
