@@ -23,7 +23,7 @@ function test_config_migration_check() {
     fi
 
     # Test 2: Different version - migration needed
-    jq '.BROLIT_SETUP.config[0].version = "0.0.0"' "${test_config}" > "${test_config}.tmp" && mv "${test_config}.tmp" "${test_config}"
+    jq '.BROLIT_SETUP.config[0].version = "0.0.0" | .NOTIFICATIONS.email[0].status = "enabled" | .NOTIFICATIONS.email[0].config[0].email_from = "from@example.com" | del(.NOTIFICATIONS.email[0].config[0].from_email)' "${test_config}" > "${test_config}.tmp" && mv "${test_config}.tmp" "${test_config}"
     config_migration_check "${test_config}"
     if [[ "${MIGRATION_NEEDED}" == "true" && "${CURRENT_VERSION}" == "0.0.0" ]]; then
         echo "PASSED: Different version detected correctly"
@@ -160,7 +160,7 @@ function test_config_migration_cli_mode() {
     brolit_configuration_file_check "${test_config}"
     exitstatus=$?
 
-    if [[ ${exitstatus} -eq 0 && "$(jq -r '.BROLIT_SETUP.config[0].version' "${test_config}")" == "${target_version}" ]]; then
+    if [[ ${exitstatus} -eq 0 && "$(jq -r '.BROLIT_SETUP.config[0].version' "${test_config}")" == "${target_version}" && "$(jq -r '.NOTIFICATIONS.email[0].config[0].from_email' "${test_config}")" == "from@example.com" ]]; then
         echo "PASSED: CLI migration applies without interactive prompt"
     else
         echo "FAILED: CLI migration should apply automatically"

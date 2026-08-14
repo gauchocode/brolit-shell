@@ -476,7 +476,10 @@ function _brolit_configuration_load_email() {
         [[ -z ${NOTIFICATION_EMAIL_SMTP_UPASS} ]] && die "Error reading NOTIFICATION_EMAIL_SMTP_UPASS from server config file."
 
         NOTIFICATION_EMAIL_FROM_EMAIL="$(json_read_field "${server_config_file}" "NOTIFICATIONS.email[].config[].from_email")"
-        [[ -z ${NOTIFICATION_EMAIL_FROM_EMAIL} ]] && die "Error reading NOTIFICATION_EMAIL_FROM_EMAIL from server config file."
+        if [[ -z ${NOTIFICATION_EMAIL_FROM_EMAIL} ]]; then
+            NOTIFICATION_EMAIL_FROM_EMAIL="${NOTIFICATION_EMAIL_EMAIL_TO:-${NOTIFICATION_EMAIL_SMTP_USER}}"
+            log_event "warning" "NOTIFICATION_EMAIL_FROM_EMAIL is missing; using a fallback sender" "false"
+        fi
 
     else
 

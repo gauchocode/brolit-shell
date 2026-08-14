@@ -155,6 +155,8 @@ function _string_remove_color_chars() {
 
   for i in "${text_styles[@]}"; do
 
+    [[ -z "${i}" ]] && continue
+
     # First we need to remove special char '\'
     i="$(echo "${i}" | sed -E 's/\\//g')"
     string="$(echo "${string}" | sed -E 's/\\//g')"
@@ -169,6 +171,8 @@ function _string_remove_color_chars() {
 
   for j in "${text_colors[@]}"; do
 
+    [[ -z "${j}" ]] && continue
+
     # First we need to remove special char '\'
     j="$(echo "${j}" | sed -E 's/\\//g')"
     string="$(echo "${string}" | sed -E 's/\\//g')"
@@ -182,6 +186,8 @@ function _string_remove_color_chars() {
   done
 
   for k in "${text_background[@]}"; do
+
+    [[ -z "${k}" ]] && continue
 
     # First we need to remove special char '\'
     k="$(echo "${k}" | sed -E 's/\\//g')"
