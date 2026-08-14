@@ -25,6 +25,7 @@ function _config_migration_load_legacy_mappings() {
     # Format: CONFIG_FIELD_MIGRATIONS["new_field"]="old_field"
     # Add migrations here when fields are renamed between versions
     CONFIG_FIELD_MIGRATIONS["NOTIFICATIONS.email[].config[].email_to"]="NOTIFICATIONS.email[].config[].maila"
+    CONFIG_FIELD_MIGRATIONS["NOTIFICATIONS.email[].config[].from_email"]="NOTIFICATIONS.email[].config[].email_from"
 
 }
 
@@ -230,7 +231,23 @@ function config_migration_merge() {
     # Merge: use template as base, overlay current values
     # This preserves all current values and adds new fields from template
     local merged_config
-    merged_config="$(jq -s '.[0] * .[1]' "${config_template}" "${temp_file}" 2>/dev/null)"
+    merged_config="$(jq -s '
+        def deepmerge($base; $overlay):
+            if ($base | type) == "object" and ($overlay | type) == "object" then
+                reduce ($overlay | keys_unsorted[]) as $key ($base;
+                    .[$key] = if has($key) then deepmerge(.[$key]; $overlay[$key]) else $overlay[$key] end)
+            elif ($base | type) == "array" and ($overlay | type) == "array" then
+                reduce range(0; ([($base | length), ($overlay | length)] | max)) as $index ($base;
+                    if $index < ($overlay | length) then
+                        .[$index] = if $index < ($base | length) then deepmerge($base[$index]; $overlay[$index]) else $overlay[$index] end
+                    else
+                        .
+                    end)
+            else
+                $overlay
+            end;
+        deepmerge(.[0]; .[1])
+    ' "${config_template}" "${temp_file}" 2>/dev/null)"
 
     if [[ -n "${merged_config}" ]]; then
         echo "${merged_config}" > "${temp_file}"
@@ -270,6 +287,20 @@ function config_migration_merge() {
         fi
 
     done
+
+    # Migrate the legacy email sender field. This path contains arrays, so it
+    # cannot be safely updated with setpath() using the dotted legacy mapping
+    # notation above.
+    local legacy_from_email
+    local current_from_email
+    legacy_from_email="$(jq -r '.NOTIFICATIONS.email[0].config[0].email_from // empty' "${temp_file}" 2>/dev/null)"
+    current_from_email="$(jq -r '.NOTIFICATIONS.email[0].config[0].from_email // empty' "${temp_file}" 2>/dev/null)"
+
+    if [[ -n "${legacy_from_email}" && -z "${current_from_email}" ]]; then
+        jq --arg from_email "${legacy_from_email}" \
+            '.NOTIFICATIONS.email[0].config[0].from_email = $from_email' \
+            "${temp_file}" > "${temp_file}.migrated" && mv "${temp_file}.migrated" "${temp_file}"
+    fi
 
     # Update version
     local updated_config
