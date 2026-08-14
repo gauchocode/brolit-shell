@@ -913,7 +913,10 @@ function _brolit_configuration_load_mariadb() {
     if [[ ${PACKAGES_MARIADB_STATUS} == "enabled" ]]; then
 
         PACKAGES_MARIADB_CONFIG_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.mariadb[].version")"
-        [[ -z ${PACKAGES_MARIADB_CONFIG_VERSION} ]] && die "Error reading PACKAGES_MARIADB_CONFIG_VERSION from server config file."
+        if [[ -z ${PACKAGES_MARIADB_CONFIG_VERSION} ]]; then
+            PACKAGES_MARIADB_CONFIG_VERSION="default"
+            log_event "warning" "MariaDB version is missing; using default" "false"
+        fi
 
         PACKAGES_MARIADB_CONFIG_PORTS="$(json_read_field "${server_config_file}" "PACKAGES.mariadb[].config[].port")"
         [[ -z ${PACKAGES_MARIADB_CONFIG_PORTS} ]] && die "Error reading PACKAGES_MARIADB_CONFIG_PORTS from server config file."
@@ -1014,7 +1017,10 @@ function _brolit_configuration_load_mysql() {
     if [[ ${PACKAGES_MYSQL_STATUS} == "enabled" ]]; then
 
         PACKAGES_MYSQL_CONFIG_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.mysql[].version")"
-        [[ -z ${PACKAGES_MYSQL_CONFIG_VERSION} ]] && die "Error reading PACKAGES_MYSQL_CONFIG_VERSION from server config file."
+        if [[ -z ${PACKAGES_MYSQL_CONFIG_VERSION} ]]; then
+            PACKAGES_MYSQL_CONFIG_VERSION="default"
+            log_event "warning" "MySQL version is missing; using default" "false"
+        fi
 
         PACKAGES_MYSQL_CONFIG_PORTS="$(json_read_field "${server_config_file}" "PACKAGES.mysql[].config[].port")"
         [[ -z ${PACKAGES_MYSQL_CONFIG_PORTS} ]] && die "Error reading PACKAGES_MYSQL_CONFIG_PORTS from server config file."
@@ -1106,7 +1112,10 @@ function _brolit_configuration_load_postgres() {
     if [[ ${PACKAGES_POSTGRES_STATUS} == "enabled" ]]; then
 
         PACKAGES_POSTGRES_CONFIG_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.postgres[].version")"
-        [[ -z ${PACKAGES_POSTGRES_CONFIG_VERSION} ]] && die "Error reading PACKAGES_POSTGRES_CONFIG_VERSION from server config file."
+        if [[ -z ${PACKAGES_POSTGRES_CONFIG_VERSION} ]]; then
+            PACKAGES_POSTGRES_CONFIG_VERSION="default"
+            log_event "warning" "PostgreSQL version is missing; using default" "false"
+        fi
 
         PACKAGES_POSTGRES_CONFIG_PORTS="$(json_read_field "${server_config_file}" "PACKAGES.postgres[].config[].port")"
         [[ -z ${PACKAGES_POSTGRES_CONFIG_PORTS} ]] && die "Error reading PACKAGES_POSTGRES_CONFIG_PORTS from server config file."
@@ -1156,7 +1165,10 @@ function _brolit_configuration_load_redis() {
     if [[ ${PACKAGES_REDIS_STATUS} == "enabled" ]]; then
 
         PACKAGES_REDIS_CONFIG_VERSION="$(json_read_field "${server_config_file}" "PACKAGES.redis[].version")"
-        [[ -z ${PACKAGES_REDIS_CONFIG_VERSION} ]] && die "Error reading PACKAGES_REDIS_CONFIG_VERSION from server config file."
+        if [[ -z ${PACKAGES_REDIS_CONFIG_VERSION} ]]; then
+            PACKAGES_REDIS_CONFIG_VERSION="default"
+            log_event "warning" "Redis version is missing; using default" "false"
+        fi
 
         # Checking if Redis is not installed
         [[ ! -x ${REDIS} ]] && pkg_config_changes_detected "redis" "true"
