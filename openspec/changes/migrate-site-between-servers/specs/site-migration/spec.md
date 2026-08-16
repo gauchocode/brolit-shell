@@ -56,11 +56,11 @@ The system SHALL use `backup_docker_project()` unmodified to produce the files-a
 - **THEN** the system produces a local backup artifact via `backup_docker_project()`
 
 ### Requirement: Migrate supports an explicit transport choice
-The system SHALL accept a `--transport` option with value `local` (default) or `dropbox`. For `local`, the system SHALL verify `BACKUPS.methods.local` is enabled on both the source and destination before capturing anything, transfer the artifact via direct rsync into the destination's local-storage path structure, and force the destination's restore to use the `local` storage method. For `dropbox`, the system SHALL verify `BACKUPS.methods.dropbox` is enabled on the source, SHALL NOT perform any direct rsync transfer (relying on the capture step's normal upload-to-all-enabled-methods behavior), and SHALL force the destination's restore to use the `dropbox` storage method. The system SHALL reject any other value.
+The system SHALL accept a `--transport` option with value `local` (default) or `dropbox`. For `local`, the system SHALL stage and transfer the artifact via direct rsync using a fixed, migrate-owned staging path (identical on both servers, independent of any `.brolit_conf.json` value) and force the destination's restore to use the `local` storage method against that same path, WITHOUT reading, requiring, or depending on `BACKUPS.methods.local` being enabled anywhere - regular/cron backups must never be affected by using this transport. For `dropbox`, the system SHALL verify `BACKUPS.methods.dropbox` is enabled on the source, SHALL NOT perform any direct rsync transfer (relying on the capture step's normal upload-to-all-enabled-methods behavior), and SHALL force the destination's restore to use the `dropbox` storage method. The system SHALL reject any other value.
 
-#### Scenario: Local transport missing local storage
-- **WHEN** `--transport local` (or the default) is used and either the source or destination does not have `BACKUPS.methods.local` enabled
-- **THEN** the system exits non-zero before capturing any backup
+#### Scenario: Local transport works regardless of BACKUPS.methods.local
+- **WHEN** `--transport local` (or the default) is used and `BACKUPS.methods.local` is disabled on both the source and destination
+- **THEN** the system still captures, transfers, and restores successfully, using its own fixed staging path, and does not enable or modify `BACKUPS.methods.local` on either server
 
 #### Scenario: Dropbox transport missing Dropbox storage
 - **WHEN** `--transport dropbox` is used and the source does not have `BACKUPS.methods.dropbox` enabled

@@ -663,6 +663,7 @@ function subtasks_restore_handler() {
   local new_domain="${5:-}"
   local storage_method="${6:-auto}"
   local source_server="${7:-}"
+  local local_staging_path="${8:-}"
 
   # Detect if running interactively (terminal available)
   local is_interactive="false"
@@ -697,7 +698,7 @@ function subtasks_restore_handler() {
       restore_backup_from_storage "${domain}" "${backup_date}"
     else
       # Non-interactive mode - use CLI function (supports new_domain for clone)
-      restore_backup_from_storage_cli "${domain}" "${backup_date}" "${new_domain}" "${storage_method}" "${source_server}"
+      restore_backup_from_storage_cli "${domain}" "${backup_date}" "${new_domain}" "${storage_method}" "${source_server}" "${local_staging_path}"
     fi
 
     exit $?

@@ -28,7 +28,17 @@ function storage_list_dir() {
     local remote_list
     local storage_result=1
 
-    if [[ ( ${storage_method} == "auto" || ${storage_method} == "dropbox" ) && ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
+    # MIGRATE_LOCAL_STAGING_PATH (set only by `migrate --transport local`) is
+    # a transient override that bypasses BACKUPS.methods.local in
+    # .brolit_conf.json entirely, so migrate's local transport never enables
+    # local storage for regular/cron backups. When set, this call uses ONLY
+    # that path, ignoring whatever storage methods are actually configured.
+    if [[ -n "${MIGRATE_LOCAL_STAGING_PATH}" ]]; then
+
+        remote_list="$(ls "${MIGRATE_LOCAL_STAGING_PATH}/${remote_directory}" 2>/dev/null)"
+        storage_result=$?
+
+    elif [[ ( ${storage_method} == "auto" || ${storage_method} == "dropbox" ) && ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
         # Dropbox API returns files names on the third column
         remote_list="$(dropbox_list_directory "${remote_directory}")"
@@ -252,6 +262,16 @@ function storage_create_dir() {
 
     log_event "debug" "Number of configured Borg servers: ${number_of_servers}" "false"
 
+    # MIGRATE_LOCAL_STAGING_PATH (set only by `migrate --transport local`) -
+    # see storage_list_dir() for the full rationale. Bypasses Dropbox/Borg
+    # entirely for this call.
+    if [[ -n "${MIGRATE_LOCAL_STAGING_PATH}" ]]; then
+
+        mkdir --parents "${MIGRATE_LOCAL_STAGING_PATH}/${remote_directory}"
+        return 0
+
+    fi
+
     # DROPBOX
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
@@ -393,6 +413,22 @@ function storage_upload_backup() {
     # Only numbers
     file_to_upload_size="$(echo "${file_to_upload_size}" | sed -E 's/[^0-9.]+//g')"
 
+    # MIGRATE_LOCAL_STAGING_PATH (set only by `migrate --transport local`) -
+    # see storage_list_dir() for the full rationale. Bypasses Dropbox/Local
+    # config entirely for this call, so a --transport local migration never
+    # uploads to Dropbox and never touches BACKUPS.methods.local.
+    if [[ -n "${MIGRATE_LOCAL_STAGING_PATH}" ]]; then
+
+        log_event "info" "Staging backup for migrate at ${MIGRATE_LOCAL_STAGING_PATH}..." "false"
+        mkdir --parents "${MIGRATE_LOCAL_STAGING_PATH}/${remote_directory}"
+        rsync --recursive "${file_to_upload}" "${MIGRATE_LOCAL_STAGING_PATH}/${remote_directory}"
+        [[ $? -eq 1 ]] && error_type="migrate_staging_upload" && got_error=1
+
+        [[ ${error_type} != "none" ]] && echo "${error_type}"
+        return ${got_error}
+
+    fi
+
     # DROPBOX
     if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
@@ -470,7 +506,16 @@ function storage_download_backup() {
     # TODO: add option to skip download if local file already exists?
     # TODO: add Borg download support (Borg restores go through a separate code path today)
 
-    if [[ ( ${storage_method} == "auto" || ${storage_method} == "dropbox" ) && ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
+    # MIGRATE_LOCAL_STAGING_PATH (set only by `migrate --transport local`) is
+    # a transient override - see storage_list_dir() for the full rationale.
+    if [[ -n "${MIGRATE_LOCAL_STAGING_PATH}" ]]; then
+
+        log_event "info" "Downloading backup from migrate local staging path..." "false"
+        mkdir --parents "${local_directory}"
+        rsync --recursive "${MIGRATE_LOCAL_STAGING_PATH}/${file_to_download}" "${local_directory}"
+        [[ $? -eq 1 ]] && error_type="local_download" && got_error=1
+
+    elif [[ ( ${storage_method} == "auto" || ${storage_method} == "dropbox" ) && ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
         # Check if local storage has enough space
         #local_space_free="$(calculate_disk_usage "${MAIN_VOL}")"
@@ -493,9 +538,7 @@ function storage_download_backup() {
         # Quick fix, for extra line
         clear_previous_lines "1"
 
-    fi
-
-    if [[ ${BACKUP_LOCAL_STATUS} == "enabled" ]]; then
+    elif [[ ( ${storage_method} == "auto" || ${storage_method} == "local" ) && ${BACKUP_LOCAL_STATUS} == "enabled" ]]; then
 
         log_event "info" "Downloading backup from local storage..." "false"
         log_event "debug" "Running: rsync --recursive \"${BACKUP_LOCAL_CONFIG_BACKUP_PATH}/${file_to_download}\" \"${local_directory}\"" "false"
