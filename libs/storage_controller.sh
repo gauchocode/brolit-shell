@@ -13,6 +13,8 @@
 #
 # Arguments:
 #   ${1} = {remote_directory}
+#   ${2} = {storage_method} - "auto" (default, Dropbox > Local > Borg priority),
+#          or force one of: dropbox, local, borg
 #
 # Outputs:
 #   ${remote_list}
@@ -21,31 +23,30 @@
 function storage_list_dir() {
 
     local remote_directory="${1}"
+    local storage_method="${2:-auto}"
 
     local remote_list
     local storage_result=1
 
-    if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
+    if [[ ( ${storage_method} == "auto" || ${storage_method} == "dropbox" ) && ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
         # Dropbox API returns files names on the third column
         remote_list="$(dropbox_list_directory "${remote_directory}")"
 
         storage_result=$?
 
-    fi
-    if [[ ${BACKUP_LOCAL_STATUS} == "enabled" ]]; then
+    elif [[ ( ${storage_method} == "auto" || ${storage_method} == "local" ) && ${BACKUP_LOCAL_STATUS} == "enabled" ]]; then
 
-        remote_list="$(ls "${remote_directory}" 2>/dev/null)"
+        remote_list="$(ls "${BACKUP_LOCAL_CONFIG_BACKUP_PATH}/${remote_directory}" 2>/dev/null)"
 
         storage_result=$?
 
         # Log
-        log_event "info" "Listing directory: ${remote_directory}" "false"
+        log_event "info" "Listing directory: ${BACKUP_LOCAL_CONFIG_BACKUP_PATH}/${remote_directory}" "false"
         log_event "info" "Remote list: ${remote_list}" "false"
-        log_event "debug" "Command executed: ls ${remote_directory}" "false"
+        log_event "debug" "Command executed: ls ${BACKUP_LOCAL_CONFIG_BACKUP_PATH}/${remote_directory}" "false"
 
-    fi
-    if [[ ${BACKUP_BORG_STATUS} == "enabled" ]]; then
+    elif [[ ( ${storage_method} == "auto" || ${storage_method} == "borg" ) && ${BACKUP_BORG_STATUS} == "enabled" ]]; then
 
         # Borg uses SSH-based listing
         local borg_repo="${remote_directory}"
@@ -445,6 +446,9 @@ function storage_upload_backup() {
 # Arguments:
 #   ${1} = {file_to_download}
 #   ${2} = {local_directory}
+#   ${3} = {skip_confirm}
+#   ${4} = {storage_method} - "auto" (default, Dropbox > Local priority),
+#          or force one of: dropbox, local
 #
 # Outputs:
 #   0 if ok, 1 on error, 2 if skipped by user.
@@ -455,6 +459,7 @@ function storage_download_backup() {
     local file_to_download="${1}"
     local local_directory="${2}"
     local skip_confirm="${3:-false}"
+    local storage_method="${4:-auto}"
 
     local got_error=0
     local error_type="none"
@@ -462,9 +467,9 @@ function storage_download_backup() {
     #local local_space_free
 
     # TODO: add option to skip download if local file already exists?
-    # TODO: add option to select download method (Borg, Dropbox, Local, etc)?
+    # TODO: add Borg download support (Borg restores go through a separate code path today)
 
-    if [[ ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
+    if [[ ( ${storage_method} == "auto" || ${storage_method} == "dropbox" ) && ${BACKUP_DROPBOX_STATUS} == "enabled" ]]; then
 
         # Check if local storage has enough space
         #local_space_free="$(calculate_disk_usage "${MAIN_VOL}")"
@@ -486,6 +491,18 @@ function storage_download_backup() {
 
         # Quick fix, for extra line
         clear_previous_lines "1"
+
+    fi
+
+    if [[ ${BACKUP_LOCAL_STATUS} == "enabled" ]]; then
+
+        log_event "info" "Downloading backup from local storage..." "false"
+        log_event "debug" "Running: rsync --recursive \"${BACKUP_LOCAL_CONFIG_BACKUP_PATH}/${file_to_download}\" \"${local_directory}\"" "false"
+
+        mkdir --parents "${local_directory}"
+
+        rsync --recursive "${BACKUP_LOCAL_CONFIG_BACKUP_PATH}/${file_to_download}" "${local_directory}"
+        [[ $? -eq 1 ]] && error_type="local_download" && got_error=1
 
     fi
 

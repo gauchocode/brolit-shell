@@ -54,6 +54,8 @@ function show_help() {
                         openresty           Subtasks: install, uninstall, reconfigure, status,
                                             api-status, api-routes, create-route, delete-route
                         migrate-npm         Subtasks: download-configs, migrate-all, migrate-domain
+                        migrate             Subtasks: site (Dockerized projects only, run from
+                                            the source server; see --dest-* options)
 
   Options:
     -st, --subtask    Sub-task to run (see task list above)
@@ -75,6 +77,28 @@ function show_help() {
     -rd, --redirect-domains  Comma-separated redirect domains (for openresty create-route)
     -cn, --cert-name  Certificate directory name to use, when it differs from
                       the domain (for openresty create-route)
+    -sm, --storage-method  Force a specific storage method (dropbox|local|borg)
+                      instead of the default auto-priority, for restore -st
+                      from-storage and migrate
+    --transport       Transport for migrate: "local" (default, direct rsync,
+                      requires BACKUPS.methods.local enabled on both servers)
+                      or "dropbox" (reuses the already-configured shared
+                      Dropbox account, no local storage required, slower)
+    --dest-host       Destination server host/IP (for migrate)
+    --dest-user       Destination server SSH user (for migrate)
+    --dest-port       Destination server SSH port (for migrate, default 22)
+    --dest-ssh-key    Path to the SSH private key for the destination (for migrate)
+    --dest-path       Override the destination project path (for migrate, optional)
+    --decommission-source  After a verified migration, stop and remove the
+                      source project (Docker stack, files, nginx vhost, certs).
+                      IRREVERSIBLE. Docker volumes are preserved unless
+                      --purge-volumes is also passed.
+    --purge-volumes   Combined with --decommission-source, also deletes the
+                      source project's Docker volumes. IRREVERSIBLE DATA LOSS.
+    --bootstrap-dest-config  If the destination is missing Cloudflare/certbot
+                      configuration, copy the Cloudflare config section from
+                      this server's own config to the destination (for migrate)
+    --force           Overwrite an existing destination path (for migrate)
     -dr, --dry-run    Dry-run mode (show what would be freed, no changes)
     -e,  --env        Environment
     -sl, --slog       Script log name
@@ -118,6 +142,8 @@ function show_help() {
     ./runner.sh -t openresty -st create-route -D www.example.com -tv http://10.2.0.104:80 -cn example.com
     ./runner.sh -t openresty -st delete-route -D example.com
     ./runner.sh -t migrate-npm -st migrate-all -D 10.2.0.100
+    ./runner.sh -t migrate -st site -D example.com --dest-host 10.2.0.200 --dest-user root --dest-ssh-key ~/.ssh/id_ed25519
+    ./runner.sh -t migrate -st site -D example.com --dest-host 10.2.0.200 --dest-user root --dest-ssh-key ~/.ssh/id_ed25519 --decommission-source
 
   "
 
@@ -516,7 +542,7 @@ function tasks_handler() {
     esac
 
     # Execute task
-    execute_task_with_error_handling "restore-${STASK}" "subtasks_restore_handler" "${STASK}" "${DOMAIN}" "${FILE}" "${TVALUE}" "${NDOMAIN}"
+    execute_task_with_error_handling "restore-${STASK}" "subtasks_restore_handler" "${STASK}" "${DOMAIN}" "${FILE}" "${TVALUE}" "${NDOMAIN}" "${STORAGEMETHOD}"
     exit_code=$?
     exit ${exit_code}
     ;;
@@ -865,6 +891,23 @@ function tasks_handler() {
     exit ${exit_code}
     ;;
 
+  migrate)
+    # Validate subtask
+    validate_task_and_subtask "migrate" "${STASK}" "site"
+    exit_code=$?
+    [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
+
+    # Validate required params
+    validate_required_params "migrate-${STASK}" "DOMAIN" "DESTHOST" "DESTUSER" "DESTSSHKEY"
+    exit_code=$?
+    [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
+
+    # Execute task
+    execute_task_with_error_handling "migrate-${STASK}" "subtasks_migrate_handler" "${STASK}" "${DOMAIN}" "${DESTHOST}" "${DESTUSER}" "${DESTPORT}" "${DESTSSHKEY}" "${DECOMMISSION_SOURCE}" "${PURGE_VOLUMES}" "${BOOTSTRAP_DEST_CONFIG}" "${FORCE}" "${DESTPATH}" "${TRANSPORT}"
+    exit_code=$?
+    exit ${exit_code}
+    ;;
+
   *)
     log_event "error" "INVALID TASK: ${TASK}" "true"
     display --indent 2 --text "- Invalid task: ${TASK}" --result "FAIL" --color RED
@@ -916,6 +959,21 @@ function flags_handler() {
   declare -g DBUSER=""
   declare -g DBUSERPSW=""
   declare -g DBENGINE="auto"
+
+  ## RESTORE
+  declare -g STORAGEMETHOD="auto"
+
+  ## MIGRATE
+  declare -g DESTHOST=""
+  declare -g DESTUSER=""
+  declare -g DESTPORT="22"
+  declare -g DESTSSHKEY=""
+  declare -g DESTPATH=""
+  declare -g DECOMMISSION_SOURCE="false"
+  declare -g PURGE_VOLUMES="false"
+  declare -g BOOTSTRAP_DEST_CONFIG="false"
+  declare -g FORCE="false"
+  declare -g TRANSPORT="local"
 
   while [ $# -ge 1 ]; do
 
@@ -1073,6 +1131,72 @@ function flags_handler() {
       shift
       DBENGINE="${1}"
       export DBENGINE
+      ;;
+
+    # RESTORE
+
+    -sm | --storage-method)
+      shift
+      STORAGEMETHOD="${1}"
+      export STORAGEMETHOD
+      ;;
+
+    # MIGRATE
+
+    --transport)
+      shift
+      TRANSPORT="${1}"
+      export TRANSPORT
+      ;;
+
+    --dest-host)
+      shift
+      DESTHOST="${1}"
+      export DESTHOST
+      ;;
+
+    --dest-user)
+      shift
+      DESTUSER="${1}"
+      export DESTUSER
+      ;;
+
+    --dest-port)
+      shift
+      DESTPORT="${1}"
+      export DESTPORT
+      ;;
+
+    --dest-ssh-key)
+      shift
+      DESTSSHKEY="${1}"
+      export DESTSSHKEY
+      ;;
+
+    --dest-path)
+      shift
+      DESTPATH="${1}"
+      export DESTPATH
+      ;;
+
+    --decommission-source)
+      DECOMMISSION_SOURCE="true"
+      export DECOMMISSION_SOURCE
+      ;;
+
+    --purge-volumes)
+      PURGE_VOLUMES="true"
+      export PURGE_VOLUMES
+      ;;
+
+    --bootstrap-dest-config)
+      BOOTSTRAP_DEST_CONFIG="true"
+      export BOOTSTRAP_DEST_CONFIG
+      ;;
+
+    --force)
+      FORCE="true"
+      export FORCE
       ;;
 
     *)

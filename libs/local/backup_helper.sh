@@ -1107,12 +1107,15 @@ function backup_project_database() {
   backup_file="$(backup_get_filename "${backup_prefix_name}" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
 
   # Database engine
+  # Note: "postgres" (used by backup_project()/backup_docker_project()) and
+  # "psql" (used by backup_all_databases()) are both accepted as the two
+  # naming conventions for PostgreSQL that coexist elsewhere in this file.
   if [[ ${db_engine} == "mysql" ]]; then
     ## Create dump file
     mysql_database_export "${database}" "${container_name}" "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"
   else
 
-    if [[ ${db_engine} == "psql" ]]; then
+    if [[ ${db_engine} == "postgres" || ${db_engine} == "psql" ]]; then
       ## Create dump file
       postgres_database_export "${database}" "${container_name}" "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"
     fi

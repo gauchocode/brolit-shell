@@ -24,6 +24,7 @@ function tests_suite_menu() {
     "11)" "RUN DOCKER TESTS"
     "12)" "RUN BROLIT NOTIFICATION TESTS"
     "13)" "RUN CLI PARAMETER TESTS"
+    "14)" "RUN SITE MIGRATION TESTS"
   )
 
   chosen_tests_options=$(whiptail --title "TESTS SUITE" --menu " " 20 78 10 "${tests_options[@]}" 3>&1 1>&2 2>&3)
@@ -41,6 +42,7 @@ function tests_suite_menu() {
       test_common_funtions
       test_borg_helper_funtions
       test_task_runner
+      test_site_migration_functions
     fi
     if [[ ${chosen_tests_options} == *"01"* ]]; then
       test_borg_backup_database
@@ -94,6 +96,10 @@ function tests_suite_menu() {
     fi
     if [[ ${chosen_tests_options} == *"13"* ]]; then
       test_task_runner
+
+    fi
+    if [[ ${chosen_tests_options} == *"14"* ]]; then
+      test_site_migration_functions
 
     fi
 
