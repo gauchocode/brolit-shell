@@ -262,7 +262,7 @@ function storage_create_dir() {
     # LOCAL
     if [[ ${BACKUP_LOCAL_STATUS} == "enabled" ]]; then
 
-        mkdir --force "${BACKUP_LOCAL_CONFIG_BACKUP_PATH}/${remote_directory}"
+        mkdir --parents "${BACKUP_LOCAL_CONFIG_BACKUP_PATH}/${remote_directory}"
 
     fi
 
