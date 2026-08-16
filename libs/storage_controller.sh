@@ -347,7 +347,8 @@ function storage_move() {
     fi
     if [[ ${BACKUP_LOCAL_STATUS} == "enabled" ]]; then
 
-        move_files "${to_move}" "${destination}"
+        mkdir --parents "${BACKUP_LOCAL_CONFIG_BACKUP_PATH}/${destination}"
+        move_files "${BACKUP_LOCAL_CONFIG_BACKUP_PATH}/${to_move}" "${BACKUP_LOCAL_CONFIG_BACKUP_PATH}/${destination}"
 
     fi
 
