@@ -542,7 +542,7 @@ function tasks_handler() {
     esac
 
     # Execute task
-    execute_task_with_error_handling "restore-${STASK}" "subtasks_restore_handler" "${STASK}" "${DOMAIN}" "${FILE}" "${TVALUE}" "${NDOMAIN}" "${STORAGEMETHOD}"
+    execute_task_with_error_handling "restore-${STASK}" "subtasks_restore_handler" "${STASK}" "${DOMAIN}" "${FILE}" "${TVALUE}" "${NDOMAIN}" "${STORAGEMETHOD}" "${SOURCESERVER}"
     exit_code=$?
     exit ${exit_code}
     ;;
@@ -962,6 +962,7 @@ function flags_handler() {
 
   ## RESTORE
   declare -g STORAGEMETHOD="auto"
+  declare -g SOURCESERVER=""
 
   ## MIGRATE
   declare -g DESTHOST=""
@@ -1139,6 +1140,12 @@ function flags_handler() {
       shift
       STORAGEMETHOD="${1}"
       export STORAGEMETHOD
+      ;;
+
+    --source-server)
+      shift
+      SOURCESERVER="${1}"
+      export SOURCESERVER
       ;;
 
     # MIGRATE
