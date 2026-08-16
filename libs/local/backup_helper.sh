@@ -1677,9 +1677,20 @@ function backup_docker_project() {
   # Set container name if we have a database service
   if [[ ${has_database_service} == "true" ]]; then
 
+    # Resolve the actual running container name via `docker compose ps`
+    # instead of assuming the old Compose v1 "${PROJECT_NAME}_<engine>"
+    # naming - modern Compose v2 defaults to "<compose-project>-<service>-1"
+    # (hyphens), which doesn't match when PROJECT_NAME isn't set in .env or
+    # doesn't match the compose project name.
+    local db_service_name
+    db_service_name="$(grep -oP '^  \K(mysql|mariadb|postgres|postgresql|db)(?=:)' "${docker_compose_file}" | head -1)"
+
     if [[ ${db_engine} == "mysql" ]]; then
 
-      container_name="${PROJECT_NAME}_mysql"
+      container_name=""
+      [[ -n "${db_service_name}" ]] && container_name="$(docker compose -f "${docker_compose_file}" ps --format '{{.Name}}' "${db_service_name}" 2>/dev/null | head -1)"
+      [[ -z "${container_name}" ]] && container_name="${PROJECT_NAME}_mysql"
+
       db_name="${MYSQL_DATABASE}"
 
       # Fallback to PROJECT_NAME if MYSQL_DATABASE is not set
@@ -1689,7 +1700,10 @@ function backup_docker_project() {
 
     elif [[ ${db_engine} == "postgres" ]]; then
 
-      container_name="${PROJECT_NAME}_postgres"
+      container_name=""
+      [[ -n "${db_service_name}" ]] && container_name="$(docker compose -f "${docker_compose_file}" ps --format '{{.Name}}' "${db_service_name}" 2>/dev/null | head -1)"
+      [[ -z "${container_name}" ]] && container_name="${PROJECT_NAME}_postgres"
+
       db_name="${POSTGRES_DB}"
 
       # Fallback to PROJECT_NAME if POSTGRES_DB is not set
