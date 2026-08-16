@@ -355,9 +355,16 @@ function restore_project_files() {
     fi
 
     # 3. Decompress backup
+    # Note: only excludes *.log here. A "cache" exclude was removed - the
+    # backup side (backup_project_files()) does not exclude cache
+    # directories, so excluding them only during restore broke extraction
+    # of any hardlinks elsewhere in the archive that pointed into them
+    # (e.g. bun/npm package caches under node_modules), causing tar to spew
+    # "Cannot hard link" errors for every affected file and leaving the
+    # restored project incomplete without a hard failure being reported.
     display --indent 6 --text "- Decompressing backup"
-    local exclude_params="--exclude=*.log --exclude=cache"
-    log_event "debug" "Excluding from restore: *.log files and cache directories" "false"
+    local exclude_params="--exclude=*.log"
+    log_event "debug" "Excluding from restore: *.log files" "false"
     if ! decompress "${BROLIT_TMP_DIR}/${project_backup_file}" "${BROLIT_TMP_DIR}" "${BACKUP_CONFIG_COMPRESSION_TYPE}" "${exclude_params}"; then
         _handle_restore_error 3 "Failed to decompress ${project_backup_file}"
         return 1

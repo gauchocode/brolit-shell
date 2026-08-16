@@ -74,7 +74,11 @@ function nginx_server_create() {
         nginx_server_file="${WSERVER}/sites-available/${project_domain}"
 
         # Copy config from template file
-        cp "${BROLIT_MAIN_DIR}/config/nginx/sites-available/${project_type}_${server_type}" "${nginx_server_file}"
+        if ! cp "${BROLIT_MAIN_DIR}/config/nginx/sites-available/${project_type}_${server_type}" "${nginx_server_file}"; then
+            log_event "error" "Nginx template not found: ${BROLIT_MAIN_DIR}/config/nginx/sites-available/${project_type}_${server_type} (project_type='${project_type}')" "true"
+            display --indent 6 --text "- Creating nginx server config" --result FAIL --color RED
+            return 1
+        fi
 
         # Symbolic link
         ln -s "${nginx_server_file}" "${WSERVER}/sites-enabled/${project_domain}"
