@@ -1106,6 +1106,47 @@ function calculate_disk_usage() {
 }
 
 ################################################################################
+# Wait for a domain's DNS A record to propagate to a public resolver
+#
+# Arguments:
+#   ${1} = ${domain}
+#   ${2} = ${expected_ip}
+#   ${3} = ${max_wait_seconds} (optional, default 60)
+#
+# Outputs:
+#   0 if propagated within the timeout, 1 otherwise.
+################################################################################
+
+function wait_for_dns_propagation() {
+
+  local domain="${1}"
+  local expected_ip="${2}"
+  local max_wait_seconds="${3:-60}"
+
+  local interval=5
+  local waited=0
+  local resolved_ip
+
+  while [[ ${waited} -lt ${max_wait_seconds} ]]; do
+
+    resolved_ip="$(dig +short "${domain}" @1.1.1.1 2>/dev/null | tail -1)"
+
+    if [[ "${resolved_ip}" == "${expected_ip}" ]]; then
+      log_event "info" "DNS propagation confirmed for ${domain} -> ${expected_ip} (waited ${waited}s)" "false"
+      return 0
+    fi
+
+    sleep "${interval}"
+    waited=$((waited + interval))
+
+  done
+
+  log_event "warning" "DNS propagation for ${domain} -> ${expected_ip} not confirmed after ${max_wait_seconds}s (last resolved: ${resolved_ip:-none})" "false"
+  return 1
+
+}
+
+################################################################################
 # Check if a specific port is in use
 #
 # Arguments:

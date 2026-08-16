@@ -1,5 +1,16 @@
 # Fix SSL Certificate Handling During Restore and Cloudflare Integration
 
+## Status: Implemented
+
+- P1 (`cloudflare_set_record` proxy bug): fixed.
+- P2 (`certbot_certificate_force_renew` undefined `${email}`): already fixed prior to this pass (verified, no longer reproducible).
+- P3 (`$?` misattribution in the proxy-enable loop): fixed in both occurrences (`certbot_certificate_install_auto()` and `certbot_helper_installer_menu()`).
+- P4 (DNS propagation wait): added `wait_for_dns_propagation()` (`libs/commons.sh`), retry loop up to 60s.
+- P5 (Cloudflare proxy vs certbot HTTP-01 challenge): `project_update_domain_config()` now skips certbot (instead of running it doomed to fail) when propagation isn't confirmed; `certbot_certificate_install_auto()`'s non-interactive Cloudflare path now forces proxy OFF for all requested domains before the HTTP-01 step, re-enabling it afterward via the (now-fixed) end-of-flow loop.
+- P6 (undefined Docker vars in `_configure_restored_project()`): already fixed prior to this pass (verified present).
+
+**Known remaining gap, found during verification (not part of the original P1-P6 list):** the proxy-enable loop's `root_domain != domain -> CNAME else A` branching (both the original plan's proposed fix and the applied P3 fix) assumes any non-root domain is a `www`-style CNAME. That's wrong for a standalone subdomain that isn't root or `www` (e.g. `mc-agent.epicahub.com`), which `project_update_domain_config()`'s own "single domain" branch correctly creates as an **A** record - the proxy-enable step then searches for a **CNAME** with that name, doesn't find one (record type mismatch, not a real propagation issue), and skips re-enabling the proxy. Functionally harmless (the site works fine via the direct A record without Cloudflare's orange-cloud proxy), but the proxy never gets re-enabled for this domain shape. Not fixed here - flagged for a follow-up change since it needs the record-type decision to mirror `project_update_domain_config()`'s three-way branching (root+www pair / CNAME redirect / standalone single domain), not a binary root-vs-not-root check.
+
 ## Context
 
 When restoring a site migrated from another server using "RESTORE FROM BACKUP", the site
