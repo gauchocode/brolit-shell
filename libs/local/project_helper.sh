@@ -3231,30 +3231,36 @@ function project_update_domain_config() {
       # Wait for DNS propagation (independent of Cloudflare status)
       display --indent 6 --text "- Waiting for DNS propagation"
       log_event "info" "Waiting for DNS propagation..." "false"
-      
-      if ! dig +short "${project_domain}" @1.1.1.1 | grep -q "${SERVER_IP}"; then
-        # Simple verification without full function
-        sleep 5
-      fi
-      
-      clear_previous_lines "1"
-      display --indent 6 --text "- Waiting for DNS propagation" --result "DONE" --color GREEN
 
-      # Install certificate (attempt regardless of Cloudflare status)
-      # Use non-interactive mode (true) to avoid prompts during automated restoration
-      if certbot_certificate_install_auto "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_root_domain},www.${project_root_domain}" "true"; then
-        # Enable HTTP/2 only if not already enabled
-        # Use nginx_config_file (redirect_domain) for root_domain type, project_domain for single
-        if [[ -n "${nginx_config_file}" ]]; then
-          nginx_server_add_http2_support "${nginx_config_file}"
+      if wait_for_dns_propagation "${project_domain}" "${SERVER_IP}" 60; then
+
+        clear_previous_lines "1"
+        display --indent 6 --text "- Waiting for DNS propagation" --result "DONE" --color GREEN
+
+        # Install certificate (attempt regardless of Cloudflare status)
+        # Use non-interactive mode (true) to avoid prompts during automated restoration
+        if certbot_certificate_install_auto "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_root_domain},www.${project_root_domain}" "true"; then
+          # Enable HTTP/2 only if not already enabled
+          # Use nginx_config_file (redirect_domain) for root_domain type, project_domain for single
+          if [[ -n "${nginx_config_file}" ]]; then
+            nginx_server_add_http2_support "${nginx_config_file}"
+          else
+            nginx_server_add_http2_support "${project_domain}"
+          fi
+          project_https_enable="true"
         else
-          nginx_server_add_http2_support "${project_domain}"
+          log_event "warning" "Certbot failed, proceeding with HTTP configuration" "false"
+          display --indent 6 --text "- SSL Certificate" --result "WARNING" --color YELLOW
+          project_https_enable="false"
         fi
-        project_https_enable="true"
+
       else
-        log_event "warning" "Certbot failed, proceeding with HTTP configuration" "false"
-        display --indent 6 --text "- SSL Certificate" --result "WARNING" --color YELLOW
+
+        clear_previous_lines "1"
+        display --indent 6 --text "- Waiting for DNS propagation" --result "WARNING" --color YELLOW
+        log_event "warning" "DNS propagation not confirmed for ${project_domain}, skipping certbot (would fail HTTP-01 challenge)" "false"
         project_https_enable="false"
+
       fi
     fi
 
@@ -3274,25 +3280,31 @@ function project_update_domain_config() {
       # Wait for DNS propagation (independent of Cloudflare status)
       display --indent 6 --text "- Waiting for DNS propagation"
       log_event "info" "Waiting for DNS propagation..." "false"
-      
-      if ! dig +short "${project_domain}" @1.1.1.1 | grep -q "${SERVER_IP}"; then
-        # Simple verification without full function
-        sleep 5
-      fi
-      
-      clear_previous_lines "1"
-      display --indent 6 --text "- Waiting for DNS propagation" --result "DONE" --color GREEN
 
-      # Install certificate (attempt regardless of Cloudflare status)
-      # Use non-interactive mode (true) to avoid prompts during automated restoration
-      if certbot_certificate_install_auto "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_domain}" "true"; then
-        # Enable HTTP/2 only if not already enabled
-        nginx_server_add_http2_support "${project_domain}"
-        project_https_enable="true"
+      if wait_for_dns_propagation "${project_domain}" "${SERVER_IP}" 60; then
+
+        clear_previous_lines "1"
+        display --indent 6 --text "- Waiting for DNS propagation" --result "DONE" --color GREEN
+
+        # Install certificate (attempt regardless of Cloudflare status)
+        # Use non-interactive mode (true) to avoid prompts during automated restoration
+        if certbot_certificate_install_auto "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_domain}" "true"; then
+          # Enable HTTP/2 only if not already enabled
+          nginx_server_add_http2_support "${project_domain}"
+          project_https_enable="true"
+        else
+          log_event "warning" "Certbot failed, proceeding with HTTP configuration" "false"
+          display --indent 6 --text "- SSL Certificate" --result "WARNING" --color YELLOW
+          project_https_enable="false"
+        fi
+
       else
-        log_event "warning" "Certbot failed, proceeding with HTTP configuration" "false"
-        display --indent 6 --text "- SSL Certificate" --result "WARNING" --color YELLOW
+
+        clear_previous_lines "1"
+        display --indent 6 --text "- Waiting for DNS propagation" --result "WARNING" --color YELLOW
+        log_event "warning" "DNS propagation not confirmed for ${project_domain}, skipping certbot (would fail HTTP-01 challenge)" "false"
         project_https_enable="false"
+
       fi
     fi
 

@@ -487,10 +487,8 @@ function cloudflare_set_record() {
     #TODO: in the future we must rewrite the vars and remove this ugly replace
     ttl=1 #1 for Auto
 
-    # Default value
-    proxy_status=false #need to be a bool, not a string
-
-    [[ ${proxy_status} == "true" ]] && proxy_status=true
+    # Convert string to boolean for Cloudflare API
+    [[ "${proxy_status}" == "true" ]] && proxy_status=true || proxy_status=false
 
     zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
     record_id="$(cloudflare_record_exists "${record_name}" "${zone_id}" "${record_type}")"

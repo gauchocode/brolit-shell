@@ -999,8 +999,11 @@ function certbot_helper_installer_menu() {
               display --indent 6 --text "- Skipping proxy for nested subdomain: ${domain}" --tcolor CYAN
             else
               # Enable cf proxy on record
-              [[ $? -eq 0 ]] && cloudflare_update_record "${root_domain}" "${domain}" "A" "true" "${SERVER_IP}"
-              [[ $? -eq 1 ]] && cloudflare_update_record "${root_domain}" "${domain}" "CNAME" "true" "${root_domain}"
+              if [[ "${root_domain}" != "${domain}" ]]; then
+                cloudflare_update_record "${root_domain}" "${domain}" "CNAME" "true" "${root_domain}"
+              else
+                cloudflare_update_record "${root_domain}" "${domain}" "A" "true" "${SERVER_IP}"
+              fi
               [[ $? -eq 1 ]] && error=true
             fi
 
@@ -1063,6 +1066,19 @@ function certbot_certificate_install_auto() {
       log_event "info" "Non-interactive mode: using Cloudflare method automatically" "false"
       log_subsection "Certificate Installation with Certbot Cloudflare"
 
+      # Guard: force proxy OFF before the HTTP-01 challenge (step 1), in case
+      # the record already exists with proxy ON from a previous setup -
+      # Cloudflare's proxy would otherwise intercept the challenge request
+      # before it reaches this server. Re-enabled at the end on success.
+      for domain in ${domains//,/ }; do
+        root_domain=$(domain_get_root "${domain}")
+        if [[ "${root_domain}" != "${domain}" ]]; then
+          cloudflare_update_record "${root_domain}" "${domain}" "CNAME" "false" "${root_domain}" 2>/dev/null
+        else
+          cloudflare_update_record "${root_domain}" "${domain}" "A" "false" "${SERVER_IP}" 2>/dev/null
+        fi
+      done
+
       # Step 1: Install certificate with nginx
       display --indent 6 --text "- Installing certificate with nginx" --tcolor CYAN
       log_event "info" "Step 1: Installing certificate with nginx to configure nginx files" "false"
@@ -1095,8 +1111,11 @@ function certbot_certificate_install_auto() {
               log_event "info" "Skipping proxy for nested subdomain: ${domain} (${prefix_dots} levels deep)" "false"
               display --indent 6 --text "- Skipping proxy for nested subdomain: ${domain}" --tcolor CYAN
             else
-              [[ $? -eq 0 ]] && cloudflare_update_record "${root_domain}" "${domain}" "A" "true" "${SERVER_IP}"
-              [[ $? -eq 1 ]] && cloudflare_update_record "${root_domain}" "${domain}" "CNAME" "true" "${root_domain}"
+              if [[ "${root_domain}" != "${domain}" ]]; then
+                cloudflare_update_record "${root_domain}" "${domain}" "CNAME" "true" "${root_domain}"
+              else
+                cloudflare_update_record "${root_domain}" "${domain}" "A" "true" "${SERVER_IP}"
+              fi
             fi
           done
 
