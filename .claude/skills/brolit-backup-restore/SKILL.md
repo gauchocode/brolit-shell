@@ -135,11 +135,42 @@ nginx -t
 ls -la /path/to/backups/
 ```
 
+## Site Migration (server-to-server, Dockerized projects only)
+
+`migrate -st site` moves a Dockerized project from the current server (source) to a destination server, over SSH. **Run only on the source.** It does not reimplement DNS/SSL/vhost logic - it triggers the destination's own `restore -st from-storage`, which already handles all of that.
+
+```bash
+# Migrate and verify, source untouched (recommended first run)
+./runner.sh -t migrate -st site -D example.com --dest-host 10.2.0.200 --dest-user root --dest-ssh-key ~/.ssh/id_ed25519
+
+# After manually confirming the migrated site, clean up the source
+./runner.sh -t migrate -st site -D example.com --dest-host 10.2.0.200 --dest-user root --dest-ssh-key ~/.ssh/id_ed25519 --decommission-source --force
+```
+
+Transport (`--transport local|dropbox`, default `local`):
+- `local` (fastest): direct rsync of the artifact into the destination's local-storage path. Requires `BACKUPS.methods.local` enabled on **both** source and destination.
+- `dropbox`: reuses an already-configured shared Dropbox account/app between the two servers - no rsync transfer, no local storage config needed, but slower (extra hop through Dropbox). Requires `BACKUPS.methods.dropbox` enabled on the source (and the destination must be able to read from the same account).
+
+Pre-flight requirements (checked automatically, fails closed otherwise):
+- Domain must be a Dockerized project on the source (`docker-compose.yml`/`.yaml` present).
+- Matching `BACKUPS.methods` entry enabled per the chosen `--transport` (see above).
+- Destination must be reachable over SSH with the given key, have Docker + Docker Compose, and have `DNS.cloudflare` and `PACKAGES.certbot` enabled in its own `~/.brolit_conf.json` (installed/bootstrapped automatically if brolit-shell itself is missing there).
+- If the destination is missing Cloudflare config specifically, `--bootstrap-dest-config` copies the source's own `DNS.cloudflare` section over (logged explicitly) - prefer a scoped Cloudflare API token over the global key when doing this, since it's copied to another server.
+
+Destructive cleanup is opt-in and gated on a verified destination:
+- `--decommission-source` stops the source's Docker stack, removes its nginx vhost/certs/files, and de-registers it - **only after** the remote restore succeeded and the destination responded to an HTTP(S) check. If either failed, the source is left completely untouched, regardless of the flag.
+- `--purge-volumes` (only meaningful with `--decommission-source`) additionally deletes the source's Docker volumes (irreversible data loss) - validate on a disposable project before ever using it against a real site.
+- The Cloudflare DNS record is never duplicated or deleted incorrectly: `project_delete()` (reused for decommissioning) only deletes a Cloudflare record if it still points at the source's own IP, which it won't once the destination's restore has repointed it.
+
+v1 scope is Dockerized projects only; host/classic project migration is not supported. Full design/rationale: `openspec/changes/migrate-site-between-servers/`.
+
 ## Key Files
 
 | File | Purpose |
 |---|---|
 | `utils/backup_restore_manager.sh` | Menu + CLI handlers for backup/restore |
+| `utils/site_migration_manager.sh` | Menu + CLI handlers for site migration |
+| `libs/local/site_migration_helper.sh` | Site migration pre-flight, transfer, remote restore trigger, verify, decommission |
 | `libs/local/backup_helper.sh` | Backup filename, compression, retention |
 | `libs/local/restore_backup_helper.sh` | Restore from all sources (interactive + CLI) |
 | `libs/storage_controller.sh` | Storage abstraction layer |

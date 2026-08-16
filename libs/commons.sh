@@ -1955,6 +1955,10 @@ function menu_main_options() {
   # when actually running on a Proxmox VE hypervisor, not inside a guest VM.
   proxmox_node_detect && runner_options+=("11)" "PROXMOX TOOLS")
 
+  # Site migration is project-oriented (operates on PROJECTS_PATH), so hide
+  # it on a bare Proxmox VE hypervisor for the same reason as 01-06 above.
+  ! proxmox_node_detect && runner_options+=("12)" "MIGRATE SITE (BETA)")
+
   while true; do
 
     chosen_type="$(whiptail --title "${whip_title}" --menu "${whip_description}" 20 78 10 "${runner_options[@]}" 3>&1 1>&2 2>&3)"
@@ -2055,6 +2059,14 @@ function menu_main_options() {
         source "${BROLIT_MAIN_DIR}/utils/proxmox_manager.sh"
 
         proxmox_manager_menu
+      fi
+
+      # MIGRATE SITE
+      if [[ ${chosen_type} == *"12"* ]]; then
+        # shellcheck source=${BROLIT_MAIN_DIR}/utils/site_migration_manager.sh
+        source "${BROLIT_MAIN_DIR}/utils/site_migration_manager.sh"
+
+        site_migration_manager_menu
       fi
 
     else

@@ -485,7 +485,7 @@ function _restore_project_database() {
 
     # Download database backup
     display --indent 6 --text "- Downloading database backup"
-    if ! storage_download_backup "${db_to_download}" "${BROLIT_TMP_DIR}"; then
+    if ! storage_download_backup "${db_to_download}" "${BROLIT_TMP_DIR}" "true" "${RESTORE_STORAGE_METHOD:-auto}"; then
         # Offer manual selection if download fails
         whiptail_message_with_skip_option "RESTORE BACKUP" "Database backup not found. Do you want to select manually the database backup to restore?"
         if [[ $? -eq 0 ]]; then
@@ -2529,6 +2529,8 @@ function docker_setup_configuration() {
 #   ${1} = ${domain} - Project domain to restore
 #   ${2} = ${backup_date} - Optional: specific backup date (YYYY-MM-DD)
 #   ${3} = ${new_domain} - Optional: new domain for the restored project
+#   ${4} = ${storage_method} - Optional: force "dropbox"/"local"/"borg" instead
+#          of the default Dropbox > Local > Borg auto-priority
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -2539,6 +2541,7 @@ function restore_backup_from_storage_cli() {
   local domain="${1}"
   local backup_date="${2}"
   local new_domain="${3:-}"
+  local storage_method="${4:-auto}"
 
   # Validate required params
   if [[ -z "${domain}" ]]; then
@@ -2552,17 +2555,18 @@ function restore_backup_from_storage_cli() {
   # Get server name from config
   local chosen_server="${SERVER_NAME}"
 
-  # Get storage path based on backup configuration
-  local storage_path
-  if [[ "${BACKUP_DROPBOX_STATUS}" == "enabled" ]]; then
-    storage_path="${BACKUP_DROPBOX_PATH}"
-  elif [[ "${BACKUP_SFTP_STATUS}" == "enabled" ]]; then
-    storage_path="${BACKUP_SFTP_PATH}"
-  elif [[ "${BACKUP_LOCAL_STATUS}" == "enabled" ]]; then
-    storage_path="${BACKUP_LOCAL_PATH}"
+  # Validate that the requested (or any, if "auto") storage method is enabled
+  if [[ ${storage_method} == "auto" ]]; then
+    if [[ ${BACKUP_DROPBOX_STATUS} != "enabled" && ${BACKUP_LOCAL_STATUS} != "enabled" && ${BACKUP_BORG_STATUS} != "enabled" ]]; then
+      log_event "error" "No backup storage method enabled" "true"
+      return 1
+    fi
   else
-    log_event "error" "No backup storage method enabled" "true"
-    return 1
+    local method_status_var="BACKUP_$(echo "${storage_method}" | tr '[:lower:]' '[:upper:]')_STATUS"
+    if [[ "${!method_status_var}" != "enabled" ]]; then
+      log_event "error" "Requested storage method '${storage_method}' is not enabled" "true"
+      return 1
+    fi
   fi
 
   # Build remote list path
@@ -2572,7 +2576,7 @@ function restore_backup_from_storage_cli() {
   display --indent 6 --text "- Listing available backups for ${domain}"
 
   local storage_backup_list
-  storage_backup_list="$(storage_list_dir "${remote_list}/site/${domain}")"
+  storage_backup_list="$(storage_list_dir "${remote_list}/site/${domain}" "${storage_method}")"
 
   if [[ -z "${storage_backup_list}" ]]; then
     log_event "error" "No backups found for domain: ${domain}" "true"
@@ -2605,7 +2609,7 @@ function restore_backup_from_storage_cli() {
 
   # Download backup
   display --indent 6 --text "- Downloading backup"
-  storage_download_backup "${full_backup_path}" "${BROLIT_TMP_DIR}"
+  storage_download_backup "${full_backup_path}" "${BROLIT_TMP_DIR}" "true" "${storage_method}"
 
   if [[ $? -ne 0 ]]; then
     display --indent 6 --text "- Downloading backup" --result "ERROR" --color RED
@@ -2617,10 +2621,16 @@ function restore_backup_from_storage_cli() {
   backup_to_restore="$(basename "${full_backup_path}")"
 
   # Restore backup
+  # RESTORE_STORAGE_METHOD is read by _restore_project_database() so the
+  # database download uses the same forced storage method as the files
+  # download above, instead of falling back to auto (Dropbox-priority).
   display --indent 6 --text "- Restoring backup"
+  declare -g RESTORE_STORAGE_METHOD="${storage_method}"
   restore_project_backup "${backup_to_restore}" "online" "${chosen_server}" "${domain}" "${new_domain}"
+  local restore_project_backup_result=$?
+  RESTORE_STORAGE_METHOD="auto"
 
-  if [[ $? -ne 0 ]]; then
+  if [[ ${restore_project_backup_result} -ne 0 ]]; then
     display --indent 6 --text "- Restore" --result "ERROR" --color RED
     return 1
   fi
