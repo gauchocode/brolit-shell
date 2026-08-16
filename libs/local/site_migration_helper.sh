@@ -588,6 +588,13 @@ function migrate_transfer_artifact() {
 #   ${6} = ${storage_method} ("local" or "dropbox" - forces which storage
 #          method the destination's restore uses, matching --transport)
 #
+# For --transport dropbox, the backup was uploaded under this (source)
+# server's own ${SERVER_NAME} namespace in the shared Dropbox account -
+# not the destination's. --source-server tells the destination's restore
+# to look there instead of its own ${SERVER_NAME}. Not needed for
+# --transport local, since the rsync transfer already placed the artifact
+# under the destination's own namespace.
+#
 # Outputs:
 #   0 if the remote restore succeeded, 1 on error (propagates remote exit code).
 ################################################################################
@@ -604,6 +611,10 @@ function migrate_trigger_remote_restore() {
   log_subsection "Migrate: Remote Restore"
 
   local remote_cmd="cd '${MIGRATE_DEST_BROLIT_DIR}' && ./runner.sh -t restore -st from-storage -D '${domain}' --storage-method '${storage_method}'"
+
+  if [[ ${storage_method} == "dropbox" ]]; then
+    remote_cmd="${remote_cmd} --source-server '${SERVER_NAME}'"
+  fi
 
   _migrate_ssh "${dest_user}" "${dest_host}" "${dest_port}" "${dest_ssh_key}" "${remote_cmd}"
   local restore_result=$?

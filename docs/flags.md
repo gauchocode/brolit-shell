@@ -16,6 +16,10 @@ Options:
     -sm, --storage-method  Force a specific storage method (dropbox|local|borg)
                        for restore -st from-storage / migrate, instead of the
                        default auto-priority (Dropbox > Local > Borg)
+    --source-server    Look under this server name's namespace in storage
+                       instead of this server's own hostname (for restore
+                       -st from-storage; used internally by migrate
+                       --transport dropbox)
     --transport        Transport for migrate: "local" (default, direct rsync,
                        requires BACKUPS.methods.local on both servers) or
                        "dropbox" (reuses an already-configured shared Dropbox

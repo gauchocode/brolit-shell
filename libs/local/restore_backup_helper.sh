@@ -2531,6 +2531,10 @@ function docker_setup_configuration() {
 #   ${3} = ${new_domain} - Optional: new domain for the restored project
 #   ${4} = ${storage_method} - Optional: force "dropbox"/"local"/"borg" instead
 #          of the default Dropbox > Local > Borg auto-priority
+#   ${5} = ${source_server_override} - Optional: look under this server name's
+#          namespace in storage instead of this server's own ${SERVER_NAME}
+#          (used by `migrate` with --transport dropbox, where the backup was
+#          uploaded under the source server's namespace in a shared account)
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -2542,6 +2546,7 @@ function restore_backup_from_storage_cli() {
   local backup_date="${2}"
   local new_domain="${3:-}"
   local storage_method="${4:-auto}"
+  local source_server_override="${5:-}"
 
   # Validate required params
   if [[ -z "${domain}" ]]; then
@@ -2552,8 +2557,8 @@ function restore_backup_from_storage_cli() {
 
   log_subsection "Restore Backup from Storage (CLI)"
 
-  # Get server name from config
-  local chosen_server="${SERVER_NAME}"
+  # Get server name from config, unless overridden (see docstring above)
+  local chosen_server="${source_server_override:-${SERVER_NAME}}"
 
   # Validate that the requested (or any, if "auto") storage method is enabled
   if [[ ${storage_method} == "auto" ]]; then
