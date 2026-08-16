@@ -13,6 +13,12 @@
 # Default path where brolit-shell is expected/installed on the destination.
 declare -g MIGRATE_DEST_BROLIT_DIR="/root/brolit-shell"
 
+# Migrate-owned local staging path for --transport local, entirely
+# independent of .brolit_conf.json's BACKUPS.methods.local (see
+# migrate_capture_source() for why). Same fixed path is used on both the
+# source and the destination.
+declare -g MIGRATE_LOCAL_STAGING_PATH_DEFAULT="/root/.brolit_migrate_staging"
+
 ################################################################################
 # Private: run a command on the destination over SSH
 #
@@ -221,10 +227,10 @@ function migrate_check_dest_brolit() {
 # Best-effort minimal bootstrap install of brolit-shell on the destination
 #
 # NOTE: this is a fallback path for a destination that has never run brolit.
-# It only enables the webserver role — it does NOT configure DNS/SSL/backup
-# credentials, which migrate_check_dest_dns_ssl_config()/migrate_check_dest_backup_local()
-# will still require afterward. Not exercised by initial real-world validation
-# against an already-provisioned destination (see tasks.md section 8).
+# It only enables the webserver role — it does NOT configure DNS/SSL
+# credentials, which migrate_check_dest_dns_ssl_config() will still require
+# afterward. Not exercised by initial real-world validation against an
+# already-provisioned destination (see tasks.md section 8).
 #
 # Arguments:
 #   ${1} = ${dest_user}
@@ -344,8 +350,9 @@ function migrate_check_dest_dns_ssl_config() {
 }
 
 ################################################################################
-# Verify the destination has local backup storage enabled, which migrate uses
-# as the hand-off point for the destination's own `restore -st from-storage`.
+# Resolve the destination's hostname, used to namespace the migrate staging
+# path exactly the way the destination's own restore -st from-storage will
+# look for it (namespaced by ${SERVER_NAME} = $HOSTNAME, per libs/commons.sh).
 #
 # Arguments:
 #   ${1} = ${dest_user}
@@ -354,42 +361,25 @@ function migrate_check_dest_dns_ssl_config() {
 #   ${4} = ${dest_ssh_key}
 #
 # Outputs:
-#   Prints "${dest_server_name}|${dest_backup_local_path}" on success.
-#   Returns 0 if ok, 1 on error.
+#   ${dest_server_name}. Returns 0 if ok, 1 on error.
 ################################################################################
 
-function migrate_check_dest_backup_local() {
+function migrate_get_dest_server_name() {
 
   local dest_user="${1}"
   local dest_host="${2}"
   local dest_port="${3}"
   local dest_ssh_key="${4}"
 
-  local dest_local_status
-  local dest_local_path
   local dest_server_name
-
-  dest_local_status="$(_migrate_ssh "${dest_user}" "${dest_host}" "${dest_port}" "${dest_ssh_key}" \
-    "jq -r '.BACKUPS.methods[0].local[0].status // empty' ~/.brolit_conf.json 2>/dev/null")"
-
-  if [[ ${dest_local_status} != "enabled" ]]; then
-    log_event "error" "Migrate: destination does not have local backup storage enabled (BACKUPS.methods.local), which migrate requires as the transfer hand-off point" "true"
-    display --indent 6 --text "- Destination local backup storage" --result "FAIL" --color RED
-    return 1
-  fi
-
-  dest_local_path="$(_migrate_ssh "${dest_user}" "${dest_host}" "${dest_port}" "${dest_ssh_key}" \
-    "jq -r '.BACKUPS.methods[0].local[0].config[0].backup_path // empty' ~/.brolit_conf.json 2>/dev/null")"
   dest_server_name="$(_migrate_ssh "${dest_user}" "${dest_host}" "${dest_port}" "${dest_ssh_key}" "hostname")"
 
-  if [[ -z "${dest_local_path}" || -z "${dest_server_name}" ]]; then
-    log_event "error" "Migrate: could not resolve destination backup path/server name" "true"
-    display --indent 6 --text "- Destination local backup storage" --result "FAIL" --color RED
+  if [[ -z "${dest_server_name}" ]]; then
+    log_event "error" "Migrate: could not resolve destination server name" "true"
     return 1
   fi
 
-  display --indent 6 --text "- Destination local backup storage" --result "DONE" --color GREEN
-  echo "${dest_server_name}|${dest_local_path}"
+  echo "${dest_server_name}"
   return 0
 
 }
@@ -458,10 +448,18 @@ function migrate_check_dest_path_collision() {
 ################################################################################
 # Capture the source project using existing Docker backup logic
 #
+# For --transport local, sets the MIGRATE_LOCAL_STAGING_PATH override (see
+# storage_upload_backup() in libs/storage_controller.sh) so the backup is
+# staged at a migrate-owned path instead of using BACKUPS.methods.local from
+# .brolit_conf.json - this is deliberate: migrate must never depend on (or
+# implicitly enable) the persistent local-backup config, since that would
+# also make every regular/cron backup start writing local copies nobody
+# asked for. For --transport dropbox, requires the real, already-configured
+# Dropbox method (no override - this genuinely uses the shared account).
+#
 # Arguments:
 #   ${1} = ${domain}
-#   ${2} = ${transport} ("local" requires BACKUP_LOCAL_STATUS enabled on the
-#          source; "dropbox" requires BACKUP_DROPBOX_STATUS enabled instead)
+#   ${2} = ${transport} ("local" or "dropbox")
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -472,12 +470,6 @@ function migrate_capture_source() {
   local domain="${1}"
   local transport="${2:-local}"
 
-  if [[ ${transport} == "local" && ${BACKUP_LOCAL_STATUS} != "enabled" ]]; then
-    log_event "error" "Migrate: --transport local requires local backup storage enabled (BACKUPS.methods.local) on the source" "true"
-    display --indent 6 --text "- Source local backup storage" --result "FAIL" --color RED
-    return 1
-  fi
-
   if [[ ${transport} == "dropbox" && ${BACKUP_DROPBOX_STATUS} != "enabled" ]]; then
     log_event "error" "Migrate: --transport dropbox requires Dropbox backup storage enabled on the source" "true"
     display --indent 6 --text "- Source Dropbox storage" --result "FAIL" --color RED
@@ -486,8 +478,14 @@ function migrate_capture_source() {
 
   log_subsection "Migrate: Capture Source"
 
+  if [[ ${transport} == "local" ]]; then
+    declare -g MIGRATE_LOCAL_STAGING_PATH="${MIGRATE_LOCAL_STAGING_PATH_DEFAULT}"
+  fi
+
   backup_docker_project "${domain}" "site"
   local capture_result=$?
+
+  MIGRATE_LOCAL_STAGING_PATH=""
 
   if [[ ${capture_result} -ne 0 ]]; then
     log_event "error" "Migrate: capturing source project ${domain} failed" "true"
@@ -503,7 +501,9 @@ function migrate_capture_source() {
 ################################################################################
 # Transfer the captured backup artifact tree to the destination, namespaced
 # under the destination's own server name so its `restore -st from-storage`
-# finds it exactly as if it had made the backup itself.
+# finds it exactly as if it had made the backup itself. Uses the fixed
+# MIGRATE_LOCAL_STAGING_PATH_DEFAULT on both ends - independent of any
+# BACKUPS.methods.local configuration.
 #
 # Arguments:
 #   ${1} = ${dest_user}
@@ -512,7 +512,6 @@ function migrate_capture_source() {
 #   ${4} = ${dest_ssh_key}
 #   ${5} = ${domain}
 #   ${6} = ${dest_server_name}
-#   ${7} = ${dest_backup_local_path}
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -526,13 +525,12 @@ function migrate_transfer_artifact() {
   local dest_ssh_key="${4}"
   local domain="${5}"
   local dest_server_name="${6}"
-  local dest_backup_local_path="${7}"
 
   local db_name
   db_name="$(project_get_configured_database "${PROJECTS_PATH}/${domain}" "$(project_get_type "${PROJECTS_PATH}/${domain}")" "$(project_get_install_type "${PROJECTS_PATH}/${domain}")")"
 
-  local source_site_path="${BACKUP_LOCAL_CONFIG_BACKUP_PATH}/${SERVER_NAME}/projects-online/site/${domain}/"
-  local dest_site_path="${dest_backup_local_path}/${dest_server_name}/projects-online/site/${domain}/"
+  local source_site_path="${MIGRATE_LOCAL_STAGING_PATH_DEFAULT}/${SERVER_NAME}/projects-online/site/${domain}/"
+  local dest_site_path="${MIGRATE_LOCAL_STAGING_PATH_DEFAULT}/${dest_server_name}/projects-online/site/${domain}/"
 
   log_subsection "Migrate: Transfer Artifact"
 
@@ -547,10 +545,10 @@ function migrate_transfer_artifact() {
 
   display --indent 6 --text "- Transfer site files" --result "DONE" --color GREEN
 
-  if [[ -n "${db_name}" && -d "${BACKUP_LOCAL_CONFIG_BACKUP_PATH}/${SERVER_NAME}/projects-online/database/${db_name}" ]]; then
+  if [[ -n "${db_name}" && -d "${MIGRATE_LOCAL_STAGING_PATH_DEFAULT}/${SERVER_NAME}/projects-online/database/${db_name}" ]]; then
 
-    local source_db_path="${BACKUP_LOCAL_CONFIG_BACKUP_PATH}/${SERVER_NAME}/projects-online/database/${db_name}/"
-    local dest_db_path="${dest_backup_local_path}/${dest_server_name}/projects-online/database/${db_name}/"
+    local source_db_path="${MIGRATE_LOCAL_STAGING_PATH_DEFAULT}/${SERVER_NAME}/projects-online/database/${db_name}/"
+    local dest_db_path="${MIGRATE_LOCAL_STAGING_PATH_DEFAULT}/${dest_server_name}/projects-online/database/${db_name}/"
 
     _migrate_rsync_push "${dest_user}" "${dest_host}" "${dest_port}" "${dest_ssh_key}" \
       "${source_db_path}" "${dest_db_path}"
@@ -614,6 +612,8 @@ function migrate_trigger_remote_restore() {
 
   if [[ ${storage_method} == "dropbox" ]]; then
     remote_cmd="${remote_cmd} --source-server '${SERVER_NAME}'"
+  elif [[ ${storage_method} == "local" ]]; then
+    remote_cmd="${remote_cmd} --local-staging-path '${MIGRATE_LOCAL_STAGING_PATH_DEFAULT}'"
   fi
 
   _migrate_ssh "${dest_user}" "${dest_host}" "${dest_port}" "${dest_ssh_key}" "${remote_cmd}"
@@ -793,9 +793,7 @@ function migrate_site() {
   local transport="${11:-local}"
 
   local dest_path
-  local dest_backup_fact
   local dest_server_name
-  local dest_backup_local_path
   local restore_result=1
   local verification_result=1
 
@@ -813,10 +811,8 @@ function migrate_site() {
   migrate_check_dest_dns_ssl_config "${dest_user}" "${dest_host}" "${dest_port}" "${dest_ssh_key}" "${bootstrap_dest_config}" || return 1
 
   if [[ ${transport} == "local" ]]; then
-    dest_backup_fact="$(migrate_check_dest_backup_local "${dest_user}" "${dest_host}" "${dest_port}" "${dest_ssh_key}")"
+    dest_server_name="$(migrate_get_dest_server_name "${dest_user}" "${dest_host}" "${dest_port}" "${dest_ssh_key}")"
     [[ $? -ne 0 ]] && return 1
-    dest_server_name="${dest_backup_fact%%|*}"
-    dest_backup_local_path="${dest_backup_fact##*|}"
   fi
 
   dest_path="$(migrate_resolve_dest_path "${domain}" "${dest_path_override}")"
@@ -826,7 +822,7 @@ function migrate_site() {
 
   if [[ ${transport} == "local" ]]; then
     migrate_transfer_artifact "${dest_user}" "${dest_host}" "${dest_port}" "${dest_ssh_key}" \
-      "${domain}" "${dest_server_name}" "${dest_backup_local_path}" || return 1
+      "${domain}" "${dest_server_name}" || return 1
   else
     log_event "info" "Migrate: --transport dropbox, skipping direct rsync transfer (backup_docker_project already uploaded to the shared Dropbox account)" "false"
   fi

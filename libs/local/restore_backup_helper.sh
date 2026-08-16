@@ -2543,6 +2543,13 @@ function docker_setup_configuration() {
 #          namespace in storage instead of this server's own ${SERVER_NAME}
 #          (used by `migrate` with --transport dropbox, where the backup was
 #          uploaded under the source server's namespace in a shared account)
+#   ${6} = ${local_staging_path} - Optional: when set together with
+#          storage_method == "local", use this path instead of
+#          BACKUP_LOCAL_CONFIG_BACKUP_PATH from .brolit_conf.json, and skip
+#          the "is local storage enabled" check entirely (used by `migrate`
+#          with --transport local, which must not depend on - or implicitly
+#          require enabling - the persistent local backup config, since that
+#          would also affect regular/cron backups)
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -2555,6 +2562,7 @@ function restore_backup_from_storage_cli() {
   local new_domain="${3:-}"
   local storage_method="${4:-auto}"
   local source_server_override="${5:-}"
+  local local_staging_path="${6:-}"
 
   # Validate required params
   if [[ -z "${domain}" ]]; then
@@ -2568,17 +2576,25 @@ function restore_backup_from_storage_cli() {
   # Get server name from config, unless overridden (see docstring above)
   local chosen_server="${source_server_override:-${SERVER_NAME}}"
 
+  if [[ ${storage_method} == "local" && -n "${local_staging_path}" ]]; then
+    declare -g MIGRATE_LOCAL_STAGING_PATH="${local_staging_path}"
+  fi
+
   # Validate that the requested (or any, if "auto") storage method is enabled
-  if [[ ${storage_method} == "auto" ]]; then
-    if [[ ${BACKUP_DROPBOX_STATUS} != "enabled" && ${BACKUP_LOCAL_STATUS} != "enabled" && ${BACKUP_BORG_STATUS} != "enabled" ]]; then
-      log_event "error" "No backup storage method enabled" "true"
-      return 1
-    fi
-  else
-    local method_status_var="BACKUP_$(echo "${storage_method}" | tr '[:lower:]' '[:upper:]')_STATUS"
-    if [[ "${!method_status_var}" != "enabled" ]]; then
-      log_event "error" "Requested storage method '${storage_method}' is not enabled" "true"
-      return 1
+  # (skipped entirely when MIGRATE_LOCAL_STAGING_PATH is set - that override
+  # bypasses the configured storage methods altogether)
+  if [[ -z "${MIGRATE_LOCAL_STAGING_PATH}" ]]; then
+    if [[ ${storage_method} == "auto" ]]; then
+      if [[ ${BACKUP_DROPBOX_STATUS} != "enabled" && ${BACKUP_LOCAL_STATUS} != "enabled" && ${BACKUP_BORG_STATUS} != "enabled" ]]; then
+        log_event "error" "No backup storage method enabled" "true"
+        return 1
+      fi
+    else
+      local method_status_var="BACKUP_$(echo "${storage_method}" | tr '[:lower:]' '[:upper:]')_STATUS"
+      if [[ "${!method_status_var}" != "enabled" ]]; then
+        log_event "error" "Requested storage method '${storage_method}' is not enabled" "true"
+        return 1
+      fi
     fi
   fi
 

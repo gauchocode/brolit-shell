@@ -20,6 +20,12 @@ Options:
                        instead of this server's own hostname (for restore
                        -st from-storage; used internally by migrate
                        --transport dropbox)
+    --local-staging-path  Use this path instead of BACKUPS.methods.local's
+                       configured backup_path, skipping the "local storage
+                       enabled" check entirely (for restore -st from-storage
+                       with --storage-method local; used internally by
+                       migrate --transport local, which never depends on or
+                       enables the persistent local backup config)
     --transport        Transport for migrate: "local" (default, direct rsync,
                        requires BACKUPS.methods.local on both servers) or
                        "dropbox" (reuses an already-configured shared Dropbox

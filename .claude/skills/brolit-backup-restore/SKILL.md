@@ -148,12 +148,12 @@ ls -la /path/to/backups/
 ```
 
 Transport (`--transport local|dropbox`, default `local`):
-- `local` (fastest): direct rsync of the artifact into the destination's local-storage path. Requires `BACKUPS.methods.local` enabled on **both** source and destination.
+- `local` (fastest): direct rsync of the artifact into a fixed, migrate-owned staging path (`/root/.brolit_migrate_staging`) on both servers. Independent of `BACKUPS.methods.local` - never reads, requires, or enables it, so regular/cron backups are unaffected.
 - `dropbox`: reuses an already-configured shared Dropbox account/app between the two servers - no rsync transfer, no local storage config needed, but slower (extra hop through Dropbox). Requires `BACKUPS.methods.dropbox` enabled on the source (and the destination must be able to read from the same account).
 
 Pre-flight requirements (checked automatically, fails closed otherwise):
 - Domain must be a Dockerized project on the source (`docker-compose.yml`/`.yaml` present).
-- Matching `BACKUPS.methods` entry enabled per the chosen `--transport` (see above).
+- For `--transport dropbox` only: `BACKUPS.methods.dropbox` enabled on the source (no config requirement at all for `--transport local`).
 - Destination must be reachable over SSH with the given key, have Docker + Docker Compose, and have `DNS.cloudflare` and `PACKAGES.certbot` enabled in its own `~/.brolit_conf.json` (installed/bootstrapped automatically if brolit-shell itself is missing there).
 - If the destination is missing Cloudflare config specifically, `--bootstrap-dest-config` copies the source's own `DNS.cloudflare` section over (logged explicitly) - prefer a scoped Cloudflare API token over the global key when doing this, since it's copied to another server.
 
