@@ -284,10 +284,18 @@ function _confirm_overwrite_destination() {
         docker_compose_rm "${destination_dir}/docker-compose.yml" || true
     fi
 
-    # Ask for confirmation
-    whiptail --title "Warning" --yesno "The project directory already exists. Continue? A backup will be stored in BROLIT tmp folder." 10 60
-    if [[ $? -ne 0 ]]; then
-        return 1
+    # Ask for confirmation - only when running interactively (a TTY is
+    # available). whiptail has no non-interactive/CLI bypass and fails
+    # outright without a terminal ("TERM environment variable needs set"),
+    # which would otherwise silently break every non-interactive restore
+    # (CLI mode, migrate) whenever the destination already exists.
+    if [[ -t 0 ]] && [[ -t 1 ]]; then
+        whiptail --title "Warning" --yesno "The project directory already exists. Continue? A backup will be stored in BROLIT tmp folder." 10 60
+        if [[ $? -ne 0 ]]; then
+            return 1
+        fi
+    else
+        log_event "warning" "Non-interactive mode: overwriting existing destination directory ${destination_dir} without prompting" "false"
     fi
 
     # Create backup of existing directory
