@@ -1681,9 +1681,12 @@ function backup_docker_project() {
     # instead of assuming the old Compose v1 "${PROJECT_NAME}_<engine>"
     # naming - modern Compose v2 defaults to "<compose-project>-<service>-1"
     # (hyphens), which doesn't match when PROJECT_NAME isn't set in .env or
-    # doesn't match the compose project name.
+    # doesn't match the compose project name. Use docker compose's own
+    # parser (`config --services`) to list real service names instead of
+    # grepping the YAML for a fixed indentation level, which breaks on
+    # files that don't use exactly 2-space indentation for top-level keys.
     local db_service_name
-    db_service_name="$(grep -oP '^  \K(mysql|mariadb|postgres|postgresql|db)(?=:)' "${docker_compose_file}" | head -1)"
+    db_service_name="$(docker compose -f "${docker_compose_file}" config --services 2>/dev/null | grep -iE '^(mysql|mariadb|postgres|postgresql|db)$' | head -1)"
 
     if [[ ${db_engine} == "mysql" ]]; then
 
