@@ -436,13 +436,26 @@ function project_get_port_from_env() {
   # Try to extract port from environment variables in priority order
   # Priority: WP_PORT (WordPress), APP_PORT (generic app), PORT (standard), then others
   # Exclude admin/utility ports like PHPMYADMIN_PORT, SSH_HOST_PORT, etc.
-  for var_name in "WP_PORT" "APP_PORT" "PORT" "SERVER_PORT" "HTTP_PORT" "NODE_PORT" "WEBSERVER_PORT"; do
+  for var_name in "WP_PORT" "APP_PORT" "APP_HOST_PORT" "HOST_PORT" "PORT" "SERVER_PORT" "HTTP_PORT" "NODE_PORT" "WEBSERVER_PORT"; do
     port="$(grep -E "^${var_name}=" "${env_file}" | grep -v '^#' | head -n 1 | cut -d '=' -f 2 | tr -d ' "')"
     if [[ -n "${port}" ]]; then
       log_event "debug" "Found port ${port} from ${var_name} in ${env_file}" "false"
       break
     fi
   done
+
+  # Last-resort fallback: any *_PORT variable not matching a known
+  # non-web-facing service (database, cache, ssh, admin tools). Only used
+  # if exactly one candidate remains, to avoid guessing wrong on ambiguity.
+  if [[ -z "${port}" ]]; then
+    local port_candidates
+    port_candidates="$(grep -E '^[A-Z0-9_]*_PORT=' "${env_file}" 2>/dev/null | grep -v '^#' \
+      | grep -viE '^(MYSQL|MARIADB|POSTGRES|PGSQL|REDIS|MONGO|DB|DATABASE|SSH|ADMIN|PHPMYADMIN|SMTP|FTP)_PORT=')"
+    if [[ "$(echo "${port_candidates}" | grep -c '.')" -eq 1 ]]; then
+      port="$(echo "${port_candidates}" | cut -d '=' -f 2 | tr -d ' "')"
+      [[ "${port}" =~ ^[0-9]+$ ]] && log_event "debug" "Found port ${port} via last-resort *_PORT fallback in ${env_file}" "false"
+    fi
+  fi
 
   # Validate port is a number
   if [[ "${port}" =~ ^[0-9]+$ ]]; then
