@@ -2603,7 +2603,7 @@ function project_delete() {
 
   else
 
-    if [[ ! -f ${PROJECTS_PATH}/${project_domain} ]]; then
+    if [[ ! -d ${PROJECTS_PATH}/${project_domain} ]]; then
       log_event "error" "Project directory to delete not found: ${PROJECTS_PATH}/${project_domain}" "true"
       return 1
     fi
