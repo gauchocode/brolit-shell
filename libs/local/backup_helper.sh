@@ -1693,7 +1693,17 @@ function backup_docker_project() {
 
       db_name="${MYSQL_DATABASE}"
 
-      # Fallback to PROJECT_NAME if MYSQL_DATABASE is not set
+      # Prefer the running container's own MYSQL_DATABASE - it's the ground
+      # truth regardless of whether it came from .env, a hardcoded value in
+      # docker-compose.yml, or interpolation. postgres_database_export()/
+      # mysql_database_export() already do the same for the DB user/password.
+      if [[ -n "${container_name}" ]]; then
+        local container_db_name
+        container_db_name="$(docker exec -i "${container_name}" printenv MYSQL_DATABASE 2>/dev/null)"
+        [[ -n "${container_db_name}" ]] && db_name="${container_db_name}"
+      fi
+
+      # Fallback to PROJECT_NAME if still unresolved
       if [[ -z "${db_name}" ]]; then
         db_name="${PROJECT_NAME}"
       fi
@@ -1706,7 +1716,14 @@ function backup_docker_project() {
 
       db_name="${POSTGRES_DB}"
 
-      # Fallback to PROJECT_NAME if POSTGRES_DB is not set
+      # Prefer the running container's own POSTGRES_DB - see note above.
+      if [[ -n "${container_name}" ]]; then
+        local container_db_name
+        container_db_name="$(docker exec -i "${container_name}" printenv POSTGRES_DB 2>/dev/null)"
+        [[ -n "${container_db_name}" ]] && db_name="${container_db_name}"
+      fi
+
+      # Fallback to PROJECT_NAME if still unresolved
       if [[ -z "${db_name}" ]]; then
         db_name="${PROJECT_NAME}"
       fi
