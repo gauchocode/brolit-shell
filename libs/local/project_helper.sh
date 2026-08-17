@@ -433,6 +433,28 @@ function project_get_port_from_env() {
     return 0
   fi
 
+  # Preferred strategy: ask Docker's own compose parser which host port was
+  # actually published (resolves ${VAR} interpolation correctly, and is the
+  # real ground truth for what nginx should proxy_pass to) instead of
+  # guessing from .env variable naming. Only trusted when exactly one
+  # service publishes a host port - with several published ports we still
+  # can't tell which one is "the" web-facing service, so fall through to
+  # the naming-based heuristics below (same conservative behavior as before).
+  local compose_file=""
+  [[ -f "${project_path}/docker-compose.yml" ]] && compose_file="${project_path}/docker-compose.yml"
+  [[ -z "${compose_file}" && -f "${project_path}/docker-compose.yaml" ]] && compose_file="${project_path}/docker-compose.yaml"
+
+  if [[ -n "${compose_file}" ]] && command -v jq >/dev/null 2>&1; then
+    local published_ports
+    published_ports="$(docker compose -f "${compose_file}" config --format json 2>/dev/null \
+      | jq -r '[.services[].ports[]?.published] | unique | .[]' 2>/dev/null)"
+    if [[ "$(echo "${published_ports}" | grep -c '.')" -eq 1 && "${published_ports}" =~ ^[0-9]+$ ]]; then
+      log_event "debug" "Found port ${published_ports} via docker compose config (single published port)" "false"
+      echo "${published_ports}"
+      return 0
+    fi
+  fi
+
   # Try to extract port from environment variables in priority order
   # Priority: WP_PORT (WordPress), APP_PORT (generic app), PORT (standard), then others
   # Exclude admin/utility ports like PHPMYADMIN_PORT, SSH_HOST_PORT, etc.
