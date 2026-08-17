@@ -216,29 +216,22 @@ function _handle_installation_permissions() {
                 clear_previous_lines "1"
                 display --indent 6 --text "- Permissions applied to ${project_short}" --result "DONE" --color GREEN
             else
-                # For dockerized projects without standard structure, set permissions on the entire project directory
-                log_event "info" "Standard application directory not found. Setting permissions on entire project directory." "false"
-                display --indent 6 --text "- Setting permissions for Docker project directory"
-
-                current_owner="$(stat -c '%U:%G' "${destination_dir}" 2>/dev/null)"
-                if [[ "${current_owner}" != "www-data:www-data" ]]; then
-                    chown -R www-data:www-data "${destination_dir}" 2>/dev/null
-                fi
-                if [[ $? -ne 0 ]]; then
-                    change_ownership "1000" "1000" "${destination_dir}"
-                    if [[ $? -ne 0 ]]; then
-                        log_event "warning" "Failed to change ownership on ${destination_dir}" "false"
-                        clear_previous_lines "1"
-                        display --indent 6 --text "- Applying ownership to ${destination_dir}" --result "WARNING" --color YELLOW
-                        # Don't return error - permissions might not be critical for all dockerized projects
-                    else
-                        clear_previous_lines "1"
-                        display --indent 6 --text "- Permissions applied to $(basename "${destination_dir}")" --result "DONE" --color GREEN
-                    fi
-                else
-                    clear_previous_lines "1"
-                    display --indent 6 --text "- Permissions applied to $(basename "${destination_dir}")" --result "DONE" --color GREEN
-                fi
+                # For dockerized projects without a standard application/ subdirectory
+                # (flat layout - docker-compose.yml, .env, and bind-mounted data
+                # directories directly under the project root), do NOT chown the
+                # whole tree to www-data. Bind-mounted directories (e.g. ./data,
+                # ./hermes-data) are read/written by processes *inside* the
+                # container under whatever UID that container expects (commonly
+                # 1000, per HERMES_UID/APP_USER_ID elsewhere in this codebase) -
+                # not by the host's nginx/www-data user, which never touches these
+                # files directly since the app is fully proxied. Forcing www-data
+                # ownership here silently broke internal container writes (e.g. a
+                # PermissionError on an app-managed lock file) while reporting
+                # "DONE". tar extraction (running as root) already preserves the
+                # original numeric UID/GID from the backup archive, which is the
+                # correct value to keep - so this branch is now a no-op by design.
+                log_event "info" "Standard application directory not found (flat Docker layout) - preserving ownership from backup archive, not forcing www-data" "false"
+                display --indent 6 --text "- Preserving ownership for Docker project directory" --result "DONE" --color GREEN
             fi
             ;;
 
