@@ -198,6 +198,34 @@ brolit -t disk-cleanup -st all                    # All of the above
 brolit -t disk-cleanup -st apt -dr                # Dry-run mode
 ```
 
+### migrate (BETA)
+
+Migrate a Dockerized project from this server (source) to a destination server, over SSH. Run only from the source. Reuses the destination's own `restore -st from-storage` for the actual restore, so nginx vhost, Cloudflare DNS, and SSL are handled automatically there - `migrate` does not implement any of that itself.
+
+```bash
+# Migrate and verify only (source untouched) - recommended first run
+brolit -t migrate -st site -D example.com \
+  --dest-host 10.2.0.200 --dest-user root --dest-ssh-key ~/.ssh/id_ed25519
+
+# Same, but transfer via the shared Dropbox account instead of direct rsync
+brolit -t migrate -st site -D example.com \
+  --dest-host 10.2.0.200 --dest-user root --dest-ssh-key ~/.ssh/id_ed25519 --transport dropbox
+
+# After manually confirming the migrated site works, clean up the source
+brolit -t migrate -st site -D example.com \
+  --dest-host 10.2.0.200 --dest-user root --dest-ssh-key ~/.ssh/id_ed25519 \
+  --decommission-source --force
+```
+
+- v1 scope: Dockerized projects only (rejects host/classic projects).
+- `--transport local` (default): direct rsync via a migrate-owned staging path, independent of `.brolit_conf.json` - never touches `BACKUPS.methods.local`, never affects cron backups.
+- `--transport dropbox`: reuses an already-configured, shared Dropbox account instead (no rsync, slower).
+- `--decommission-source` (+ optional `--purge-volumes` to also delete Docker volumes): stops and removes the source project, but **only** after the destination is verified working. On any failure, the source is left completely untouched, regardless of the flag.
+- `--force`: overwrite an existing project at the destination path.
+- `--bootstrap-dest-config`: if the destination is missing Cloudflare/certbot config, copy the Cloudflare section from this server's own config.
+
+**Required parameters:** `-D`, `--dest-host`, `--dest-user`, `--dest-ssh-key`. See `.claude/skills/brolit-backup-restore/SKILL.md` for the full pre-flight checklist and troubleshooting.
+
 ### Other tasks
 
 ```bash
@@ -231,6 +259,16 @@ brolit --help                                     # Show help
 | `-d` | `--debug` | Enable bash debug (`set -x`) |
 | `-e` | `--env` | Environment |
 | `-sl` | `--slog` | Script log name |
+| `-sm` | `--storage-method` | Force `dropbox`/`local`/`borg` for `restore -st from-storage` instead of the default auto-priority |
+| — | `--source-server` | `restore -st from-storage`: look under this server name's namespace instead of this server's own hostname |
+| — | `--local-staging-path` | `restore -st from-storage`: use this path instead of the configured local backup path |
+| — | `--dest-host` / `--dest-user` / `--dest-port` / `--dest-ssh-key` | Destination server SSH connection details (for `migrate`) |
+| — | `--dest-path` | Override the destination project path (for `migrate`) |
+| — | `--transport` | `migrate`: `local` (default) or `dropbox` |
+| — | `--decommission-source` | `migrate`: remove the source project after a verified migration (irreversible) |
+| — | `--purge-volumes` | `migrate`: with `--decommission-source`, also delete the source's Docker volumes (irreversible data loss) |
+| — | `--bootstrap-dest-config` | `migrate`: copy Cloudflare config to the destination if missing |
+| — | `--force` | Overwrite an existing destination path (`migrate`) |
 
 ## Cron Examples
 
@@ -260,3 +298,4 @@ brolit --help                                     # Show help
 - For Docker projects, brolit auto-detects containers and reads credentials from container environment
 - Notifications (Telegram, Discord, Email, ntfy) are sent automatically on errors and important events
 - Restore operations work in both interactive (terminal) and non-interactive (AI/CLI) modes
+- `migrate` (BETA) must be run **only from the source server** - it SSHes out to the destination, never the other way around. Dockerized projects only in v1.

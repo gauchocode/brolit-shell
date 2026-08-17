@@ -25,6 +25,7 @@ Map user request to brolit task:
 | "check server" | `./runner.sh -t server-status` |
 | "check certificates" | `./runner.sh -t server-status -st certs` |
 | "scan for malware" | `./runner.sh -t security-scan` |
+| "migrate site X to server Y" (BETA) | `./runner.sh -t migrate -st site -D X --dest-host Y --dest-user root --dest-ssh-key /path/to/key` (run on server X; Dockerized projects only) |
 
 ### Step 2: Validate Prerequisites
 
@@ -105,6 +106,23 @@ curl -I https://example.com
 ./runner.sh -t restore -st from-borg -D example.com
 ```
 
+### Migration Operations (BETA)
+
+```bash
+# Migrate a Dockerized project to another server, verify only (source untouched)
+# Run this ON THE SOURCE server:
+./runner.sh -t migrate -st site -D example.com \
+  --dest-host 10.2.0.200 --dest-user root --dest-ssh-key ~/.ssh/id_ed25519
+
+# Same, but decommission the source once the destination is verified working
+# (irreversible - only do this after manually confirming the migrated site)
+./runner.sh -t migrate -st site -D example.com \
+  --dest-host 10.2.0.200 --dest-user root --dest-ssh-key ~/.ssh/id_ed25519 \
+  --decommission-source --force
+```
+
+Before running: verify the domain is a Dockerized project (`docker-compose.yml` present under `/var/www/<domain>/`), and that you have SSH access from the source to the destination with the given key. `migrate` does not implement DNS/SSL/vhost logic itself - it triggers the destination's own restore, so failures there behave exactly like a normal `restore -st from-storage` failure.
+
 ### Database Operations
 
 ```bash
@@ -155,6 +173,9 @@ curl -I https://example.com
 | "Config not found" | Missing `~/.brolit_conf.json` | Run server setup first |
 | "Domain not found" | Project doesn't exist | Verify domain in `/var/www/` |
 | "Backup file not found" | Invalid file path | Check path with `ls -la` |
+| "is not a Docker project" (migrate) | Domain has no `docker-compose.yml` | v1 only supports Dockerized projects |
+| "cannot reach ... over SSH" (migrate) | Bad `--dest-host`/`--dest-ssh-key`, or run from the wrong server | `migrate` runs only on the source; verify SSH manually first: `ssh -i KEY user@dest-host true` |
+| "destination path already exists" (migrate) | Project already exists at the destination | Add `--force` to overwrite, or pick a different `--dest-path` |
 
 ### Error Output Format
 
@@ -177,6 +198,7 @@ fi
 - For Docker projects, brolit auto-detects containers
 - Notifications sent automatically on errors and important events
 - Database operations auto-detect engine (MySQL/PostgreSQL) unless `-de` specified
+- `migrate` (BETA) must run on the **source** server only, and only supports Dockerized projects. Never pass `--decommission-source` on a first attempt - verify the migrated site manually first, then re-run with that flag.
 
 ## Verification Checklist
 
@@ -232,4 +254,21 @@ fi
 
 # Export specific database
 ./runner.sh -t database -st export_db -db mydb_prod
+```
+
+### Example 4: Migrate a Site to Another Server (BETA)
+
+```bash
+# User: "migrate example.com to 10.2.0.200"
+# Run this on the SOURCE server (example.com currently lives here):
+output=$(./runner.sh -t migrate -st site -D example.com --dest-host 10.2.0.200 --dest-user root --dest-ssh-key ~/.ssh/id_ed25519 2>&1)
+exit_code=$?
+
+if [[ $exit_code -eq 0 ]]; then
+  echo "Migration completed and verified. Source left untouched."
+  echo "Manually confirm the site on the destination before deciding to decommission the source."
+else
+  echo "Migration failed with exit code: $exit_code"
+  echo "$output" | grep -A3 "ERROR\|FAIL"
+fi
 ```

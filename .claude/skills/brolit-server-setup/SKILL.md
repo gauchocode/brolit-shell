@@ -9,6 +9,8 @@ Guides the interactive configuration of brolit-shell on a new server. Use this s
 - Internet connectivity
 - Bash >= 4
 
+**Moving an existing site to this new server instead of building it from scratch?** Once this server is set up, use `migrate -st site` (BETA, Dockerized projects only) from the *old* server to pull it over automatically - see `.claude/skills/brolit-cli-commands/SKILL.md`. `migrate` can also bootstrap-install brolit-shell on a bare destination itself, but that path is less tested than doing setup manually first.
+
 ## Setup Workflow
 
 ### Phase 1: Install Brolit-Shell on the Server
