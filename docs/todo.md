@@ -1,5 +1,12 @@
 # TODO List
 
+## Site migration (`migrate -st site`) follow-ups (v1 shipped in 3.11)
+
+- [ ] Host/classic (non-Docker) project support - v1 is Dockerized projects only.
+- [ ] Borg and SFTP storage support for `migrate` transport (currently `local`/`dropbox` only; `storage_download_backup()` still has no Borg branch at all).
+- [ ] Cloudflare proxy re-enable after cert issuance fails to find the record for a standalone (non-root, non-`www`) subdomain - `project_update_domain_config()` creates it as an A record, but the proxy-enable branching in `certbot_certificate_install_auto()`/`certbot_helper_installer_menu()` assumes any non-root domain is a `www`-style CNAME. Harmless (site still works without Cloudflare proxy) but should be fixed to mirror the three-way branching (root+www / CNAME redirect / standalone single domain).
+- [ ] `--purge-volumes` and destination bootstrap-install-brolit path need validation against more real projects (only lightly exercised so far).
+
 ## For release 3.5 (final)
 
 ### Know Bugs

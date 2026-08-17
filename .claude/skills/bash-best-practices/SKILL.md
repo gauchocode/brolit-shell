@@ -11,7 +11,7 @@ Every script MUST start with:
 ```bash
 #!/usr/bin/env bash
 # Author: GauchoCode
-# Version: 3.10
+# Version: 3.11
 # Description: Short description of the script
 ################################################################################
 ```
