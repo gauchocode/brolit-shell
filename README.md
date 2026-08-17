@@ -21,6 +21,7 @@ BROLIT-SHELL is a server management tool built on **BASH**, designed to expedien
 * Simplified backup and restoration processes.
 * Backup upload functionality to Dropbox or an FTP server.
 * Restore backups from Dropbox, URLs, or local files.
+* Site migration: move a Dockerized project between two brolit-managed servers with a single command, run from the source (BETA).
 * Streamlined creation, deployment, and hosting of PHP projects.
 * WordPress automated installation feature.
 * WP-CLI actions helper for WordPress management.
