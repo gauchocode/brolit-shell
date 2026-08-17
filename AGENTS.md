@@ -64,7 +64,7 @@ All sourced from `BROLIT_MAIN_DIR`:
 4. `libs/storage_controller.sh`
 5. `libs/borg_storage_controller.sh`
 6. `libs/task_runner.sh`
-7. `libs/local/*.sh` — project, domains, backup, restore, packages, whiptail, log, etc.
+7. `libs/local/*.sh` — project, domains, backup, restore, packages, whiptail, log, migrate, etc.
 8. `libs/apps/*.sh` — docker, nginx, mysql, certbot, cloudflare, wpcli, etc.
 9. `utils/*.sh` — manager scripts (project, backup, certbot, etc.)
 
@@ -72,17 +72,18 @@ All sourced from `BROLIT_MAIN_DIR`:
 
 | Function | File |
 |---|---|
-| `display` | `libs/local/log_and_display_helper.sh:456` |
-| `log_event` | `libs/local/log_and_display_helper.sh:219` |
-| `log_section` / `log_subsection` | `libs/local/log_and_display_helper.sh:354/383` |
-| `clear_previous_lines` | `libs/local/log_and_display_helper.sh:430` |
+| `display` | `libs/local/log_and_display_helper.sh:462` |
+| `log_event` | `libs/local/log_and_display_helper.sh:225` |
+| `log_section` / `log_subsection` | `libs/local/log_and_display_helper.sh:360/389` |
+| `clear_previous_lines` | `libs/local/log_and_display_helper.sh:436` |
 | `whiptail_selection_menu` | `libs/local/whiptail_helper.sh:107` |
 | `project_set_config_var` | `libs/local/project_helper.sh:76` |
 | `domain_get_root` | `libs/local/domains_helper.sh:60` |
 | `package_is_installed` | `libs/local/packages_helper.sh:104` |
-| `network_port_is_use` | `libs/commons.sh:1089` |
-| `network_next_available_port` | `libs/commons.sh:1114` |
-| `network_port_is_excluded` | `libs/commons.sh:1159` |
+| `wait_for_dns_propagation` | `libs/commons.sh:1120` |
+| `network_port_is_use` | `libs/commons.sh:1159` |
+| `network_next_available_port` | `libs/commons.sh:1184` |
+| `network_port_is_excluded` | `libs/commons.sh:1229` |
 
 ## Project-specific rules
 

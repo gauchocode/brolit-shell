@@ -33,8 +33,13 @@ Managed by `libs/apps/firewall_helper.sh`:
 
 ```bash
 # Run via CLI
-./runner.sh -t security -st clamav-scan
-./runner.sh -t security -st lynis-audit
+./runner.sh -t security-scan                  # Full scan: wordfence + clamav + processes
+./runner.sh -t security-scan -st clamav        # ClamAV only
+./runner.sh -t security-scan -st wordfence     # Wordfence CLI only (WordPress)
+./runner.sh -t security-scan -st processes     # Cryptominer/process scanner
+
+# Lynis is not wired into a CLI task/subtask - run directly:
+lynis audit system
 
 # Scheduled (cron)
 cron/security_tasks.sh  # Runs Wordfence CLI on all WordPress projects

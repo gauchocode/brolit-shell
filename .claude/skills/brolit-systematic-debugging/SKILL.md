@@ -44,9 +44,10 @@ docker ps -a
 | 403 Forbidden | File permissions on `/var/www/`, nginx user is `www-data` |
 | SSL errors | Certbot certificate expiry, nginx SSL config |
 | DB connection refused | MySQL running, `.my.cnf` credentials correct, port matches |
-| Docker port conflict | `network_port_is_use` in `libs/commons.sh:1089` |
+| Docker port conflict | `network_port_is_use` in `libs/commons.sh:1159` |
 | Backup failure | Borg connectivity, SSH key, remote server reachable |
 | Cron task failure | Check `log/` for task output, verify config loaded |
+| Migrate failure (BETA) | Which pre-flight step failed (SSH, Docker, brolit/config on destination, path collision) determines the fix - see `.claude/skills/brolit-backup-restore/SKILL.md`. Remember it behaves like a normal `restore -st from-storage` failure on the destination once past capture. |
 
 ### Step 5: Common Fix Patterns
 
@@ -90,6 +91,7 @@ docker compose -f /path/to/docker-compose.yml logs
 | `libs/apps/docker_helper.sh` | Docker operations, port management |
 | `libs/apps/mysql_helper.sh` | MySQL operations, credential management |
 | `libs/borg_storage_controller.sh` | Borg backup/restore operations |
+| `libs/local/site_migration_helper.sh` | Migrate (BETA): pre-flight, capture, transfer, remote restore trigger, verify, decommission |
 | `utils/brolit_configuration_manager.sh` | Config loading from `~/.brolit_conf.json` |
 
 ## Instructions for AI Assistant
