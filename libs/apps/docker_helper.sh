@@ -56,13 +56,25 @@ function docker_compose_pull() {
     display --indent 6 --text "- Pulling docker stack images"
     log_event "debug" "Running: docker compose -f ${compose_file} pull" "false"
 
+    # Only pull services with a registry "image:" - services defined with
+    # "build:" only have no pullable repository, and a blanket pull against
+    # the whole file fails as soon as one of those returns "pull access
+    # denied", even when a later build step would have handled it fine.
+    local pullable_services
+    pullable_services="$(docker compose -f "${compose_file}" config --format json 2>/dev/null | jq -r '.services | to_entries[] | select(.value.image != null and .value.build == null) | .key')"
+
     # Execute docker compose command
     ## Options:
     ##    -f, --force   Don't ask to confirm removal
     ##    -s, --stop    Stop the containers, if required, before removing
     ##    -v            Remove any anonymous volumes attached to containers
-    docker compose -f "${compose_file}" pull >/dev/null 2>&1
-    exitstatus=$?
+    if [[ -n "${pullable_services}" ]]; then
+        docker compose -f "${compose_file}" pull ${pullable_services} >/dev/null 2>&1
+        exitstatus=$?
+    else
+        log_event "debug" "No services with a pullable image found in ${compose_file}; skipping pull" "false"
+        exitstatus=0
+    fi
 
     if [[ ${exitstatus} -eq 0 ]]; then
 
@@ -268,14 +280,31 @@ function docker_compose_build() {
     display --indent 6 --text "- Pulling docker stack ..."
     log_event "debug" "Running: docker compose -f ${compose_file} pull" "false"
 
-    # Execute docker compose command and capture output
-    pull_output=$(docker compose -f "${compose_file}" pull 2>&1)
-    pull_status=$?
+    # Only pull services with a registry "image:" - services defined with
+    # "build:" only (no image) are meant to be built locally and have no
+    # pullable repository. Running a blanket "docker compose pull" against
+    # the whole file aborts the entire restore as soon as one of those
+    # build-only services returns "pull access denied", even though
+    # "docker compose up --build" below would have built it just fine.
+    local pullable_services
+    pullable_services="$(docker compose -f "${compose_file}" config --format json 2>/dev/null | jq -r '.services | to_entries[] | select(.value.image != null and .value.build == null) | .key')"
 
-    if [[ ${pull_status} -ne 0 ]]; then
-        display --indent 6 --text "- Pulling docker stack ..." --result "FAIL" --color RED
-        log_event "error" "Docker pull failed: ${pull_output}" "false"
-        return 1
+    if [[ -n "${pullable_services}" ]]; then
+
+        # Execute docker compose command and capture output
+        pull_output=$(docker compose -f "${compose_file}" pull ${pullable_services} 2>&1)
+        pull_status=$?
+
+        if [[ ${pull_status} -ne 0 ]]; then
+            display --indent 6 --text "- Pulling docker stack ..." --result "FAIL" --color RED
+            log_event "error" "Docker pull failed: ${pull_output}" "false"
+            return 1
+        fi
+
+    else
+
+        log_event "debug" "No services with a pullable image found in ${compose_file}; skipping pull" "false"
+
     fi
 
     # Log
