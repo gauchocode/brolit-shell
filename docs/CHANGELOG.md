@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.12 - 2026-08-18
+
+### Fixed
+
+All of the following were found migrating real Dockerized projects (`tukiverse-apps01` → `tukiverse-apps03`, and the remaining `tukiverse-apps03` → `epica-apps02` fleet) after the 3.11 release.
+
+- `_handle_installation_permissions()` (`libs/local/restore_backup_helper.sh`) unconditionally `chown -R www-data:www-data`'d the entire project tree for flat-layout Dockerized projects (no `application/` subdirectory - just `docker-compose.yml`, `.env`, and bind-mounted data directories directly under the project root). Bind-mounted directories are read/written by processes *inside* the container under whatever UID that container expects (commonly `1000`), never by the host's nginx/`www-data` user, since the app is fully proxied. Forcing `www-data` ownership broke in-container writes (e.g. `PermissionError` on an app-managed lock file) while `restore` still reported `DONE`. Now a no-op for this layout - ownership from the backup archive's original numeric UID/GID (already preserved by `tar` extraction running as root) is left as-is.
+- `project_get_port_from_env()` (`libs/local/project_helper.sh`) resolved a Dockerized project's port purely from `.env` variable-name heuristics. Added a primary tier, checked before any `.env` guessing: `docker compose config --format json | jq -r '[.services[].ports[]?.published] | unique | .[]'` - Docker Compose's own parser, used only when it resolves to exactly one published port.
+- `docker_compose_pull()` / `docker_compose_build()` (`libs/apps/docker_helper.sh`) ran a blanket `docker compose pull` across every service in the compose file before building. A service declared with `build:` only (no `image:`) has no pullable repository, so Docker correctly refuses the pull ("pull access denied") - but that failure aborted the whole restore/rebuild before `docker_compose_build()` ever reached its own `up --build` step, which would have built the service locally without issue. Now filters to only pull services that have an `image` and no `build` (same `docker compose config --format json | jq` pattern already used in `project_helper.sh`), skipping the pull step entirely (and always falling through to build) when there are none.
+
 ## 3.11 - 2026-08-16
 
 ### Added

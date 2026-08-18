@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.11
+# Version: 3.12
 ################################################################################
 
 function test_task_runner() {
