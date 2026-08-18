@@ -194,10 +194,20 @@ function docker_compose_patch_pnpm_builds() {
 
     [[ -z "${pnpm_dir}" ]] && return 0
 
-    log_event "info" "Detected pnpm project at ${pnpm_dir}; writing pnpm-workspace.yaml with allowBuilds" "false"
+    # If the project already ships its own pnpm-workspace.yaml, don't
+    # blindly overwrite it - it may carry settings we must not lose (e.g.
+    # "verifyDepsBeforeRun: false"). Only append our allowBuilds block if
+    # the file doesn't already define one; leave it alone if it does
+    # (the project's own config wins).
+    if [[ -f "${workspace_file}" ]]; then
 
-    # Write pnpm 11 allowBuilds map. Use a heredoc to keep formatting clean.
-    cat > "${workspace_file}" << 'PWS_EOF'
+        if grep -q '^allowBuilds:' "${workspace_file}"; then
+            log_event "info" "${workspace_file} already defines allowBuilds - leaving it as-is" "false"
+            return 0
+        fi
+
+        log_event "info" "Appending allowBuilds to existing ${workspace_file}" "false"
+        cat >> "${workspace_file}" << 'PWS_EOF'
 allowBuilds:
   sharp: true
   "@swc/core": true
@@ -211,6 +221,28 @@ allowBuilds:
   protobufjs: true
   vue-demi: true
 PWS_EOF
+
+    else
+
+        log_event "info" "Detected pnpm project at ${pnpm_dir}; writing pnpm-workspace.yaml with allowBuilds" "false"
+
+        # Write pnpm 11 allowBuilds map. Use a heredoc to keep formatting clean.
+        cat > "${workspace_file}" << 'PWS_EOF'
+allowBuilds:
+  sharp: true
+  "@swc/core": true
+  "@parcel/watcher": true
+  unrs-resolver: true
+  esbuild: true
+  better-sqlite3: true
+  node-gyp: true
+  "@nestjs/core": true
+  cbor-extract: true
+  protobufjs: true
+  vue-demi: true
+PWS_EOF
+
+    fi
 
     log_event "info" "Wrote ${workspace_file}" "false"
 
