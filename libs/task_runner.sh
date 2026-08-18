@@ -49,6 +49,8 @@ function show_help() {
                         server-status       Subtasks: full (default), disk, packages, certs
                         security-scan       Subtasks: full (default), clamav, wordfence, processes
                         ssh-keygen          (no subtask)
+                        user                Subtasks: create, delete, grant-sudo, revoke-sudo,
+                                            add-key, remove-key, list-keys, list
                         disk-cleanup        Subtasks: apt, journal, docker, all
                         aliases-install     (no subtask)
                         openresty           Subtasks: install, uninstall, reconfigure, status,
@@ -72,7 +74,10 @@ function show_help() {
     -de, --db-engine  Database engine: auto (default), mysql, postgres
     -tf, --file       Config file path (for project-install)
     -tt, --type       Install type: clean, copy (for project-install)
-    -tv, --task-value Value parameter for tasks that need it
+    -tv, --task-value Value parameter for tasks that need it (also carries the
+                      key fingerprint for user -st remove-key)
+    -un, --username   System username (for user task)
+        --sudo        Grant sudo group membership (for user -st create)
     -nd, --new-domain New domain (for restore with clone to different domain)
     -rd, --redirect-domains  Comma-separated redirect domains (for openresty create-route)
     -cn, --cert-name  Certificate directory name to use, when it differs from
@@ -135,6 +140,12 @@ function show_help() {
     ./runner.sh -t security-scan -st wordfence -D example.com
     ./runner.sh -t disk-cleanup -st apt -dr
     ./runner.sh -t project-install -tf /path/to/config.json -tt clean
+    ./runner.sh -t user -st create -un deploy --sudo
+    ./runner.sh -t user -st add-key -un deploy -tf /tmp/brolit_key.json
+    ./runner.sh -t user -st remove-key -un deploy -tv SHA256:abc123...
+    ./runner.sh -t user -st list-keys -un deploy
+    ./runner.sh -t user -st revoke-sudo -un deploy
+    ./runner.sh -t user -st delete -un deploy
     ./runner.sh -t openresty -st install
     ./runner.sh -t openresty -st api-routes
     ./runner.sh -t openresty -st create-route -D example.com -tv http://10.2.0.104:80
@@ -713,6 +724,62 @@ function tasks_handler() {
     exit ${exit_code}
     ;;
 
+  user)
+    # Validate subtask
+    validate_task_and_subtask "user" "${STASK}" "create delete grant-sudo revoke-sudo add-key remove-key list-keys list"
+    exit_code=$?
+    [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
+
+    # Validate required params based on subtask
+    case "${STASK}" in
+      create|delete|grant-sudo|revoke-sudo|list-keys)
+        validate_required_params "user-${STASK}" "USERNAME"
+        exit_code=$?
+        [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
+        ;;
+      add-key)
+        validate_required_params "user-add-key" "USERNAME" "FILE"
+        exit_code=$?
+        [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
+        ;;
+      remove-key)
+        validate_required_params "user-remove-key" "USERNAME" "TVALUE"
+        exit_code=$?
+        [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
+        ;;
+    esac
+
+    # Execute task
+    case "${STASK}" in
+      create)
+        execute_task_with_error_handling "user-create" "brolit_user_create" "${USERNAME}" "${GRANT_SUDO}"
+        ;;
+      delete)
+        execute_task_with_error_handling "user-delete" "brolit_user_delete" "${USERNAME}"
+        ;;
+      grant-sudo)
+        execute_task_with_error_handling "user-grant-sudo" "brolit_user_grant_sudo" "${USERNAME}"
+        ;;
+      revoke-sudo)
+        execute_task_with_error_handling "user-revoke-sudo" "brolit_user_revoke_sudo" "${USERNAME}"
+        ;;
+      add-key)
+        execute_task_with_error_handling "user-add-key" "brolit_user_add_key" "${USERNAME}" "${FILE}"
+        ;;
+      remove-key)
+        execute_task_with_error_handling "user-remove-key" "brolit_user_remove_key" "${USERNAME}" "${TVALUE}"
+        ;;
+      list-keys)
+        execute_task_with_error_handling "user-list-keys" "brolit_user_list_keys" "${USERNAME}"
+        ;;
+      list)
+        execute_task_with_error_handling "user-list" "brolit_user_list"
+        ;;
+    esac
+    exit_code=$?
+    exit ${exit_code}
+    ;;
+
   disk-cleanup)
     # Validate subtask
     validate_task_and_subtask "disk-cleanup" "${STASK}" "apt journal docker all"
@@ -952,6 +1019,10 @@ function flags_handler() {
   declare -g RDOMAINS=""
   declare -g CERTNAME=""
 
+  ## USER
+  declare -g USERNAME=""
+  declare -g GRANT_SUDO="false"
+
   ## DATABASE
   declare -g DBNAME=""
   declare -g DBNAME_N=""
@@ -1095,6 +1166,19 @@ function flags_handler() {
       shift
       CERTNAME="${1}"
       export CERTNAME
+      ;;
+
+    # USER
+
+    -un | --username)
+      shift
+      USERNAME="${1}"
+      export USERNAME
+      ;;
+
+    --sudo)
+      GRANT_SUDO="true"
+      export GRANT_SUDO
       ;;
 
     # DATABASE
