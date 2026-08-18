@@ -281,13 +281,22 @@ function docker_compose_build() {
     log_event "debug" "Running: docker compose -f ${compose_file} pull" "false"
 
     # Only pull services with a registry "image:" - services defined with
-    # "build:" only (no image) are meant to be built locally and have no
-    # pullable repository. Running a blanket "docker compose pull" against
-    # the whole file aborts the entire restore as soon as one of those
-    # build-only services returns "pull access denied", even though
-    # "docker compose up --build" below would have built it just fine.
+    # "build:" (or that reuse an image another service in the same file
+    # builds, e.g. several worker services all set "image: myapp" and only
+    # one of them has the matching "build:" block) are meant to be built
+    # locally and have no pullable repository. Running a blanket
+    # "docker compose pull" against the whole file aborts the entire
+    # restore as soon as one of those build-only services returns "pull
+    # access denied", even though "docker compose up --build" below would
+    # have built it just fine.
     local pullable_services
-    pullable_services="$(docker compose -f "${compose_file}" config --format json 2>/dev/null | jq -r '.services | to_entries[] | select(.value.image != null and .value.build == null) | .key')"
+    pullable_services="$(docker compose -f "${compose_file}" config --format json 2>/dev/null | jq -r '
+      .services as $s
+      | ($s | to_entries | map(select(.value.build != null) | .value.image) | map(select(. != null))) as $locally_built_images
+      | $s | to_entries[]
+      | select(.value.image != null and (.value.image as $img | $locally_built_images | index($img) == null))
+      | .key
+    ')"
 
     if [[ -n "${pullable_services}" ]]; then
 
