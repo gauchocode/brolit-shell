@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.12
+# Version: 3.13
 #############################################################################
 
 function test_site_migration_functions() {
