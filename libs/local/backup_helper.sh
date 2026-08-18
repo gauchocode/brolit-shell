@@ -1070,6 +1070,11 @@ function backup_databases() {
 #  ${1} = ${database}
 #  ${2} = ${db_engine}
 #  ${3} = ${container_name}
+#  ${4} = ${storage_key} - Optional. Naming/storage-path key, when it must
+#         differ from the real ${database} name (e.g. a Docker project with
+#         several database services that could share the same in-container
+#         DB name, like two Postgres services both named "postgres" -
+#         disambiguated as "<project>_<service>"). Defaults to ${database}.
 #
 # Outputs:
 #  "backupfile backup_file_size" if ok, 1 if error
@@ -1080,6 +1085,7 @@ function backup_project_database() {
   local database="${1}"
   local db_engine="${2}"
   local container_name="${3}"
+  local storage_key="${4:-${database}}"
 
   local export_result
 
@@ -1102,7 +1108,7 @@ function backup_project_database() {
   fi
 
   # Backups file names
-  backup_prefix_name="${database}_database"
+  backup_prefix_name="${storage_key}_database"
   dump_file="$(backup_get_filename "${backup_prefix_name}" "sql")"
   backup_file="$(backup_get_filename "${backup_prefix_name}" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")"
 
@@ -1138,10 +1144,10 @@ function backup_project_database() {
       # Create dir structure
       storage_create_dir "/${SERVER_NAME}/projects-online"
       storage_create_dir "/${SERVER_NAME}/projects-online/database"
-      storage_create_dir "/${SERVER_NAME}/projects-online/database/${database}"
+      storage_create_dir "/${SERVER_NAME}/projects-online/database/${storage_key}"
 
       # Upload database backup
-      storage_path="/${SERVER_NAME}/projects-online/database/${database}"
+      storage_path="/${SERVER_NAME}/projects-online/database/${storage_key}"
       storage_result="$(storage_upload_backup "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "${storage_path}" "${backup_file_size}")"
 
       exitstatus=$?
@@ -1579,7 +1585,6 @@ function backup_docker_project() {
   local db_engine
   local backup_file
   local project_type
-  local container_name
   local docker_compose_file
   local has_database_service
   local mysql_database_var
@@ -1606,15 +1611,15 @@ function backup_docker_project() {
 
   fi
 
-  # Check for database services in docker-compose.yml
+  # Check for database services in docker-compose.yml (by any service name/
+  # image, not just literal "mysql"/"postgres"/"db" - see
+  # docker_list_project_databases()). A project can define more than one
+  # real database service (e.g. an app DB plus a Convex or analytics DB in
+  # the same compose file).
   has_database_service="false"
-  if grep -q "mysql\|mariadb" "${docker_compose_file}"; then
-    has_database_service="true"
-    db_engine="mysql"
-  elif grep -q "postgres\|postgresql" "${docker_compose_file}"; then
-    has_database_service="true"
-    db_engine="postgres"
-  fi
+  local detected_databases
+  detected_databases="$(docker_list_project_databases "${docker_compose_file}")"
+  [[ -n "${detected_databases}" ]] && has_database_service="true"
 
   # Read the .env file if it exists
   if [[ -f "${PROJECTS_PATH}/${project_domain}/.env" ]]; then
@@ -1674,64 +1679,51 @@ function backup_docker_project() {
 
   fi
 
-  # Set container name if we have a database service
-  if [[ ${has_database_service} == "true" ]]; then
+  # Build the list of databases to back up: one entry per real service
+  # detected in docker-compose.yml, or a single synthetic entry for the
+  # "external database declared in .env" fallback above (no container).
+  # Each entry is a flat 4-tuple: service engine container name
+  local -a docker_databases=()
 
-    # Resolve the actual running container name via `docker compose ps`
-    # instead of assuming the old Compose v1 "${PROJECT_NAME}_<engine>"
-    # naming - modern Compose v2 defaults to "<compose-project>-<service>-1"
-    # (hyphens), which doesn't match when PROJECT_NAME isn't set in .env or
-    # doesn't match the compose project name. Use docker compose's own
-    # parser (`config --services`) to list real service names instead of
-    # grepping the YAML for a fixed indentation level, which breaks on
-    # files that don't use exactly 2-space indentation for top-level keys.
-    local db_service_name
-    db_service_name="$(docker compose -f "${docker_compose_file}" config --services 2>/dev/null | grep -iE '^(mysql|mariadb|postgres|postgresql|db)$' | head -1)"
+  if [[ -n "${detected_databases}" ]]; then
 
-    if [[ ${db_engine} == "mysql" ]]; then
+    local db_service db_engine_found db_service_container container_db_name
 
-      container_name=""
-      [[ -n "${db_service_name}" ]] && container_name="$(docker compose -f "${docker_compose_file}" ps --format '{{.Name}}' "${db_service_name}" 2>/dev/null | head -1)"
-      [[ -z "${container_name}" ]] && container_name="${PROJECT_NAME}_mysql"
+    while IFS=$'\t' read -r db_service db_engine_found; do
+      [[ -z "${db_service}" ]] && continue
 
-      db_name="${MYSQL_DATABASE}"
+      # Resolve the actual running container name via `docker compose ps`
+      # instead of assuming the old Compose v1 "${PROJECT_NAME}_<engine>"
+      # naming - modern Compose v2 defaults to "<compose-project>-<service>-1"
+      # (hyphens), which doesn't match when PROJECT_NAME isn't set in .env or
+      # doesn't match the compose project name.
+      db_service_container="$(docker compose -f "${docker_compose_file}" ps --format '{{.Name}}' "${db_service}" 2>/dev/null | head -1)"
+      [[ -z "${db_service_container}" ]] && db_service_container="${PROJECT_NAME}_${db_engine_found}"
 
-      # Prefer the running container's own MYSQL_DATABASE - it's the ground
-      # truth regardless of whether it came from .env, a hardcoded value in
-      # docker-compose.yml, or interpolation. postgres_database_export()/
-      # mysql_database_export() already do the same for the DB user/password.
-      if [[ -n "${container_name}" ]]; then
-        local container_db_name
-        container_db_name="$(docker exec -i "${container_name}" printenv MYSQL_DATABASE 2>/dev/null)"
-        [[ -n "${container_db_name}" ]] && db_name="${container_db_name}"
+      # Prefer the running container's own MYSQL_DATABASE/POSTGRES_DB - it's
+      # the ground truth regardless of whether it came from .env, a
+      # hardcoded value in docker-compose.yml, or interpolation.
+      # postgres_database_export()/mysql_database_export() already do the
+      # same for the DB user/password.
+      container_db_name=""
+      if [[ -n "${db_service_container}" ]]; then
+        if [[ ${db_engine_found} == "mysql" ]]; then
+          container_db_name="$(docker exec -i "${db_service_container}" printenv MYSQL_DATABASE 2>/dev/null)"
+        else
+          container_db_name="$(docker exec -i "${db_service_container}" printenv POSTGRES_DB 2>/dev/null)"
+        fi
       fi
+      [[ -z "${container_db_name}" ]] && container_db_name="${PROJECT_NAME}"
 
-      # Fallback to PROJECT_NAME if still unresolved
-      if [[ -z "${db_name}" ]]; then
-        db_name="${PROJECT_NAME}"
-      fi
+      docker_databases+=("${db_service}" "${db_engine_found}" "${db_service_container}" "${container_db_name}")
 
-    elif [[ ${db_engine} == "postgres" ]]; then
+    done <<<"${detected_databases}"
 
-      container_name=""
-      [[ -n "${db_service_name}" ]] && container_name="$(docker compose -f "${docker_compose_file}" ps --format '{{.Name}}' "${db_service_name}" 2>/dev/null | head -1)"
-      [[ -z "${container_name}" ]] && container_name="${PROJECT_NAME}_postgres"
+  elif [[ ${has_database_service} == "true" ]]; then
 
-      db_name="${POSTGRES_DB}"
-
-      # Prefer the running container's own POSTGRES_DB - see note above.
-      if [[ -n "${container_name}" ]]; then
-        local container_db_name
-        container_db_name="$(docker exec -i "${container_name}" printenv POSTGRES_DB 2>/dev/null)"
-        [[ -n "${container_db_name}" ]] && db_name="${container_db_name}"
-      fi
-
-      # Fallback to PROJECT_NAME if still unresolved
-      if [[ -z "${db_name}" ]]; then
-        db_name="${PROJECT_NAME}"
-      fi
-
-    fi
+    # External database fallback (declared in .env, no local compose
+    # service/container) - single synthetic entry, no container.
+    docker_databases+=("" "${db_engine}" "" "${db_name}")
 
   fi
 
@@ -1748,9 +1740,36 @@ function backup_docker_project() {
     # Only backup database if we have a database service and it's not an HTML project
     if [[ ${has_database_service} == "true" && ${project_type} != "html" ]]; then
 
-      log_subsection "Backup Project Database (${db_engine^})"
-      backup_project_database "${db_name}" "${db_engine}" "${container_name}"
-      got_error=$?
+      # Disambiguate storage keys only when there's more than one real
+      # database (${#docker_databases[@]} is 4x the entry count) - two
+      # services could otherwise default to the same in-container DB name
+      # (e.g. both "postgres") and collide under the same storage path.
+      # The single-DB case keeps today's exact naming (storage_key ==
+      # database name), so existing backups/restores are unaffected.
+      local multi_db="false"
+      [[ $((${#docker_databases[@]} / 4)) -gt 1 ]] && multi_db="true"
+
+      local db_service db_engine_loop db_container db_dbname storage_key
+      local project_name_for_key
+      [[ ${multi_db} == "true" ]] && project_name_for_key="$(project_get_name_from_domain "${project_domain}")"
+
+      local i=0
+      while [[ ${i} -lt ${#docker_databases[@]} ]]; do
+
+        db_service="${docker_databases[i]}"
+        db_engine_loop="${docker_databases[i+1]}"
+        db_container="${docker_databases[i+2]}"
+        db_dbname="${docker_databases[i+3]}"
+        i=$((i + 4))
+
+        storage_key="${db_dbname}"
+        [[ ${multi_db} == "true" ]] && storage_key="${project_name_for_key}_${db_service}"
+
+        log_subsection "Backup Project Database (${db_engine_loop^}${db_service:+: ${db_service}})"
+        backup_project_database "${db_dbname}" "${db_engine_loop}" "${db_container}" "${storage_key}"
+        [[ $? -ne 0 ]] && got_error=1
+
+      done
 
     else
       if [[ ${project_type} == "html" ]]; then

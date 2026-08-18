@@ -567,19 +567,60 @@ function _configure_restored_project() {
     
     local project_install_path="${PROJECTS_PATH}/${project_domain_new}"
 
-    # For Docker projects, extract DB info from .env since variables are not passed by caller
+    # For Docker projects, detect the real database service(s) from the
+    # restored docker-compose.yml (by any service name/engine - see
+    # docker_list_project_databases()) instead of assuming a single MySQL
+    # database read from .env, which silently mislabeled Postgres/Convex/
+    # multi-DB projects and left db_user/db_pass empty for them.
     local project_db_status="disabled"
     local db_engine=""
     local db_user=""
+    local -a db_tuples=() # flat: service engine name host user pass ...
+    local db_count=0
 
     if [[ "${project_install_type}" == "docker"* ]]; then
-        local env_file
-        env_file="$(project_find_env_file "${project_install_path}")"
-        if [[ -n "${env_file}" && -f "${env_file}" ]]; then
-            db_engine="mysql"
-            db_user="$(grep -oP '^MYSQL_USER=\K.*' "${env_file}" 2>/dev/null)"
-            db_pass="$(grep -oP '^MYSQL_PASSWORD=\K.*' "${env_file}" 2>/dev/null)"
-            project_db_status="enabled"
+
+        local compose_file="${project_install_path}/docker-compose.yml"
+        [[ ! -f ${compose_file} ]] && compose_file="${project_install_path}/docker-compose.yaml"
+
+        local detected_databases=""
+        [[ -f ${compose_file} ]] && detected_databases="$(docker_list_project_databases "${compose_file}")"
+
+        if [[ -n "${detected_databases}" ]]; then
+
+            local db_service db_engine_found db_container db_name_var db_user_var db_pass_var
+
+            while IFS=$'\t' read -r db_service db_engine_found; do
+                [[ -z "${db_service}" ]] && continue
+
+                db_container="$(docker compose -f "${compose_file}" ps --format '{{.Name}}' "${db_service}" 2>/dev/null | head -1)"
+                [[ -z "${db_container}" ]] && continue
+
+                if [[ "${db_engine_found}" == "mysql" ]]; then
+                    db_user_var="$(docker exec -i "${db_container}" printenv MYSQL_USER 2>/dev/null)"
+                    db_pass_var="$(docker exec -i "${db_container}" printenv MYSQL_PASSWORD 2>/dev/null)"
+                    db_name_var="$(docker exec -i "${db_container}" printenv MYSQL_DATABASE 2>/dev/null)"
+                else
+                    db_user_var="$(docker exec -i "${db_container}" printenv POSTGRES_USER 2>/dev/null)"
+                    db_pass_var="$(docker exec -i "${db_container}" printenv POSTGRES_PASSWORD 2>/dev/null)"
+                    db_name_var="$(docker exec -i "${db_container}" printenv POSTGRES_DB 2>/dev/null)"
+                fi
+
+                [[ -z "${db_name_var}" ]] && db_name_var="${project_name}_${project_stage}"
+
+                db_tuples+=("${db_service}" "${db_engine_found}" "${db_name_var}" "localhost" "${db_user_var}" "${db_pass_var}")
+                db_count=$((db_count + 1))
+
+                # Keep the single-DB vars populated too, for the
+                # backward-compatible project_update_brolit_config() call below.
+                db_engine="${db_engine_found}"
+                db_user="${db_user_var}"
+                db_pass="${db_pass_var}"
+
+            done <<<"${detected_databases}"
+
+            [[ ${db_count} -gt 0 ]] && project_db_status="enabled"
+
         fi
     fi
 
@@ -645,6 +686,14 @@ function _configure_restored_project() {
     # Create/update brolit_project_conf.json file with project info
     project_update_brolit_config "${project_install_path}" "${project_name}" "${project_stage}" "${project_type}" "${project_db_status}" "${db_engine}" "${project_name}_${project_stage}" "localhost" "${db_user}" "${db_pass}" "${project_domain_new}" "" "" "" ""
 
+    # For Docker projects with more than one real database service, the
+    # call above only wrote a single database[] entry (index 0) - overwrite
+    # it with the full, correct set now that the config file exists.
+    if [[ ${db_count} -gt 1 ]]; then
+        local project_config_file="${BROLIT_CONFIG_PATH}/${project_domain_new}_conf.json"
+        project_write_brolit_config_databases "${project_config_file}" "${project_domain_new}" "${db_tuples[@]}"
+    fi
+
     return 0
 }
 
@@ -680,9 +729,6 @@ function restore_project_backup() {
     local db_user
     local db_pass
     local project_db_status="disabled"
-    local container_name
-    local mysql_user
-    local mysql_user_passw
     local base_name
 
     # Validate parameters
@@ -754,37 +800,41 @@ function restore_project_backup() {
             return 1
         fi
 
-        # Get database information
-        db_name="$(project_get_configured_database "${project_install_path}" "${project_type}" "${project_install_type}")"
+        # Find the real database service(s) in the restored docker-compose.yml
+        # (by any service name/engine - not a guessed "${PROJECT_NAME}_mysql").
+        # Their data was already restored as part of the plain file restore
+        # above (each DB's data directory is bind-mounted under the project
+        # path, same as the rest of the project files) - this only verifies
+        # the containers came back up.
+        local compose_file="${project_install_path}/docker-compose.yml"
+        [[ ! -f ${compose_file} ]] && compose_file="${project_install_path}/docker-compose.yaml"
 
-        # Restore database if configured
-        if [[ -n "${db_name}" && "${db_name}" != "no-database" ]]; then
-            # Read .env file for database credentials
-            local env_file
-            env_file="$(project_find_env_file "${project_install_path}")"
-            if [[ -n "${env_file}" && -f "${env_file}" ]]; then
-                local compose_project_name
-                compose_project_name="$(grep -oP '^PROJECT_NAME=\K.*' "${env_file}" 2>/dev/null)"
-                container_name="${compose_project_name}_mysql"
-                db_engine="mysql"
-                mysql_user="$(grep -oP '^MYSQL_USER=\K.*' "${env_file}" 2>/dev/null)"
-                mysql_user_passw="$(grep -oP '^MYSQL_PASSWORD=\K.*' "${env_file}" 2>/dev/null)"
-                db_user="${mysql_user}"
-            else
-                _handle_restore_error 6 "Docker .env file not found"
-                return 1
-            fi
+        local detected_databases=""
+        [[ -f ${compose_file} ]] && detected_databases="$(docker_list_project_databases "${compose_file}")"
 
-            # Verify database container is running
-            docker ps | grep "${container_name}" > /dev/null
-            if [[ $? -ne 0 ]]; then
-                _handle_restore_error 7 "Docker container ${container_name} is not running"
+        if [[ -n "${detected_databases}" ]]; then
+
+            local db_service db_engine_found db_container_name all_up="true"
+
+            while IFS=$'\t' read -r db_service db_engine_found; do
+                [[ -z "${db_service}" ]] && continue
+
+                db_container_name="$(docker compose -f "${compose_file}" ps --format '{{.Name}}' "${db_service}" 2>/dev/null | head -1)"
+
+                if [[ -z "${db_container_name}" ]] || ! docker ps --format '{{.Names}}' | grep -qx "${db_container_name}"; then
+                    log_event "error" "Docker database service '${db_service}' (${db_engine_found}) is not running after restore" "false"
+                    all_up="false"
+                fi
+            done <<<"${detected_databases}"
+
+            if [[ "${all_up}" != "true" ]]; then
+                _handle_restore_error 7 "One or more Docker database containers are not running after restore"
                 return 1
             fi
 
             project_db_status="enabled"
         else
-            log_event "info" "No database configured for this Docker project" "false"
+            log_event "info" "No database service detected in docker-compose.yml for this Docker project" "false"
             project_db_status="disabled"
         fi
     else

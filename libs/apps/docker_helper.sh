@@ -674,6 +674,57 @@ function docker_find_postgres_containers() {
 }
 
 ################################################################################
+# List every real database service defined in a project's docker-compose.yml
+#
+# A project can define more than one database service (e.g. an app DB, a
+# Convex backend DB, an analytics/Timescale DB all in the same compose
+# file), and services can be named anything (not just "db"/"mysql"/
+# "postgres"). This detects them by image (mysql/mariadb/postgres/
+# postgresql/timescaledb, matched as an exact repo path segment so it
+# doesn't false-match e.g. "postgrest") AND requires a volume mounted onto
+# that engine's canonical data directory, which is what excludes one-shot
+# job/bootstrap containers that merely run a DB image as a client (e.g. a
+# migration runner or role-bootstrap script that uses the postgres image
+# but never mounts /var/lib/postgresql).
+#
+# Arguments:
+#   ${1} = ${compose_file} - Path to the project's docker-compose.yml
+#
+# Outputs:
+#   One line per real database service: "<service_name>\t<engine>"
+#   (engine is "mysql" or "postgres"). Empty if none found.
+#   0 if ok, 1 on error.
+################################################################################
+
+function docker_list_project_databases() {
+
+    local compose_file="${1}"
+
+    if [[ ! -f ${compose_file} ]]; then
+        log_event "error" "docker_list_project_databases: compose file not found: ${compose_file}" "false"
+        return 1
+    fi
+
+    docker compose -f "${compose_file}" config --format json 2>/dev/null | jq -r '
+      .services | to_entries[]
+      | select(.value.image != null)
+      | . as $e
+      | ($e.value.image | split("@")[0] | split(":")[0] | split("/") | last) as $repo
+      | ($repo | test("^(mysql|mariadb)$"; "i")) as $is_mysql
+      | ($repo | test("^(postgres|postgresql|timescaledb)$"; "i")) as $is_pg
+      | select($is_mysql or $is_pg)
+      | ([$e.value.volumes[]?.target]) as $targets
+      | (if $is_mysql then ($targets | any(test("^/var/lib/mysql"; "i")))
+         else ($targets | any(test("^/var/lib/postgresql"; "i")))
+         end) as $has_datadir
+      | select($has_datadir)
+      | [$e.key, (if $is_mysql then "mysql" else "postgres" end)]
+      | @tsv
+    '
+
+}
+
+################################################################################
 # Docker MySQL database import
 #
 # Arguments:
@@ -1463,7 +1514,11 @@ define('WP_REDIS_HOST','redis');\n" "${project_path}/wordpress/wp-config.php"
     #  $13 = ${project_override_nginx_conf}
     #  $14 = ${project_use_http2}
     #  $15 = ${project_certbot_mode}
-    project_update_brolit_config "${project_path}" "${project_name}" "${project_stage}" "${project_type}" "enabled" "mysql" "${project_database}" "localhost" "${project_database_user}" "${project_database_user_passw}" "${project_domain}" "${project_secondary_subdomain}" "${WSERVER}/sites-available/${project_domain}" "" "${cert_path}"
+    local detected_db_engine
+    detected_db_engine="$(project_get_configured_database_engine "${project_path}" "${project_type}" "docker")"
+    [[ -z ${detected_db_engine} ]] && detected_db_engine="mysql"
+
+    project_update_brolit_config "${project_path}" "${project_name}" "${project_stage}" "${project_type}" "enabled" "${detected_db_engine}" "${project_database}" "localhost" "${project_database_user}" "${project_database_user_passw}" "${project_domain}" "${project_secondary_subdomain}" "${WSERVER}/sites-available/${project_domain}" "" "${cert_path}"
 
     # Log
     log_event "info" "New ${project_type} project installation for '${project_domain}' finished ok." "false"
@@ -2207,7 +2262,11 @@ function docker_project_install_from_git() {
     #  $13 = ${project_override_nginx_conf}
     #  $14 = ${project_use_http2}
     #  $15 = ${project_certbot_mode}
-    project_update_brolit_config "${project_path}" "${project_name}" "${project_stage}" "${project_type}" "enabled" "mysql" "${project_database}" "localhost" "${project_database_user}" "${project_database_user_passw:-}" "${project_domain}" "${project_secondary_subdomain}" "${WSERVER}/sites-available/${project_domain}" "" "${cert_path}"
+    local detected_db_engine
+    detected_db_engine="$(project_get_configured_database_engine "${project_path}" "${project_type}" "docker")"
+    [[ -z ${detected_db_engine} ]] && detected_db_engine="mysql"
+
+    project_update_brolit_config "${project_path}" "${project_name}" "${project_stage}" "${project_type}" "enabled" "${detected_db_engine}" "${project_database}" "localhost" "${project_database_user}" "${project_database_user_passw:-}" "${project_domain}" "${project_secondary_subdomain}" "${WSERVER}/sites-available/${project_domain}" "" "${cert_path}"
 
     # Save Git information in project config
     if [[ -f "${project_path}/project-config.json" ]]; then
