@@ -206,6 +206,10 @@ allowBuilds:
   esbuild: true
   better-sqlite3: true
   node-gyp: true
+  "@nestjs/core": true
+  cbor-extract: true
+  protobufjs: true
+  vue-demi: true
 PWS_EOF
 
     log_event "info" "Wrote ${workspace_file}" "false"
