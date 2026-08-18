@@ -836,6 +836,81 @@ function project_update_brolit_config() {
 }
 
 ################################################################################
+# Replace the entire project[].database array in one shot
+#
+# project_update_brolit_config() always targets project[].database[] via
+# json_write_field's blank-bracket jq semantics, which is only safe because
+# there has only ever been exactly one database entry - a bare "[] = value"
+# jq assignment updates EVERY matching element, not "the first"/"append".
+# For Docker projects with more than one real database service (see
+# docker_list_project_databases()), this writes all N entries atomically
+# via a single jq call instead. project_update_brolit_config() and its
+# existing single-entry callers are untouched.
+#
+# Arguments:
+#  ${1} = ${project_config_file} - Path to the /etc/brolit/<domain>_conf.json file
+#  ${2} = ${project_prymary_subdomain} - only used if the config file doesn't exist yet
+#  ${@:3} = flat list of 6-tuples, repeated once per database:
+#           service engine db_name db_host db_user db_pass
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function project_write_brolit_config_databases() {
+
+  local project_config_file="${1}"
+  local project_prymary_subdomain="${2}"
+  shift 2
+
+  local -a entries=()
+  local entry_json
+  local db_count=0
+
+  if [[ ! -e ${project_config_file} ]]; then
+    cp "${BROLIT_MAIN_DIR}/config/brolit/brolit_project.json" "${project_config_file}"
+    json_write_field "${project_config_file}" "project[].primary_subdomain" "${project_prymary_subdomain}"
+  fi
+
+  while [[ $# -ge 6 ]]; do
+
+    entry_json="$(jq -n \
+      --arg service "${1}" \
+      --arg engine "${2}" \
+      --arg name "${3}" \
+      --arg host "${4}" \
+      --arg user "${5}" \
+      --arg pass "${6}" \
+      '{status: "enabled", engine: $engine, service: $service, config: [{name: $name, host: $host, user: $user, pass: $pass}]}')"
+
+    entries+=("${entry_json}")
+    db_count=$((db_count + 1))
+    shift 6
+
+  done
+
+  if [[ ${db_count} -eq 0 ]]; then
+    log_event "error" "project_write_brolit_config_databases: no database tuples given" "false"
+    return 1
+  fi
+
+  local databases_json
+  databases_json="$(printf '%s\n' "${entries[@]}" | jq -s '.')"
+
+  if jq --argjson databases "${databases_json}" '.project[0].database = $databases' "${project_config_file}" >"${project_config_file}.tmp"; then
+    mv "${project_config_file}.tmp" "${project_config_file}"
+    display --indent 6 --text "- Updating project databases (${db_count} found)" --result DONE --color GREEN
+    log_event "info" "Project config databases updated: ${project_config_file} (${db_count} entries)" "false"
+    return 0
+  else
+    rm -f "${project_config_file}.tmp"
+    log_event "error" "Failed writing multi-db project config: ${project_config_file}" "false"
+    return 1
+  fi
+
+}
+
+################################################################################
 # Generate project config
 #
 # Arguments:
