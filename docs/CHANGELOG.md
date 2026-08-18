@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.13 - 2026-08-18
+
+### Fixed
+
+- `dropbox_list_directory()` (`libs/apps/dropbox_uploader_helper.sh`) captured `$?` right after piping `dropbox_uploader.sh list` into `awk`, with `pipefail` not set anywhere in the codebase - `$?` there always reflected `awk`'s own exit code (virtually always `0`), not the underlying Dropbox API call's. A failing `dropbox_uploader.sh` call that still printed any `awk`-extractable text was silently treated as a successful, empty directory listing instead of a real error, which can make backup retention cleanup (`storage_delete_old_backups()`) skip pruning without ever surfacing a failure. Fixed with a `set -o pipefail` scoped to the command substitution's own subshell (`PIPESTATUS` doesn't work here, since it doesn't cross the subshell boundary `$(...)` creates).
+- Investigated why old backups sometimes pile up in Dropbox despite retention being configured: confirmed Borg is unaffected (it has its own independent retention via `borgmatic prune`, not routed through `storage_controller.sh` at all) and that SFTP has no working implementation anywhere in the storage layer (upload, listing, and delete are all unimplemented for it, not just delete) - not a bug to fix, a feature that was never built.
+
 ## 3.12 - 2026-08-18
 
 ### Fixed

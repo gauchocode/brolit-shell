@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agent - https://gauchocode.com
-# Version: 3.12
+# Version: 3.13
 ################################################################################
 #
 # Certbot Helper: Certbot functions.
