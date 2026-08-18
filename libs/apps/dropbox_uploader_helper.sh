@@ -407,7 +407,15 @@ function dropbox_list_directory() {
     # Dropbox API returns directory/file names on the last column
     for ((attempt=1; attempt<=max_attempts; attempt++)); do
 
-        dir_list="$("${DROPBOX_UPLOADER}" -hq list "${directory}" | awk '{print $NF;}')"
+        # "set -o pipefail" scoped to this command substitution's own
+        # subshell (doesn't leak to the caller) so $? below reflects a
+        # failing dropbox_uploader.sh call even if it still prints
+        # something awk can extract a last column from - without it, $?
+        # always reflects awk's own exit code (virtually always 0),
+        # masking real Dropbox API failures as an empty-but-successful
+        # listing. PIPESTATUS doesn't work here: it doesn't cross the
+        # subshell boundary that "$(...)" creates.
+        dir_list="$(set -o pipefail; "${DROPBOX_UPLOADER}" -hq list "${directory}" | awk '{print $NF;}')"
         exitstatus=$?
 
         # If command succeeded and we got results, we're done
