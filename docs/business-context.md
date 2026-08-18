@@ -52,4 +52,4 @@ Configuration is stored in `~/.brolit_conf.json` on each server, managed via the
 
 ## Version
 
-Current version: **3.11**. Maintained by GauchoCode.
+Current version: **3.12**. Maintained by GauchoCode.
