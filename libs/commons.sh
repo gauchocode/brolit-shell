@@ -1717,7 +1717,7 @@ function compress() {
     display --indent 6 --text "- Testing backup file"
 
     # Test backup with pv output
-    pv --width 70 "${file_output}" | ${BACKUP_CONFIG_COMPRESSION_TYPE} "${decompress_parameter}" --test
+    pv --width 70 "${file_output}" | ${BACKUP_CONFIG_COMPRESSION_TYPE} ${decompress_parameter} --test
 
     compress_result=$?
 
