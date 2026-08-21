@@ -399,10 +399,14 @@ function dropbox_list_directory() {
     local dir_list
     local attempt
     local max_attempts=3
+    local dpu_stderr
 
     # Log
     log_event "debug" "Listing directory ${directory} on Dropbox" "false"
-    log_event "debug" "Executing: ${DROPBOX_UPLOADER} -hq list \"${directory}\" | awk '{print $NF;}'" "false"
+    log_event "debug" "Executing: ${DROPBOX_UPLOADER} -hq list \"${directory}\" | awk '{print \$NF;}'" "false"
+
+    # Temp file to capture dropbox_uploader stderr for diagnostics
+    dpu_stderr="$(mktemp)"
 
     # Dropbox API returns directory/file names on the last column
     for ((attempt=1; attempt<=max_attempts; attempt++)); do
@@ -415,7 +419,7 @@ function dropbox_list_directory() {
         # masking real Dropbox API failures as an empty-but-successful
         # listing. PIPESTATUS doesn't work here: it doesn't cross the
         # subshell boundary that "$(...)" creates.
-        dir_list="$(set -o pipefail; "${DROPBOX_UPLOADER}" -hq list "${directory}" | awk '{print $NF;}')"
+        dir_list="$(set -o pipefail; "${DROPBOX_UPLOADER}" -hq list "${directory}" 2>"${dpu_stderr}" | awk '{print $NF;}')"
         exitstatus=$?
 
         # If command succeeded and we got results, we're done
@@ -423,14 +427,15 @@ function dropbox_list_directory() {
             break
         fi
 
-        # If command failed, don't retry
-        if [[ ${exitstatus} -ne 0 ]]; then
-            break
-        fi
-
-        # If empty and not the last attempt, wait and retry
+        # Command failed (network/API/transient error) or returned empty:
+        # retry with backoff, a single transient failure must not abort the flow
         if [[ ${attempt} -lt ${max_attempts} ]]; then
-            log_event "debug" "Empty response from Dropbox API, retrying in 3 seconds... (attempt ${attempt}/$((max_attempts - 1)))" "false"
+            if [[ ${exitstatus} -ne 0 ]]; then
+                log_event "warning" "Dropbox list failed with exit status ${exitstatus}, retrying in 3 seconds... (attempt ${attempt}/${max_attempts})" "false"
+                [[ -s ${dpu_stderr} ]] && log_event "warning" "dropbox_uploader stderr: $(cat "${dpu_stderr}")" "false"
+            else
+                log_event "debug" "Empty response from Dropbox API, retrying in 3 seconds... (attempt ${attempt}/${max_attempts})" "false"
+            fi
             sleep 3
         fi
 
@@ -442,6 +447,9 @@ function dropbox_list_directory() {
         log_event "info" "Listing directory: ${directory}" "false"
         log_event "info" "Remote list: ${dir_list}" "false"
 
+        # Cleanup
+        rm -f "${dpu_stderr}"
+
         # Return
         echo "${dir_list}" && return 0
 
@@ -449,7 +457,11 @@ function dropbox_list_directory() {
 
         # Log
         log_event "error" "Can't list directory ${directory} on Dropbox" "false"
-        log_event "debug" "Command executed: ${DROPBOX_UPLOADER} -hq list \"${directory}\" | awk '{print $NF;}'" "false"
+        log_event "debug" "Command executed: ${DROPBOX_UPLOADER} -hq list \"${directory}\" | awk '{print \$NF;}'" "false"
+        [[ -s ${dpu_stderr} ]] && log_event "error" "dropbox_uploader stderr: $(cat "${dpu_stderr}")" "false"
+
+        # Cleanup
+        rm -f "${dpu_stderr}"
 
         return 1
 
