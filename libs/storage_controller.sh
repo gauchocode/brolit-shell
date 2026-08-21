@@ -748,7 +748,7 @@ function storage_remote_server_list() {
         remote_server_list="$(sort_array_alphabetically "${remote_server_list}")"
 
         # Show output
-        chosen_server="$(whiptail --title "BACKUP SELECTION" --menu "Choose a server to work with" 20 78 10 $(for x in ${remote_server_list}; do echo "${x} [D]"; done) --default-item "${SERVER_NAME}" 3>&1 1>&2 2>&3)"
+        chosen_server="$(whiptail --title "BACKUP SELECTION" --default-item "${SERVER_NAME}" --menu "Choose a server to work with" 20 78 10 $(for x in ${remote_server_list}; do echo "${x} [D]"; done) 3>&1 1>&2 2>&3)"
 
         exitstatus=$?
         if [[ ${exitstatus} -eq 0 ]]; then
@@ -769,6 +769,12 @@ function storage_remote_server_list() {
 
         # Log
         log_event "error" "Storage list dir failed. Output: ${remote_server_list}. Exit status: ${exitstatus}" "false"
+
+        # Display (the caller chain returns 1 silently, so without this the
+        # user is dumped back to the menu with no explanation)
+        display --indent 6 --text "- Listing storage servers" --result "FAIL" --color RED
+        display --indent 8 --text "Could not list the storage root directory" --tcolor RED
+        display --indent 8 --text "Check storage backend connectivity/credentials (see log for details)" --tcolor YELLOW
 
         # Return
         return 1

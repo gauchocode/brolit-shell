@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- `dropbox_list_directory()` (`libs/apps/dropbox_uploader_helper.sh`) only retried empty-but-successful listings - any failing `dropbox_uploader.sh` call (transient network/API error, token refresh hiccup) aborted on the first attempt. Worse, the whole "NEW PROJECT FROM BACKUP" flow then returned `1` with zero user-facing output: the user answered the OPCache prompt and was silently dumped back at the project menu (reproduced on gaucho-dev04, where two restore attempts died at the Dropbox root listing during a transient API error). Now command failures retry with the same 3s backoff as empty responses, `dropbox_uploader.sh` stderr is captured into the log for diagnosis, and `storage_remote_server_list()` (`libs/storage_controller.sh`) displays a clear FAIL message ("Could not list the storage root directory - check storage backend connectivity/credentials") instead of only writing to the log. Also fixed that same whiptail call passing `--default-item` after the `--menu` items, where whiptail parsed it as an extra menu entry instead of an option.
+
 ## 3.13 - 2026-08-18
 
 ### Fixed
