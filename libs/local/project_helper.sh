@@ -3501,39 +3501,63 @@ function project_post_install_tasks() {
     # Search & Replace URLs if domain changed (ALWAYS NEEDED when domain changes)
     if [[ -n ${old_project_domain} && -n ${new_project_domain} ]]; then
       if [[ ${old_project_domain} != "${new_project_domain}" ]]; then
-        # Real WP content is rarely one clean canonical URL: old posts/embeds
-        # commonly mix http:// and https://, and root-level domains commonly
-        # mix www./non-www links even when one is the "official" canonical.
-        # A single bare-domain search (scheme-agnostic, matches both http://
-        # and https://) already covers the scheme axis. The www axis needs
-        # its own pass ONLY when old_project_domain is root-level - a
-        # subdomain (e.g. shop.example.com) has no "www." variant to worry
-        # about, and treating it as one would search/replace the bare apex
-        # domain, corrupting mentions of unrelated subdomains that happen to
-        # share it (e.g. blog.example.com).
-        local root_domain_old
-        root_domain_old="$(domain_get_root "${old_project_domain}")"
+        # Guard against re-running this against an already-migrated site.
+        # The search/replace below is a plain substring match, not a
+        # true rename - if new_project_domain already appears in the DB
+        # (e.g. this restore already ran once, or something else already
+        # wrote it), re-running would match the new domain's occurrences
+        # too, since new_project_domain typically contains old_project_domain
+        # as a substring (e.g. dev.example.com contains example.com),
+        # corrupting them into "dev.dev.example.com". One cheap read avoids
+        # a full-database, expensive-to-detect corruption.
+        local already_migrated_home
+        already_migrated_home="$(wpcli_option_get_home "${project_install_path}" "${project_install_type}" 2>/dev/null)"
 
-        if [[ ${old_project_domain} == "${root_domain_old}" || ${old_project_domain} == "www.${root_domain_old}" ]]; then
-          # Pass 1: consolidate any www-prefixed occurrence down to the bare
-          # root domain first. Must run before pass 2 - if run after, pass 2's
-          # search for the bare root domain would also match (and corrupt)
-          # the "<new_project_domain>" strings pass 2 just wrote, since
-          # "<root_domain_old>" is typically a substring of
-          # "<new_project_domain>" (e.g. dev.<root_domain_old>).
-          wpcli_search_and_replace "${project_install_path}" "${project_install_type}" "www.${root_domain_old}" "${root_domain_old}"
+        if [[ ${already_migrated_home} == "https://${new_project_domain}"* ]]; then
 
-          # Pass 2: every remaining occurrence of the bare root domain (both
-          # what was already bare, and what pass 1 just consolidated) now
-          # becomes the new domain, in one single pass.
-          wpcli_search_and_replace "${project_install_path}" "${project_install_type}" "${root_domain_old}" "${new_project_domain}"
+          log_event "info" "Site's home option already points at ${new_project_domain}, skipping search-replace (already migrated)" "false"
+          display --indent 6 --text "- Running search and replace" --result "SKIPPED" --color YELLOW
+          display --indent 8 --text "Already migrated to ${new_project_domain}" --tcolor YELLOW
+
         else
-          # Source domain is itself a subdomain - no www ambiguity, single
-          # exact scheme-agnostic pass.
-          wpcli_search_and_replace "${project_install_path}" "${project_install_type}" "${old_project_domain}" "${new_project_domain}"
+
+          # Real WP content is rarely one clean canonical URL: old posts/embeds
+          # commonly mix http:// and https://, and root-level domains commonly
+          # mix www./non-www links even when one is the "official" canonical.
+          # A single bare-domain search (scheme-agnostic, matches both http://
+          # and https://) already covers the scheme axis. The www axis needs
+          # its own pass ONLY when old_project_domain is root-level - a
+          # subdomain (e.g. shop.example.com) has no "www." variant to worry
+          # about, and treating it as one would search/replace the bare apex
+          # domain, corrupting mentions of unrelated subdomains that happen to
+          # share it (e.g. blog.example.com).
+          local root_domain_old
+          root_domain_old="$(domain_get_root "${old_project_domain}")"
+
+          if [[ ${old_project_domain} == "${root_domain_old}" || ${old_project_domain} == "www.${root_domain_old}" ]]; then
+            # Pass 1: consolidate any www-prefixed occurrence down to the bare
+            # root domain first. Must run before pass 2 - if run after, pass 2's
+            # search for the bare root domain would also match (and corrupt)
+            # the "<new_project_domain>" strings pass 2 just wrote, since
+            # "<root_domain_old>" is typically a substring of
+            # "<new_project_domain>" (e.g. dev.<root_domain_old>).
+            wpcli_search_and_replace "${project_install_path}" "${project_install_type}" "www.${root_domain_old}" "${root_domain_old}"
+
+            # Pass 2: every remaining occurrence of the bare root domain (both
+            # what was already bare, and what pass 1 just consolidated) now
+            # becomes the new domain, in one single pass.
+            wpcli_search_and_replace "${project_install_path}" "${project_install_type}" "${root_domain_old}" "${new_project_domain}"
+          else
+            # Source domain is itself a subdomain - no www ambiguity, single
+            # exact scheme-agnostic pass.
+            wpcli_search_and_replace "${project_install_path}" "${project_install_type}" "${old_project_domain}" "${new_project_domain}"
+          fi
+
         fi
 
-        # Update WP_HOME & WP_SITEURL only if domain changed
+        # Update WP_HOME & WP_SITEURL only if domain changed (idempotent
+        # either way - safe to run even when the search-replace above was
+        # skipped because the site was already migrated).
         wpcli_config_set "${project_install_path}" "${project_install_type}" "WP_HOME" "https://${new_project_domain}/"
         wpcli_config_set "${project_install_path}" "${project_install_type}" "WP_SITEURL" "https://${new_project_domain}/"
       fi
