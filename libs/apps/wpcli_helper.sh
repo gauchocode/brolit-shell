@@ -3273,10 +3273,10 @@ function wpcli_option_get_home() {
     [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose --progress=quiet -f ${wp_site}/../docker-compose.yml run -T -u "$(grep '^APP_USER_ID=' "${wp_site}/../.env" 2>/dev/null | cut -d= -f2 | head -1)" -e HOME=/tmp --rm wordpress-cli wp --no-color"
 
     # Log
-    log_event "debug" "Running: sudo -u www-data wp --path=${wp_site} option get home" "false"
+    log_event "debug" "Running: ${wpcli_cmd} option get home" "false"
 
     # Command
-    wp_option_home="$(sudo -u www-data wp --path="${wp_site}" option get home)"
+    wp_option_home="$(${wpcli_cmd} option get home)"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
