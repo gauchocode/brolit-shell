@@ -564,7 +564,14 @@ function _configure_restored_project() {
     local db_pass="${6}"
     local project_domain="${7}"
     local project_port="${8}"  # Port for Docker/proxy projects (empty for default)
-    
+
+    # Capture whether the caller explicitly requested a different domain
+    # (--new-domain) before anything below has a chance to rewrite
+    # project_domain_new - needed to know whether the www-pattern heuristic
+    # further down is allowed to touch it.
+    local new_domain_was_explicit=false
+    [[ "${project_domain_new}" != "${project_domain}" ]] && new_domain_was_explicit=true
+
     local project_install_path="${PROJECTS_PATH}/${project_domain_new}"
 
     # For Docker projects, detect the real database service(s) from the
@@ -677,8 +684,14 @@ function _configure_restored_project() {
         project_domain="${www_prefix}${root_domain_old}"
     fi
 
-    if [[ ${new_is_subdomain} == false ]]; then
-        # Root-level domain: apply the www prefix pattern detected from the backup's WP_HOME
+    if [[ ${new_is_subdomain} == false && ${new_domain_was_explicit} == false ]]; then
+        # Root-level domain, same-domain restore (no explicit --new-domain):
+        # apply the www prefix pattern detected from the backup's WP_HOME.
+        # Skipped when the caller explicitly requested a different domain -
+        # an explicit --new-domain must be used exactly as given, never
+        # silently rewritten by a pattern guessed from the SOURCE backup's
+        # own wp-config.php (which describes the old site, not what the
+        # caller asked the new one to be called).
         project_domain_new="${www_prefix}${root_domain_new}"
     fi
 
