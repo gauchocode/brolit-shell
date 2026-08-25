@@ -156,8 +156,11 @@ function nginx_server_create() {
 
     esac
 
-    # Set/Change PHP version if needed
-    php_set_version_on_config "" "${nginx_server_file}"
+    # Set/Change PHP version if needed (Docker/proxy vhosts run their own PHP
+    # inside the container and their templates have no PHP_V placeholder, so
+    # skip this - it would otherwise prompt for a host-installed PHP version
+    # that has nothing to do with the Dockerized project)
+    [[ ${project_type} != "proxy" ]] && php_set_version_on_config "" "${nginx_server_file}"
 
     #Test the validity of the nginx configuration
     nginx_configuration_test
