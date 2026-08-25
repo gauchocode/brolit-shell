@@ -3501,26 +3501,37 @@ function project_post_install_tasks() {
     # Search & Replace URLs if domain changed (ALWAYS NEEDED when domain changes)
     if [[ -n ${old_project_domain} && -n ${new_project_domain} ]]; then
       if [[ ${old_project_domain} != "${new_project_domain}" ]]; then
-        # Use the site's actual current host (from its live 'home' URL, with
-        # scheme stripped) as the search term instead of the bare
-        # old_project_domain. old_project_domain is just the domain brolit
-        # restored from - it doesn't know if the site's real canonical URL
-        # is www or non-www. Searching for the bare old_project_domain alone
-        # only replaces that substring, so a www-canonical prod site
-        # restored under a new non-www domain ends up as
-        # "www.<new_project_domain>" instead of "<new_project_domain>".
-        # Scheme is deliberately stripped from the search term (not just
-        # read as-is) so both http:// and https:// occurrences get replaced,
-        # matching the scheme-agnostic behavior of a bare-domain search.
-        local current_home_url current_home_host
-        current_home_url="$(wpcli_option_get_home "${project_install_path}" "${project_install_type}" 2>/dev/null)"
-        current_home_host="${current_home_url#http://}"
-        current_home_host="${current_home_host#https://}"
-        current_home_host="${current_home_host%%/*}"
-        [[ -z ${current_home_host} ]] && current_home_host="${old_project_domain}"
+        # Real WP content is rarely one clean canonical URL: old posts/embeds
+        # commonly mix http:// and https://, and root-level domains commonly
+        # mix www./non-www links even when one is the "official" canonical.
+        # A single bare-domain search (scheme-agnostic, matches both http://
+        # and https://) already covers the scheme axis. The www axis needs
+        # its own pass ONLY when old_project_domain is root-level - a
+        # subdomain (e.g. shop.example.com) has no "www." variant to worry
+        # about, and treating it as one would search/replace the bare apex
+        # domain, corrupting mentions of unrelated subdomains that happen to
+        # share it (e.g. blog.example.com).
+        local root_domain_old
+        root_domain_old="$(domain_get_root "${old_project_domain}")"
 
-        # Change urls on database
-        wpcli_search_and_replace "${project_install_path}" "${project_install_type}" "${current_home_host}" "${new_project_domain}"
+        if [[ ${old_project_domain} == "${root_domain_old}" || ${old_project_domain} == "www.${root_domain_old}" ]]; then
+          # Pass 1: consolidate any www-prefixed occurrence down to the bare
+          # root domain first. Must run before pass 2 - if run after, pass 2's
+          # search for the bare root domain would also match (and corrupt)
+          # the "<new_project_domain>" strings pass 2 just wrote, since
+          # "<root_domain_old>" is typically a substring of
+          # "<new_project_domain>" (e.g. dev.<root_domain_old>).
+          wpcli_search_and_replace "${project_install_path}" "${project_install_type}" "www.${root_domain_old}" "${root_domain_old}"
+
+          # Pass 2: every remaining occurrence of the bare root domain (both
+          # what was already bare, and what pass 1 just consolidated) now
+          # becomes the new domain, in one single pass.
+          wpcli_search_and_replace "${project_install_path}" "${project_install_type}" "${root_domain_old}" "${new_project_domain}"
+        else
+          # Source domain is itself a subdomain - no www ambiguity, single
+          # exact scheme-agnostic pass.
+          wpcli_search_and_replace "${project_install_path}" "${project_install_type}" "${old_project_domain}" "${new_project_domain}"
+        fi
 
         # Update WP_HOME & WP_SITEURL only if domain changed
         wpcli_config_set "${project_install_path}" "${project_install_type}" "WP_HOME" "https://${new_project_domain}/"
