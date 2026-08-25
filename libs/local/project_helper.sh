@@ -3501,19 +3501,26 @@ function project_post_install_tasks() {
     # Search & Replace URLs if domain changed (ALWAYS NEEDED when domain changes)
     if [[ -n ${old_project_domain} && -n ${new_project_domain} ]]; then
       if [[ ${old_project_domain} != "${new_project_domain}" ]]; then
-        # Use the site's actual current 'home' URL as the search term instead
-        # of the bare old_project_domain. old_project_domain is just the
-        # domain brolit restored from - it doesn't know if the site's real
-        # canonical URL is www or non-www. Searching for the bare domain
-        # only replaces the substring, so a www-canonical prod site restored
-        # under a new non-www domain ends up as "www.<new_project_domain>"
-        # instead of "<new_project_domain>".
-        local current_home_url
+        # Use the site's actual current host (from its live 'home' URL, with
+        # scheme stripped) as the search term instead of the bare
+        # old_project_domain. old_project_domain is just the domain brolit
+        # restored from - it doesn't know if the site's real canonical URL
+        # is www or non-www. Searching for the bare old_project_domain alone
+        # only replaces that substring, so a www-canonical prod site
+        # restored under a new non-www domain ends up as
+        # "www.<new_project_domain>" instead of "<new_project_domain>".
+        # Scheme is deliberately stripped from the search term (not just
+        # read as-is) so both http:// and https:// occurrences get replaced,
+        # matching the scheme-agnostic behavior of a bare-domain search.
+        local current_home_url current_home_host
         current_home_url="$(wpcli_option_get_home "${project_install_path}" "${project_install_type}" 2>/dev/null)"
-        [[ -z ${current_home_url} ]] && current_home_url="https://${old_project_domain}"
+        current_home_host="${current_home_url#http://}"
+        current_home_host="${current_home_host#https://}"
+        current_home_host="${current_home_host%%/*}"
+        [[ -z ${current_home_host} ]] && current_home_host="${old_project_domain}"
 
         # Change urls on database
-        wpcli_search_and_replace "${project_install_path}" "${project_install_type}" "${current_home_url}" "https://${new_project_domain}"
+        wpcli_search_and_replace "${project_install_path}" "${project_install_type}" "${current_home_host}" "${new_project_domain}"
 
         # Update WP_HOME & WP_SITEURL only if domain changed
         wpcli_config_set "${project_install_path}" "${project_install_type}" "WP_HOME" "https://${new_project_domain}/"
