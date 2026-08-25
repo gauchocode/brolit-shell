@@ -2393,15 +2393,18 @@ function wpcli_search_and_replace() {
     is_network=$?
     if [[ ${is_network} -eq 0 ]]; then
 
-        log_event "debug" "Running: ${wpcli_cmd} search-replace ${search} ${replace} --network" "false"
+        log_event "debug" "Running: ${wpcli_cmd} search-replace ${search} ${replace} --network --all-tables" "false"
 
-        wpcli_result="$(${wpcli_cmd} search-replace --url=https://"${wp_site_url}" "${search}" "${replace}" --network)"
+        wpcli_result="$(${wpcli_cmd} search-replace --url=https://"${wp_site_url}" "${search}" "${replace}" --network --all-tables)"
 
     else
 
-        log_event "debug" "Running: ${wpcli_cmd} search-replace ${search} ${replace}" "false"
+        log_event "debug" "Running: ${wpcli_cmd} search-replace ${search} ${replace} --all-tables" "false"
 
-        wpcli_result="$(${wpcli_cmd} search-replace "${search}" "${replace}")"
+        # --all-tables: without it, wp-cli only touches tables it recognizes
+        # via $table_prefix - plugin tables that don't follow that naming
+        # convention are silently skipped otherwise.
+        wpcli_result="$(${wpcli_cmd} search-replace "${search}" "${replace}" --all-tables)"
 
     fi
 
@@ -2412,6 +2415,32 @@ function wpcli_search_and_replace() {
         log_event "info" "Search and replace finished ok" "false"
         display --indent 6 --text "- Running search and replace" --result "DONE" --color GREEN
         display --indent 8 --text "${search} was replaced by ${replace}" --tcolor YELLOW
+
+        # Verify nothing was left behind - but ONLY when that check can't
+        # produce a false positive. If ${replace} itself contains ${search}
+        # as a substring (the common case: cloning example.com to
+        # dev.example.com), then every occurrence we JUST correctly replaced
+        # still "contains" the search string as part of the new domain, so a
+        # remaining-count would always report a false alarm equal to what
+        # was just fixed. Only meaningful for a genuinely unrelated rename
+        # (e.g. example.com -> staging-copy.net).
+        #
+        # Even when it does run, this is still best-effort: URL-encoded or
+        # base64 references, non-standard serialization, and third-party
+        # page-builder/plugin caches stored outside the database are outside
+        # its reach - this makes a real gap visible, it doesn't guarantee
+        # there isn't one.
+        if [[ ${replace} != *"${search}"* ]]; then
+            local remaining_count
+            remaining_count="$(${wpcli_cmd} search-replace "${search}" "${replace}" --all-tables --dry-run --report-changed-only 2>/dev/null | grep -c "^wp_")"
+            if [[ ${remaining_count} -gt 0 ]]; then
+                log_event "warning" "Search and replace: ${remaining_count} table(s) still contain '${search}' after replacement - likely URL-encoded, serialized in a non-standard format, or in a plugin cache outside the database. Manual review may be needed." "false"
+                display --indent 6 --text "- Verifying no references remain" --result "WARNING" --color YELLOW
+                display --indent 8 --text "${remaining_count} table(s) still reference ${search}" --tcolor YELLOW
+            else
+                display --indent 6 --text "- Verifying no references remain" --result "DONE" --color GREEN
+            fi
+        fi
 
         # Cache Flush
         ${wpcli_cmd} cache flush --quiet
