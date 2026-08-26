@@ -2508,7 +2508,12 @@ show_backup_information() {
                 # hostname) point at it without code changes or slow runtime probing.
                 local backup_host
                 backup_host="$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].backup_host")"
-                [[ -z "${backup_host}" ]] && backup_host="${HOSTNAME}"
+                # _json_read_field returns the literal text "null" (not empty) for a
+                # missing/unset field -- jq -r's rendering of JSON null. backup_host is
+                # optional and unset on most servers, so without this check every
+                # borg query below silently resolves to a nonexistent ".../null/..."
+                # repo path instead of falling back to the real hostname.
+                [[ -z "${backup_host}" || "${backup_host}" == "null" ]] && backup_host="${HOSTNAME}"
 
                 for project_path in $(find -L "${PROJECTS_PATH}" -maxdepth 1 -mindepth 1 -type d -not -path '*/.*' | sort); do
 
@@ -2751,7 +2756,8 @@ show_backup_information_by_domain() {
 
         local backup_host
         backup_host="$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].backup_host")"
-        [[ -z "${backup_host}" ]] && backup_host="${HOSTNAME}"
+        # See show_backup_information()'s identical fallback for why "null" is checked too.
+        [[ -z "${backup_host}" || "${backup_host}" == "null" ]] && backup_host="${HOSTNAME}"
 
         # Try each Borg config
         for (( i=0; i<"${borg_configs_count}"; i++ )); do
