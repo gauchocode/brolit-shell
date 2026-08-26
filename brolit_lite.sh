@@ -2371,7 +2371,6 @@ show_backup_information() {
     local timestamp
     local check_date
     local backup_method
-    local projects_backup
 
     local json_output_file
     local json_config_file="/root/.brolit_conf.json"
@@ -2382,30 +2381,38 @@ show_backup_information() {
     source "${BROLIT_MAIN_DIR}/utils/brolit_configuration_manager.sh"
     source "${BROLIT_MAIN_DIR}/libs/local/json_helper.sh"
 
-    # Detect enabled backup methods from config
+    # Detect ALL enabled backup methods from config, not just one -- a server
+    # can legitimately run more than one destination at once (e.g. Borg to a
+    # Storage Box plus Dropbox as a second copy). Scanning only the first
+    # match left the other destination's redundancy invisible to any report
+    # consumer.
     local dropbox_status borg_status
     dropbox_status="$(_json_read_field "${json_config_file}" "BACKUPS.methods[].dropbox[].status")"
     borg_status="$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].status")"
 
-    # Determine primary backup method
-    if [[ "${dropbox_status}" == "enabled" ]]; then
-        backup_method="dropbox"
-    elif [[ "${borg_status}" == "enabled" ]]; then
-        backup_method="borg"
+    local -a backup_methods=()
+    [[ "${dropbox_status}" == "enabled" ]] && backup_methods+=("dropbox")
+    [[ "${borg_status}" == "enabled" ]] && backup_methods+=("borg")
+
+    # Primary method, kept for consumers still reading the old singular field
+    # (same first-enabled priority as before: dropbox, then borg, then none).
+    backup_method="${backup_methods[0]:-none}"
+
+    local backup_methods_json
+    if [[ "${#backup_methods[@]}" -eq 0 ]]; then
+        backup_methods_json="[]"
     else
-        backup_method="none"
+        backup_methods_json="$(printf '%s\n' "${backup_methods[@]}" | jq -R . | jq -s -c .)"
     fi
 
-    # Initialize JSON string
-    local json_string="{ \"check_date\": \"$(date -u +"%Y-%m-%dT%H:%M:%S")\", \"backup_method\": \"${backup_method}\", \"projects_backup\": { "
-
-    local temp_file
-    temp_file=$(mktemp)
+    local dropbox_temp_file borg_temp_file
+    dropbox_temp_file=$(mktemp)
+    borg_temp_file=$(mktemp)
 
     #######################################
     # DROPBOX BACKUPS
     #######################################
-    if [[ "${backup_method}" == "dropbox" && -n "${DROPBOX_UPLOADER}" && -f "${DROPBOX_UPLOADER}" ]]; then
+    if [[ " ${backup_methods[*]} " == *" dropbox "* && -n "${DROPBOX_UPLOADER}" && -f "${DROPBOX_UPLOADER}" ]]; then
 
         local dropbox_base_path="${HOSTNAME}"
 
@@ -2459,7 +2466,7 @@ show_backup_information() {
                     { [[ "${last_site_backup}" != "empty" ]] || [[ "${last_db_backup}" != "empty" ]]; } && backup_status="success"
 
                     project_json="\"${project_directory}\": { \"files\": \"${last_site_backup}\", \"files_date\": \"${backup_date_site}\", \"database\": \"${last_db_backup}\", \"database_date\": \"${backup_date_db}\", \"status\": \"${backup_status}\", \"size_bytes\": ${backup_size} }"
-                    echo "${project_json}" >> "${temp_file}"
+                    echo "${project_json}" >> "${dropbox_temp_file}"
                     ) &
                 fi
             done
@@ -2467,10 +2474,12 @@ show_backup_information() {
             wait
         fi
 
+    fi
+
     #######################################
     # BORG BACKUPS
     #######################################
-    elif [[ "${backup_method}" == "borg" ]]; then
+    if [[ " ${backup_methods[*]} " == *" borg "* ]]; then
 
         source "${BROLIT_MAIN_DIR}/libs/borg_storage_controller.sh"
         _brolit_configuration_load_backup_borg "/root/.brolit_conf.json"
@@ -2545,7 +2554,7 @@ show_backup_information() {
                     fi
 
                     project_json="\"${project_directory}\": { \"last_archive\": \"${last_backup_file}\", \"backup_date\": \"${backup_date}\", \"files\": \"${last_backup_file}\", \"database\": \"${backup_db}\", \"status\": \"${backup_status}\", \"size_bytes\": ${backup_size} }"
-                    echo "${project_json}" >> "${temp_file}"
+                    echo "${project_json}" >> "${borg_temp_file}"
 
                     ) &
                 done
@@ -2554,7 +2563,7 @@ show_backup_information() {
 
                 # First Borg configuration that yields backup data wins; avoids duplicate
                 # entries when more than one storage box is configured.
-                if [[ -s "${temp_file}" ]]; then
+                if [[ -s "${borg_temp_file}" ]]; then
                     break
                 fi
 
@@ -2564,19 +2573,52 @@ show_backup_information() {
 
     fi
 
-    # Read temp file and append to JSON string
-    while read -r line; do
-        [[ -n "${line}" ]] && json_string="${json_string}${line},"
-    done < "${temp_file}"
-
-    rm -f "${temp_file}"
-
-    # Finalize JSON string (remove trailing comma if present)
-    json_string="${json_string%,} } }"
-
-    # Save JSON output to file
     json_output_file="${BROLIT_LITE_OUTPUT_DIR}/show_backups_information.json"
-    echo "${json_string}" > "${json_output_file}"
+
+    if [[ "${#backup_methods[@]}" -le 1 ]]; then
+        # Single (or no) destination: unchanged flat shape --
+        # projects_backup.<project> = {...}. At most one of the two temp
+        # files has content here, so concatenation order doesn't matter.
+        local json_string="{ \"check_date\": \"$(date -u +"%Y-%m-%dT%H:%M:%S")\", \"backup_method\": \"${backup_method}\", \"backup_methods\": ${backup_methods_json}, \"projects_backup\": { "
+        while read -r line; do
+            [[ -n "${line}" ]] && json_string="${json_string}${line},"
+        done < <(cat "${dropbox_temp_file}" "${borg_temp_file}")
+        json_string="${json_string%,} } }"
+        echo "${json_string}" > "${json_output_file}"
+    else
+        # Multiple destinations enabled: nest each project's entry by method
+        # (projects_backup.<project> = { dropbox: {...}, borg: {...} }) so a
+        # project backed up by more than one destination reports both instead
+        # of one silently overwriting the other. Done with jq, not string
+        # concatenation, since both temp files can legitimately contain an
+        # entry for the same project key.
+        local dropbox_json borg_json
+        dropbox_json="{ $(paste -sd, "${dropbox_temp_file}" 2>/dev/null) }"
+        borg_json="{ $(paste -sd, "${borg_temp_file}" 2>/dev/null) }"
+
+        jq -n \
+            --arg check_date "$(date -u +"%Y-%m-%dT%H:%M:%S")" \
+            --arg backup_method "${backup_method}" \
+            --argjson backup_methods "${backup_methods_json}" \
+            --argjson dropbox "${dropbox_json}" \
+            --argjson borg "${borg_json}" \
+            '
+            def projects_for($method; $data): ($data // {}) | to_entries | map({(.key): {($method): .value}}) | add // {};
+            (projects_for("dropbox"; $dropbox)) as $dp |
+            (projects_for("borg"; $borg)) as $bp |
+            {
+                check_date: $check_date,
+                backup_method: $backup_method,
+                backup_methods: $backup_methods,
+                projects_backup: (
+                    reduce (($dp | keys_unsorted) + ($bp | keys_unsorted) | unique)[] as $k
+                        ({}; .[$k] = (($dp[$k] // {}) * ($bp[$k] // {})))
+                )
+            }
+            ' > "${json_output_file}"
+    fi
+
+    rm -f "${dropbox_temp_file}" "${borg_temp_file}"
 
     # Return JSON
     cat "${json_output_file}"
@@ -2610,26 +2652,35 @@ show_backup_information_by_domain() {
         return 1
     fi
 
-    # Detect enabled backup methods from config
+    # Detect ALL enabled backup methods (see show_backup_information for why:
+    # a server can have more than one destination enabled at once, and only
+    # scanning the priority-selected one hid the other's history entirely).
     local dropbox_status borg_status
     dropbox_status="$(_json_read_field "${json_config_file}" "BACKUPS.methods[].dropbox[].status")"
     borg_status="$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].status")"
 
-    # Determine primary backup method
-    if [[ "${dropbox_status}" == "enabled" ]]; then
-        backup_method="dropbox"
-    elif [[ "${borg_status}" == "enabled" ]]; then
-        backup_method="borg"
-    else
-        backup_method="none"
+    local -a backup_methods=()
+    [[ "${dropbox_status}" == "enabled" ]] && backup_methods+=("dropbox")
+    [[ "${borg_status}" == "enabled" ]] && backup_methods+=("borg")
+    backup_method="${backup_methods[0]:-none}"
+
+    if [[ "${#backup_methods[@]}" -eq 0 ]]; then
+        echo "{\"error\": \"No backup method enabled\", \"domain\": \"${project_domain}\"}"
+        return 1
     fi
 
+    local backup_methods_json
+    backup_methods_json="$(printf '%s\n' "${backup_methods[@]}" | jq -R . | jq -s -c .)"
+
     timestamp="$(date -u +"%Y-%m-%dT%H:%M:%S")"
+
+    local dropbox_backups_json="[]"
+    local borg_backups_json="[]"
 
     #######################################
     # DROPBOX BACKUPS
     #######################################
-    if [[ "${backup_method}" == "dropbox" && -n "${DROPBOX_UPLOADER}" && -f "${DROPBOX_UPLOADER}" ]]; then
+    if [[ " ${backup_methods[*]} " == *" dropbox "* && -n "${DROPBOX_UPLOADER}" && -f "${DROPBOX_UPLOADER}" ]]; then
 
         local dropbox_base_path="${HOSTNAME}"
         local dropbox_site_dir="${dropbox_base_path}/projects-online/site/${project_domain}"
@@ -2681,14 +2732,14 @@ show_backup_information_by_domain() {
         done
 
         backups_json="${backups_json}]"
+        dropbox_backups_json="${backups_json}"
 
-        # Build final JSON
-        echo "{\"check_date\":\"${timestamp}\",\"backup_method\":\"dropbox\",\"domain\":\"${project_domain}\",\"backups\":${backups_json}}"
+    fi
 
     #######################################
     # BORG BACKUPS
     #######################################
-    elif [[ "${backup_method}" == "borg" ]]; then
+    if [[ " ${backup_methods[*]} " == *" borg "* ]]; then
 
         source "${BROLIT_MAIN_DIR}/libs/borg_storage_controller.sh"
         _brolit_configuration_load_backup_borg "/root/.brolit_conf.json"
@@ -2749,21 +2800,32 @@ show_backup_information_by_domain() {
                 done <<< "${borg_archives}"
 
                 backups_json="${backups_json}]"
-
-                echo "{\"check_date\":\"${timestamp}\",\"backup_method\":\"borg\",\"domain\":\"${project_domain}\",\"backups\":${backups_json}}"
-                return 0
+                borg_backups_json="${backups_json}"
+                break
             fi
 
         done
 
-        # No backups found
-        echo "{\"check_date\":\"${timestamp}\",\"backup_method\":\"borg\",\"domain\":\"${project_domain}\",\"backups\":[]}"
-
-    else
-        echo "{\"error\": \"No backup method enabled\", \"domain\": \"${project_domain}\"}"
-        return 1
     fi
 
+    if [[ "${#backup_methods[@]}" -le 1 ]]; then
+        # Single destination: unchanged flat shape -- backups: [...].
+        local single_backups_json="[]"
+        [[ "${backup_method}" == "dropbox" ]] && single_backups_json="${dropbox_backups_json}"
+        [[ "${backup_method}" == "borg" ]] && single_backups_json="${borg_backups_json}"
+        echo "{\"check_date\":\"${timestamp}\",\"backup_method\":\"${backup_method}\",\"backup_methods\":${backup_methods_json},\"domain\":\"${project_domain}\",\"backups\":${single_backups_json}}"
+    else
+        # Multiple destinations enabled: backups grouped by method instead of
+        # one array implicitly from whichever method used to win priority.
+        jq -n \
+            --arg check_date "${timestamp}" \
+            --arg backup_method "${backup_method}" \
+            --argjson backup_methods "${backup_methods_json}" \
+            --arg domain "${project_domain}" \
+            --argjson dropbox "${dropbox_backups_json}" \
+            --argjson borg "${borg_backups_json}" \
+            '{check_date: $check_date, backup_method: $backup_method, backup_methods: $backup_methods, domain: $domain, backups: {dropbox: $dropbox, borg: $borg}}'
+    fi
 }
 
 ################################################################################
