@@ -31,15 +31,104 @@ delete/upload/download implementation at all. The retention settings in
    - Add `sftp_delete_file()` using `ssh rm` or `sftp rm`
    - Wire them into `storage_list_dir()` and `storage_delete_backup()`
 
-2. **Unify retention config source**
-   - `borgmatic` templates currently hardcode retention (`keep_monthly: 6`,
-     `keep_yearly: 1`). These should be read from `.brolit_conf.json`
-     `BACKUPS.config[].retention[]` instead, so there's a single source of truth.
-   - During `generate_borg_config()`, inject retention values from
-     `.brolit_conf.json` into the YAML with `yq`.
+**Files affected:** `libs/storage_controller.sh`, `cron/backups_tasks.sh`
+
+---
+
+### A2. Retention config is per-method, not shared (revised 2026-08-26 — supersedes the old "unify into one source" idea below)
+
+**This item originally proposed (A.2, now retired) making `.brolit_conf.json`'s
+single `BACKUPS.config[].retention[]` block the source of truth for *both*
+`storage_delete_old_backups()` (dropbox/sftp/local) and borg, injecting it into
+the borgmatic YAML at generation time. Deeper investigation (real incident,
+`myspyglass.online` on `spyglass-hccx13use`, 2026-08-26) found the actual
+situation is worse than "two systems that happen to read the same value" — and
+that forcing them onto literally the same 3 numbers is the wrong fix, not just
+an implementation detail.**
+
+**Confirmed facts:**
+
+1. `BACKUPS.config[].retention[].{keep_daily,keep_weekly,keep_monthly}` is read
+   once into `BACKUP_RETENTION_KEEP_*` globals
+   (`brolit_configuration_manager.sh:393-407`) and consumed **only** by
+   `storage_delete_old_backups()` (`storage_controller.sh:612`), called from 4
+   sites in `backup_helper.sh` (server-config, openresty-vm, project files,
+   database backups) — all going through `storage_upload_backup`, i.e. the
+   dropbox/sftp/local path. Borg never touches these globals at all.
+2. Borg's retention lives entirely inside each project's
+   `/etc/borgmatic.d/<project>.yml`, using borgmatic's own native GFS fields
+   (`keep_daily`/`keep_weekly`/`keep_monthly`/`keep_yearly`/`keep_within` —
+   same *names*, unrelated mechanism: borgmatic prunes by real archive
+   timestamp with proper GFS semantics; `storage_delete_old_backups()` buckets
+   by sorting a flat filename list and checking for a literal `-weekly`/
+   `-monthly` substring).
+3. **`generate_borg_config()` (`cron/backups_tasks.sh:123-207`) writes this
+   YAML exactly once** — `if [ ! -f "${yml_file}" ]` — and never touches it
+   again. Nothing in the codebase writes `keep_daily`/`keep_weekly`/
+   `keep_monthly`/`keep_yearly`/`keep_within` into a borgmatic YAML,
+   confirmed by grepping for those field names across
+   `borg_storage_controller.sh` and `backups_tasks.sh`: zero matches. So the
+   "inject from JSON at generation time" half of the old A.2 proposal was
+   never implemented either — retention has *never* been connected to
+   `.brolit_conf.json` for borg, not even one-way.
+4. The four YAML templates don't even agree with each other on defaults:
+   `docker`/`postgres` ship `keep_monthly: 6, keep_yearly: 1` with no
+   `keep_within`; `default`/`mysql` ship `keep_within: 1m` *and*
+   `keep_monthly: 6, keep_yearly: 1`; all four ship `keep_daily`/`keep_weekly`
+   **commented out** (disabled) by default. Yet the real, live
+   `myspyglass.online.yml` has `keep_daily: 2, keep_weekly: 0` uncommented —
+   someone hand-edited it after generation, with no way for that intent to
+   have come from `.brolit_conf.json` (nothing writes those keys there) or to
+   ever get reconciled again.
+5. Real-world case for *why* a single shared value is the wrong target, not
+   just an unimplemented one: `myspyglass.online` backs up ~167GB (two large
+   media directories via explicit `source_directories`, not symlink-following
+   — Borg has no `--dereference` equivalent to tar's `-h`, so the working
+   fix for symlinked content is listing the real target paths directly, which
+   this project's YAML already does). That's fine for Borg on a flat-fee 10TB
+   Storage Box, but is exactly why Dropbox got disabled for this project today
+   — a naive `tar | lbzip2` pipeline can't stage that volume on a 75GB root
+   disk. Destinations with different cost/durability/capacity profiles
+   legitimately want different retention depths, not the same 3 numbers
+   forced onto both a crude count-based pruner and a native GFS engine.
+
+**Revised proposal: retention becomes a per-method config block, kept in sync
+on every write, not just at first generation.**
+
+1. **Schema**: nest retention under each method instead of one shared
+   `BACKUPS.config[].retention[]`:
+   ```json
+   "BACKUPS": {
+     "methods": [{
+       "dropbox": [{ "status": "enabled", "retention": { "keep_daily": 7, "keep_weekly": 4, "keep_monthly": 6 } }],
+       "borg":    [{ "status": "enabled", "retention": { "keep_daily": 7, "keep_weekly": 4, "keep_monthly": 6, "keep_yearly": 1, "keep_within": "1d" } }],
+       "sftp":    [{ "retention": { "keep_daily": 7, "keep_weekly": 4, "keep_monthly": 6 } }],
+       "local":   [{ "retention": { "keep_daily": 7, "keep_weekly": 4, "keep_monthly": 6 } }]
+     }]
+   }
+   ```
+   Borg's block can carry fields (`keep_yearly`, `keep_within`) the others
+   don't need — matches borgmatic's actual capability instead of lowest-common-
+   denominator. `BACKUPS.config[].retention[]` (old shared block) is read as a
+   fallback default for methods without their own block, for migration.
+2. **`storage_delete_old_backups()`** reads
+   `BACKUPS.methods[].<method>[].retention` for the method it's currently
+   pruning (needs the method name threaded through from its 4 call sites)
+   instead of the global `BACKUP_RETENTION_KEEP_*` vars.
+3. **`generate_borg_config()`** injects `BACKUPS.methods[].borg[].retention`
+   into the YAML's `keep_*` fields with `yq`, same mechanism already used
+   there for `constants.project`/`group`/`hostname`.
+4. **New: keep the YAML in sync after generation, not just once.** Add
+   `sync_borg_retention_config()`, called from the same place a config-write
+   flow would call it (brolit-admin's `brolit_config_write` job, or the
+   interactive config editor) — re-applies just the `keep_*` fields via `yq`
+   to every existing `/etc/borgmatic.d/*.yml` without touching
+   `source_directories`/`repositories`/hooks. This is the piece that actually
+   closes the "write-once, drifts forever" gap; steps 1-3 alone would still
+   only apply to *newly created* projects.
 
 **Files affected:** `libs/storage_controller.sh`, `cron/backups_tasks.sh`,
-`libs/borg_storage_controller.sh`
+`libs/borg_storage_controller.sh`, `utils/brolit_configuration_manager.sh`
 
 ---
 
@@ -111,6 +200,17 @@ date of all borg repositories from a single command or menu option.
 
 2. **Wire into menu**
    - Add option 08 in BACKUP TOOLS: "BORG REPO STATUS"
+
+**Cross-reference (2026-08-26):** brolit-admin is planning a storage-box
+visibility/audit UI (`brolit-admin` repo,
+`docs/plan/active/2026-08-storage-box-visibility.md`) that wants exactly this
+data — per-repo archive count, last archive date, dedup/original/compressed
+size, quota (`sftp df` on the storage box) — surfaced over SSH instead of a
+terminal table. If `borg_repo_status()` emits `--json` (or a `--machine`
+flag), brolit-admin's inventory command can reuse the same function instead
+of re-deriving the same `borg info`/quota-check logic independently. Worth
+designing this function's JSON shape with that consumer in mind, not just the
+terminal table.
 
 **Files affected:** `libs/borg_storage_controller.sh`, `utils/it_utils_manager.sh`
 
@@ -186,13 +286,35 @@ old archives become orphans.
 — it relies on `SERVER_NAME` / `HOSTNAME` and can fail if the server hostname
 changed.
 
-**Proposed changes:**
+**Update (2026-08-26): the "already partially solved" read side had a real,
+confirmed bug — fixed.** `_json_read_field()` (`brolit_lite.sh:34-45`) runs
+`jq -r`, and `jq -r` renders a *missing* field as the 4-character string
+`"null"`, not an empty string. Both `show_backup_information()` and
+`show_backup_information_by_domain()` only fell back to `$HOSTNAME` when the
+read was empty (`[[ -z "${backup_host}" ]]`) — since `backup_host` is unset on
+the overwhelming majority of servers, that fallback never fired, and every
+borg repo path silently resolved to `.../<group>/null/projects-online/...`
+instead of the real hostname. Fixed in both functions (commit `f2170221`):
+`[[ -z "${backup_host}" || "${backup_host}" == "null" ]]`.
+
+Found via a live incident on `spyglass-hccx13use`: `show_backup_information`
+reported borg backups as completely empty for `myspyglass.online` despite
+`borgmatic` successfully writing daily archives — the read was hitting the
+`null` path, which doesn't exist, while the write path (borgmatic's own YAML,
+which hardcodes `hostname` correctly per-project) was fine all along. This is
+likely a **fleet-wide** false-negative, not specific to this server — any
+borg-enabled server without an explicit `backup_host` would show the same
+"empty" borg status in brolit-admin regardless of real backup health.
+
+**Still open — this item's original scope, now narrower:**
 
 1. **Read `backup_host` in restore functions**
    - `restore_backup_with_borg()` should check for `backup_host` in
-     `.brolit_conf.json` before falling back to `HOSTNAME`
-   - Same for `generate_borg_config()` — it already reads hostname from the
-     system, but should check for an override
+     `.brolit_conf.json` before falling back to `HOSTNAME` (apply the same
+     `-z || == "null"` fix, not just `-z`)
+2. **`generate_borg_config()`** should also check the override (currently
+   only uses live `$HOSTNAME`) — same fix needed there for consistency, even
+   though it's write-once today (see item A2 above on making it re-syncable).
 
 **Files affected:** `libs/borg_storage_controller.sh`,
 `libs/local/restore_backup_helper.sh`, `cron/backups_tasks.sh`
@@ -231,10 +353,11 @@ automation, it is a security concern.
 | Priority | Feature | Effort | Impact |
 |----------|---------|--------|--------|
 | P0 | E — UI for borg credential setup | Medium | High — unblocks new server setup |
-| P0 | B — Automatic prune after backup | Small | High — prevents storage bloat |
+| P0 | B — Automatic prune after backup | Small | High — prevents storage bloat. **Confirmed live 2026-08-26**: `myspyglass.online`'s second Storage Box has ~2 months of unpruned daily archives despite `keep_daily: 2` configured — this isn't theoretical, it's already happening |
+| P0 | A2 — Per-method retention, kept in sync (not just at generation) | Medium | High — retention has *never* been connected to borg's actual YAML for any server; blocks B from being configurable per the plan below it, and is what makes brolit-admin's new "retention" column (`docs/plan/active/2026-08-backup-data-richness.md`, this repo) accurate instead of dropbox-only-but-labeled-generic |
 | P1 | A — SFTP prune support | Medium | Medium — closes gap |
 | P1 | C — Borg verify + auto-check before restore | Medium | Medium — data safety |
 | P1 | H — Encryption support | Small | Medium — security |
-| P2 | D — Repo status dashboard | Small | Low — visibility |
+| P2 | D — Repo status dashboard | Small | Low — visibility. See 2026-08-26 cross-reference: design the JSON shape for brolit-admin's storage-box UI to consume, not just a terminal table |
 | P2 | F — Project rename handling | Large | Medium — edge case |
-| P2 | G — backup_host in restore flow | Small | Medium — edge case |
+| P2 | G — backup_host in restore flow | Small | Medium — edge case. **Read-side half already fixed 2026-08-26** (`show_backup_information*`); restore-side (`restore_backup_with_borg`) and `generate_borg_config()` still need the same fix |
