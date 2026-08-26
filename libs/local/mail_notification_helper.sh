@@ -146,11 +146,17 @@ function mail_send_notification() {
 
     # Log
     log_event "info" "Sending Email to ${NOTIFICATION_EMAIL_EMAIL_TO} ..." "false"
-    log_event "debug" "Running: sendEmail -f \"${from_email}\" -t \"${NOTIFICATION_EMAIL_EMAIL_TO}\" -u \"${email_subject}\" -o message-content-type=html -m \"${email_content}\" -s \"${NOTIFICATION_EMAIL_SMTP_SERVER}:${NOTIFICATION_EMAIL_SMTP_PORT}\" -o tls=\"${NOTIFICATION_EMAIL_SMTP_TLS}\" -xu \"${NOTIFICATION_EMAIL_SMTP_USER}\" -xp \"${NOTIFICATION_EMAIL_SMTP_UPASS}\"" "false"
+    log_event "debug" "Running: sendEmail -f \"${from_email}\" -t \"${NOTIFICATION_EMAIL_EMAIL_TO}\" -u \"${email_subject}\" -o message-content-type=html -o message-charset=UTF-8 -m \"${email_content}\" -s \"${NOTIFICATION_EMAIL_SMTP_SERVER}:${NOTIFICATION_EMAIL_SMTP_PORT}\" -o tls=\"${NOTIFICATION_EMAIL_SMTP_TLS}\" -xu \"${NOTIFICATION_EMAIL_SMTP_USER}\" -xp \"${NOTIFICATION_EMAIL_SMTP_UPASS}\"" "false"
 
     # Sending email
     ## Use -l "/${SCRIPT}/sendemail.log" for custom log file
-    sendEmail -f "${from_email}" -t "${NOTIFICATION_EMAIL_EMAIL_TO}" -u "${email_subject}" -o message-content-type=html -m "${email_content}" -s "${NOTIFICATION_EMAIL_SMTP_SERVER}:${NOTIFICATION_EMAIL_SMTP_PORT}" -o tls="${NOTIFICATION_EMAIL_SMTP_TLS}" -xu "${NOTIFICATION_EMAIL_SMTP_USER}" -xp "${NOTIFICATION_EMAIL_SMTP_UPASS}" 1>&2
+    # -o message-charset=UTF-8 is required: sendEmail defaults to iso-8859-1
+    # regardless of the body's actual encoding, so without it the outgoing
+    # Content-Type header lies about the charset (declares iso-8859-1 while
+    # the body is real UTF-8 bytes, e.g. emoji status icons), and mail
+    # clients render mojibake even though the HTML template itself
+    # correctly declares <meta charset="utf-8">.
+    sendEmail -f "${from_email}" -t "${NOTIFICATION_EMAIL_EMAIL_TO}" -u "${email_subject}" -o message-content-type=html -o message-charset=UTF-8 -m "${email_content}" -s "${NOTIFICATION_EMAIL_SMTP_SERVER}:${NOTIFICATION_EMAIL_SMTP_PORT}" -o tls="${NOTIFICATION_EMAIL_SMTP_TLS}" -xu "${NOTIFICATION_EMAIL_SMTP_USER}" -xp "${NOTIFICATION_EMAIL_SMTP_UPASS}" 1>&2
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
