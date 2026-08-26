@@ -2416,60 +2416,93 @@ show_backup_information() {
 
         local dropbox_base_path="${HOSTNAME}"
 
-        # List projects that have backups on Dropbox
+        # List projects that have backups on Dropbox. Use -q (raw byte sizes,
+        # not -h human-readable) since the [F] branch below needs an accurate
+        # size_bytes straight from this listing, not just the name.
         local dropbox_site_dir="${dropbox_base_path}/projects-online/site"
-        local dropbox_projects
+        local dropbox_listing
 
-        dropbox_projects="$("${DROPBOX_UPLOADER}" -hq list "${dropbox_site_dir}" 2>/dev/null | awk '{print $NF;}')"
+        dropbox_listing="$("${DROPBOX_UPLOADER}" -q list "${dropbox_site_dir}" 2>/dev/null)"
 
-        if [[ -n "${dropbox_projects}" ]]; then
+        if [[ -n "${dropbox_listing}" ]]; then
 
-            for project_directory in ${dropbox_projects}; do
+            while IFS= read -r dropbox_entry_line; do
 
-                if [[ -d "${project_directory_path}/${project_directory}" ]]; then
+                [[ -z "${dropbox_entry_line}" ]] && continue
 
+                local entry_type project_directory
+                entry_type="$(echo "${dropbox_entry_line}" | awk '{print $1;}')"
+                project_directory="$(echo "${dropbox_entry_line}" | awk '{print $NF;}')"
+
+                [[ -z "${project_directory}" ]] && continue
+                [[ ! -d "${project_directory_path}/${project_directory}" ]] && continue
+
+                if [[ "${entry_type}" == "[F]" ]]; then
+
+                    # Some projects store a single consolidated backup file
+                    # directly under projects-online/site/<project> instead of
+                    # a per-project folder with dated site-files/db archives
+                    # (e.g. an older/legacy full-site dump). There's nothing to
+                    # "list" inside a file -- the previous code tried exactly
+                    # that, got no output, and silently left status=unknown,
+                    # size_bytes=0 even though the backup itself was fine.
+                    # Treat the file entry itself as the (site-only) backup.
                     (
-                    local last_site_backup last_db_backup backup_date_site backup_date_db
-                    local site_size=0 db_size=0 backup_size=0 backup_status="unknown"
-                    local project_json=""
-                    local site_line db_line
+                    local project_json="" entry_size entry_date
+                    entry_size="$(echo "${dropbox_entry_line}" | awk '{print $2;}')"
+                    [[ -z "${entry_size}" || ! "${entry_size}" =~ ^[0-9]+$ ]] && entry_size=0
+                    entry_date="$(echo "${dropbox_entry_line}" | awk '{print $3;}' | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')"
+                    [[ -z "${entry_date}" ]] && entry_date="unknown"
 
-                    # Get last site-files backup. Note: -q only (no -h) so the size column
-                    # is raw bytes; with -h it would be human-readable and hard to parse.
-                    site_line="$("${DROPBOX_UPLOADER}" -q list "${dropbox_site_dir}/${project_directory}" 2>/dev/null | grep -E 'site-files|tar\.bz2|tar\.gz|\.tgz' | tail -1)"
-                    last_site_backup="$(echo "${site_line}" | awk '{print $NF;}')"
-                    site_size="$(echo "${site_line}" | awk '{print $2;}')"
-                    [[ -z "${site_size}" || ! "${site_size}" =~ ^[0-9]+$ ]] && site_size=0
-
-                    if [[ -n "${last_site_backup}" ]]; then
-                        backup_date_site=$(echo "${last_site_backup}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')
-                    else
-                        backup_date_site="unknown"
-                        last_site_backup="empty"
-                    fi
-
-                    # Get last database backup
-                    local dropbox_db_dir="${dropbox_base_path}/projects-online/database/${project_directory}"
-                    db_line="$("${DROPBOX_UPLOADER}" -q list "${dropbox_db_dir}" 2>/dev/null | grep -E '\.tar\.bz2|\.sql|\.gz' | tail -1)"
-                    last_db_backup="$(echo "${db_line}" | awk '{print $NF;}')"
-                    db_size="$(echo "${db_line}" | awk '{print $2;}')"
-                    [[ -z "${db_size}" || ! "${db_size}" =~ ^[0-9]+$ ]] && db_size=0
-
-                    if [[ -n "${last_db_backup}" ]]; then
-                        backup_date_db=$(echo "${last_db_backup}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')
-                    else
-                        backup_date_db="empty"
-                        last_db_backup="empty"
-                    fi
-
-                    backup_size=$((site_size + db_size))
-                    { [[ "${last_site_backup}" != "empty" ]] || [[ "${last_db_backup}" != "empty" ]]; } && backup_status="success"
-
-                    project_json="\"${project_directory}\": { \"files\": \"${last_site_backup}\", \"files_date\": \"${backup_date_site}\", \"database\": \"${last_db_backup}\", \"database_date\": \"${backup_date_db}\", \"status\": \"${backup_status}\", \"size_bytes\": ${backup_size} }"
+                    project_json="\"${project_directory}\": { \"files\": \"${project_directory}\", \"files_date\": \"${entry_date}\", \"database\": \"empty\", \"database_date\": \"empty\", \"status\": \"success\", \"size_bytes\": ${entry_size} }"
                     echo "${project_json}" >> "${dropbox_temp_file}"
                     ) &
+
+                    continue
                 fi
-            done
+
+                (
+                local last_site_backup last_db_backup backup_date_site backup_date_db
+                local site_size=0 db_size=0 backup_size=0 backup_status="unknown"
+                local project_json=""
+                local site_line db_line
+
+                # Get last site-files backup. Note: -q only (no -h) so the size column
+                # is raw bytes; with -h it would be human-readable and hard to parse.
+                site_line="$("${DROPBOX_UPLOADER}" -q list "${dropbox_site_dir}/${project_directory}" 2>/dev/null | grep -E 'site-files|tar\.bz2|tar\.gz|\.tgz' | tail -1)"
+                last_site_backup="$(echo "${site_line}" | awk '{print $NF;}')"
+                site_size="$(echo "${site_line}" | awk '{print $2;}')"
+                [[ -z "${site_size}" || ! "${site_size}" =~ ^[0-9]+$ ]] && site_size=0
+
+                if [[ -n "${last_site_backup}" ]]; then
+                    backup_date_site=$(echo "${last_site_backup}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')
+                else
+                    backup_date_site="unknown"
+                    last_site_backup="empty"
+                fi
+
+                # Get last database backup
+                local dropbox_db_dir="${dropbox_base_path}/projects-online/database/${project_directory}"
+                db_line="$("${DROPBOX_UPLOADER}" -q list "${dropbox_db_dir}" 2>/dev/null | grep -E '\.tar\.bz2|\.sql|\.gz' | tail -1)"
+                last_db_backup="$(echo "${db_line}" | awk '{print $NF;}')"
+                db_size="$(echo "${db_line}" | awk '{print $2;}')"
+                [[ -z "${db_size}" || ! "${db_size}" =~ ^[0-9]+$ ]] && db_size=0
+
+                if [[ -n "${last_db_backup}" ]]; then
+                    backup_date_db=$(echo "${last_db_backup}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')
+                else
+                    backup_date_db="empty"
+                    last_db_backup="empty"
+                fi
+
+                backup_size=$((site_size + db_size))
+                { [[ "${last_site_backup}" != "empty" ]] || [[ "${last_db_backup}" != "empty" ]]; } && backup_status="success"
+
+                project_json="\"${project_directory}\": { \"files\": \"${last_site_backup}\", \"files_date\": \"${backup_date_site}\", \"database\": \"${last_db_backup}\", \"database_date\": \"${backup_date_db}\", \"status\": \"${backup_status}\", \"size_bytes\": ${backup_size} }"
+                echo "${project_json}" >> "${dropbox_temp_file}"
+                ) &
+
+            done <<< "${dropbox_listing}"
 
             wait
         fi

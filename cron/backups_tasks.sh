@@ -168,6 +168,12 @@ function generate_borg_config() {
             return 1
         fi
 
+        # /etc/borgmatic.d doesn't exist on a fresh install -- nothing else in
+        # the codebase creates it (borg_update_templates() even treats its
+        # absence as a hard failure), so without this every cp below fails
+        # and no config ever gets generated for any project.
+        mkdir -p "$(dirname "${yml_file}")"
+
         cp "${BROLIT_MAIN_DIR}/config/borg/${template_file}" "${yml_file}"
 
         if [ $? -ne 0 ]; then
@@ -250,9 +256,15 @@ function backup_project_all_enabled_methods() {
             log_event "info" "Running borgmatic backup for ${project_domain}" "false"
             display --indent 6 --text "- Backing up ${project_domain} with borgmatic" --tcolor YELLOW
 
-            # Setup project directories and initialize repository if needed
-            setup_project_directories "${project_domain}"
-            initialize_repository_if_needed "/etc/borgmatic.d/${project_domain}.yml" "${project_domain}"
+            # Initialize the repository if it doesn't exist yet. Idempotent --
+            # initialize_repository() checks via `borgmatic info` first and is
+            # a no-op if the repo is already there. (The two calls this
+            # replaced, setup_project_directories() and
+            # initialize_repository_if_needed(), don't exist anywhere in the
+            # codebase -- every project whose repo wasn't already initialized
+            # by some other path silently never got one, and the nightly
+            # `borgmatic --stats` run below failed on it forever after.)
+            initialize_repository "/etc/borgmatic.d/${project_domain}.yml"
 
             # Run borgmatic backup
             if borgmatic --config "/etc/borgmatic.d/${project_domain}.yml" --stats; then
