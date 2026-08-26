@@ -348,6 +348,69 @@ automation, it is a security concern.
 
 ---
 
+### I. Three more confirmed false-negatives in backup status reporting (fixed 2026-08-26)
+
+**Problem:** Following up on item G, `epica-apps01` and `gaucho-dev04` were both
+showing every borg-backed project as `status: unknown, size_bytes: 0` in
+brolit-admin even *after* the `backup_host` fix (commit `f2170221`) was
+deployed to them. A Dropbox project (`app.wigou.com.ar` on `wigou`) showed the
+same unknown/0B despite a real, same-day backup existing. Three distinct,
+unrelated bugs, all now fixed:
+
+1. **`/etc/borgmatic.d/` never gets created.** Nothing in the codebase does
+   `mkdir -p` on it — `generate_borg_config()` (`cron/backups_tasks.sh`) just
+   `cp`s a template into `/etc/borgmatic.d/<project>.yml` and assumes the
+   directory exists; `borg_update_templates()` even treats its absence as a
+   hard failure rather than creating it. On `epica-apps01` the directory
+   simply didn't exist, so every `cp` failed silently (caught and reported as
+   `"failed"` per-project, but nothing surfaced that fleet-wide), no configs
+   were ever generated, and `borgmatic` ran nightly with literally nothing
+   configured. **Fix:** `generate_borg_config()` now does
+   `mkdir -p "$(dirname "${yml_file}")"` before the `cp`.
+
+2. **`backup_project_all_enabled_methods()` called two functions that don't
+   exist.** `setup_project_directories()` and
+   `initialize_repository_if_needed()` — grepped the entire codebase, neither
+   is defined anywhere; the real function is `initialize_repository()`
+   (`borg_storage_controller.sh:1075`, already sourced via `commons.sh`),
+   taking just the config file path and already idempotent (checks
+   `borgmatic info` before running `borgmatic init`). Calling an undefined
+   bash function is a no-op-ish "command not found" that doesn't abort the
+   script, so this went unnoticed: for any project whose repo wasn't already
+   initialized through some other path, initialization silently never
+   happened, and the nightly `borgmatic --config ... --stats` failed on it
+   forever after (confirmed live on `gaucho-dev04`: older projects like
+   `dev.ali.broobe.net` have real archives; newer ones like
+   `dev.cro.broobe.net` have a directory on the Storage Box that
+   `borg list` reports as "not a valid repository" — never initialized).
+   **Fix:** replaced both calls with `initialize_repository "/etc/borgmatic.d/${project_domain}.yml"`.
+
+3. **Dropbox: a project backed up as a single flat file breaks the
+   per-project-folder assumption.** `show_backup_information()`'s Dropbox
+   branch assumes every entry under `<hostname>/projects-online/site/` is a
+   directory containing dated site-files/db archives, and does
+   `dropbox_uploader.sh list <site_dir>/<project>` to find the latest one.
+   When a project's "backup" is instead one file directly under `site_dir`
+   (confirmed on `wigou`: `app.wigou.com.ar` is a single 4.2GB archive, not a
+   folder) that `list` call is listing a file's contents, which returns
+   nothing — so the entry falls through to the unconditional
+   `status="unknown"`, `size_bytes=0` defaults regardless of how fresh or
+   valid the actual backup is. **Fix:** the listing is now read once with
+   type markers (`[D]`/`[F]`, from `dropbox_uploader.sh -q list`) preserved;
+   `[F]` entries are treated as the backup itself (status `success`, size and
+   date read straight from the listing line) instead of being probed as if
+   they were a folder. `[D]` entries keep the original per-folder logic
+   unchanged.
+
+**Not yet checked:** whether other borg-enabled servers have the same missing
+`/etc/borgmatic.d/` or other flat-file Dropbox projects exist elsewhere in the
+fleet — items 1-2 were only directly confirmed on `epica-apps01` and
+`gaucho-dev04` respectively, item 3 only on `wigou`. Worth a fleet sweep.
+
+**Files affected:** `cron/backups_tasks.sh`, `brolit_lite.sh`.
+
+---
+
 ## Implementation Order
 
 | Priority | Feature | Effort | Impact |
