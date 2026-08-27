@@ -140,23 +140,28 @@ function mail_template_render_env() {
 # Arguments:
 #   $1 - Output file path
 #   $2 - Main template name (without -tpl.html suffix)
-#   $3+ - Section file paths to include
+#   $3+ - Section entries as "placeholder_name=file_path"
 #
 # Returns:
 #   0 on success, 1+ on error
 #
 # Example:
 #   mail_template_assemble "/tmp/email.html" "main" \
-#       "/tmp/server_info.mail" \
-#       "/tmp/packages.mail" \
-#       "/tmp/footer.mail"
+#       "server_info=/tmp/server_info.mail" \
+#       "packages_section=/tmp/packages.mail" \
+#       "footer=/tmp/footer.mail"
 #
 # How it works:
 #   1. Loads the main template (e.g., main-tpl.html)
-#   2. For each section file, reads its content
-#   3. Replaces {{section_name}} placeholders with section content
+#   2. For each "name=file" entry, reads the file's content
+#   3. Replaces the {{name}} placeholder with that content
 #   4. Removes any unused placeholders
 #   5. Writes final result to output file
+#
+# Note: the placeholder name must be given explicitly (not derived from the
+# file's basename) since section files carry a timestamp suffix (e.g.
+# "packages-<NOW>.mail") that never matches the {{packages_section}}
+# placeholder in the template.
 ################################################################################
 function mail_template_assemble() {
     local output_file="${1}"
@@ -191,12 +196,12 @@ function mail_template_assemble() {
     }
 
     # Replace section placeholders
-    local section_name section_content
-    for section_file in "${sections[@]}"; do
-        if [[ -f "${section_file}" ]]; then
-            # Extract section name from filename (remove path and .mail extension)
-            section_name="$(basename "${section_file}" .mail)"
+    local section_entry section_name section_file section_content
+    for section_entry in "${sections[@]}"; do
+        section_name="${section_entry%%=*}"
+        section_file="${section_entry#*=}"
 
+        if [[ -f "${section_file}" ]]; then
             # Read section content
             section_content="$(cat "${section_file}" 2>/dev/null)" || {
                 log_event "warning" "Failed to read section file: ${section_file}" "false"

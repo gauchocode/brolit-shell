@@ -64,31 +64,18 @@ function backup_manager_menu() {
       # Footer
       mail_footer "${SCRIPT_V}"
 
-      # Preparing Mail Notifications Template
-      email_template="default"
-
       # New full email file
       email_html_file="${BROLIT_TMP_DIR}/full-email-${NOW}.mail"
 
-      # Copy from template
-      cp "${BROLIT_MAIN_DIR}/templates/emails/${email_template}/main-tpl.html" "${email_html_file}"
-
-      # Begin to replace
-      sed -i '/{{server_info}}/r '"${BROLIT_TMP_DIR}/server_info-${NOW}.mail" "${email_html_file}"
-      sed -i '/{{databases_backup_section}}/r '"${BROLIT_TMP_DIR}/databases-bk-${NOW}.mail" "${email_html_file}"
-      sed -i '/{{configs_backup_section}}/r '"${BROLIT_TMP_DIR}/configuration-bk-${NOW}.mail" "${email_html_file}"
-      sed -i '/{{files_backup_section}}/r '"${BROLIT_TMP_DIR}/files-bk-${NOW}.mail" "${email_html_file}"
-      sed -i '/{{footer}}/r '"${BROLIT_TMP_DIR}/footer-${NOW}.mail" "${email_html_file}"
-
       # Assemble complete email using new template engine (Phase 2 refactor)
       if ! mail_template_assemble "${email_html_file}" "main" \
-        "${BROLIT_TMP_DIR}/server_info-${NOW}.mail" \
-        "${BROLIT_TMP_DIR}/packages-${NOW}.mail" \
-        "${BROLIT_TMP_DIR}/certificates-${NOW}.mail" \
-        "${BROLIT_TMP_DIR}/databases-bk-${NOW}.mail" \
-        "${BROLIT_TMP_DIR}/configuration-bk-${NOW}.mail" \
-        "${BROLIT_TMP_DIR}/files-bk-${NOW}.mail" \
-        "${BROLIT_TMP_DIR}/footer-${NOW}.mail"; then
+        "server_info=${BROLIT_TMP_DIR}/server_info-${NOW}.mail" \
+        "packages_section=${BROLIT_TMP_DIR}/packages-${NOW}.mail" \
+        "certificates_section=${BROLIT_TMP_DIR}/certificates-${NOW}.mail" \
+        "databases_backup_section=${BROLIT_TMP_DIR}/databases-bk-${NOW}.mail" \
+        "configs_backup_section=${BROLIT_TMP_DIR}/configuration-bk-${NOW}.mail" \
+        "files_backup_section=${BROLIT_TMP_DIR}/files-bk-${NOW}.mail" \
+        "footer=${BROLIT_TMP_DIR}/footer-${NOW}.mail"; then
         log_event "error" "Failed to assemble complete backup email template" "false"
       fi
 
