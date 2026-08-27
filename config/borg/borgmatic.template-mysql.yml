@@ -101,7 +101,7 @@ mysql_databases:
     # database hook implicitly enables both read_special and
     # one_file_system (see above) to support dump and restore
     # streaming.
-    - name: ${database}
+    - name: {database}
 
       # Database hostname to connect to. Defaults to connecting
       # via local Unix socket.
