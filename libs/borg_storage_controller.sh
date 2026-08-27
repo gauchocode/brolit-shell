@@ -1072,44 +1072,62 @@ function restore_project_with_borg() {
 #   Return 0 if ok, 1 on error.
 ################################################################################
 
-function initialize_repository() {
+################################################################################
+# Private: resolve the borgmatic executable, robustly.
+#
+# Outputs:
+#   Command (possibly multi-word, e.g. "pipx run borgmatic") on stdout, or
+#   empty if not found.
+################################################################################
+
+function _borgmatic_resolve_cmd() {
+
+    if command -v borgmatic >/dev/null 2>&1; then
+        echo "borgmatic"
+    elif [[ -x "/root/.local/bin/borgmatic" ]]; then
+        echo "/root/.local/bin/borgmatic"
+    elif command -v pipx >/dev/null 2>&1; then
+        echo "pipx run borgmatic"
+    elif command -v python3 >/dev/null 2>&1; then
+        echo "python3 -m borgmatic"
+    fi
+
+}
+
+################################################################################
+# Private: initialize the repository (or repositories) in a single borgmatic
+# config file, as one combined borgmatic call. Borgmatic aborts the whole
+# command on the first repository it can't reach/init -- fine for a
+# single-repository config (the normal case), but for a multi-repository one
+# this means one broken destination blocks every other configured
+# destination too, forever. Callers with more than one repository should
+# invoke this per-repository (see initialize_repository()) instead of
+# relying on it to handle the fan-out itself.
+#
+# Arguments:
+#   ${1} = ${config_file}
+#   ${2} = ${borg_cmd}
+#   ${3} = ${log_label} (optional, for clearer log/display messages when
+#          called once per repository)
+#
+# Outputs:
+#   0 if ok (already existed or freshly initialized), 1 on error.
+################################################################################
+
+function _initialize_repository_for_config() {
 
     local config_file="${1}"
-
-    # Check if config file exists
-    if [[ ! -f "${config_file}" ]]; then
-        log_event "error" "Borgmatic config file not found: ${config_file}" "false"
-        display --indent 6 --text "- Borgmatic config file not found" --result "FAIL" --color RED
-        display --indent 8 --text "${config_file}" --tcolor YELLOW
-        return 1
-    fi
-
-    # Resolve borgmatic command robustly
-    local borg_cmd=""
-    if command -v borgmatic >/dev/null 2>&1; then
-        borg_cmd="borgmatic"
-    elif [[ -x "/root/.local/bin/borgmatic" ]]; then
-        borg_cmd="/root/.local/bin/borgmatic"
-    elif command -v pipx >/dev/null 2>&1; then
-        borg_cmd="pipx run borgmatic"
-    elif command -v python3 >/dev/null 2>&1; then
-        borg_cmd="python3 -m borgmatic"
-    fi
-
-    if [[ -z "${borg_cmd}" ]]; then
-        log_event "error" "Borgmatic executable not found via PATH, /root/.local/bin, pipx, or python3 -m" "true"
-        display --indent 6 --text "- Borgmatic executable not found" --result "FAIL" --color RED
-        return 1
-    fi
+    local borg_cmd="${2}"
+    local log_label="${3:-${config_file}}"
 
     # Check if repository already exists
     if eval "${borg_cmd} --config \"${config_file}\" info" >/dev/null 2>&1; then
-        log_event "info" "Repository already exists, skipping initialization" "false"
+        log_event "info" "Repository already exists, skipping initialization (${log_label})" "false"
         return 0
     fi
 
-    display --indent 6 --text "- Initializing Borg repository" --result "RUNNING" --color YELLOW
-    log_event "info" "Initializing new repository with '${borg_cmd}'" "false"
+    display --indent 6 --text "- Initializing Borg repository (${log_label})" --result "RUNNING" --color YELLOW
+    log_event "info" "Initializing new repository with '${borg_cmd}' (${log_label})" "false"
 
     # Try to initialize and capture output for diagnostics (e.g., Python Traceback)
     local init_output
@@ -1117,8 +1135,8 @@ function initialize_repository() {
 
         # Log
         clear_previous_lines "1"
-        display --indent 6 --text "- Repository initialization" --result "FAIL" --color RED
-        log_event "error" "Repository initialization failed. Command='${borg_cmd} init --encryption=none --config ${config_file}'" "false"
+        display --indent 6 --text "- Repository initialization (${log_label})" --result "FAIL" --color RED
+        log_event "error" "Repository initialization failed for ${log_label}. Command='${borg_cmd} init --encryption=none --config ${config_file}'" "false"
         # Surface a short snippet to logs to aid troubleshooting
         log_event "error" "borgmatic stderr: $(echo "${init_output}" | tail -n 10 | tr '\n' ' ')" "true"
 
@@ -1132,8 +1150,97 @@ function initialize_repository() {
 
     # Log
     clear_previous_lines "1"
-    display --indent 6 --text "- Repository initialization" --result "DONE" --color GREEN
-    log_event "info" "Repository initialized successfully" "false"
+    display --indent 6 --text "- Repository initialization (${log_label})" --result "DONE" --color GREEN
+    log_event "info" "Repository initialized successfully (${log_label})" "false"
+
+    return 0
+
+}
+
+################################################################################
+# Initialize the repository (or repositories) configured in a borgmatic
+# config file. Idempotent -- skips any repository that already exists.
+#
+# For a config with more than one repository (multi-destination redundancy,
+# e.g. two Storage Boxes), each repository is initialized independently: one
+# destination being unreachable/uninitializable no longer blocks the others
+# forever (confirmed live: epica-apps01's second Storage Box mirror was
+# never provisioned for this host, which previously made every single
+# project's borg backup fail completely, even though the first mirror was
+# healthy and ready). Returns success if at least one repository is usable;
+# any that failed are logged so the gap stays visible instead of silently
+# losing redundancy.
+#
+# Arguments:
+#   ${1} = ${config_file}
+#
+# Outputs:
+#   0 if at least one repository is usable, 1 if all failed.
+################################################################################
+
+function initialize_repository() {
+
+    local config_file="${1}"
+
+    # Check if config file exists
+    if [[ ! -f "${config_file}" ]]; then
+        log_event "error" "Borgmatic config file not found: ${config_file}" "false"
+        display --indent 6 --text "- Borgmatic config file not found" --result "FAIL" --color RED
+        display --indent 8 --text "${config_file}" --tcolor YELLOW
+        return 1
+    fi
+
+    # Resolve borgmatic command robustly
+    local borg_cmd
+    borg_cmd="$(_borgmatic_resolve_cmd)"
+
+    if [[ -z "${borg_cmd}" ]]; then
+        log_event "error" "Borgmatic executable not found via PATH, /root/.local/bin, pipx, or python3 -m" "true"
+        display --indent 6 --text "- Borgmatic executable not found" --result "FAIL" --color RED
+        return 1
+    fi
+
+    local repo_count
+    repo_count="$(yq '.repositories | length' "${config_file}" 2>/dev/null || echo "1")"
+    [[ -z "${repo_count}" || ! "${repo_count}" =~ ^[0-9]+$ ]] && repo_count=1
+
+    # Single (or no) repository -- one combined call, same as always.
+    if [[ "${repo_count}" -le 1 ]]; then
+        _initialize_repository_for_config "${config_file}" "${borg_cmd}"
+        return $?
+    fi
+
+    # Multiple repositories: initialize each independently via a per-repo
+    # temp config, so one broken destination can't block the others.
+    local i label ok_count=0 fail_labels=()
+    for (( i=0; i<repo_count; i++ )); do
+
+        label="$(yq ".repositories[${i}].label" "${config_file}" 2>/dev/null)"
+        [[ -z "${label}" || "${label}" == "null" ]] && label="repo-${i}"
+
+        local repo_config_file
+        repo_config_file="$(mktemp --suffix=".yml")"
+        cp "${config_file}" "${repo_config_file}"
+        yq -i ".repositories = [.repositories[${i}]]" "${repo_config_file}" 2>/dev/null
+
+        if _initialize_repository_for_config "${repo_config_file}" "${borg_cmd}" "${label}"; then
+            ((ok_count++))
+        else
+            fail_labels+=("${label}")
+        fi
+
+        rm -f "${repo_config_file}"
+
+    done
+
+    if [[ "${ok_count}" -eq 0 ]]; then
+        log_event "error" "All ${repo_count} repositories failed to initialize for $(basename "${config_file}")" "false"
+        return 1
+    fi
+
+    if [[ "${#fail_labels[@]}" -gt 0 ]]; then
+        log_event "warning" "${ok_count}/${repo_count} repositories usable for $(basename "${config_file}"); failed: ${fail_labels[*]} -- redundancy is reduced until this is fixed" "false"
+    fi
 
     return 0
 
