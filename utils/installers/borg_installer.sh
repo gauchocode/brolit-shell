@@ -43,31 +43,39 @@ function borg_check_if_installed() {
 
 # Check only borgmatic installation status (robust to manual uninstalls)
 function borgmatic_is_installed() {
-    
-    local installed="false"
 
-    if command -v pipx >/dev/null 2>&1; then
-        log_event "debug" "pipx detected for borgmatic check" "false"
-        if pipx list 2>/dev/null | grep -qi '\bborgmatic\b'; then
-            log_event "debug" "pipx list reports borgmatic installed" "false"
-            installed="true"
-        else
-            log_event "debug" "pipx list reports borgmatic NOT installed" "false"
-        fi
+    local installed="false"
+    local borgmatic_bin=""
+
+    if command -v pipx >/dev/null 2>&1 && pipx list 2>/dev/null | grep -qi '\bborgmatic\b'; then
+        log_event "debug" "pipx list reports borgmatic installed" "false"
     else
-        log_event "debug" "pipx not found; falling back to PATH checks (borgmatic check)" "false"
+        log_event "debug" "pipx not found or does not list borgmatic" "false"
     fi
 
-    if [[ "${installed}" == "false" ]]; then
-        if command -v borgmatic >/dev/null 2>&1; then
-            log_event "debug" "borgmatic found in PATH via command -v" "false"
-            installed="true"
-        elif [[ -x "/root/.local/bin/borgmatic" ]]; then
-            log_event "debug" "borgmatic found at /root/.local/bin/borgmatic" "false"
+    if command -v borgmatic >/dev/null 2>&1; then
+        borgmatic_bin="borgmatic"
+    elif [[ -x "/root/.local/bin/borgmatic" ]]; then
+        borgmatic_bin="/root/.local/bin/borgmatic"
+    fi
+
+    # A binary being findable (via pipx's registry or PATH) isn't enough --
+    # pipx can report an app as installed while its venv is corrupted (e.g. a
+    # partial upgrade left site-packages without the borgmatic module
+    # itself, `ModuleNotFoundError: No module named 'borgmatic'` on every
+    # invocation). That silently breaks every backup on the host with
+    # nothing ever detecting or repairing it, since this was the only check
+    # anything used to decide "does borgmatic need installing". Only trust a
+    # binary that actually runs.
+    if [[ -n "${borgmatic_bin}" ]]; then
+        if "${borgmatic_bin}" --version >/dev/null 2>&1; then
+            log_event "debug" "borgmatic binary (${borgmatic_bin}) verified working" "false"
             installed="true"
         else
-            log_event "debug" "borgmatic not found in PATH nor /root/.local/bin/borgmatic" "false"
+            log_event "warning" "borgmatic binary found (${borgmatic_bin}) but failed to run -- treating as NOT installed (broken venv)" "false"
         fi
+    else
+        log_event "debug" "borgmatic not found in PATH nor /root/.local/bin/borgmatic" "false"
     fi
 
     log_event "debug" "borgmatic_installed=${installed}" "false"
@@ -240,8 +248,12 @@ function borgmatic_installer() {
 
     display --indent 6 --text "- Installing borgmatic"
 
-    # Install borgmatic
-    if sudo pipx install borgmatic > /dev/null 2>&1; then
+    # --force: this is only called when borgmatic_is_installed() already
+    # found no *working* binary. Without --force, `pipx install` on an app
+    # pipx still has registered (even with a corrupted venv) just prints
+    # "already seems to be installed" and does nothing -- leaving a broken
+    # install broken. --force always gives a fresh venv.
+    if sudo pipx install borgmatic --force > /dev/null 2>&1; then
 
         # Log
         clear_previous_lines "1"
