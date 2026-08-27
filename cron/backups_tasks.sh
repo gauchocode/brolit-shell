@@ -420,13 +420,13 @@ email_html_file="${BROLIT_TMP_DIR}/full-email-${NOW}.mail"
 # Assemble complete email using new template engine
 # This replaces the previous 21 lines of grep/sed/mv operations with a single function call
 if ! mail_template_assemble "${email_html_file}" "main" \
-    "${BROLIT_TMP_DIR}/server_info-${NOW}.mail" \
-    "${BROLIT_TMP_DIR}/packages-${NOW}.mail" \
-    "${BROLIT_TMP_DIR}/certificates-${NOW}.mail" \
-    "${BROLIT_TMP_DIR}/databases-bk-${NOW}.mail" \
-    "${BROLIT_TMP_DIR}/configuration-bk-${NOW}.mail" \
-    "${BROLIT_TMP_DIR}/files-bk-${NOW}.mail" \
-    "${BROLIT_TMP_DIR}/footer-${NOW}.mail"; then
+    "server_info=${BROLIT_TMP_DIR}/server_info-${NOW}.mail" \
+    "packages_section=${BROLIT_TMP_DIR}/packages-${NOW}.mail" \
+    "certificates_section=${BROLIT_TMP_DIR}/certificates-${NOW}.mail" \
+    "databases_backup_section=${BROLIT_TMP_DIR}/databases-bk-${NOW}.mail" \
+    "configs_backup_section=${BROLIT_TMP_DIR}/configuration-bk-${NOW}.mail" \
+    "files_backup_section=${BROLIT_TMP_DIR}/files-bk-${NOW}.mail" \
+    "footer=${BROLIT_TMP_DIR}/footer-${NOW}.mail"; then
     log_event "error" "Failed to assemble email template" "false"
     display --indent 6 --text "- Assembling email template" --result "FAIL" --color RED
     return 1
