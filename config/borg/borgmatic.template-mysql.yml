@@ -101,7 +101,11 @@ mysql_databases:
     # database hook implicitly enables both read_special and
     # one_file_system (see above) to support dump and restore
     # streaming.
-    - name: {database}
+    # Quoted -- an unquoted bare "{name}" is valid YAML flow-mapping syntax
+    # for the whole value, not a plain string; yq re-serializes the file on
+    # every `-i` call in generate_borg_config() and silently rewrites an
+    # unquoted `{database}` here into `{database: ''}`. Confirmed live.
+    - name: "{database}"
 
       # Database hostname to connect to. Defaults to connecting
       # via local Unix socket.
