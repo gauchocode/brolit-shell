@@ -629,6 +629,58 @@ function project_get_database_engine() {
 }
 
 ################################################################################
+# Get the project's database name (best-effort). Used to fill borgmatic's
+# {database} constant -- an unresolved constant fails the *entire* config
+# file to parse (not just the DB dump section), so callers should fall back
+# to something rather than leave this empty.
+#
+# Arguments:
+#   ${1} = ${project_name}
+#   ${2} = ${project_install_type}
+#
+# Outputs:
+#   Database name, or empty string if not detected
+################################################################################
+
+function project_get_database_name() {
+
+    local project_name="${1}"
+    local project_install_type="${2}"
+
+    local project_path="/${PROJECTS_PATH}/${project_name}"
+    local db_name=""
+
+    # Docker projects: MYSQL_DATABASE / POSTGRES_DB env var, from
+    # docker-compose.yml first, then a sibling .env file
+    if [[ "${project_install_type}" == "docker"* ]]; then
+
+        local compose_file
+        for compose_file in "${project_path}/docker-compose.yml" "${project_path}/docker-compose.yaml"; do
+            [[ -f "${compose_file}" ]] || continue
+            db_name="$(grep -Eo "(MYSQL_DATABASE|POSTGRES_DB)[[:space:]]*[:=][[:space:]]*[^[:space:]#\"']+" "${compose_file}" 2>/dev/null | head -1 | sed -E 's/^[^:=]+[:=][[:space:]]*//')"
+            [[ -n "${db_name}" ]] && break
+        done
+
+        if [[ -z "${db_name}" && -f "${project_path}/.env" ]]; then
+            db_name="$(grep -E '^(MYSQL_DATABASE|POSTGRES_DB)=' "${project_path}/.env" 2>/dev/null | head -1 | cut -d '=' -f2- | tr -d "\"'")"
+        fi
+
+    fi
+
+    # WordPress
+    if [[ -z "${db_name}" && -f "${project_path}/wp-config.php" ]]; then
+        db_name="$(wp_config_get_option "${project_path}" "DB_NAME" 2>/dev/null)"
+    fi
+
+    # Laravel/PHP frameworks (.env DB_DATABASE)
+    if [[ -z "${db_name}" && -f "${project_path}/.env" ]]; then
+        db_name="$(grep -E '^DB_DATABASE=' "${project_path}/.env" 2>/dev/null | head -1 | cut -d '=' -f2- | tr -d "\"'")"
+    fi
+
+    echo "${db_name}"
+}
+
+################################################################################
 # Get project name from domain
 #
 # Arguments:

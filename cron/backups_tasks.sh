@@ -190,6 +190,20 @@ function generate_borg_config() {
         GROUP="${BACKUP_BORG_GROUP}" yq -i '.constants.group = strenv(GROUP)' "${yml_file}" 2>/dev/null || true
         HOST="${HOSTNAME}" yq -i '.constants.hostname = strenv(HOST)' "${yml_file}" 2>/dev/null || true
 
+        # The mysql/postgres templates reference a {database} constant in
+        # their *_databases hook. Leaving it unset doesn't just skip the DB
+        # dump -- borgmatic fails to parse the *entire* file ("cannot find
+        # variable database"), blocking the file-level backup too. Best-effort
+        # detect it; fall back to the project name (a common convention for
+        # single-site installs) rather than leave it unresolved.
+        local db_name
+        db_name="$(project_get_database_name "${project_name}" "${project_install_type}")"
+        if [[ -z "${db_name}" ]]; then
+            db_name="${project_name}"
+            log_event "warning" "Could not detect database name for ${project_name}, defaulting borgmatic's {database} constant to the project name -- verify this is correct" "false"
+        fi
+        DATABASE="${db_name}" yq -i '.constants.database = strenv(DATABASE)' "${yml_file}" 2>/dev/null || true
+
         # Add server configuration for each backup server
         local number_of_servers
         number_of_servers=$(jq ".BACKUPS.methods[].borg[].config | length" /root/.brolit_conf.json 2>/dev/null || echo "0")
