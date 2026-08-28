@@ -34,16 +34,21 @@ function _cleanup_mail_temp_files() {
 # Create a temporary mail file and track it for cleanup
 #
 # Arguments:
-#   ${1} = ${base_name} // Base name for the temp file (e.g., "server_info")
+#   ${1} = ${base_name} // Base name for the temp file (e.g., "server_info-${NOW}")
 #
 # Outputs:
 #   Path to the created temporary file
+#
+# Note: the resulting path is "${BROLIT_TMP_DIR}/${base_name}.mail" with no
+# extra timestamp/PID appended. Callers already include ${NOW} in base_name
+# to keep the name unique per run, and mail_template_assemble() callers
+# (cron/backups_tasks.sh, utils/backup_restore_manager.sh) reference that
+# exact path when assembling the final email - appending a second timestamp
+# here would make the file never found, silently dropping the section.
 ################################################################################
 function _create_temp_mail_file() {
     local base_name="${1}"
-    local timestamp
-    timestamp="$(date +%Y%m%d_%H%M%S)"
-    local temp_file="${BROLIT_TMP_DIR}/${base_name}-${timestamp}-$$.mail"
+    local temp_file="${BROLIT_TMP_DIR}/${base_name}.mail"
 
     # Track this file for cleanup
     MAIL_TEMP_FILES+=("${temp_file}")

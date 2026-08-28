@@ -473,11 +473,11 @@ elif [[ ${retention_backup_result} -eq 1 ]]; then
     notification_message="Backup completed, but ${STORAGE_DELETE_ERRORS} old backup(s) could not be deleted from remote storage. Check logs to avoid filling up storage quota."
 fi
 
-# Sending email notification
+# Sending email notification (detailed report)
 mail_send_notification "${email_subject}" "${mail_html}"
 
-# Send push notification if available
-send_notification "${SERVER_NAME}" "${notification_message}" "${notification_status}"
+# Send push notification to other channels (email already sent above, skip it to avoid duplicates)
+send_notification "${SERVER_NAME}" "${notification_message}" "${notification_status}" "email"
 
 # Write e-mail (debug)
 # echo "${mail_html}" >"${BROLIT_TMP_DIR}/email-${NOW}.mail"
