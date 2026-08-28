@@ -107,7 +107,7 @@ function backup_manager_menu() {
       backup_summary+="<b>Borg:</b> $([ "${STATUS_BACKUP_BORG}" -eq 0 ] && echo '✅ OK' || echo '❌ ERROR')<br><br>"
       backup_summary+="Check email for detailed report."
 
-      send_notification "${SERVER_NAME} - Complete Backup ${status_text^}" "${backup_summary}" "${notification_status}"
+      send_notification "${SERVER_NAME} - Complete Backup ${status_text^}" "${backup_summary}" "${notification_status}" "email"
 
     fi
     
@@ -138,7 +138,7 @@ function backup_manager_menu() {
       db_backup_summary+="<b>Time:</b> $(date '+%Y-%m-%d %H:%M:%S')<br><br>"
       db_backup_summary+="All databases have been backed up. Check email for detailed report."
 
-      send_notification "${SERVER_NAME} - Database Backup Completed" "${db_backup_summary}" "success"
+      send_notification "${SERVER_NAME} - Database Backup Completed" "${db_backup_summary}" "success" "email"
 
     fi
 
@@ -171,7 +171,7 @@ function backup_manager_menu() {
       files_backup_summary+="<b>Time:</b> $(date '+%Y-%m-%d %H:%M:%S')<br><br>"
       files_backup_summary+="Check email for detailed report."
 
-      send_notification "${SERVER_NAME} - Files Backup Completed" "${files_backup_summary}" "success"
+      send_notification "${SERVER_NAME} - Files Backup Completed" "${files_backup_summary}" "success" "email"
 
     fi
 
