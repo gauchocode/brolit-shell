@@ -1786,6 +1786,12 @@ function compress() {
 # Arguments:
 #   ${1} = ${script}
 #   ${2} = ${scheduled_time}
+#   ${3} = ${cron_wrapper} - optional command prefix (e.g. flock/timeout)
+#          run in front of ${script}. Not part of the idempotency check
+#          below, so a script already installed without a wrapper is still
+#          correctly detected as installed and won't get a second, wrapped
+#          duplicate line -- upgrading an already-provisioned host's cron
+#          entry to add/change a wrapper needs a separate migration step.
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -1795,6 +1801,7 @@ function brolit_cronjob_install() {
 
   local script="${1}"
   local scheduled_time="${2}"
+  local cron_wrapper="${3:-}"
 
   local cron_file
 
@@ -1820,8 +1827,11 @@ function brolit_cronjob_install() {
   grep_result=$?
   if [[ ${grep_result} -ne 0 ]]; then
 
+    local cron_command="${script}"
+    [[ -n "${cron_wrapper}" ]] && cron_command="${cron_wrapper} ${script}"
+
     log_event "info" "Updating cron job for script: ${script}" "false"
-    /bin/echo "${scheduled_time} ${script}" >>"${cron_file}"
+    /bin/echo "${scheduled_time} ${cron_command}" >>"${cron_file}"
 
     display --indent 2 --text "- Updating cron job" --result DONE --color GREEN
 
@@ -2225,6 +2235,14 @@ function menu_cron_script_tasks() {
   local scheduled_time
   local suggested_cron
 
+  # backups_tasks.sh drives borg/borgmatic against remote repos and can run
+  # long; without this a stuck run (e.g. a hung SSH connection) never gets
+  # reaped and the next day's cron pile up on top of it indefinitely.
+  # flock -n skips a new run outright if the previous one is still alive
+  # instead of queuing behind it; timeout caps how long any single run can
+  # occupy the lock.
+  local backups_cron_wrapper="/usr/bin/flock -n /var/lock/brolit_backups_tasks.lock /usr/bin/timeout 6h"
+
   runner_options=(
     "01)" "BACKUPS TASKS"
     "02)" "BORGMATIC TASKS"
@@ -2248,7 +2266,7 @@ function menu_cron_script_tasks() {
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
 
-        brolit_cronjob_install "${BROLIT_MAIN_DIR}/cron/backups_tasks.sh" "${scheduled_time}"
+        brolit_cronjob_install "${BROLIT_MAIN_DIR}/cron/backups_tasks.sh" "${scheduled_time}" "${backups_cron_wrapper}"
 
       fi
 
@@ -2261,7 +2279,7 @@ function menu_cron_script_tasks() {
       exitstatus=$?
       if [[ ${exitstatus} -eq 0 ]]; then
         # Schedule unified backups script instead of legacy borgmatic task
-        brolit_cronjob_install "${BROLIT_MAIN_DIR}/cron/backups_tasks.sh" "${scheduled_time}"
+        brolit_cronjob_install "${BROLIT_MAIN_DIR}/cron/backups_tasks.sh" "${scheduled_time}" "${backups_cron_wrapper}"
       fi
 
     fi
