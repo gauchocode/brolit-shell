@@ -46,6 +46,7 @@ function generate_config() {
         local total_projects=0
         local configs_created=0
         local configs_existing=0
+        local configs_skipped=0
         local configs_failed=0
         local projects_without_config=()
 
@@ -79,6 +80,10 @@ function generate_config() {
                         ((configs_existing++))
                         log_event "debug" "✓ Config already exists for: ${folder_name}" "false"
                         ;;
+                    "skipped")
+                        ((configs_skipped++))
+                        display --indent 6 --text "- Config skipped for ${folder_name} (empty/alias project)" --result "SKIPPED" --color YELLOW
+                        ;;
                     "failed")
                         ((configs_failed++))
                         projects_without_config+=("${folder_name}")
@@ -96,12 +101,14 @@ function generate_config() {
         log_event "info" "Total projects: ${total_projects}" "false"
         log_event "info" "Configs created: ${configs_created}" "false"
         log_event "info" "Configs existing: ${configs_existing}" "false"
+        log_event "info" "Configs skipped (empty/alias): ${configs_skipped}" "false"
         log_event "info" "Configs failed: ${configs_failed}" "false"
 
         display --indent 4 --text "Borgmatic configuration summary:" --tcolor YELLOW
         display --indent 6 --text "Total projects: ${total_projects}" --tcolor WHITE
         display --indent 6 --text "New configs created: ${configs_created}" --tcolor GREEN
         display --indent 6 --text "Existing configs: ${configs_existing}" --tcolor BLUE
+        display --indent 6 --text "Skipped (empty/alias): ${configs_skipped}" --tcolor YELLOW
 
         if [ ${configs_failed} -gt 0 ]; then
             display --indent 6 --text "Failed configs: ${configs_failed}" --tcolor RED
@@ -125,9 +132,32 @@ function generate_borg_config() {
 
     local project_name="${1}"
     local yml_file="/etc/borgmatic.d/${project_name}.yml"
+    local project_dir="/var/www/${project_name}"
     local project_install_type
 
-    project_install_type="$(project_get_install_type "/var/www/${project_name}" 2>/dev/null || echo "unknown")"
+    # Some domains only exist under PROJECTS_PATH to follow brolit's
+    # convention (one directory per site), while the site itself is served
+    # from elsewhere (e.g. an nginx alias/proxy_pass to another project's
+    # docker-compose). There's nothing to detect an engine for or back up
+    # here -- generating a config for these was defaulting to the mysql
+    # template with an unresolved {database} constant, which broke
+    # borgmatic's parsing of the file on every run. Skip them instead.
+    if [[ -d "${project_dir}" ]] && [[ -z "$(find "${project_dir}" -mindepth 1 -maxdepth 1 -print -quit)" ]]; then
+
+        log_event "info" "${project_name} directory is empty (alias/placeholder project) -- skipping borgmatic config" "false"
+
+        # Remove any stale config left over from before this project became empty
+        if [[ -f "${yml_file}" ]]; then
+            log_event "warning" "Removing stale borgmatic config for now-empty project: ${yml_file}" "false"
+            rm -f "${yml_file}"
+        fi
+
+        echo "skipped"
+        return 0
+
+    fi
+
+    project_install_type="$(project_get_install_type "${project_dir}" 2>/dev/null || echo "unknown")"
 
     # Check if config file already exists
     if [ ! -f "${yml_file}" ]; then
@@ -289,6 +319,14 @@ function backup_project_all_enabled_methods() {
                 display --indent 8 --text "Backup failed" --result "FAIL" --color RED
                 backup_status=1
             fi
+
+        elif [[ -z "$(find "${PROJECTS_PATH}/${project_domain}" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]]; then
+
+            # Empty project directory -- an alias/placeholder for a site
+            # served elsewhere (e.g. an nginx proxy_pass into another
+            # project's docker-compose). Nothing to back up; not an error.
+            log_event "info" "${project_domain} is an empty/alias project directory -- no backup needed" "false"
+            display --indent 6 --text "- ${project_domain} (empty/alias project)" --result "SKIPPED" --color YELLOW
 
         else
 

@@ -10,8 +10,15 @@ source "${BROLIT_MAIN_DIR}/libs/local/mail_template_engine.sh"
 # Global array to track temporary mail files for cleanup
 declare -ga MAIL_TEMP_FILES=()
 
-# Trap to ensure cleanup on script exit
-trap '_cleanup_mail_temp_files' EXIT ERR INT TERM
+# Trap to ensure cleanup on script exit. EXIT/ERR just clean up (the shell
+# is already exiting/continuing on its own); INT/TERM must also actually
+# terminate the process -- a trap handler that returns without exiting
+# leaves the signal "handled" and the script running, making it immune to
+# SIGTERM (confirmed live: killed backups_tasks.sh instances stuck for days
+# survived repeated SIGTERM and needed SIGKILL because of this).
+trap '_cleanup_mail_temp_files' EXIT ERR
+trap '_cleanup_mail_temp_files; exit 143' TERM
+trap '_cleanup_mail_temp_files; exit 130' INT
 
 ################################################################################
 # Cleanup all tracked temporary mail files
