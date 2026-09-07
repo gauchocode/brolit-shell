@@ -3460,11 +3460,17 @@ function wpcli_config_set() {
     ## --no-color added to avoid unwanted wp-cli output
     [[ ${install_type} == "docker"* ]] && wpcli_cmd="docker compose --progress=quiet -f ${wp_site}/../docker-compose.yml run -T -u "$(grep '^APP_USER_ID=' "${wp_site}/../.env" 2>/dev/null | cut -d= -f2 | head -1)" -e HOME=/tmp --rm wordpress-cli wp --no-color"
 
+    local error_output
+    local exitstatus
+    local wp_config_path
+    local original_permissions
+    local original_owner
+
     # Log
     log_event "debug" "Running: ${wpcli_cmd} config set ${wp_config_option} ${wp_config_option_value}" "false"
 
-    # wp-cli command
-    wp_config="$(${wpcli_cmd} config set "${wp_config_option}" "${wp_config_option_value}")"
+    # wp-cli command - capture stderr to detect permission errors
+    error_output=$(${wpcli_cmd} config set "${wp_config_option}" "${wp_config_option_value}" 2>&1)
 
     # get exit status
     exitstatus=$?
@@ -3473,16 +3479,86 @@ function wpcli_config_set() {
         # Log success
         [[ ${install_type} == "docker"* ]] && clear_previous_lines "1"
         log_event "debug" "Command executed: ${wpcli_cmd} config set ${wp_config_option} ${wp_config_option_value}" "false"
-        log_event "debug" "wp config set return:${wp_config}" "false"
+        log_event "debug" "wp config set return:${error_output}" "false"
 
         return 0
 
     else
 
+        # Check if error is due to wp-config.php not being writable
+        # (e.g. restored backups owned by www-data:www-data while wp-cli
+        # runs as APP_USER_ID inside the container).
+        # Same retry pattern as wpcli_shuffle_salts.
+        if echo "${error_output}" | grep -qi "not writable"; then
+
+            log_event "info" "wp-config.php is not writable, attempting to fix permissions temporarily" "false"
+
+            # Determine wp-config.php path
+            wp_config_path="${wp_site}/wp-config.php"
+
+            # Check if wp-config.php exists
+            if [[ ! -f ${wp_config_path} ]]; then
+                log_event "error" "wp-config.php not found at ${wp_config_path}" "false"
+                [[ ${install_type} == "docker"* ]] && clear_previous_lines "1"
+                log_event "debug" "Command executed: ${wpcli_cmd} config set ${wp_config_option} ${wp_config_option_value}" "false"
+                log_event "error" "wp config set return:${error_output}" "false"
+
+                return 1
+            fi
+
+            # Save original permissions and owner
+            original_permissions=$(stat -c "%a" "${wp_config_path}")
+            original_owner=$(stat -c "%U:%G" "${wp_config_path}")
+            log_event "debug" "Original permissions: ${original_permissions}, owner: ${original_owner}" "false"
+
+            # Make wp-config.php writable
+            if [[ ${install_type} == "docker"* ]]; then
+                # For Docker, change owner to the wp-cli runtime user
+                chown "${APP_USER_ID:-33}:${APP_GROUP_ID:-33}" "${wp_config_path}"
+                log_event "debug" "Changed owner to ${APP_USER_ID:-33}:${APP_GROUP_ID:-33} for config set operation" "false"
+            else
+                # For default installation, ensure it's writable by www-data
+                chown www-data:www-data "${wp_config_path}"
+                log_event "debug" "Changed owner to www-data:www-data for config set operation" "false"
+            fi
+
+            # Also ensure permissions allow writing
+            chmod 644 "${wp_config_path}"
+            log_event "debug" "Changed permissions to 644 for config set operation" "false"
+
+            # Try config set again
+            error_output=$(${wpcli_cmd} config set "${wp_config_option}" "${wp_config_option_value}" 2>&1)
+            exitstatus=$?
+
+            # Restore original permissions and owner
+            chmod "${original_permissions}" "${wp_config_path}"
+            chown "${original_owner}" "${wp_config_path}"
+            log_event "debug" "Restored original permissions: ${original_permissions} and owner: ${original_owner}" "false"
+
+            if [[ ${exitstatus} -eq 0 ]]; then
+                # Log success
+                [[ ${install_type} == "docker"* ]] && clear_previous_lines "1"
+                log_event "debug" "Command executed: ${wpcli_cmd} config set ${wp_config_option} ${wp_config_option_value}" "false"
+                log_event "info" "wp config set succeeded after fixing permissions" "false"
+
+                return 0
+            else
+                # Still failed after permission fix
+                log_event "error" "Failed to set config even after fixing permissions" "false"
+                log_event "error" "Error output: ${error_output}" "false"
+                [[ ${install_type} == "docker"* ]] && clear_previous_lines "1"
+                log_event "debug" "Command executed: ${wpcli_cmd} config set ${wp_config_option} ${wp_config_option_value}" "false"
+                log_event "error" "wp config set return:${error_output}" "false"
+
+                return 1
+            fi
+
+        fi
+
         # Log failure
         [[ ${install_type} == "docker"* ]] && clear_previous_lines "1"
         log_event "debug" "Command executed: ${wpcli_cmd} config set ${wp_config_option} ${wp_config_option_value}" "false"
-        log_event "error" "wp config set return:${wp_config}" "false"
+        log_event "error" "wp config set return:${error_output}" "false"
 
         return 1
 
