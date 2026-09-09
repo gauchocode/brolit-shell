@@ -196,33 +196,53 @@ function mail_template_assemble() {
     }
 
     # Replace section placeholders
-    local section_entry section_name section_file section_content
+    local section_entry section_name section_file
     for section_entry in "${sections[@]}"; do
         section_name="${section_entry%%=*}"
         section_file="${section_entry#*=}"
 
         if [[ -f "${section_file}" ]]; then
-            # Read section content
-            section_content="$(cat "${section_file}" 2>/dev/null)" || {
+            # Read section content (kept as a permissions check; the awk
+            # replacement below slurps the file itself)
+            cat "${section_file}" >/dev/null 2>&1 || {
                 log_event "warning" "Failed to read section file: ${section_file}" "false"
                 continue
             }
-
-            # Escape special characters for sed
-            section_content="$(echo "${section_content}" | sed 's/[&/\]/\\&/g')"
-
-            # Replace placeholder with content
-            result="$(echo "${result}" | sed "s|{{${section_name}}}|${section_content}|g")"
+            # Uses awk instead of sed: section files are multi-line HTML, and
+            # interpolating multi-line content inside `sed "s|ph|content|g"`
+            # breaks the s command at the first embedded newline (silently
+            # producing an empty assembly). awk slurps the section file and
+            # does a literal index/substr replacement with no escaping needs.
+            # $0 is safe inside the single-quoted awk program.
+            result="$(printf '%s' "${result}" | SECTION_FILE="${section_file}" PLACEHOLDER="{{${section_name}}}" awk '
+                BEGIN {
+                    secfile = ENVIRON["SECTION_FILE"]
+                    ph = ENVIRON["PLACEHOLDER"]
+                    content = ""
+                    while ((getline line < secfile) > 0) {
+                        content = content line "\n"
+                    }
+                    close(secfile)
+                }
+                {
+                    out = $0
+                    res = ""
+                    while ((i = index(out, ph)) > 0) {
+                        res = res substr(out, 1, i - 1) content
+                        out = substr(out, i + length(ph))
+                    }
+                    print res out
+                }')"
         else
             log_event "debug" "Section file not found (skipping): ${section_file}" "false"
         fi
     done
 
     # Remove all unused placeholders (anything still in {{...}} format)
-    result="$(echo "${result}" | sed 's|{{[^}]*}}||g')"
+    result="$(printf '%s' "${result}" | sed 's|{{[^}]*}}||g')"
 
     # Write result to output file
-    echo "${result}" > "${output_file}" 2>/dev/null || {
+    printf '%s\n' "${result}" > "${output_file}" 2>/dev/null || {
         log_event "error" "Failed to write assembled email to: ${output_file}" "false"
         return 1
     }
