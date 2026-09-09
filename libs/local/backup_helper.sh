@@ -219,6 +219,11 @@ function backup_server_config() {
         # Log
         log_event "debug" "storage_upload_backup return: ${storage_result}" "false"
 
+        # Run retention cleanup even when the upload fails: deleting the oldest
+        # remote backups is what frees quota so the next attempt can succeed.
+        storage_delete_old_backups "${storage_path}"
+        [[ $? -ne 0 ]] && log_event "error" "Retention cleanup failed after upload error for server config backup: ${bk_sup_type} (${storage_path})" "false"
+
         # Delete temp backup even on failure to avoid filling disk
         rm --force "${BROLIT_TMP_DIR}/${NOW}/${backup_file}"
         log_event "info" "Temp backup deleted from server (upload failed)" "false"
@@ -778,6 +783,13 @@ function backup_project_files() {
         # Log
         log_event "debug" "storage_upload_backup return: ${storage_result}" "false"
 
+        # Run retention cleanup even when the upload fails: deleting the oldest
+        # remote backups is what frees quota so the next attempt can succeed.
+        # Skipping it on this branch caused old backups to pile up and fill
+        # remote storage until every upload started failing.
+        storage_delete_old_backups "${storage_path}"
+        [[ $? -ne 0 ]] && log_event "error" "Retention cleanup failed after upload error for project files backup: ${directory_to_backup} (${storage_path})" "false"
+
         # Delete temp backup even on failure to avoid filling disk
         rm --force "${BROLIT_TMP_DIR}/${NOW}/${backup_file}"
         log_event "info" "Temp backup deleted from server (upload failed)" "false"
@@ -1170,6 +1182,11 @@ function backup_project_database() {
         error_msg="Error uploading file: ${backup_file}. Upload result: ${storage_result}"
 
         log_event "error" "${error_msg}" "false"
+
+        # Run retention cleanup even when the upload fails: deleting the oldest
+        # remote backups is what frees quota so the next attempt can succeed.
+        storage_delete_old_backups "${storage_path}"
+        [[ $? -ne 0 ]] && log_event "error" "Retention cleanup failed after upload error for database backup: ${database} (${storage_path})" "false"
 
         # Delete local temp files even on failure to avoid filling disk
         rm --force "${BROLIT_TMP_DIR}/${NOW}/${dump_file}"

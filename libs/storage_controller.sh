@@ -441,8 +441,18 @@ function storage_upload_backup() {
 
         # Compare
         ## Need to do this because Bash doesn't support floating point arithmetic on [[]]
+        ## When there is not enough free space, skip the upload entirely instead
+        ## of starting a doomed multi-hour transfer: the caller will run
+        ## retention cleanup on the failure branch, which frees quota from the
+        ## oldest backups so the next backup attempt can succeed.
         result=$(echo "${storage_space_free} < ${file_to_upload_size}" | bc)
-        [[ ${result} -eq 1 ]] && error_type="dropbox_space" && got_error=1
+        if [[ ${result} -eq 1 ]]; then
+            log_event "error" "Not enough Dropbox space: free=${storage_space_free}MB, file=${file_to_upload_size}MB. Skipping upload (run retention cleanup to free space)." "false"
+            error_type="dropbox_space"
+            got_error=1
+            [[ ${error_type} != "none" ]] && echo "${error_type}"
+            return ${got_error}
+        fi
 
         # Upload
         dropbox_upload "${file_to_upload}" "${remote_directory}"
