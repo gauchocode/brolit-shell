@@ -471,10 +471,12 @@ email_html_file="${BROLIT_TMP_DIR}/full-email-${NOW}.mail"
 
 # Assemble complete email using new template engine
 # This replaces the previous 21 lines of grep/sed/mv operations with a single function call
+# Note: the certificates section is intentionally NOT included here. Certificate
+# health has its own monitoring (security scan, Brolit UI) and must not drive
+# the backup report status.
 if ! mail_template_assemble "${email_html_file}" "main" \
     "server_info=${BROLIT_TMP_DIR}/server_info-${NOW}.mail" \
     "packages_section=${BROLIT_TMP_DIR}/packages-${NOW}.mail" \
-    "certificates_section=${BROLIT_TMP_DIR}/certificates-${NOW}.mail" \
     "databases_backup_section=${BROLIT_TMP_DIR}/databases-bk-${NOW}.mail" \
     "configs_backup_section=${BROLIT_TMP_DIR}/configuration-bk-${NOW}.mail" \
     "files_backup_section=${BROLIT_TMP_DIR}/files-bk-${NOW}.mail" \
@@ -494,7 +496,9 @@ retention_backup_result=0
 [[ ${STORAGE_DELETE_ERRORS} -gt 0 ]] && retention_backup_result=1
 
 # Checking result status for mail subject (including borg backup status)
-email_status="$(mail_subject_status "${database_backup_result}" "${files_backup_result}" "${STATUS_SERVER}" "${STATUS_CERTS}" "${OUTDATED_PACKAGES}" "${borg_backup_result}" "${retention_backup_result}")"
+# Certificate status is deliberately excluded: cert health is monitored
+# separately (security scan, Brolit UI) and must not mix with backup status.
+email_status="$(mail_subject_status "${database_backup_result}" "${files_backup_result}" "${STATUS_SERVER}" "0" "${OUTDATED_PACKAGES}" "${borg_backup_result}" "${retention_backup_result}")"
 
 # Preparing email to send
 email_subject="${email_status} [${NOWDISPLAY}] - Complete Backup on ${SERVER_NAME}"
