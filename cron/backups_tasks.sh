@@ -521,6 +521,17 @@ mail_send_notification "${email_subject}" "${mail_html}"
 # Send push notification to other channels (email already sent above, skip it to avoid duplicates)
 send_notification "${SERVER_NAME}" "${notification_message}" "${notification_status}" "email"
 
+# Independent SSL certificate alert: sent ONLY when a certificate needs
+# attention (missing, expired or expiring soon). Silent when all are OK,
+# so certificate noise never mixes with the backup report again.
+cert_section_file="${BROLIT_TMP_DIR}/certificates-${NOW}.mail"
+if [[ -f "${cert_section_file}" ]] && grep -q "Certificates on server: WARNING" "${cert_section_file}" 2>/dev/null; then
+    cert_alert_body="$(cat "${cert_section_file}")"
+    mail_send_notification "⚠️ SSL certificates need attention on ${SERVER_NAME}" "${cert_alert_body}" "alert"
+else
+    log_event "debug" "All SSL certificates OK, skipping certificate alert email" "false"
+fi
+
 # Write e-mail (debug)
 # echo "${mail_html}" >"${BROLIT_TMP_DIR}/email-${NOW}.mail"
 
