@@ -3327,6 +3327,12 @@ function project_update_domain_config() {
   log_subsection "Update Domain Configuration"
 
   project_root_domain="$(domain_get_root "${project_domain}")"
+  if [[ $? -ne 0 ]]; then
+    display --indent 6 --text "- Update Domain Configuration" --result "FAIL" --color RED
+    display --indent 8 --text "Domain extension for '${project_domain}' not supported, add it to config/domain_extension-list"
+    log_event "error" "Aborting: unsupported domain extension for '${project_domain}'" "false"
+    return 1
+  fi
 
   # Validate port if provided
   if [[ -n "${project_port}" && ! "${project_port}" =~ ^[0-9]+$ ]]; then

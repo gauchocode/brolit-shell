@@ -196,7 +196,9 @@ function domain_get_extension() {
   else
 
     # Logging
-    log_event "error" "Extracting domain extension from ${domain}" "false"
+    log_event "error" "Domain extension not supported for '${domain}'. If this is a valid TLD, add it to ${BROLIT_MAIN_DIR}/config/domain_extension-list and retry." "false"
+    display --indent 6 --text "- Domain extension for ${domain}" --result "FAIL" --color RED
+    display --indent 8 --text "TLD not in config/domain_extension-list, add it and retry"
 
     return 1
 
