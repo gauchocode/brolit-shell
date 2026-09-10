@@ -105,6 +105,7 @@
 .info
 .int
 .mobi
+.news
 .pw
 .tel
 .travel
@@ -115,6 +116,7 @@
 .host
 .hosting
 .live
+.site
 .studio
 .team
 .top
