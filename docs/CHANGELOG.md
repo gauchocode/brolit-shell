@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 3.14 - 2026-09-11
+
+### Added
+
+- Host nginx now restores the real visitor IP behind the Cloudflare proxy: new `config/nginx/conf.d/cloudflare-real-ip.conf` (Cloudflare edge ranges + `CF-Connecting-IP` header), deployed to `/etc/nginx/conf.d/` by `nginx_reconfigure()` (`libs/apps/nginx_helper.sh`). Docker nginx templates (`config/docker-compose/{wordpress,php}/production-stack-proxy/php-8.{3,4,5}_docker/nginx/nginx.conf`) now restore PHP `REMOTE_ADDR` from `X-Real-IP`. Root cause fixed: on Cloudflare-proxied sites WordPress/Wordfence only ever saw Cloudflare edge IPs, so rate limiting (login failures, password resets, 404s) was enforced collectively across all visitors sharing an edge IP, producing mass false-positive 503 blocks (reproduced on casanatalia.com.ar, `gaucho-docker-host04`).
 
 ### Fixed
 

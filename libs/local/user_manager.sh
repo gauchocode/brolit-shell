@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.13
+# Version: 3.14
 ################################################################################
 #
 # User Manager: create/delete system users, manage sudo membership and
