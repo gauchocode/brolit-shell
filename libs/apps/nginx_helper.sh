@@ -458,6 +458,11 @@ function nginx_reconfigure() {
     cat "${BROLIT_MAIN_DIR}/config/nginx/mime.types" >"/etc/nginx/mime.types"
     display --indent 6 --text "- Updating mime.types" --result "DONE" --color GREEN
 
+    # Cloudflare real-IP snippet (restores visitor IP behind CF proxy)
+    mkdir -p "/etc/nginx/conf.d"
+    cat "${BROLIT_MAIN_DIR}/config/nginx/conf.d/cloudflare-real-ip.conf" >"/etc/nginx/conf.d/cloudflare-real-ip.conf"
+    display --indent 6 --text "- Updating Cloudflare real-IP snippet" --result "DONE" --color GREEN
+
     #Test the validity of the nginx configuration
     nginx_configuration_test
 
