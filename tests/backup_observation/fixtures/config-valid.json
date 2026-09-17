@@ -1,0 +1,9 @@
+{
+  "BROLIT_SETUP": { "config": [{ "version": "3.10.7" }] },
+  "BACKUPS": {
+    "methods": [{
+      "borg": [{ "status": "enabled", "group": "fixture-group", "config": [] }],
+      "dropbox": [{ "status": "disabled", "config": [{ "file": "/root/.dropbox_uploader" }] }]
+    }]
+  }
+}

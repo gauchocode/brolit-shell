@@ -1,0 +1,26 @@
+constants:
+  user_1: u372319
+  server_1: u372319.your-storagebox.de
+  port_1: 23
+  user_2: u391408
+  server_2: u391408.your-storagebox.de
+  port_2: 23
+  project: demo.stellacast.com
+  hostname: stellacast-vm
+  group: stellacast-hosts
+
+source_directories:
+  - /var/www/{project}
+
+repositories:
+  - path: ssh://{user_1}@{server_1}:{port_1}/./applications/{group}/{hostname}/projects-online/site/{project}
+    label: storage-{user_1}
+  - path: ssh://{user_2}@{server_2}:{port_2}/./applications/{group}/{hostname}/projects-online/site/{project}
+    label: storage-{user_2}
+
+retention:
+  keep_daily: 1
+  keep_weekly: 0
+  keep_monthly: 0
+
+archive_name_format: '{project}_site-files-{now}'

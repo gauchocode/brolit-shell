@@ -196,6 +196,78 @@ BACKUP_BORG_USERS=()
 BACKUP_BORG_SERVERS=()
 BACKUP_BORG_PORTS=()
 
+################################################################################
+# Read-only backup observation projection.
+#
+# This function is intentionally separate from brolit_configuration_load. It
+# uses jq directly, never sources credentials, creates files, migrates config,
+# checks packages, initializes directories, or emits notifications. The
+# observer imports this definition-only file but never invokes the normal
+# configuration loaders.
+#
+# Arguments:
+#   ${1} = ${server_config_file}
+#
+# Outputs:
+#   Sets BACKUP_OBSERVATION_* globals; returns 0 for a current valid config.
+################################################################################
+function brolit_configuration_backup_observation_projection() {
+    local server_config_file="${1}"
+    local template_file="${BROLIT_MAIN_DIR:-$(pwd)}/config/brolit/brolit_conf.json"
+    local configured_version=""
+    local expected_version=""
+
+    declare -g BACKUP_OBSERVATION_CONFIG_STATUS="invalid"
+    declare -g BACKUP_OBSERVATION_CONFIG_FILE="${server_config_file}"
+    declare -g BACKUP_OBSERVATION_CONFIG_VERSION=""
+    declare -g BACKUP_OBSERVATION_BORG_STATUS="disabled"
+    declare -g BACKUP_OBSERVATION_BORG_GROUP=""
+    declare -g BACKUP_OBSERVATION_DROPBOX_STATUS="disabled"
+    declare -g BACKUP_OBSERVATION_DROPBOX_CONFIG_FILE=""
+    declare -g BACKUP_OBSERVATION_DROPBOX_ROOT=""
+    declare -g BACKUP_OBSERVATION_TIMEZONE="UTC"
+
+    if [[ ! -f "${server_config_file}" || -L "${server_config_file}" ]]; then
+        return 1
+    fi
+    if ! command -v jq >/dev/null 2>&1 || ! jq -e 'try (
+        type == "object"
+        and (.BROLIT_SETUP | type == "object")
+        and (.BROLIT_SETUP.config | type == "array" and length == 1)
+        and (.BROLIT_SETUP.config[0].version | type == "string" and length > 0 and length <= 64)
+        and (.BACKUPS | type == "object")
+        and (.BACKUPS.methods | type == "array" and length == 1)
+        and (.BACKUPS.methods[0] | type == "object")
+        and (.BACKUPS.methods[0].borg | type == "array" and length <= 1)
+        and (.BACKUPS.methods[0].dropbox | type == "array" and length <= 1)
+        and all(.BACKUPS.methods[0].borg[]; type == "object" and (.status | type == "string" and (. == "enabled" or . == "disabled")) and (.config | type == "array"))
+        and all(.BACKUPS.methods[0].dropbox[]; type == "object" and (.status | type == "string" and (. == "enabled" or . == "disabled")) and (.config | type == "array"))
+        and ((.SERVER_CONFIG // {}) | type == "object")
+        and ((.SERVER_CONFIG.timezone // "UTC") | type == "string" and length <= 128)
+    ) catch false' "${server_config_file}" >/dev/null 2>&1; then
+        return 1
+    fi
+
+    configured_version="$(jq -r '.BROLIT_SETUP.config[0].version // empty' "${server_config_file}" 2>/dev/null)"
+    expected_version="$(jq -r '.BROLIT_SETUP.config[0].version // empty' "${template_file}" 2>/dev/null)"
+    if [[ -z "${configured_version}" || -z "${expected_version}" || "${configured_version}" != "${expected_version}" ]]; then
+        BACKUP_OBSERVATION_CONFIG_VERSION="${configured_version}"
+        return 1
+    fi
+
+    BACKUP_OBSERVATION_BORG_STATUS="$(jq -r '.BACKUPS.methods[0].borg[0].status // "disabled"' "${server_config_file}")"
+    BACKUP_OBSERVATION_BORG_GROUP="$(jq -r '.BACKUPS.methods[0].borg[0].group // empty' "${server_config_file}")"
+    BACKUP_OBSERVATION_DROPBOX_STATUS="$(jq -r '.BACKUPS.methods[0].dropbox[0].status // "disabled"' "${server_config_file}")"
+    BACKUP_OBSERVATION_DROPBOX_CONFIG_FILE="$(jq -r '.BACKUPS.methods[0].dropbox[0].config[0].file // empty' "${server_config_file}")"
+    BACKUP_OBSERVATION_DROPBOX_ROOT="$(jq -r '.BACKUPS.methods[0].dropbox[0].authorized_root // .BACKUPS.methods[0].dropbox[0].root // .BACKUPS.methods[0].dropbox[0].config[0].authorized_root // .BACKUPS.methods[0].dropbox[0].config[0].root // empty' "${server_config_file}")"
+    BACKUP_OBSERVATION_TIMEZONE="$(jq -r '.SERVER_CONFIG.timezone // "UTC"' "${server_config_file}")"
+    [[ "${BACKUP_OBSERVATION_BORG_STATUS}" == "enabled" || "${BACKUP_OBSERVATION_BORG_STATUS}" == "disabled" ]] || return 1
+    [[ "${BACKUP_OBSERVATION_DROPBOX_STATUS}" == "enabled" || "${BACKUP_OBSERVATION_DROPBOX_STATUS}" == "disabled" ]] || return 1
+    BACKUP_OBSERVATION_CONFIG_VERSION="${configured_version}"
+    BACKUP_OBSERVATION_CONFIG_STATUS="valid"
+    return 0
+}
+
 function _brolit_configuration_load_backup_borg() {
 
     local server_config_file="${1}"

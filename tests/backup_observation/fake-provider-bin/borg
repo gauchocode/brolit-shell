@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# Fake borg for isolated observer tests. Records every invocation and answers
+# only the allowlisted read-only metadata commands with fixture JSON.
+printf 'borg %q\n' "$*" >> "${BO_ATTEMPT_LOG:?}"
+
+case "${1:-}" in
+    --version)
+        printf 'borg 1.2.0\n'
+        exit 0
+        ;;
+    info)
+        if [[ ${BROLIT_OBSERVER_TEST_BORG_MODE:-} == "lock" ]]; then
+            printf 'Failed to create/acquire the repository lock: Permission denied\n' >&2
+            exit 2
+        fi
+        if [[ ${BROLIT_OBSERVER_TEST_BORG_MODE:-} == "missing" ]]; then
+            printf 'repository does not exist\n' >&2
+            exit 2
+        fi
+        printf '{"cache":{"path":"/root/.cache/borg/fixture"},"encryption":{"mode":"none"},"repository":{"id":"b84ddee397162a6bbf4def41e630048005bea7dbb39d4a23390c0c7acf9dd4b6","last_modified":"2026-09-16T08:10:24.000000","location":"%s"}}\n' "${3:-unknown}"
+        exit 0
+        ;;
+    list)
+        if [[ ${BROLIT_OBSERVER_TEST_BORG_MODE:-} == "lock" ]]; then
+            printf 'Failed to create/acquire the repository lock: Permission denied\n' >&2
+            exit 2
+        fi
+        if [[ ${BROLIT_OBSERVER_TEST_BORG_MODE:-} == "missing" ]]; then
+            printf 'repository does not exist\n' >&2
+            exit 2
+        fi
+        if [[ ${BROLIT_OBSERVER_TEST_BORG_MODE:-} == "truncated" ]]; then
+            printf '{"archives":['
+            printf '%*s' 70000 ''
+            printf '],"repository":{"id":"fixture"}}\n'
+            exit 0
+        fi
+        printf 'borg-env unencrypted=%s relocated=%s\n' "${BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK:-}" "${BORG_RELOCATED_REPO_ACCESS_IS_OK:-}" >> "${BO_ATTEMPT_LOG:?}"
+        printf '{"archives":[{"archive":"demo.stellacast.com_site-files-2026-09-15T08:04:16","barchive":"demo.stellacast.com_site-files-2026-09-15T08:04:16","id":"7d6dc4b30983dae745cc3d2cabd6162f9f9a4985315f4d6a41088aeb1fce5802","name":"demo.stellacast.com_site-files-2026-09-15T08:04:16","start":"2026-09-15T08:04:17.000000","time":"2026-09-15T08:04:17.000000"},{"archive":"demo.stellacast.com_site-files-2026-09-16T08:04:16","barchive":"demo.stellacast.com_site-files-2026-09-16T08:04:16","id":"a76af10b1cff9d45ff1692eb725aedae047070fe6b76851b0e27420bd0c9c9bb","name":"demo.stellacast.com_site-files-2026-09-16T08:04:16","start":"2026-09-16T08:04:17.000000","time":"2026-09-16T08:04:17.000000"}],"encryption":{"mode":"none"},"repository":{"id":"b84ddee397162a6bbf4def41e630048005bea7dbb39d4a23390c0c7acf9dd4b6","last_modified":"2026-09-16T08:04:20.000000","location":"%s"}}\n' "${3:-unknown}"
+        exit 0
+        ;;
+esac
+
+printf 'fake borg: unsupported invocation\n' >&2
+exit 2

@@ -1,0 +1,9 @@
+# Fixture only: the observer must not evaluate any of this configuration.
+repositories:
+  - path: ssh://backup.example/./repo
+    label: "{project}"
+include:
+  - /etc/borgmatic.d/other.yml
+before_backup:
+  - "touch /tmp/brolit-observation-hook-canary"
+encryption_passcommand: "$(touch /tmp/brolit-observation-passcommand-canary)"
