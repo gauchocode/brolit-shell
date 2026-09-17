@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# Network-free Dropbox JSON fixture. The observer passes only a config path;
+# this fake intentionally never prints or logs the config contents.
+set -u
+printf 'curl %q\n' "$*" >> "${BO_ATTEMPT_LOG:?}"
+
+if [[ ${1:-} == "--version" ]]; then
+    printf 'curl 7.81.0 (fixture)\n'
+    exit 0
+fi
+
+config=""
+for ((i = 1; i <= $#; i++)); do
+    if [[ "${!i}" == "--config" ]]; then
+        j=$((i + 1))
+        config="${!j}"
+    fi
+done
+[[ -f "${config}" ]] || exit 2
+url="$(sed -n 's/^url = "\(.*\)"$/\1/p' "${config}")"
+output="$(sed -n 's/^output = "\(.*\)"$/\1/p' "${config}")"
+[[ -n "${output}" ]] || exit 2
+
+case "${url}" in
+    https://api.dropboxapi.com/oauth2/token)
+        printf '{"access_token":"sl.fixture-token","token_type":"bearer","expires_in":14400}\n' >"${output}"
+        ;;
+    https://api.dropboxapi.com/2/users/get_current_account)
+        printf '{"account_id":"dbid:fixture-account","name":{"display_name":"Fixture Account"},"root_info":{".tag":"root","root_namespace_id":"123456"}}\n' >"${output}"
+        ;;
+    https://api.dropboxapi.com/2/files/list_folder)
+        if [[ ${BROLIT_OBSERVER_TEST_DROPBOX_MODE:-} == "malformed" ]]; then
+            printf '{"entries":"not-an-array","has_more":true}\n' >"${output}"
+        elif [[ ${BROLIT_OBSERVER_TEST_DROPBOX_MODE:-} == "rate" ]]; then
+            printf '{"error_summary":"too_many_requests/fixture"}\n' >"${output}"
+            exit 22
+        elif [[ ${BROLIT_OBSERVER_TEST_DROPBOX_MODE:-} == "oversized" ]]; then
+            printf '{"entries":[' >"${output}"
+            printf '%*s' 70000 '' >>"${output}"
+            printf '],"has_more":false}\n' >>"${output}"
+        elif [[ ${BROLIT_OBSERVER_TEST_DROPBOX_MODE:-} == "outside-root" ]]; then
+            printf '{"entries":[{".tag":"file","id":"id:outside","name":"outside","path_display":"/outside-root/file","path_lower":"/outside-root/file","rev":"rev-outside","size":1,"server_modified":"2026-09-15T11:04:17Z","client_modified":"2026-09-15T11:04:18Z"}],"has_more":false}\n' >"${output}"
+        else
+            printf '{"entries":[{".tag":"file","id":"id:fixture-one","name":"fixture_site-files_2026-09-15T08:04:16","path_display":"/fixture-host/projects-online/site/fixture-site/fixture_site-files_2026-09-15T08:04:16","path_lower":"/fixture-host/projects-online/site/fixture-site/fixture_site-files_2026-09-15t08:04:16","rev":"rev-one","size":1234,"server_modified":"2026-09-15T11:04:17.123456Z","client_modified":"2026-09-15T11:04:18Z"},{".tag":"folder","name":"ignored-folder","path_display":"/fixture-host/projects-online/site/fixture-site"}],"has_more":true,"cursor":"cursor-page-one"}\n' >"${output}"
+        fi
+        ;;
+    https://api.dropboxapi.com/2/files/list_folder/continue)
+        if [[ ${BROLIT_OBSERVER_TEST_DROPBOX_MODE:-} == "repeat" ]]; then
+            printf '{"entries":[],"has_more":true,"cursor":"cursor-page-one"}\n' >"${output}"
+        elif [[ ${BROLIT_OBSERVER_TEST_DROPBOX_MODE:-} == "reset" ]]; then
+            printf '{"error":{".tag":"reset"},"error_summary":"reset/fixture"}\n' >"${output}"
+            exit 22
+        else
+            printf '{"entries":[{".tag":"file","id":"id:fixture-two","name":"database_backup_2026-09-16T08:04:16Z.sql.gz","path_display":"/fixture-host/projects-online/database/fixture-db/database_backup_2026-09-16T08:04:16Z.sql.gz","path_lower":"/fixture-host/projects-online/database/fixture-db/database_backup_2026-09-16t08:04:16z.sql.gz","rev":"rev-two","size":4567,"server_modified":"2026-09-16T11:04:17Z","client_modified":"2026-09-16T11:04:18.9999Z"}],"has_more":false}\n' >"${output}"
+        fi
+        ;;
+    *)
+        printf 'unexpected Dropbox endpoint\n' >&2
+        exit 2
+        ;;
+esac
+exit 0

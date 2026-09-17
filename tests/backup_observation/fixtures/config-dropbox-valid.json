@@ -1,0 +1,14 @@
+{
+  "BROLIT_SETUP": { "config": [{ "version": "3.10.7" }] },
+  "SERVER_CONFIG": { "timezone": "America/Argentina/Buenos_Aires" },
+  "BACKUPS": {
+    "methods": [{
+      "borg": [{ "status": "disabled", "group": "fixture-group", "config": [] }],
+      "dropbox": [{
+        "status": "enabled",
+        "authorized_root": "/fixture-host/projects-online",
+        "config": [{ "file": "/tmp/brolit-dropbox-credentials" }]
+      }]
+    }]
+  }
+}

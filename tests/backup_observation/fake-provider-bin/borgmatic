@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+printf 'unexpected borgmatic execution\n' >&2
+exit 125
