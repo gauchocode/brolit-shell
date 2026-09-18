@@ -2714,64 +2714,84 @@ show_backup_information_by_domain() {
 
     local dropbox_backups_json="[]"
     local borg_backups_json="[]"
+    local dropbox_error="false"
+    local borg_error="false"
 
     #######################################
     # DROPBOX BACKUPS
     #######################################
-    if [[ " ${backup_methods[*]} " == *" dropbox "* && -n "${DROPBOX_UPLOADER}" && -f "${DROPBOX_UPLOADER}" ]]; then
+    if [[ " ${backup_methods[*]} " == *" dropbox "* ]]; then
 
-        local dropbox_base_path="${HOSTNAME}"
-        local dropbox_site_dir="${dropbox_base_path}/projects-online/site/${project_domain}"
-        local dropbox_db_dir="${dropbox_base_path}/projects-online/database"
+        if [[ -z "${DROPBOX_UPLOADER}" || ! -f "${DROPBOX_UPLOADER}" ]]; then
+            dropbox_error="true"
+        else
 
-        # Get all site backups
-        local site_backups
-        site_backups="$("${DROPBOX_UPLOADER}" -q list "${dropbox_site_dir}" 2>/dev/null | grep -E 'site-files|tar\.bz2|tar\.gz|\.tgz')"
+            local dropbox_base_path="${HOSTNAME}"
+            local dropbox_site_dir="${dropbox_base_path}/projects-online/site/${project_domain}"
+            local dropbox_db_dir="${dropbox_base_path}/projects-online/database"
 
-        # Initialize JSON array
-        local backups_json="["
-        local first_entry="true"
-
-        for site_line in ${site_backups}; do
-            local backup_file backup_date site_size
-            backup_file="$(echo "${site_line}" | awk '{print $NF;}')"
-            site_size="$(echo "${site_line}" | awk '{print $2;}')"
-            [[ -z "${site_size}" || ! "${site_size}" =~ ^[0-9]+$ ]] && site_size=0
-
-            # Extract date from filename
-            backup_date="$(echo "${backup_file}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')"
-            [[ -z "${backup_date}" ]] && backup_date="unknown"
-
-            # Search for matching database backup
-            local project_name db_backup="empty" db_size=0
-            project_name="$(echo "${project_domain}" | cut -d'.' -f2)"
-
-            local project_types=("prod" "dev" "stage" "test" "beta" "demo")
-            for project_type in "${project_types[@]}"; do
-                local db_dir="${dropbox_db_dir}/${project_name}_${project_type}"
-                local search_pattern="${project_name}_${project_type}_database_${backup_date}"
-                local found_db
-                found_db="$("${DROPBOX_UPLOADER}" -q list "${db_dir}" 2>/dev/null | grep "${search_pattern}" | awk '{print $NF}' | head -1)"
-
-                if [[ -n "${found_db}" ]]; then
-                    db_backup="$(basename "${found_db}")"
-                    break
-                fi
-            done
-
-            # Add to JSON array
-            if [[ "${first_entry}" == "true" ]]; then
-                first_entry="false"
-            else
-                backups_json="${backups_json},"
+            # Get all site backups.  Keep the command status separate from the
+            # listing itself so an unavailable provider is not mistaken for a
+            # valid empty repository.
+            local site_backups
+            if ! site_backups="$("${DROPBOX_UPLOADER}" -q list "${dropbox_site_dir}" 2>/dev/null)"; then
+                dropbox_error="true"
             fi
 
-            backups_json="${backups_json}{\"date\":\"${backup_date}\",\"files\":\"${backup_file}\",\"database\":\"${db_backup}\",\"site_bytes\":${site_size}}"
-        done
+            if [[ "${dropbox_error}" != "true" ]]; then
+                # Initialize JSON array
+                local backups_json="["
+                local first_entry="true"
 
-        backups_json="${backups_json}]"
-        dropbox_backups_json="${backups_json}"
+                # Dropbox uploader emits one listing record per line.  Do not
+                # iterate over whitespace-separated tokens: doing so turns
+                # file metadata such as "[F]" and numeric size fields into
+                # fake backup entries.
+                while IFS= read -r site_line; do
+                    [[ -z "${site_line}" ]] && continue
+                    local backup_file backup_date site_size
+                    backup_file="$(echo "${site_line}" | awk '{print $NF;}')"
+                    backup_file="$(basename "${backup_file}")"
+                    [[ "${backup_file}" == *site-files* || "${backup_file}" == *.tar.bz2 || "${backup_file}" == *.tar.gz || "${backup_file}" == *.tgz ]] || continue
+                    site_size="$(echo "${site_line}" | awk '{print $2;}')"
+                    [[ -z "${site_size}" || ! "${site_size}" =~ ^[0-9]+$ ]] && site_size=0
 
+                    # Extract date from filename
+                    backup_date="$(echo "${backup_file}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')"
+                    [[ -z "${backup_date}" ]] && continue
+
+                    # Search for matching database backup
+                    local project_name db_backup="empty" db_size=0
+                    project_name="$(echo "${project_domain}" | cut -d'.' -f2)"
+
+                    local project_types=("prod" "dev" "stage" "test" "beta" "demo")
+                    for project_type in "${project_types[@]}"; do
+                        local db_dir="${dropbox_db_dir}/${project_name}_${project_type}"
+                        local search_pattern="${project_name}_${project_type}_database_${backup_date}"
+                        local found_db
+                        found_db="$("${DROPBOX_UPLOADER}" -q list "${db_dir}" 2>/dev/null | grep "${search_pattern}" | awk '{print $NF}' | head -1)"
+
+                        if [[ -n "${found_db}" ]]; then
+                            db_backup="$(basename "${found_db}")"
+                            break
+                        fi
+                    done
+
+                    # Add to JSON array
+                    if [[ "${first_entry}" == "true" ]]; then
+                        first_entry="false"
+                    else
+                        backups_json="${backups_json},"
+                    fi
+
+                    backups_json="${backups_json}{\"date\":\"${backup_date}\",\"files\":\"${backup_file}\",\"database\":\"${db_backup}\",\"site_bytes\":${site_size}}"
+                done <<< "${site_backups}"
+
+                backups_json="${backups_json}]"
+                dropbox_backups_json="${backups_json}"
+            fi
+
+        fi
     fi
 
     #######################################
@@ -2792,7 +2812,10 @@ show_backup_information_by_domain() {
         # See show_backup_information()'s identical fallback for why "null" is checked too.
         [[ -z "${backup_host}" || "${backup_host}" == "null" ]] && backup_host="${HOSTNAME}"
 
-        # Try each Borg config
+        # Try each Borg config. A successful empty listing is authoritative;
+        # failures across every configured repository are not.
+        local borg_list_succeeded="false"
+        local borg_list_failed="false"
         for (( i=0; i<"${borg_configs_count}"; i++ )); do
 
             BACKUP_BORG_USER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[${i}].user")
@@ -2802,12 +2825,17 @@ show_backup_information_by_domain() {
             local borg_repo="ssh://${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}/./applications/${BACKUP_BORG_GROUP}/${backup_host}/projects-online/site/${project_domain}"
 
             # List all archives
-            local borg_archives
-            borg_archives="$(BORG_RSH="ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15" \
+            local borg_archives borg_raw
+            if borg_raw="$(BORG_RSH="ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15" \
                 BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=yes \
                 BORG_RELOCATED_REPO_ACCESS_IS_OK=yes \
-                borg list --format '{archive}{NL}' "${borg_repo}" 2>/dev/null \
-                | sed -r "s/\x1B\[[0-9;]*[mG]//g")"
+                borg list --format '{archive}{NL}' "${borg_repo}" 2>/dev/null)"; then
+                borg_list_succeeded="true"
+                borg_archives="$(printf '%s\n' "${borg_raw}" | sed -r "s/\x1B\[[0-9;]*[mG]//g")"
+            else
+                borg_list_failed="true"
+                continue
+            fi
 
             if [[ -n "${borg_archives}" ]]; then
 
@@ -2845,14 +2873,20 @@ show_backup_information_by_domain() {
 
         done
 
+        [[ "${borg_list_succeeded}" != "true" || "${borg_list_failed}" == "true" ]] && borg_error="true"
+
     fi
+
+    local errors_json
+    errors_json="$(jq -n --arg dropbox "${dropbox_error}" --arg borg "${borg_error}" \
+        '{dropbox: (if $dropbox == "true" then "provider_unavailable" else null end), borg: (if $borg == "true" then "provider_unavailable" else null end)} | with_entries(select(.value != null))')"
 
     if [[ "${#backup_methods[@]}" -le 1 ]]; then
         # Single destination: unchanged flat shape -- backups: [...].
         local single_backups_json="[]"
         [[ "${backup_method}" == "dropbox" ]] && single_backups_json="${dropbox_backups_json}"
         [[ "${backup_method}" == "borg" ]] && single_backups_json="${borg_backups_json}"
-        echo "{\"check_date\":\"${timestamp}\",\"backup_method\":\"${backup_method}\",\"backup_methods\":${backup_methods_json},\"domain\":\"${project_domain}\",\"backups\":${single_backups_json}}"
+        echo "{\"check_date\":\"${timestamp}\",\"backup_method\":\"${backup_method}\",\"backup_methods\":${backup_methods_json},\"backup_report_version\":2,\"domain\":\"${project_domain}\",\"backups\":${single_backups_json},\"errors\":${errors_json}}"
     else
         # Multiple destinations enabled: backups grouped by method instead of
         # one array implicitly from whichever method used to win priority.
@@ -2863,7 +2897,8 @@ show_backup_information_by_domain() {
             --arg domain "${project_domain}" \
             --argjson dropbox "${dropbox_backups_json}" \
             --argjson borg "${borg_backups_json}" \
-            '{check_date: $check_date, backup_method: $backup_method, backup_methods: $backup_methods, domain: $domain, backups: {dropbox: $dropbox, borg: $borg}}'
+            --argjson errors "${errors_json}" \
+            '{check_date: $check_date, backup_method: $backup_method, backup_methods: $backup_methods, backup_report_version: 2, domain: $domain, backups: {dropbox: $dropbox, borg: $borg}, errors: $errors}'
     fi
 }
 
