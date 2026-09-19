@@ -853,7 +853,7 @@ function docker_project_files_import() {
     local rand
 
     rand="$(cat /dev/urandom | tr -dc 'a-z' | fold -w 3 | head -n 1)"
-    project_backup_path="${BROLIT_MAIN_DIR}/tmp/${rand}"
+    project_backup_path="${BROLIT_RUNTIME_STATE_DIR:-${BROLIT_MAIN_DIR}}/tmp/${rand}"
 
     mkdir -p "${project_backup_path}"
 

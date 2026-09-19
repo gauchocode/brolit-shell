@@ -703,7 +703,7 @@ function wpcli_core_verify() {
     local timestamp
     timestamp="$(date +%Y%m%d_%H%M%S)"
 
-    local wp_verify_checksum_output_file="${BROLIT_MAIN_DIR}/tmp/wp_verify_checksum_${timestamp}"
+          local wp_verify_checksum_output_file="${BROLIT_RUNTIME_STATE_DIR:-${BROLIT_MAIN_DIR}}/tmp/wp_verify_checksum_${timestamp}"
 
     # Check project_install_type
     [[ ${install_type} == "default" ]] && wpcli_cmd="sudo -u www-data wp --path=${wp_site} --no-color"

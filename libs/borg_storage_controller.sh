@@ -719,8 +719,14 @@ function generate_tar_and_decompress() {
     fi
     
     # Exportar el backup verificado
+    local export_tmp_dir="${BROLIT_TMP_DIR:-${BROLIT_RUNTIME_STATE_DIR:-${BROLIT_MAIN_DIR}/tmp}}"
+    mkdir -p "${export_tmp_dir}"
+    local safe_project_backup_file="${project_backup_file//[^A-Za-z0-9._-]/_}"
+    local exported_archive="${export_tmp_dir}/${safe_project_backup_file}.$$"
+    rm -f "${exported_archive}"
+    trap 'rm -f -- "${exported_archive}"; exit 130' INT TERM
     # borg export-tar --tar-filter='auto' --progress ssh://${BACKUP_BORG_USER}@${BACKUP_BORG_SERVER}:${BACKUP_BORG_PORT}/./applications/${BACKUP_BORG_GROUP}/${server_hostname}/projects-online/site/${project_domain}::${chosen_archive} ${BROLIT_MAIN_DIR}/tmp/${project_backup_file}
-    borg export-tar --tar-filter='auto' --progress "${repo_path}::{chosen_archive}" "${BROLIT_MAIN_DIR}/tmp/${project_backup_file}"
+    borg export-tar --tar-filter='auto' --progress "${repo_path}::${chosen_archive}" "${exported_archive}"
 
     local exitstatus=$?
 
@@ -733,6 +739,8 @@ function generate_tar_and_decompress() {
 
         display --indent 6 --text "- Exporting compressed file from storage box" --result "FAIL" --color RED
         log_event "error" "Error trying to export ${project_backup_file}!" "false"
+        rm -f "${exported_archive}"
+        trap - INT TERM
         return 1
 
     fi
@@ -740,7 +748,7 @@ function generate_tar_and_decompress() {
     #log_event "info" "Extracting compressed file: ${project_backup_file}" "false"
     #display --indent 6 --text "- Extracting compressed file"
 
-    if [ -f "${BROLIT_MAIN_DIR}/tmp/${project_backup_file}" ]; then
+    if [ -f "${exported_archive}" ]; then
 
         # If project directory exists, make a backup of it
         if [[ -d "${destination_dir}" ]]; then
@@ -763,7 +771,7 @@ function generate_tar_and_decompress() {
 
                 # Backup old project
                 _create_tmp_copy "${destination_dir}" "move"
-                [[ $? -eq 1 ]] && return 1
+                if [[ $? -eq 1 ]]; then rm -f "${exported_archive}"; trap - INT TERM; return 1; fi
 
             else
 
@@ -771,23 +779,27 @@ function generate_tar_and_decompress() {
                 log_event "info" "The project directory already exist. User skipped operation." "false"
                 display --indent 6 --text "- Restore files" --result "SKIPPED" --color YELLOW
 
+                rm -f "${exported_archive}"
+                trap - INT TERM
                 return 1
 
             fi
 
         fi
 
-        # Extract project
-        pv --width 70 "${BROLIT_MAIN_DIR}/tmp/${project_backup_file}" | tar xpj -C / var/www
+        # Extract project, then remove the exported archive on every path.
+        local extraction_status=0
+        pv --width 70 "${exported_archive}" | tar xpj -C / var/www || extraction_status=$?
+        rm -f "${exported_archive}"
 
-        # if extracted ok then
-        if [[ $? -eq 0 ]]; then
+        if [[ ${extraction_status} -eq 0 ]]; then
 
             clear_previous_lines "2"
 
             log_event "info" "${project_backup_file} extracted ok!" "false"
             display --indent 6 --text "- Extracting compressed file" --result "DONE" --color GREEN
 
+            trap - INT TERM
             return 0
 
         else
@@ -797,19 +809,17 @@ function generate_tar_and_decompress() {
             log_event "error" "Error extracting ${project_backup_file}" "false"
             display --indent 6 --text "- Extracting compressed file" --result "FAIL" --color RED
 
+            trap - INT TERM
             return 1
 
-        fi       
-
-        sleep 1
-
-        rm -rf "${BROLIT_MAIN_DIR}/tmp/${project_backup_file}"
-        [[ $? -eq 0 ]] && log_event "info" "Removing tmp files" "false"
+        fi
         
     else
 
         log_event "error" "Error exporting file: ${project_backup_file}" "false"
         display --indent 6 --text "- Exporting file" --result "FAIL" --color RED
+        rm -f "${exported_archive}"
+        trap - INT TERM
         return 1
 
     fi

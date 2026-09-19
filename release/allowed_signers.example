@@ -1,0 +1,17 @@
+# Brolit Shell release signing trust anchor (public key material only).
+#
+# Copy this file to release/allowed_signers and replace the placeholder line
+# with the real release signing principal. The file is packaged into release
+# artifacts so verification is self-contained for this open-source repo.
+#
+# Format (OpenSSH allowed_signers, one entry per line):
+#   <principal> <keytype> <base64-key> [<comment>]
+#
+# Example:
+#   brolit-release-2026 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx release-signing-key-2026
+#
+# Rules:
+# - NEVER commit private keys. Only public key lines belong here.
+# - Key rotation is explicit: a release whose bundled key differs from the
+#   previously pinned key is rejected. Rotate via /etc/brolit/allowed_signers
+#   on the VPS or the BROLIT_RELEASE_ALLOWED_SIGNERS override.

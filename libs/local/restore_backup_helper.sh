@@ -34,29 +34,30 @@ function _create_tmp_copy() {
   local operation="${2}"
 
   local timestamp
+  local tmp_dir="${BROLIT_TMP_DIR:-${BROLIT_RUNTIME_STATE_DIR:-${BROLIT_MAIN_DIR}/tmp}}"
 
   display --indent 6 --text "- Creating backup on brolit tmp directory"
 
   # Moving project files to temp directory
-  mkdir -p "${BROLIT_MAIN_DIR}/tmp/old_backups"
+  mkdir -p "${tmp_dir}/old_backups"
 
   # Check if directory already exists
-  base_directory="$(basename "${BROLIT_MAIN_DIR}/tmp/old_backups/${folder_to_backup}")"
+  base_directory="$(basename "${tmp_dir}/old_backups/${folder_to_backup}")"
 
-  if [[ -d "${BROLIT_MAIN_DIR}/tmp/old_backups/${base_directory}" ]]; then
+  if [[ -d "${tmp_dir}/old_backups/${base_directory}" ]]; then
 
     timestamp=$(date +"%s")
     # Rename it with a timestamp
-    mv "${BROLIT_MAIN_DIR}/tmp/old_backups/${base_directory}" "${BROLIT_MAIN_DIR}/tmp/old_backups/${base_directory}_${timestamp}"
+    mv "${tmp_dir}/old_backups/${base_directory}" "${tmp_dir}/old_backups/${base_directory}_${timestamp}"
 
   fi
 
   if [[ "${operation}" == "move" ]]; then
-    move_files "${folder_to_backup}" "${BROLIT_MAIN_DIR}/tmp/old_backups"
+    move_files "${folder_to_backup}" "${tmp_dir}/old_backups"
     return $? # Return move_files exit code
 
   else
-    copy_files "${folder_to_backup}" "${BROLIT_MAIN_DIR}/tmp/old_backups"
+    copy_files "${folder_to_backup}" "${tmp_dir}/old_backups"
     return $? # Return copy_files exit code
   fi
 
@@ -1822,19 +1823,15 @@ function restore_config_files_from_storage() {
     # Downloading Config Backup
     display --indent 6 --text "- Downloading config backup from Dropbox"
 
-    #dropbox_download "${chosen_type_path}/${chosen_config_type}/${chosen_config_bk}" "${BROLIT_MAIN_DIR}/tmp"
-    storage_download_backup "${chosen_type_path}/${chosen_config_type}/${chosen_config_bk}" "${BROLIT_MAIN_DIR}/tmp"
+    local runtime_tmp_dir="${BROLIT_TMP_DIR:-${BROLIT_RUNTIME_STATE_DIR:-${BROLIT_MAIN_DIR}/tmp}}"
+    local downloaded_config_backup="${runtime_tmp_dir}/$(basename "${chosen_config_bk}")"
+    storage_download_backup "${chosen_type_path}/${chosen_config_type}/${chosen_config_bk}" "${runtime_tmp_dir}"
     [[ $? -ne 0 ]] && display --indent 6 --text "- Downloading config backup" --result "ERROR" --color RED && return 1
 
-    #clear_previous_lines "1"
-    #display --indent 6 --text "- Downloading config backup from dropbox" --result "DONE" --color GREEN
-
-    # Restore files
-    mkdir -p "${chosen_config_type}"
-    mv "${chosen_config_bk}" "${chosen_config_type}"
+    mkdir -p "${runtime_tmp_dir}/${chosen_config_type}"
 
     # Decompress
-    decompress "${chosen_config_bk}" "${BROLIT_MAIN_DIR}/tmp/${chosen_config_type}" "${BACKUP_CONFIG_COMPRESSION_TYPE}" ""
+    decompress "${downloaded_config_backup}" "${runtime_tmp_dir}/${chosen_config_type}" "${BACKUP_CONFIG_COMPRESSION_TYPE}" ""
 
     if [[ "${chosen_config_bk}" == *"nginx"* ]]; then
 
@@ -1842,8 +1839,8 @@ function restore_config_files_from_storage() {
 
     fi
 
-    log_event "info" "${CHOSEN_CONFIG} Config backup downloaded and uncompressed on  ${BROLIT_MAIN_DIR}/tmp/${chosen_config_type}"
-    whiptail_message "IMPORTANT!" "${CHOSEN_CONFIG} config files were downloaded on this temp directory: ${BROLIT_MAIN_DIR}/tmp/${chosen_config_type}."
+    log_event "info" "${CHOSEN_CONFIG} Config backup downloaded and uncompressed on  ${runtime_tmp_dir}/${chosen_config_type}"
+    whiptail_message "IMPORTANT!" "${CHOSEN_CONFIG} config files were downloaded on this temp directory: ${runtime_tmp_dir}/${chosen_config_type}."
 
   else
 
@@ -1886,12 +1883,12 @@ function restore_nginx_site_files() {
   log_subsection "Nginx server configuration Restore"
 
   # Downloading Config Backup
-  storage_download_backup "${bk_to_download}" "${BROLIT_TMP_DIR}"
+   storage_download_backup "${bk_to_download}" "${BROLIT_TMP_DIR}"
   [[ $? -ne 0 ]] && return 1
 
   # Extract
-  mkdir -p "${BROLIT_MAIN_DIR}/tmp/nginx"
-  decompress "${bk_file}" "${BROLIT_MAIN_DIR}/tmp/nginx" "${BACKUP_CONFIG_COMPRESSION_TYPE}" ""
+    mkdir -p "${BROLIT_TMP_DIR}/nginx"
+    decompress "${BROLIT_TMP_DIR}/${bk_file}" "${BROLIT_TMP_DIR}/nginx" "${BACKUP_CONFIG_COMPRESSION_TYPE}" ""
 
   # TODO: if nginx is installed, ask if nginx.conf must be replace
 
@@ -1902,7 +1899,7 @@ function restore_nginx_site_files() {
 
     if [[ -z "${domain}" ]]; then
 
-      startdir="${BROLIT_MAIN_DIR}/tmp/nginx/sites-available"
+      startdir="${BROLIT_TMP_DIR}/nginx/sites-available"
       file_browser "$menutitle" "$startdir"
 
       to_restore="${filepath}/${filename}"
@@ -1910,7 +1907,7 @@ function restore_nginx_site_files() {
 
     else
 
-      to_restore="${BROLIT_MAIN_DIR}/tmp/nginx/sites-available/${domain}"
+      to_restore="${BROLIT_TMP_DIR}/nginx/sites-available/${domain}"
       filename=${domain}
 
       log_event "info" "File to restore: ${to_restore} ..." "false"
@@ -1975,11 +1972,12 @@ function restore_letsencrypt_site_files() {
 
   log_event "debug" "Running: ${DROPBOX_UPLOADER} download ${bk_to_download}"
 
-  dropbox_output=$(${DROPBOX_UPLOADER} download "${bk_to_download}" 1>&2)
+  local runtime_tmp_dir="${BROLIT_TMP_DIR:-${BROLIT_RUNTIME_STATE_DIR:-${BROLIT_MAIN_DIR}/tmp}}"
+  mkdir -p "${runtime_tmp_dir}/letsencrypt"
+  dropbox_output="$(cd "${runtime_tmp_dir}" && "${DROPBOX_UPLOADER}" download "${bk_to_download}" 2>&1)" || return 1
 
   # Extract
-  mkdir "${BROLIT_MAIN_DIR}/tmp/letsencrypt"
-  decompress "${bk_file}" "${BROLIT_MAIN_DIR}/tmp/letsencrypt" "${BACKUP_CONFIG_COMPRESSION_TYPE}" ""
+    decompress "${runtime_tmp_dir}/${bk_file}" "${runtime_tmp_dir}/letsencrypt" "${BACKUP_CONFIG_COMPRESSION_TYPE}" ""
 
   # Creating directories
   if [[ ! -d "/etc/letsencrypt/archive/" ]]; then
@@ -2001,21 +1999,21 @@ function restore_letsencrypt_site_files() {
 
   # Check if file exist
   if [[ ! -f "/etc/letsencrypt/options-ssl-nginx.conf" ]]; then
-    cp -r "${BROLIT_MAIN_DIR}/tmp/letsencrypt/options-ssl-nginx.conf" "/etc/letsencrypt/"
+    cp -r "${runtime_tmp_dir}/letsencrypt/options-ssl-nginx.conf" "/etc/letsencrypt/"
 
   fi
   if [[ ! -f "/etc/letsencrypt/ssl-dhparams.pem" ]]; then
-    cp -r "${BROLIT_MAIN_DIR}/tmp/letsencrypt/ssl-dhparams.pem" "/etc/letsencrypt/"
+    cp -r "${runtime_tmp_dir}/letsencrypt/ssl-dhparams.pem" "/etc/letsencrypt/"
 
   fi
 
   # TODO: Restore main files (checking non-www and www domains)
-  if [[ ! -f "${BROLIT_MAIN_DIR}/tmp/letsencrypt/archive/${domain}" ]]; then
-    cp -r "${BROLIT_MAIN_DIR}/tmp/letsencrypt/archive/${domain}" "/etc/letsencrypt/archive/"
+    if [[ ! -f "${runtime_tmp_dir}/letsencrypt/archive/${domain}" ]]; then
+      cp -r "${runtime_tmp_dir}/letsencrypt/archive/${domain}" "/etc/letsencrypt/archive/"
 
   fi
-  if [[ ! -f "${BROLIT_MAIN_DIR}/tmp/letsencrypt/live/${domain}" ]]; then
-    cp -r "${BROLIT_MAIN_DIR}/tmp/letsencrypt/live/${domain}" "/etc/letsencrypt/live/"
+    if [[ ! -f "${runtime_tmp_dir}/letsencrypt/live/${domain}" ]]; then
+      cp -r "${runtime_tmp_dir}/letsencrypt/live/${domain}" "/etc/letsencrypt/live/"
 
   fi
 

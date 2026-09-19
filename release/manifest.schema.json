@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:brolit:shell-release:1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["product", "version", "commit", "protocol_version", "min_admin_protocol", "sha256", "capabilities"],
+  "properties": {
+    "product": {"const": "brolit-shell"},
+    "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "protocol_version": {"type": "integer", "minimum": 1},
+    "min_admin_protocol": {"type": "integer", "minimum": 1},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "artifact_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "capabilities": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$"}},
+    "signature": {"type": "object"}
+  },
+  "description": "Format schema for brolit-shell release manifests. The installer and Admin enforce a stricter supported subset (protocol_version 1, min_admin_protocol within the supported Admin range); unknown future protocol versions fail closed there, not here. artifact_sha256 is a legacy alias of sha256. Detached OpenSSH signatures travel as manifest.json.sig next to the manifest, never inside it."
+}

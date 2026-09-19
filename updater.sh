@@ -1,58 +1,20 @@
 #!/usr/bin/env bash
-#
-# Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.14
-#############################################################################
 
-BRANCH="master"
+set -euo pipefail
 
-# Foreground/Text Colours
-GREEN='\E[32;40m'
-YELLOW='\E[33;40m'
-CYAN='\E[36;40m'
-ENDCOLOR='\033[0m'
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 
-function _self_update() {
+cat >&2 <<'EOF'
+Brolit Shell no longer updates production installations from a Git working tree.
+Use the staged release installer instead:
 
-    # Store credentials on first git pull
-    git config --global credential.helper store
+  release/install.sh install <manifest.json> <runtime.tar.gz> [install-root]
 
-    git fetch
+This protects local configuration and operator changes from destructive resets.
+EOF
 
-    # A detached HEAD (e.g. left over from a manual "git checkout <sha>") is
-    # itself a reason to update: it's never on ${BRANCH}, so it would never
-    # self-correct on its own. Otherwise, only update when the working tree
-    # actually differs from origin/${BRANCH} - not just when updater.sh
-    # itself changed (the previous check filtered the diff down to only
-    # this file's own name, so it essentially never fired and servers
-    # silently drifted arbitrarily far behind while this printed "latest
-    # version").
-    local is_detached="false"
-    git symbolic-ref -q HEAD >/dev/null || is_detached="true"
+if [[ "${1:-}" == "install" ]]; then
+    exec "${ROOT_DIR}/release/install.sh" "$@"
+fi
 
-    if [[ "${is_detached}" == "true" ]] || [[ -n "$(git diff --name-only "origin/${BRANCH}")" ]]; then
-
-        echo -e "${GREEN}Found a new version of BROLIT Shell, updating ...${ENDCOLOR}"
-
-        git checkout --quiet "${BRANCH}"
-        git reset --hard --quiet origin/master
-        git pull --ff-only --force --quiet
-
-        echo -e "${GREEN}Running chmod ...${ENDCOLOR}"
-        find ./ -name "*.sh" ! -perm /u+x -exec chmod +x {} \;
-
-        echo -e "${CYAN}Now you can run the runner.sh, enjoy!${ENDCOLOR}"
-
-        exit 1
-
-    else
-
-        echo -e "${YELLOW}Already the latest version.${ENDCOLOR}"
-
-    fi
-
-}
-
-#############################################################################
-
-_self_update
+exit 2
