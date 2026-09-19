@@ -2156,7 +2156,11 @@ function brolit_configuration_setup_check() {
         fi
 
         # Check if $BROLIT_TMP_DIR starts with "/"
-        if [[ ${BROLIT_TMP_DIR} != '/'* ]]; then
+        if [[ "${BROLIT_RUNTIME_STATE_DIR:-${BROLIT_MAIN_DIR}}" != "${BROLIT_MAIN_DIR}" ]]; then
+            # Release directories are immutable. All temporary work from a
+            # staged runtime belongs under the persistent state root.
+            BROLIT_TMP_DIR="${BROLIT_RUNTIME_STATE_DIR}/tmp"
+        elif [[ ${BROLIT_TMP_DIR} != '/'* ]]; then
             BROLIT_TMP_DIR="${BROLIT_MAIN_DIR}/${BROLIT_TMP_DIR}"
         fi
 

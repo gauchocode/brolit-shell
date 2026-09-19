@@ -34,7 +34,11 @@ function security_clamav_scan() {
   systemctl stop clamav-freshclam.service
 
   # Update clamav database
-  freshclam
+  if ! freshclam; then
+    log_event "error" "freshclam failed; malware scan is not authoritative" "false"
+    echo "error"
+    return 2
+  fi
 
   # Log
   log_subsection "Malware Scan"
@@ -42,7 +46,7 @@ function security_clamav_scan() {
   display --indent 6 --text "- Searching for malware"
   log_event "info" "Running clamscan on ${directory}" "false"
 
-  report_file="${BROLIT_MAIN_DIR}/reports/clamav-results-${timestamp}.log"
+  report_file="${BROLIT_RUNTIME_STATE_DIR:-${BROLIT_MAIN_DIR}}/reports/clamav-results-${timestamp}.log"
 
   # Run on specific directory with parameters:
   # -r recursive (Scan subdirectories recursively)
@@ -51,7 +55,16 @@ function security_clamav_scan() {
 
   log_event "debug" "Running: clamscan --recursive --infected --no-summary ${directory} | grep -i 'FOUND' >>${report_file}" "false"
 
-  clamscan_result="$(clamscan --recursive --infected --no-summary "${directory}" | grep -i 'FOUND' >>"${report_file}")"
+  local scan_exit=0
+  local scan_output
+  scan_output="$(clamscan --recursive --infected --no-summary "${directory}" 2>&1)" || scan_exit=$?
+  printf '%s\n' "${scan_output}" | grep -i 'FOUND' >>"${report_file}" || true
+  if [[ ${scan_exit} -gt 1 ]]; then
+    log_event "error" "clamscan failed with exit code ${scan_exit}; malware scan is not authoritative" "false"
+    echo "error"
+    return 2
+  fi
+  clamscan_result=""
 
   # Check if file is empty
   if [[ -s ${report_file} ]]; then
@@ -135,7 +148,7 @@ function security_process_scanner() {
   local temp_results
 
   timestamp="$(date +%Y%m%d_%H%M%S)"
-  report_file="${BROLIT_MAIN_DIR}/reports/process-malware-scan-${timestamp}.log"
+  report_file="${BROLIT_RUNTIME_STATE_DIR:-${BROLIT_MAIN_DIR}}/reports/process-malware-scan-${timestamp}.log"
   temp_results=$(mktemp)
 
   log_subsection "Process Malware Scanner"

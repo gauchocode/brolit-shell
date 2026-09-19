@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.14
+# Version: 3.14.0
 ################################################################################
 
 ################################################################################
@@ -2322,8 +2322,21 @@ declare -g BROLIT_PROJECT_CONFIG_PATH="/etc/brolit"
 
 declare -g BROLIT_CONFIG_FILE=~/.brolit_conf.json
 
-#declare -g BROLIT_TMP_DIR="/root/brolit-shell/tmp"
-declare -g BROLIT_LITE_OUTPUT_DIR="${BROLIT_MAIN_DIR}/tmp/lite-output"
+# Keep generated observer output outside immutable release directories. Legacy
+# Git-tree installations retain their historical local path until migrated.
+if [[ "${BROLIT_MAIN_DIR}" == */brolit-shell/releases/* || "${BROLIT_MAIN_DIR}" == */brolit-shell/current* ]]; then
+    declare -g BROLIT_RUNTIME_STATE_DIR="${BROLIT_STATE_DIR:-/var/lib/brolit}"
+else
+    declare -g BROLIT_RUNTIME_STATE_DIR="${BROLIT_MAIN_DIR}"
+fi
+export BROLIT_RUNTIME_STATE_DIR
+declare -g BROLIT_LITE_OUTPUT_DIR="${BROLIT_RUNTIME_STATE_DIR}/tmp/lite-output"
+if [[ "${BROLIT_RUNTIME_STATE_DIR}" != "${BROLIT_MAIN_DIR}" ]]; then
+    umask 077
+    mkdir -p "${BROLIT_RUNTIME_STATE_DIR}/tmp" "${BROLIT_RUNTIME_STATE_DIR}/log" "${BROLIT_RUNTIME_STATE_DIR}/reports"
+    chmod 700 "${BROLIT_RUNTIME_STATE_DIR}" "${BROLIT_RUNTIME_STATE_DIR}/tmp" "${BROLIT_RUNTIME_STATE_DIR}/log" "${BROLIT_RUNTIME_STATE_DIR}/reports" 2>/dev/null || true
+    find "${BROLIT_RUNTIME_STATE_DIR}" -type f -exec chmod 600 {} + 2>/dev/null || true
+fi
 if [[ ! -d ${BROLIT_LITE_OUTPUT_DIR} ]]; then
     mkdir -p "${BROLIT_LITE_OUTPUT_DIR}"
 fi
@@ -2352,9 +2365,50 @@ fi
 declare -g PROJECTS_PATH
 PROJECTS_PATH="$(_json_read_field "${BROLIT_CONFIG_FILE}" "PROJECTS.path")"
 
-# Version
-BROLIT_VERSION="3.10"
-BROLIT_LITE_VERSION="3.10-132"
+# Version. Keep the legacy variables for existing JSON consumers, but source
+# the release value from one tracked file instead of maintaining independent
+# hardcoded versions in multiple entrypoints.
+if [[ -f "${BROLIT_MAIN_DIR}/release/version.env" ]]; then
+    # shellcheck disable=SC1090
+    source "${BROLIT_MAIN_DIR}/release/version.env"
+fi
+BROLIT_VERSION="${BROLIT_RELEASE_VERSION:-3.14.0}"
+BROLIT_LITE_VERSION="${BROLIT_RELEASE_VERSION:-3.14.0}"
+
+_brolit_dropbox_list() {
+    local path="${1}"
+    local output status=0
+    output="$(timeout 60 "${DROPBOX_UPLOADER}" -q list "${path}" 2>&1)" || status=$?
+    if [[ "${status}" -ne 0 ]]; then
+        # A project or database path that has never been created is an empty
+        # backup set, not a provider outage. Timeouts, auth failures, and
+        # transport errors remain failures for the caller to report.
+        if grep -Eqi 'not found|does not exist|no such file|path.*exist' <<<"${output}"; then
+            return 0
+        fi
+        printf '%s\n' "${output}" >&2
+        return "${status}"
+    fi
+    printf '%s\n' "${output}"
+}
+
+_brolit_borg_list() {
+    local repo="${1}"
+    shift
+    local output status=0
+    output="$(BORG_RSH="ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15" \
+        BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=yes \
+        BORG_RELOCATED_REPO_ACCESS_IS_OK=yes \
+        timeout 60 borg list "$@" "${repo}" 2>&1)" || status=$?
+    if [[ "${status}" -ne 0 ]]; then
+        if grep -Eqi 'does not exist|not found|no such file|repository.*missing' <<<"${output}"; then
+            return 0
+        fi
+        printf '%s\n' "${output}" >&2
+        return "${status}"
+    fi
+    printf '%s\n' "${output}"
+}
 
 ################################################################################
 # Show backups information
@@ -2387,6 +2441,7 @@ show_backup_information() {
     # match left the other destination's redundancy invisible to any report
     # consumer.
     local dropbox_status borg_status
+    local dropbox_provider_error="false" borg_provider_error="false"
     dropbox_status="$(_json_read_field "${json_config_file}" "BACKUPS.methods[].dropbox[].status")"
     borg_status="$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].status")"
 
@@ -2405,14 +2460,19 @@ show_backup_information() {
         backup_methods_json="$(printf '%s\n' "${backup_methods[@]}" | jq -R . | jq -s -c .)"
     fi
 
-    local dropbox_temp_file borg_temp_file
+    local dropbox_temp_file borg_temp_file dropbox_error_temp_file borg_error_temp_file
     dropbox_temp_file=$(mktemp)
     borg_temp_file=$(mktemp)
+    dropbox_error_temp_file=$(mktemp)
+    borg_error_temp_file=$(mktemp)
 
     #######################################
     # DROPBOX BACKUPS
     #######################################
-    if [[ " ${backup_methods[*]} " == *" dropbox "* && -n "${DROPBOX_UPLOADER}" && -f "${DROPBOX_UPLOADER}" ]]; then
+    if [[ " ${backup_methods[*]} " == *" dropbox "* ]]; then
+      if [[ -z "${DROPBOX_UPLOADER:-}" || ! -f "${DROPBOX_UPLOADER}" ]]; then
+        dropbox_provider_error="true"
+      else
 
         local dropbox_base_path="${HOSTNAME}"
 
@@ -2422,7 +2482,10 @@ show_backup_information() {
         local dropbox_site_dir="${dropbox_base_path}/projects-online/site"
         local dropbox_listing
 
-        dropbox_listing="$("${DROPBOX_UPLOADER}" -q list "${dropbox_site_dir}" 2>/dev/null)"
+        if ! dropbox_listing="$(_brolit_dropbox_list "${dropbox_site_dir}")"; then
+            dropbox_provider_error="true"
+            dropbox_listing=""
+        fi
 
         if [[ -n "${dropbox_listing}" ]]; then
 
@@ -2469,7 +2532,11 @@ show_backup_information() {
 
                 # Get last site-files backup. Note: -q only (no -h) so the size column
                 # is raw bytes; with -h it would be human-readable and hard to parse.
-                site_line="$("${DROPBOX_UPLOADER}" -q list "${dropbox_site_dir}/${project_directory}" 2>/dev/null | grep -E 'site-files|tar\.bz2|tar\.gz|\.tgz' | tail -1)"
+                local site_listing=""
+                if ! site_listing="$(_brolit_dropbox_list "${dropbox_site_dir}/${project_directory}")"; then
+                    printf 'provider_unavailable\n' >> "${dropbox_error_temp_file}"
+                fi
+                site_line="$(printf '%s\n' "${site_listing}" | grep -E 'site-files|tar\.bz2|tar\.gz|\.tgz' | tail -1 || true)"
                 last_site_backup="$(echo "${site_line}" | awk '{print $NF;}')"
                 site_size="$(echo "${site_line}" | awk '{print $2;}')"
                 [[ -z "${site_size}" || ! "${site_size}" =~ ^[0-9]+$ ]] && site_size=0
@@ -2483,7 +2550,11 @@ show_backup_information() {
 
                 # Get last database backup
                 local dropbox_db_dir="${dropbox_base_path}/projects-online/database/${project_directory}"
-                db_line="$("${DROPBOX_UPLOADER}" -q list "${dropbox_db_dir}" 2>/dev/null | grep -E '\.tar\.bz2|\.sql|\.gz' | tail -1)"
+                local db_listing=""
+                if ! db_listing="$(_brolit_dropbox_list "${dropbox_db_dir}")"; then
+                    printf 'provider_unavailable\n' >> "${dropbox_error_temp_file}"
+                fi
+                db_line="$(printf '%s\n' "${db_listing}" | grep -E '\.tar\.bz2|\.sql|\.gz' | tail -1 || true)"
                 last_db_backup="$(echo "${db_line}" | awk '{print $NF;}')"
                 db_size="$(echo "${db_line}" | awk '{print $2;}')"
                 [[ -z "${db_size}" || ! "${db_size}" =~ ^[0-9]+$ ]] && db_size=0
@@ -2505,8 +2576,10 @@ show_backup_information() {
             done <<< "${dropbox_listing}"
 
             wait
+            [[ -s "${dropbox_error_temp_file}" ]] && dropbox_provider_error="true"
         fi
 
+      fi
     fi
 
     #######################################
@@ -2529,8 +2602,12 @@ show_backup_information() {
         #   borg list ssh://user@server:port/./applications/<group>/<host>/projects-online/site/<project>
         if [[ -d "${PROJECTS_PATH}" ]]; then
 
-            # Loop through each Borg configuration until one yields data
+            # Loop through each Borg configuration until one yields complete data.
+            local borg_config_succeeded="false"
             for (( i=0; i<"${borg_configs_count}"; i++ )); do
+
+                : > "${borg_temp_file}"
+                : > "${borg_error_temp_file}"
 
                 BACKUP_BORG_USER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[${i}].user")
                 BACKUP_BORG_SERVER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[${i}].server")
@@ -2561,6 +2638,7 @@ show_backup_information() {
 
                     local project_json=""
                     local last_backup_file=""
+                    local borg_list_raw=""
                     local backup_date="unknown"
                     local backup_status="empty"
                     local backup_db="empty"
@@ -2571,24 +2649,39 @@ show_backup_information() {
                     # BORG_RSH keeps ssh non-interactive (BatchMode) and accepts new host keys (TOFU).
                     # Repos are unencrypted (encryption=none), so the two BORG_*_IS_OK flags silence
                     # the confirmation prompts that would otherwise block a non-interactive run.
-                    last_backup_file="$(BORG_RSH="ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15" \
-                        BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=yes \
-                        BORG_RELOCATED_REPO_ACCESS_IS_OK=yes \
-                        borg list --last 1 --format '{archive}{NL}' "${borg_repo}" 2>/dev/null \
-                        | sed -r "s/\x1B\[[0-9;]*[mG]//g" | head -n 1)"
+                    if borg_list_raw="$(_brolit_borg_list "${borg_repo}" --last 1 --format '{archive}{NL}')"; then
+                        last_backup_file="$(printf '%s\n' "${borg_list_raw}" | sed -r "s/\x1B\[[0-9;]*[mG]//g" | head -n 1)"
+                    else
+                        last_backup_file="error"
+                        backup_date="unknown"
+                        backup_status="error"
+                        printf 'provider_unavailable\n' >> "${borg_error_temp_file}"
+                    fi
 
-                    if [[ -n "${last_backup_file}" ]]; then
+                    if [[ "${backup_status}" != "error" && -n "${last_backup_file}" ]]; then
                         backup_date=$(echo "${last_backup_file}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')
                         backup_status="success"
                         # Original (uncompressed, pre-dedup) size of the last archive, in bytes.
-                        backup_size="$(BORG_RSH="ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15" \
+                        local borg_info_raw=""
+                        if borg_info_raw="$(BORG_RSH="ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15" \
                             BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=yes \
                             BORG_RELOCATED_REPO_ACCESS_IS_OK=yes \
-                            borg info --json "${borg_repo}::${last_backup_file}" 2>/dev/null \
-                            | jq -r '.archives[0].stats.original_size // 0' 2>/dev/null)"
+                            timeout 60 borg info --json "${borg_repo}::${last_backup_file}" 2>/dev/null)"; then
+                            if backup_size="$(printf '%s' "${borg_info_raw}" | jq -er '.archives[0].stats.original_size // 0' 2>/dev/null)" && [[ "${backup_size}" =~ ^[0-9]+$ ]]; then
+                                :
+                            else
+                                backup_size=0
+                                backup_status="error"
+                                printf 'provider_unavailable\n' >> "${borg_error_temp_file}"
+                            fi
+                        else
+                            backup_size=0
+                            backup_status="error"
+                            printf 'provider_unavailable\n' >> "${borg_error_temp_file}"
+                        fi
                         [[ -z "${backup_size}" || ! "${backup_size}" =~ ^[0-9]+$ ]] && backup_size=0
                     else
-                        last_backup_file="empty"
+                        [[ "${backup_status}" == "error" ]] || last_backup_file="empty"
                     fi
 
                     project_json="\"${project_directory}\": { \"last_archive\": \"${last_backup_file}\", \"backup_date\": \"${backup_date}\", \"files\": \"${last_backup_file}\", \"database\": \"${backup_db}\", \"status\": \"${backup_status}\", \"size_bytes\": ${backup_size} }"
@@ -2598,14 +2691,22 @@ show_backup_information() {
                 done
 
                 wait
+                if [[ -s "${borg_error_temp_file}" ]]; then
+                    borg_provider_error="true"
+                elif [[ -s "${borg_temp_file}" ]]; then
+                    borg_provider_error="false"
+                    borg_config_succeeded="true"
+                fi
 
                 # First Borg configuration that yields backup data wins; avoids duplicate
                 # entries when more than one storage box is configured.
-                if [[ -s "${borg_temp_file}" ]]; then
+                if [[ "${borg_config_succeeded}" == "true" ]]; then
                     break
                 fi
 
             done
+
+            [[ "${borg_config_succeeded}" == "true" ]] || : > "${borg_temp_file}"
 
         fi
 
@@ -2617,11 +2718,13 @@ show_backup_information() {
         # Single (or no) destination: unchanged flat shape --
         # projects_backup.<project> = {...}. At most one of the two temp
         # files has content here, so concatenation order doesn't matter.
+        local provider_errors_json
+        provider_errors_json="$(jq -n --arg dropbox "${dropbox_provider_error}" --arg borg "${borg_provider_error}" '{dropbox: (if $dropbox == "true" then "provider_unavailable" else null end), borg: (if $borg == "true" then "provider_unavailable" else null end)} | with_entries(select(.value != null))')"
         local json_string="{ \"check_date\": \"$(date -u +"%Y-%m-%dT%H:%M:%S")\", \"backup_method\": \"${backup_method}\", \"backup_methods\": ${backup_methods_json}, \"projects_backup\": { "
         while read -r line; do
             [[ -n "${line}" ]] && json_string="${json_string}${line},"
         done < <(cat "${dropbox_temp_file}" "${borg_temp_file}")
-        json_string="${json_string%,} } }"
+        json_string="${json_string%,} }, \"errors\": ${provider_errors_json} }"
         echo "${json_string}" > "${json_output_file}"
     else
         # Multiple destinations enabled: nest each project's entry by method
@@ -2630,9 +2733,10 @@ show_backup_information() {
         # of one silently overwriting the other. Done with jq, not string
         # concatenation, since both temp files can legitimately contain an
         # entry for the same project key.
-        local dropbox_json borg_json
+        local dropbox_json borg_json provider_errors_json
         dropbox_json="{ $(paste -sd, "${dropbox_temp_file}" 2>/dev/null) }"
         borg_json="{ $(paste -sd, "${borg_temp_file}" 2>/dev/null) }"
+        provider_errors_json="$(jq -n --arg dropbox "${dropbox_provider_error}" --arg borg "${borg_provider_error}" '{dropbox: (if $dropbox == "true" then "provider_unavailable" else null end), borg: (if $borg == "true" then "provider_unavailable" else null end)} | with_entries(select(.value != null))')"
 
         jq -n \
             --arg check_date "$(date -u +"%Y-%m-%dT%H:%M:%S")" \
@@ -2640,6 +2744,7 @@ show_backup_information() {
             --argjson backup_methods "${backup_methods_json}" \
             --argjson dropbox "${dropbox_json}" \
             --argjson borg "${borg_json}" \
+            --argjson errors "${provider_errors_json}" \
             '
             def projects_for($method; $data): ($data // {}) | to_entries | map({(.key): {($method): .value}}) | add // {};
             (projects_for("dropbox"; $dropbox)) as $dp |
@@ -2651,12 +2756,13 @@ show_backup_information() {
                 projects_backup: (
                     reduce (($dp | keys_unsorted) + ($bp | keys_unsorted) | unique)[] as $k
                         ({}; .[$k] = (($dp[$k] // {}) * ($bp[$k] // {})))
-                )
+                ),
+                errors: $errors
             }
             ' > "${json_output_file}"
     fi
 
-    rm -f "${dropbox_temp_file}" "${borg_temp_file}"
+    rm -f "${dropbox_temp_file}" "${borg_temp_file}" "${dropbox_error_temp_file}" "${borg_error_temp_file}"
 
     # Return JSON
     cat "${json_output_file}"
@@ -2734,7 +2840,7 @@ show_backup_information_by_domain() {
             # listing itself so an unavailable provider is not mistaken for a
             # valid empty repository.
             local site_backups
-            if ! site_backups="$("${DROPBOX_UPLOADER}" -q list "${dropbox_site_dir}" 2>/dev/null)"; then
+            if ! site_backups="$(_brolit_dropbox_list "${dropbox_site_dir}")"; then
                 dropbox_error="true"
             fi
 
@@ -2769,7 +2875,13 @@ show_backup_information_by_domain() {
                         local db_dir="${dropbox_db_dir}/${project_name}_${project_type}"
                         local search_pattern="${project_name}_${project_type}_database_${backup_date}"
                         local found_db
-                        found_db="$("${DROPBOX_UPLOADER}" -q list "${db_dir}" 2>/dev/null | grep "${search_pattern}" | awk '{print $NF}' | head -1)"
+                        local db_listing=""
+                        if ! db_listing="$(_brolit_dropbox_list "${db_dir}")"; then
+                            dropbox_error="true"
+                            found_db=""
+                        else
+                            found_db="$(printf '%s\n' "${db_listing}" | grep "${search_pattern}" | awk '{print $NF}' | head -1 || true)"
+                        fi
 
                         if [[ -n "${found_db}" ]]; then
                             db_backup="$(basename "${found_db}")"
@@ -2814,8 +2926,7 @@ show_backup_information_by_domain() {
 
         # Try each Borg config. A successful empty listing is authoritative;
         # failures across every configured repository are not.
-        local borg_list_succeeded="false"
-        local borg_list_failed="false"
+        local borg_candidate_succeeded="false"
         for (( i=0; i<"${borg_configs_count}"; i++ )); do
 
             BACKUP_BORG_USER=$(_json_read_field "${json_config_file}" "BACKUPS.methods[].borg[].config[${i}].user")
@@ -2826,14 +2937,9 @@ show_backup_information_by_domain() {
 
             # List all archives
             local borg_archives borg_raw
-            if borg_raw="$(BORG_RSH="ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15" \
-                BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=yes \
-                BORG_RELOCATED_REPO_ACCESS_IS_OK=yes \
-                borg list --format '{archive}{NL}' "${borg_repo}" 2>/dev/null)"; then
-                borg_list_succeeded="true"
+            if borg_raw="$(_brolit_borg_list "${borg_repo}" --format '{archive}{NL}')"; then
                 borg_archives="$(printf '%s\n' "${borg_raw}" | sed -r "s/\x1B\[[0-9;]*[mG]//g")"
             else
-                borg_list_failed="true"
                 continue
             fi
 
@@ -2841,20 +2947,30 @@ show_backup_information_by_domain() {
 
                 local backups_json="["
                 local first_entry="true"
+                local borg_info_failed="false"
 
                 while IFS= read -r archive; do
                     [[ -z "${archive}" ]] && continue
 
-                    local backup_date backup_size
+                    local backup_date backup_size borg_info_raw
                     backup_date="$(echo "${archive}" | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')"
                     [[ -z "${backup_date}" ]] && backup_date="unknown"
 
-                    backup_size="$(BORG_RSH="ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15" \
+                    if borg_info_raw="$(BORG_RSH="ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15" \
                         BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=yes \
                         BORG_RELOCATED_REPO_ACCESS_IS_OK=yes \
-                        borg info --json "${borg_repo}::${archive}" 2>/dev/null \
-                        | jq -r '.archives[0].stats.original_size // 0' 2>/dev/null)"
-                    [[ -z "${backup_size}" || ! "${backup_size}" =~ ^[0-9]+$ ]] && backup_size=0
+                        timeout 60 borg info --json "${borg_repo}::${archive}" 2>/dev/null)"; then
+                        backup_size="$(printf '%s' "${borg_info_raw}" | jq -er '.archives[0].stats.original_size // 0' 2>/dev/null || true)"
+                        [[ -z "${backup_size}" || ! "${backup_size}" =~ ^[0-9]+$ ]] && backup_size=null
+                        if [[ "${backup_size}" == "null" ]]; then
+                            borg_error="true"
+                            borg_info_failed="true"
+                        fi
+                    else
+                        backup_size=null
+                        borg_error="true"
+                        borg_info_failed="true"
+                    fi
 
                     if [[ "${first_entry}" == "true" ]]; then
                         first_entry="false"
@@ -2867,13 +2983,23 @@ show_backup_information_by_domain() {
                 done <<< "${borg_archives}"
 
                 backups_json="${backups_json}]"
+                if [[ "${borg_info_failed}" == "true" ]]; then
+                    continue
+                fi
                 borg_backups_json="${backups_json}"
+                borg_error="false"
+                borg_candidate_succeeded="true"
+                break
+            else
+                borg_backups_json="[]"
+                borg_error="false"
+                borg_candidate_succeeded="true"
                 break
             fi
 
         done
 
-        [[ "${borg_list_succeeded}" != "true" || "${borg_list_failed}" == "true" ]] && borg_error="true"
+        [[ "${borg_candidate_succeeded}" != "true" ]] && borg_error="true"
 
     fi
 

@@ -2,7 +2,7 @@
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
 # Script Name: BROLIT Shell
-# Version: 3.14
+# Version: 3.14.0
 ################################################################################
 
 ### Environment checks
@@ -17,6 +17,11 @@ if [[ -z "${BROLIT_MAIN_DIR}" ]]; then
   exit 1 # error; the path is not accessible
 fi
 
+if [[ -f "${BROLIT_MAIN_DIR}/release/version.env" ]]; then
+  # shellcheck disable=SC1090
+  source "${BROLIT_MAIN_DIR}/release/version.env"
+fi
+
 ### Early exit for help/version (no init needed) ###########################
 
 for arg in "$@"; do
@@ -28,7 +33,7 @@ for arg in "$@"; do
       exit 0
       ;;
     --version)
-      echo "BROLIT Shell v3.10"
+      echo "BROLIT Shell v${BROLIT_RELEASE_VERSION:-3.14.0}"
       exit 0
       ;;
   esac

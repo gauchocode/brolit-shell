@@ -97,7 +97,7 @@ function wordfencecli_read_license() {
 
 function build_wordfencecli_docker_image() {
 
-    local target_directory="${BROLIT_MAIN_DIR}/tmp"
+    local target_directory="${BROLIT_RUNTIME_STATE_DIR:-${BROLIT_MAIN_DIR}}/tmp"
 
     if [[ ! -d "${target_directory}/wordfence-cli" ]]; then
         git clone https://github.com/wordfence/wordfence-cli.git "${target_directory}/wordfence-cli"
@@ -134,7 +134,7 @@ function wordfencecli_malware_scan() {
     # Build the Wordfence CLI Docker image
     if [[ "$(docker images -q wordfence-cli:latest 2> /dev/null)" == "" ]]; then
         log_event "info" "Building Wordfence CLI Docker image..." "false"
-        build_wordfencecli_docker_image
+            build_wordfencecli_docker_image || return 2
     fi
 
     # Read license 
@@ -152,7 +152,7 @@ function wordfencecli_malware_scan() {
 
         # Output file path
         local output_file
-        output_file="${BROLIT_MAIN_DIR}/tmp/$(basename "${directory_to_scan}")_scan.csv"
+        output_file="${BROLIT_RUNTIME_STATE_DIR:-${BROLIT_MAIN_DIR}}/tmp/$(basename "${directory_to_scan}")_scan.csv"
 
         # Calculate workers
         local workers
@@ -160,7 +160,12 @@ function wordfencecli_malware_scan() {
 
         # Malware Scan command - capture output
         local scan_output
-        scan_output=$(docker run -v /var/www:/var/www -v "${BROLIT_MAIN_DIR}/tmp":/output wordfence-cli:latest malware-scan ${scan_option} --workers "${workers}" --accept-terms --license "${license}" "${directory_to_scan}" --output-path "/output/$(basename "${directory_to_scan}")_scan.csv" 2>&1)
+        local scan_exit=0
+        scan_output=$(docker run -v /var/www:/var/www -v "${BROLIT_RUNTIME_STATE_DIR:-${BROLIT_MAIN_DIR}}/tmp":/output wordfence-cli:latest malware-scan ${scan_option} --workers "${workers}" --accept-terms --license "${license}" "${directory_to_scan}" --output-path "/output/$(basename "${directory_to_scan}")_scan.csv" 2>&1) || scan_exit=$?
+        if [[ ${scan_exit} -ne 0 ]]; then
+            log_event "error" "Wordfence scan failed with exit code ${scan_exit}" "false"
+            return 2
+        fi
 
         # Display formatted output
         echo ""

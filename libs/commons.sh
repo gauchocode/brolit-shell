@@ -233,7 +233,7 @@ function _check_scripts_permissions() {
   log_event "debug" "Executing chmod +x on *.sh" "false"
 
   ### chmod (only if not already executable, avoids git noise)
-  find ./ -name "*.sh" ! -perm /u+x -exec chmod +x {} \;
+  find "${BROLIT_MAIN_DIR}" -name "*.sh" ! -perm /u+x -exec chmod +x {} \;
 
   # Check errors
   if [[ $? -ne 0 ]]; then
@@ -383,6 +383,14 @@ function script_init() {
   declare -g BROLIT_EXEC_TYPE
 
   declare -g BROLIT_CONFIG_FILE=~/.brolit_conf.json
+  if [[ -z "${BROLIT_RUNTIME_STATE_DIR:-}" ]]; then
+    if [[ "${BROLIT_MAIN_DIR}" == */brolit-shell/releases/* || "${BROLIT_MAIN_DIR}" == */brolit-shell/current* ]]; then
+      declare -g BROLIT_RUNTIME_STATE_DIR="${BROLIT_STATE_DIR:-/var/lib/brolit}"
+    else
+      declare -g BROLIT_RUNTIME_STATE_DIR="${BROLIT_MAIN_DIR}"
+    fi
+    export BROLIT_RUNTIME_STATE_DIR
+  fi
 
   local timestamp
   local path_log
@@ -391,14 +399,20 @@ function script_init() {
 
   # Log
   timestamp="$(date +%Y%m%d_%H%M%S)"
-  path_log="${BROLIT_MAIN_DIR}/log"
-  if [[ ! -d "${BROLIT_MAIN_DIR}/log" ]]; then
-    mkdir "${BROLIT_MAIN_DIR}/log"
+  path_log="${BROLIT_RUNTIME_STATE_DIR}/log"
+  if [[ ! -d "${path_log}" ]]; then
+    mkdir -p "${path_log}"
   fi
   # Reports
-  path_reports="${BROLIT_MAIN_DIR}/reports"
+  path_reports="${BROLIT_RUNTIME_STATE_DIR}/reports"
   if [[ ! -d "${path_reports}" ]]; then
-    mkdir "${path_reports}"
+    mkdir -p "${path_reports}"
+  fi
+  mkdir -p "${BROLIT_RUNTIME_STATE_DIR}/tmp"
+  if [[ "${BROLIT_RUNTIME_STATE_DIR}" != "${BROLIT_MAIN_DIR}" ]]; then
+    umask 077
+    chmod 700 "${BROLIT_RUNTIME_STATE_DIR}" "${BROLIT_RUNTIME_STATE_DIR}/tmp" "${path_log}" "${path_reports}" 2>/dev/null || true
+    find "${BROLIT_RUNTIME_STATE_DIR}" -type f -exec chmod 600 {} + 2>/dev/null || true
   fi
 
   ## Only for BROLIT-UI
