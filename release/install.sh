@@ -212,19 +212,24 @@ install_release() {
     trap cleanup_install EXIT
     stage="$(mktemp -d "${root}/.stage.XXXXXX")"
 
-    # Verification order: checksum binds the manifest to the artifact, then
-    # the signature authenticates the manifest (TOFU peeks only at an
-    # artifact whose checksum already verified).
+    # Verification order: checksum binds the manifest to the artifact first
+    # (cheap, no ceremony); the OpenSSH signature is verified only when
+    # enforcement is enabled via BROLIT_ENFORCE_RELEASE_SIGNATURE=1.
     actual="$(sha256sum "${artifact}" | awk '{print $1}')"
     [[ "${actual}" == "${expected}" ]] || die "artifact checksum mismatch"
-    verify_release_signature "${manifest_file}" "${artifact}" "${root}" "${stage}"
+    if [[ "${BROLIT_ENFORCE_RELEASE_SIGNATURE:-0}" == "1" ]]; then
+        verify_release_signature "${manifest_file}" "${artifact}" "${root}" "${stage}"
+    else
+        RELEASE_TRUST="unsigned"
+        RELEASE_PRINCIPAL=""
+    fi
 
     tar --no-same-owner --no-same-permissions -xzf "${artifact}" -C "${stage}"
     [[ -f "${stage}/runner.sh" && -f "${stage}/brolit_lite.sh" ]] || die "runtime bundle is incomplete"
     if find "${stage}" -type l -print -quit | grep -q .; then
         die "runtime bundle must not contain symlinks"
     fi
-    if [[ "${RELEASE_TRUST}" == "pinned" ]]; then
+    if [[ "${RELEASE_TRUST}" == "pinned" && "${BROLIT_ENFORCE_RELEASE_SIGNATURE:-0}" == "1" ]]; then
         anchor_for_rotation=""
         if [[ -n "${BROLIT_RELEASE_ALLOWED_SIGNERS:-}" ]]; then
             anchor_for_rotation="${BROLIT_RELEASE_ALLOWED_SIGNERS}"

@@ -20,12 +20,17 @@ If `release/allowed_signers` exists (public key material, safe to commit), it
 is packaged as `release/allowed_signers` so verification stays self-contained
 for this open-source repo. Never commit private keys or `*.sig` files.
 
-## Signing
+## Signing (opt-in)
 
-Verification order on the VPS is archive paths/types → checksum → signature →
-shell syntax and entrypoints. The signature authenticates the manifest only
-after the checksum has bound it to the artifact, so even first-contact key
-extraction reads a checksum-verified bundle.
+Signature enforcement is off by default: production installs verify archive
+paths/types, checksum, shell syntax, and entrypoints with no key ceremony.
+Trust comes from HTTPS distribution plus the operator-pinned version/commit.
+
+To enforce authenticity, set `BROLIT_ENFORCE_RELEASE_SIGNATURE=1` on the VPS
+before installing. Enforcement verifies the detached OpenSSH signature
+(`manifest.json.sig`, staged next to the manifest) against a trust anchor and
+records `trust: pinned|tofu` in the receipt; default installs record
+`trust: unsigned`.
 
 Key ceremony (offline, once per key generation):
 
@@ -50,16 +55,17 @@ Trust anchors, in precedence order:
 4. First-contact trust: the key bundled at `release/allowed_signers` inside
    the artifact, pinned into the new release on success.
 
-Rules: a configured anchor plus an unsigned release is a downgrade and is
-rejected; a bundled key that differs from the pinned anchor is rejected
-(rotation must be explicit via 1 or 2). `BROLIT_ALLOW_UNSIGNED_RELEASE=1`
-bypasses signature checks for local tests only. The install receipt records
-`trust` (`pinned`, `tofu`, or `unsigned-test`) and the signing principal.
+Rules (apply when `BROLIT_ENFORCE_RELEASE_SIGNATURE=1`): a configured anchor
+plus an unsigned release is a downgrade and is rejected; a bundled key that
+differs from the pinned anchor is rejected (rotation must be explicit via 1
+or 2). The install receipt records `trust` (`unsigned` by default; `pinned`
+or `tofu` when enforcement is on) and the signing principal.
 
 ## Install and rollback
 
 `release/install.sh install <manifest.json> <runtime.tar.gz> [root]` verifies
-(archive paths/types → checksum → signature → shell syntax and entrypoints)
+(archive paths/types → checksum → shell syntax and entrypoints, plus the
+signature when `BROLIT_ENFORCE_RELEASE_SIGNATURE=1`)
 before creating:
 
 ```text
