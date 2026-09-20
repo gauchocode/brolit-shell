@@ -22,25 +22,21 @@ archive_listing="$(tar -tzf "${release_dir}/brolit-shell-runtime.tar.gz")"
 grep -q './cron/security_tasks.sh' <<<"${archive_listing}" || fail "cron runtime files missing"
 
 install_root="${TEMP_DIR}/install"
-BROLIT_INSTALL_TEST_MODE=1 BROLIT_ALLOW_UNSIGNED_RELEASE=1 "${ROOT_DIR}/release/install.sh" install \
+BROLIT_INSTALL_TEST_MODE=1 "${ROOT_DIR}/release/install.sh" install \
   "${release_dir}/manifest.json" \
   "${release_dir}/brolit-shell-runtime.tar.gz" \
   "${install_root}" >/dev/null
 
 [[ -L "${install_root}/current" ]] || fail "release was not activated atomically"
 [[ -f "${install_root}/install-receipt.json" ]] || fail "install receipt missing"
-jq -e '.previous_release == null and .active_release != null and .validation == "passed" and .trust == "unsigned-test"' "${install_root}/install-receipt.json" >/dev/null || fail "first-install receipt is invalid"
+jq -e '.previous_release == null and .active_release != null and .validation == "passed" and .trust == "unsigned"' "${install_root}/install-receipt.json" >/dev/null || fail "first-install receipt is invalid"
 if find "${install_root}/current" -type f -perm /022 -print -quit | grep -q .; then
   fail "installed runtime contains group/world-writable files"
 fi
 
-# Unsigned installs fail closed by default (no trust anchor, no opt-in).
-if BROLIT_INSTALL_TEST_MODE=1 "${ROOT_DIR}/release/install.sh" install \
-  "${release_dir}/manifest.json" \
-  "${release_dir}/brolit-shell-runtime.tar.gz" \
-  "${TEMP_DIR}/unsigned-install" >/dev/null 2>&1; then
-  fail "unsigned release was accepted without opt-in"
-fi
+# Signature enforcement is opt-in. The block below exercises the enforced
+# path end to end; the default path stays ceremony-free.
+export BROLIT_ENFORCE_RELEASE_SIGNATURE=1
 
 if command -v ssh-keygen >/dev/null 2>&1; then
   sign_dir="${TEMP_DIR}/signing"
@@ -84,6 +80,28 @@ if command -v ssh-keygen >/dev/null 2>&1; then
     "${TEMP_DIR}/downgrade-install" >/dev/null 2>&1; then
     fail "unsigned manifest was accepted despite a configured anchor"
   fi
+
+  # Enforced without any anchor or signature: rejected.
+  if BROLIT_INSTALL_TEST_MODE=1 \
+    "${ROOT_DIR}/release/install.sh" install \
+    "${release_dir}/manifest.json" \
+    "${release_dir}/brolit-shell-runtime.tar.gz" \
+    "${TEMP_DIR}/enforced-unsigned-install" >/dev/null 2>&1; then
+    fail "unsigned release was accepted under enforcement"
+  fi
+
+  # Enforcement off ignores even a present-but-invalid sidecar signature.
+  cp "${release_dir}/manifest.json" "${TEMP_DIR}/badsidecar-manifest.json"
+  printf 'bogus' > "${TEMP_DIR}/badsidecar-manifest.json.sig"
+  unset BROLIT_ENFORCE_RELEASE_SIGNATURE
+  BROLIT_INSTALL_TEST_MODE=1 "${ROOT_DIR}/release/install.sh" install \
+    "${TEMP_DIR}/badsidecar-manifest.json" \
+    "${release_dir}/brolit-shell-runtime.tar.gz" \
+    "${TEMP_DIR}/badsidecar-install" >/dev/null \
+    || fail "default path should ignore an unverifiable sidecar signature"
+  jq -e '.trust == "unsigned"' "${TEMP_DIR}/badsidecar-install/install-receipt.json" >/dev/null \
+    || fail "sidecar install receipt should record unsigned trust"
+  export BROLIT_ENFORCE_RELEASE_SIGNATURE=1
 
   # First-contact trust: an artifact bundling a key is accepted and pins it.
   tofu_work="${TEMP_DIR}/tofu"
@@ -134,7 +152,8 @@ jq -e '.previous_release != null and .validation == "rollback" and .artifact_sha
 
 cp "${release_dir}/brolit-shell-runtime.tar.gz" "${TEMP_DIR}/tampered.tar.gz"
 printf 'tampered' >> "${TEMP_DIR}/tampered.tar.gz"
-if BROLIT_INSTALL_TEST_MODE=1 BROLIT_ALLOW_UNSIGNED_RELEASE=1 "${ROOT_DIR}/release/install.sh" install "${release_dir}/manifest.json" "${TEMP_DIR}/tampered.tar.gz" "${TEMP_DIR}/tampered-install" >/dev/null 2>&1; then
+unset BROLIT_ENFORCE_RELEASE_SIGNATURE
+if BROLIT_INSTALL_TEST_MODE=1 "${ROOT_DIR}/release/install.sh" install "${release_dir}/manifest.json" "${TEMP_DIR}/tampered.tar.gz" "${TEMP_DIR}/tampered-install" >/dev/null 2>&1; then
   fail "tampered artifact was accepted"
 fi
 
