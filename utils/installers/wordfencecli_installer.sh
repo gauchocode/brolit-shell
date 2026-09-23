@@ -19,8 +19,8 @@
 
 function wordfencecli_installer () {
 
-  # Check if wordfence-cli:latest not exists
-  if [[ "$(docker images -q wordfence-cli:latest 2> /dev/null)" == "" ]]; then
+  # Check if the pinned Wordfence image exists
+  if ! docker image inspect "${WORDFENCECLI_IMAGE}" > /dev/null 2>&1; then
 
     # Dependencies
     package_install_if_not "git"
@@ -28,26 +28,20 @@ function wordfencecli_installer () {
 
     log_subsection "Wordfence-cli Installer"
 
-    # Log
-    display --indent 6 --text "- Downloading Wordfence-cli"
-    log_event "debug" "Running: git clone https://github.com/wordfence/wordfence-cli.git /root/wordfence-cli" "false"
-    
-    # Download wordfence-cli
-    git clone https://github.com/wordfence/wordfence-cli.git /root/wordfence-cli > /dev/null 2>&1
-    
-    clear_previous_lines "2"
-    display --indent 6 --text "- Downloading Wordfence-cli" --result "DONE" --color GREEN
+    if ! build_wordfencecli_docker_image; then
+      display --indent 6 --text "- Installing Wordfence-cli" --result "ERROR" --color RED
+      return 1
+    fi
 
-    # Docker build (silent mode)
-    docker build -t wordfence-cli:latest /root/wordfence-cli > /dev/null 2>&1
+    clear_previous_lines "2"
 
     # Log
     log_event "info" "Wordfence-cli installer finished" "false"
     display --indent 6 --text "- Installing Wordfence-cli" --result "DONE" --color GREEN
     
     # Ask for license
-    read -p "Enter Wordfence-cli license key: " wordfencecli_license_key
-    wordfencecli_write_license "${wordfencecli_license_key}"
+    read -r -p "Enter Wordfence-cli license key: " wordfencecli_license_key
+    wordfencecli_write_license "${wordfencecli_license_key}" || return 1
 
 
   else
@@ -73,14 +67,11 @@ function wordfencecli_updater () {
 
   log_subsection "Wordfence-cli"
 
-  # Download wordfence-cli
   display --indent 6 --text "- Updating Wordfence-cli"
-  log_event "debug" "Running: (cd /root/wordfence-cli && git pull)" "false"
-  
-  (cd /root/wordfence-cli && git pull)
-
-  # Docker build (silent mode)
-  docker build -t wordfence-cli:latest /root/wordfence-cli > /dev/null 2>&1
+  if ! build_wordfencecli_docker_image; then
+    display --indent 6 --text "- Updating Wordfence-cli" --result "ERROR" --color RED
+    return 1
+  fi
 
   # Log
   clear_previous_lines "2"
@@ -103,14 +94,13 @@ function wordfencecli_uninstall() {
   
     log_subsection "Wordfence-cli Uninstaller"
   
-    # Check if wordfence-cli:latest exists
-    if [[ "$(docker images -q wordfence-cli:latest 2> /dev/null)" != "" ]]; then
+    # Check if the Wordfence image exists
+    if docker image inspect "${WORDFENCECLI_IMAGE}" > /dev/null 2>&1 || docker image inspect wordfence-cli:latest > /dev/null 2>&1; then
   
       # Remove wordfence-cli
       display --indent 6 --text "- Removing Wordfence-cli"
-      log_event "debug" "Running: docker rmi wordfence-cli:latest" "false"
-      
-      docker rmi wordfence-cli:latest
+      log_event "debug" "Removing Wordfence CLI image tags" "false"
+      docker image rm "${WORDFENCECLI_IMAGE}" wordfence-cli:latest || return 1
       
       clear_previous_lines "2"
       display --indent 6 --text "- Removing Wordfence-cli" --result "DONE" --color GREEN

@@ -25,6 +25,7 @@ function tests_suite_menu() {
     "12)" "RUN BROLIT NOTIFICATION TESTS"
     "13)" "RUN CLI PARAMETER TESTS"
     "14)" "RUN SITE MIGRATION TESTS"
+    "15)" "RUN WORDFENCE CLI TESTS"
   )
 
   chosen_tests_options=$(whiptail --title "TESTS SUITE" --menu " " 20 78 10 "${tests_options[@]}" 3>&1 1>&2 2>&3)
@@ -43,6 +44,7 @@ function tests_suite_menu() {
       test_borg_helper_funtions
       test_task_runner
       test_site_migration_functions
+      test_wordfencecli_helper
     fi
     if [[ ${chosen_tests_options} == *"01"* ]]; then
       test_borg_backup_database
@@ -101,6 +103,9 @@ function tests_suite_menu() {
     if [[ ${chosen_tests_options} == *"14"* ]]; then
       test_site_migration_functions
 
+    fi
+    if [[ ${chosen_tests_options} == *"15"* ]]; then
+      test_wordfencecli_helper
     fi
 
   else
