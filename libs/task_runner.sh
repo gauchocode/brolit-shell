@@ -421,6 +421,7 @@ function security_scan_handler() {
   local scan_status="No Issues"
   local scan_target
   local scan_label
+  local scan_failed="false"
 
   if [[ -n "${domain}" ]]; then
     scan_target="${PROJECTS_PATH}/${domain}"
@@ -438,13 +439,18 @@ function security_scan_handler() {
       local site="${PROJECTS_PATH}/${domain}"
       if [[ -d "${site}/wordpress" ]] || { [[ -f "${site}/index.php" ]] && [[ -d "${site}/wp-content" ]]; }; then
         local wf_result
-        wf_result="$(wordfencecli_malware_scan "${site}" "true")"
-        if [[ "${wf_result}" == "true" ]]; then
+        if ! wf_result="$(wordfencecli_malware_scan "${site}" "true")"; then
+          display --indent 2 --text "${domain}" --result "ERROR" --color RED
+          scan_failed="true"
+        elif [[ "${wf_result}" == "true" ]]; then
           display --indent 2 --text "${domain}" --result "MALWARE" --color RED
           send_notification "${SERVER_NAME}" "Malware detected on ${domain}" "alert"
           scan_status="Found Issues"
-        else
+        elif [[ "${wf_result}" == "false" ]]; then
           display --indent 2 --text "${domain}" --result "CLEAN" --color GREEN
+        else
+          display --indent 2 --text "${domain}" --result "ERROR" --color RED
+          scan_failed="true"
         fi
       else
         display --indent 2 --text "${domain} is not a WordPress site, skipping wordfence" --result "SKIP" --color YELLOW
@@ -457,13 +463,18 @@ function security_scan_handler() {
         project_name="$(basename "${site}")"
         if [[ -d "${site}/wordpress" ]] || { [[ -f "${site}/index.php" ]] && [[ -d "${site}/wp-content" ]]; }; then
           local wf_result
-          wf_result="$(wordfencecli_malware_scan "${site}" "true")"
-          if [[ "${wf_result}" == "true" ]]; then
+          if ! wf_result="$(wordfencecli_malware_scan "${site}" "true")"; then
+            display --indent 2 --text "${project_name}" --result "ERROR" --color RED
+            scan_failed="true"
+          elif [[ "${wf_result}" == "true" ]]; then
             display --indent 2 --text "${project_name}" --result "MALWARE" --color RED
             send_notification "${SERVER_NAME}" "Malware detected on ${project_name}" "alert"
             scan_status="Found Issues"
-          else
+          elif [[ "${wf_result}" == "false" ]]; then
             display --indent 2 --text "${project_name}" --result "CLEAN" --color GREEN
+          else
+            display --indent 2 --text "${project_name}" --result "ERROR" --color RED
+            scan_failed="true"
           fi
         fi
       done
@@ -474,7 +485,10 @@ function security_scan_handler() {
     log_subsection "ClamAV Scan"
     local clamav_result
     clamav_result="$(security_clamav_scan "${scan_target}")"
-    if [[ "${clamav_result}" == "true" ]]; then
+    if [[ "${clamav_result}" == "error" ]]; then
+      display --indent 2 --text "ClamAV scan on ${scan_label}" --result "ERROR" --color RED
+      scan_failed="true"
+    elif [[ "${clamav_result}" == "true" ]]; then
       display --indent 2 --text "ClamAV scan on ${scan_label}" --result "THREATS" --color RED
       send_notification "${SERVER_NAME}" "ClamAV detected threats in ${scan_label}" "alert"
       scan_status="Found Issues"
@@ -496,7 +510,12 @@ function security_scan_handler() {
     fi
   fi
 
+  if [[ "${scan_failed}" == "true" ]]; then
+    scan_status="Error"
+  fi
   display --indent 2 --text "Security scan status: ${scan_status}" --tcolor WHITE
+
+  [[ "${scan_failed}" == "true" ]] && return 2
 
 }
 

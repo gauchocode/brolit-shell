@@ -189,7 +189,7 @@ function menu_security_wordfencecli_scan() {
       include_all_files="false"
     fi
 
-    wordfencecli_malware_scan "${to_scan}" "${include_all_files}"
+    wordfencecli_malware_scan "${to_scan}" "${include_all_files}" > /dev/null
 
   fi
 

@@ -70,10 +70,15 @@ _security_tasks() {
 
           SCAN_STATUS="Found Issues"
 
-        else
+        elif [[ ${wordfencecli_scan_result} == "false" ]]; then
 
           log_event "info" "Wordfence-cli has not found malware files in ${project_dir}" "false"
           #send_notification "${SERVER_NAME}" "Wordfence-cli did not find any malware files in ${project_dir}. No action needed." "info"
+
+        else
+
+          log_event "error" "Wordfence-cli returned an invalid scan result for ${project_dir}; result is not authoritative" "false"
+          scan_failed="true"
 
         fi
 
