@@ -1295,13 +1295,73 @@ function certbot_show_domain_certificates_expiration_date() {
 }
 
 ################################################################################
+# Get certificate state for a cert name
+#
+# Arguments:
+#  ${1} = ${domains} - cert name to look up
+#
+# Outputs:
+#   ${cert_days} as a positive integer when valid, "EXPIRED" when certbot
+#   reports it as invalid/expired, empty when no such certificate exists.
+#   Always returns 0: emptiness of stdout is the signal, and a non-zero
+#   return would abort callers under `set -e` (v="$(f)" inherits f's status).
+#
+# Note: this used to be inline `grep 'VALID' | cut ...`, which also matched
+# "(INVALID: EXPIRED)". The leftover "EXPIRED)" string then reached the
+# caller arithmetic comparison, where a bareword evaluates to 0 and produced
+# the meaningless "EXPIRED) days" label in the report.
+################################################################################
+
+function certbot_certificate_state() {
+
+  local domains="${1}"
+
+  local expiry_line
+  local cert_state
+
+  expiry_line="$(certbot_certificates_output --cert-name "${domains}" | grep 'Expiry Date' | head -n 1)"
+
+  if [[ -z "${expiry_line}" ]]; then
+
+    return 0
+
+  fi
+
+  # "(VALID: 35 days)" -> 35
+  if [[ "${expiry_line}" == *"(VALID:"* ]]; then
+
+    cert_state="$(sed -n 's/.*(VALID: \([0-9][0-9]*\).*/\1/p' <<<"${expiry_line}")"
+
+    if [[ -n "${cert_state}" ]]; then
+
+      echo "${cert_state}"
+
+      return 0
+
+    fi
+
+  fi
+
+  # "(INVALID: EXPIRED)"
+  if [[ "${expiry_line}" == *"INVALID: EXPIRED"* ]]; then
+
+    echo "EXPIRED"
+
+  fi
+
+  return 0
+
+}
+
+################################################################################
 # Show certificates valid days
 #
 # Arguments:
 #  ${1} = ${domains} - (domain.com,www.domain.com)
 #
 # Outputs:
-#   ${cert_days} if ok, "no-cert" on error.
+#   ${cert_days} if ok, "EXPIRED" if the certificate expired, empty when
+#   there is no certificate at all.
 ################################################################################
 
 # TODO: Awful code, need a refactor
@@ -1316,26 +1376,26 @@ function certbot_certificate_valid_days() {
   root_domain="$(domain_get_root "${domain}")"
   subdomain_part="$(domain_get_subdomain_part "${domain}")"
 
-  cert_days="$(certbot_certificates_output --cert-name "${domain}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)"
+  cert_days="$(certbot_certificate_state "${domain}")"
 
   if [[ -z ${cert_days} ]]; then
 
     if [[ ${subdomain_part} == "www" ]]; then
 
-      cert_days="$(certbot_certificates_output --cert-name "${root_domain}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)"
+      cert_days="$(certbot_certificate_state "${root_domain}")"
 
       if [[ -z "${cert_days}" ]]; then
         # New try with -0001
-        cert_days="$(certbot_certificates_output --cert-name "${root_domain}-0001" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)"
+        cert_days="$(certbot_certificate_state "${root_domain}-0001")"
 
       fi
 
     else
 
-      cert_days="$(certbot_certificates_output --cert-name "www.${root_domain}" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)"
+      cert_days="$(certbot_certificate_state "www.${root_domain}")"
 
       if [[ -z ${cert_days} ]]; then
-        cert_days="$(certbot_certificates_output --cert-name "${domain}-0001" | grep 'VALID' | cut -d '(' -f2 | cut -d ' ' -f2)"
+        cert_days="$(certbot_certificate_state "${domain}-0001")"
 
       fi
 
@@ -1343,7 +1403,11 @@ function certbot_certificate_valid_days() {
 
   fi
 
-  log_event "info" "Certificate valid for: ${cert_days} days" "false"
+  if [[ "${cert_days}" == "EXPIRED" ]]; then
+    log_event "info" "Certificate EXPIRED for ${domain}" "false"
+  else
+    log_event "info" "Certificate valid for: ${cert_days} days" "false"
+  fi
 
   # Return
   echo "${cert_days}"

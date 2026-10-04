@@ -456,39 +456,68 @@ function mail_certificates_section() {
         # Check blacklist ${IGNORED_PROJECTS_LIST}
         if [[ "${IGNORED_PROJECTS_LIST}" != *"${domain}"* ]]; then
 
-            log_event "info" "Getting certificate info for: ${domain}" "false"
-
-            # Change global
-            BK_FL_ARRAY_INDEX="$((BK_FL_ARRAY_INDEX + 1))"
-
             email_cert_new_line="<div style=\"float:left;width:100%\">"
             email_cert_domain="<div>${domain}"
 
-            cert_days="$(certbot_certificate_valid_days "${domain}")"
+            if ! domain_is_valid "${domain}"; then
 
-            if [[ -z "${cert_days}" ]]; then
-                # GREY LABEL - No certificate
+                # GREY LABEL - Not a domain
+                # Project directories are not always domains (e.g. a
+                # docker-compose project named "compreface-monitor"). There
+                # is nothing to check and nothing wrong, so this must NOT
+                # raise an unsupported-TLD error nor flip the section to
+                # WARNING -- otherwise every server with a non-domain
+                # project gets a daily false "SSL certificates need
+                # attention" email.
+                log_event "debug" "Skipping certificate check for ${domain}: not a domain" "false"
                 email_cert_days_container=" <span style=\"color:white;background-color:#5d5d5d;border-radius:12px;padding:0 5px 0 5px;\">"
-                email_cert_days="${email_cert_days_container} no certificate"
-                cert_status_icon="⚠️"
-                status_certs="WARNING"
+                email_cert_days="${email_cert_days_container} not a domain"
 
             else
-                # Certificate found - color based on days remaining
-                if (("${cert_days}" >= 14)); then
-                    # GREEN LABEL
-                    email_cert_days_container=" <span style=\"color:white;background-color:#27b50d;border-radius:12px;padding:0 5px 0 5px;\">"
-                elif (("${cert_days}" >= 7)); then
-                    # ORANGE LABEL
-                    email_cert_days_container=" <span style=\"color:white;background-color:#df761d;border-radius:12px;padding:0 5px 0 5px;\">"
-                else
-                    # RED LABEL
-                    email_cert_days_container=" <span style=\"color:white;background-color:#df1d1d;border-radius:12px;padding:0 5px 0 5px;\">"
+
+                log_event "info" "Getting certificate info for: ${domain}" "false"
+
+                # Change global
+                BK_FL_ARRAY_INDEX="$((BK_FL_ARRAY_INDEX + 1))"
+
+                cert_days="$(certbot_certificate_valid_days "${domain}")"
+
+                if [[ -z "${cert_days}" ]]; then
+                    # GREY LABEL - No certificate
+                    email_cert_days_container=" <span style=\"color:white;background-color:#5d5d5d;border-radius:12px;padding:0 5px 0 5px;\">"
+                    email_cert_days="${email_cert_days_container} no certificate"
                     cert_status_icon="⚠️"
                     status_certs="WARNING"
+
+                elif [[ "${cert_days}" == "EXPIRED" ]]; then
+                    # RED LABEL - Expired
+                    # certbot reports "(INVALID: EXPIRED)" for these. Handled
+                    # explicitly instead of being fed to the arithmetic
+                    # comparison below, where a bareword resolves to 0 and
+                    # prints the meaningless "EXPIRED) days" label.
+                    email_cert_days_container=" <span style=\"color:white;background-color:#df1d1d;border-radius:12px;padding:0 5px 0 5px;\">"
+                    email_cert_days="${email_cert_days_container} EXPIRED"
+                    cert_status_icon="⚠️"
+                    status_certs="WARNING"
+
+                else
+                    # Certificate found - color based on days remaining
+                    if (("${cert_days}" >= 14)); then
+                        # GREEN LABEL
+                        email_cert_days_container=" <span style=\"color:white;background-color:#27b50d;border-radius:12px;padding:0 5px 0 5px;\">"
+                    elif (("${cert_days}" >= 7)); then
+                        # ORANGE LABEL
+                        email_cert_days_container=" <span style=\"color:white;background-color:#df761d;border-radius:12px;padding:0 5px 0 5px;\">"
+                    else
+                        # RED LABEL
+                        email_cert_days_container=" <span style=\"color:white;background-color:#df1d1d;border-radius:12px;padding:0 5px 0 5px;\">"
+                        cert_status_icon="⚠️"
+                        status_certs="WARNING"
+                    fi
+
+                    email_cert_days="${email_cert_days_container}${cert_days} days"
                 fi
 
-                email_cert_days="${email_cert_days_container}${cert_days} days"
             fi
 
             email_cert_end_line="</span></div></div>"
