@@ -416,7 +416,11 @@ fi
 log_section "Backup All"
 
 # Databases Backup (traditional - handled per project in multi-method approach)
-database_backup_result="$(backup_all_databases)"
+# NOTE: capture exit code, not stdout. The old
+# database_backup_result="$(backup_all_databases)" captured stdout (display
+# output, sizes) so mail_subject_status() never saw a real 0/1.
+backup_all_databases
+database_backup_result=$?
 
 # Verify PROJECTS_PATH is defined and is a valid directory
 if [[ -z "${PROJECTS_PATH}" ]]; then
@@ -432,8 +436,12 @@ fi
 # Projects Backup with multi-method support
 log_subsection "Backup Projects with Multi-Method Support"
 
-# Initialize borg backup status
+# Initialize borg backup status. The per-project Docker DB fallback also
+# reports through this flag (see borg_backup_database), so it must stay
+# visible in the email body and not only in the subject.
 borg_backup_result=0
+borg_failed_projects=()
+borg_backup_list=()
 
 # Iterate over projects in PROJECTS_PATH
 for project_dir in "${PROJECTS_PATH}"/*/; do
@@ -447,20 +455,41 @@ for project_dir in "${PROJECTS_PATH}"/*/; do
         # Capture any borg failures during project backups
         if [[ $? -ne 0 ]]; then
             borg_backup_result=1
+            borg_failed_projects+=("${project_domain}")
+            borg_backup_list+=("${project_domain};FAIL")
+        else
+            borg_backup_list+=("${project_domain};OK")
         fi
 
     fi
 done
 
 # Files Backup
-files_backup_result="$(backup_all_files)"
+# NOTE: same as above - capture exit code, not stdout.
+backup_all_files
+files_backup_result=$?
 
 # Backup All with Borg (runs borgmatic for all project configs if enabled)
 if [[ ${BACKUP_BORG_STATUS} == "enabled" ]]; then
     backup_all_files_with_borg
     if [[ $? -ne 0 ]]; then
         borg_backup_result=1
+        borg_failed_projects+=("borgmatic-global")
+        borg_backup_list+=("borgmatic-global;FAIL")
     fi
+fi
+
+# Borg mail section: previously borg failures only drove the subject (ERROR)
+# while the body showed all OK. Render them explicitly so subject and body
+# always agree.
+if [[ "${BACKUP_BORG_STATUS}" == "enabled" ]]; then
+    if [[ ${borg_backup_result} -eq 0 ]]; then
+        mail_backup_section "none" "none" "borg" "${borg_backup_list[@]}"
+    else
+        mail_backup_section "Borg backup failed for: ${borg_failed_projects[*]}" "borg_backup" "borg" "${borg_backup_list[@]}"
+    fi
+else
+    mail_backup_section "none" "none" "borg" "Borg backup disabled - skipped;SKIPPED"
 fi
 
 # Footer
@@ -480,6 +509,7 @@ if ! mail_template_assemble "${email_html_file}" "main" \
     "databases_backup_section=${BROLIT_TMP_DIR}/databases-bk-${NOW}.mail" \
     "configs_backup_section=${BROLIT_TMP_DIR}/configuration-bk-${NOW}.mail" \
     "files_backup_section=${BROLIT_TMP_DIR}/files-bk-${NOW}.mail" \
+    "borg_backup_section=${BROLIT_TMP_DIR}/borg-bk-${NOW}.mail" \
     "footer=${BROLIT_TMP_DIR}/footer-${NOW}.mail"; then
     log_event "error" "Failed to assemble email template" "false"
     display --indent 6 --text "- Assembling email template" --result "FAIL" --color RED

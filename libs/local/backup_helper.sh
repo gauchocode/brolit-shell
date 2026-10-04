@@ -542,14 +542,21 @@ function backup_all_projects_files() {
 
 function backup_all_files() {
 
+  local got_error=0
+
   ## SERVER CONFIG FILES
   backup_all_server_configs
+  [[ $? -ne 0 ]] && got_error=1
 
   ## PROJECTS FILES
   backup_all_projects_files
+  [[ $? -ne 0 ]] && got_error=1
 
   ## ADDITIONAL DIRS
   backup_additional_dirs
+  [[ $? -ne 0 ]] && got_error=1
+
+  return ${got_error}
 
 }
 
@@ -828,13 +835,21 @@ function backup_project_files() {
 
 function backup_all_databases() {
 
-  local error_msg
-  local error_type
-  local database_backup_index
+  local error_msg="none"
+  local error_type="none"
+  local got_error=0
   local mysql_containers
   local container_databases
   local total_databases=0
   local has_databases=false
+
+  # Global accumulator: backup_databases() appends here. Previously each
+  # backup_databases() call rendered its own "databases-bk" mail file with a
+  # local list starting at index 0, so every call overwrote the previous one
+  # and the email only showed the last container (e.g. anfibia-cronos showed
+  # a single revistaanfibia_prod file as OK while other DBs were invisible).
+  declare -g -a BACKUP_ALL_DATABASES_LIST=()
+  BACKUP_ALL_DATABASES_LIST=()
 
   # Starting Messages
   log_subsection "Backup Databases"
@@ -880,8 +895,13 @@ function backup_all_databases() {
       backup_databases_status=$?
       if [[ ${backup_databases_status} -eq 1 ]]; then
 
-        error_type="${error_type}${error_type:+\n}MySQL (host)"
-        error_msg="${error_msg}${error_msg:+\n}MySQL backup failed (host)"
+        got_error=1
+        error_type="database_backup"
+        if [[ "${error_msg}" == "none" ]]; then
+          error_msg="MySQL backup failed (host)"
+        else
+          error_msg="${error_msg}, MySQL backup failed (host)"
+        fi
 
       fi
     fi
@@ -915,8 +935,13 @@ function backup_all_databases() {
         backup_databases_status=$?
         if [[ ${backup_databases_status} -eq 1 ]]; then
 
-          error_type="${error_type}${error_type:+\n}MySQL (${container})"
-          error_msg="${error_msg}${error_msg:+\n}MySQL backup failed (${container})"
+          got_error=1
+          error_type="database_backup"
+          if [[ "${error_msg}" == "none" ]]; then
+            error_msg="MySQL backup failed (${container})"
+          else
+            error_msg="${error_msg}, MySQL backup failed (${container})"
+          fi
 
         fi
       fi
@@ -945,14 +970,26 @@ function backup_all_databases() {
     backup_databases_status=$?
     if [[ ${backup_databases_status} -eq 1 ]]; then
 
-      error_type="${error_type}${error_type:+\n}PostgreSQL"
-      error_msg="${error_msg}${error_msg:+\n}PostgreSQL backup failed"
+      got_error=1
+      error_type="database_backup"
+      if [[ "${error_msg}" == "none" ]]; then
+        error_msg="PostgreSQL backup failed"
+      else
+        error_msg="${error_msg}, PostgreSQL backup failed"
+      fi
 
     fi
 
   fi
 
-  [[ -n ${error_type} ]] && echo "${error_type}" && return 1
+  # Single mail section with the complete accumulated list. Previously this
+  # was rendered inside backup_databases() on every container, overwriting
+  # the file each time.
+  mail_backup_section "${error_msg}" "${error_type}" "databases" "${BACKUP_ALL_DATABASES_LIST[@]}"
+
+  [[ ${got_error} -eq 1 ]] && return 1
+
+  return 0
 
 }
 
@@ -1016,11 +1053,13 @@ function backup_databases() {
   local db_engine="${2}"
   local container_name="${3:-}"
 
-  local database_backup_index=0
-
   local got_error=0
-  local error_msg="none"
-  local error_type="none"
+
+  # Append to the global accumulator owned by backup_all_databases().
+  # The mail section is rendered once there, so every container's DBs stay
+  # visible instead of overwriting each other.
+  declare -g -a BACKUP_ALL_DATABASES_LIST
+  [[ -v BACKUP_ALL_DATABASES_LIST ]] || declare -g -a BACKUP_ALL_DATABASES_LIST=()
 
   for database in ${databases}; do
 
@@ -1040,16 +1079,13 @@ function backup_databases() {
 
         database_backup_file="$(basename "${database_backup_path}")"
 
-        backuped_databases_list[$database_backup_index]="${database_backup_file};${database_backup_size}"
+        BACKUP_ALL_DATABASES_LIST+=("${database_backup_file};${database_backup_size}")
 
-        database_backup_index=$((database_backup_index + 1))
-
-        log_event "info" "Backup ${database_backup_index} of ${databases_count} done" "false"
+        log_event "info" "Backup of ${database} done (${database_backup_size})" "false"
 
       else
 
         got_error=1
-        error_type="database_backup"
 
         log_event "error" "Something went wrong making a backup of ${database}." "false"
         log_event "debug" "backup_project_database result: ${backup_project_database_output}." "false"
@@ -1067,8 +1103,8 @@ function backup_databases() {
 
   done
 
-  # Configure Email
-  mail_backup_section "${error_msg}" "${error_type}" "databases" "${backuped_databases_list[@]}"
+  # NOTE: the "databases" mail section is rendered once by
+  # backup_all_databases() with the full accumulated list.
 
   # Return
   return ${got_error}
@@ -1317,6 +1353,16 @@ function borg_backup_database() {
   local project_domain="${1}"
 
   local json_config_file="/root/.brolit_conf.json"
+
+  # When Borg is disabled, Docker databases are already covered by the
+  # traditional Dropbox/SFTP backup (backup_all_databases). Trying an SCP
+  # upload to an empty Borg destination only produces a false ERROR in the
+  # backup report subject (e.g. anfibia-cronos 2026-10-03).
+  if [[ "${BACKUP_BORG_STATUS}" != "enabled" ]]; then
+    log_event "info" "Skipping Borg database backup for ${project_domain}: Borg backup is not enabled (covered by traditional backup)." "false"
+    display --indent 6 --text "- Database backup with Borg" --result "SKIPPED" --color WHITE
+    return 0
+  fi
 
   display --indent 6 --text "- Database backup with Borg" --result "RUNNING" --color YELLOW
 
