@@ -371,6 +371,11 @@ function server_status_handler() {
       cert_days="$(certbot_certificate_valid_days "${DOMAIN}")"
       if [[ -z "${cert_days}" ]]; then
         display --indent 2 --text "${DOMAIN} - no certificate" --result "MISSING" --color WHITE
+      elif [[ "${cert_days}" == "EXPIRED" ]]; then
+        # Must be checked before the numeric comparisons below: bash resolves
+        # a bareword in arithmetic context as an unset variable (0), which
+        # printed the meaningless "EXPIRED days remaining" label.
+        display --indent 2 --text "${DOMAIN} - certificate expired" --result "EXPIRED" --color RED
       elif [[ ${cert_days} -ge 14 ]]; then
         display --indent 2 --text "${DOMAIN} - ${cert_days} days remaining" --result "OK" --color GREEN
       elif [[ ${cert_days} -ge 7 ]]; then
@@ -391,6 +396,9 @@ function server_status_handler() {
         cert_days="$(certbot_certificate_valid_days "${domain}")"
         if [[ -z "${cert_days}" ]]; then
           display --indent 2 --text "${domain} - no certificate" --result "MISSING" --color WHITE
+        elif [[ "${cert_days}" == "EXPIRED" ]]; then
+          # See the note in the single-domain branch above
+          display --indent 2 --text "${domain} - certificate expired" --result "EXPIRED" --color RED
         elif [[ ${cert_days} -ge 14 ]]; then
           display --indent 2 --text "${domain} - ${cert_days} days remaining" --result "OK" --color GREEN
         elif [[ ${cert_days} -ge 7 ]]; then

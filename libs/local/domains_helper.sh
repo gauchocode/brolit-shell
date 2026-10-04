@@ -144,10 +144,45 @@ function domain_get_subdomain_part() {
 }
 
 ################################################################################
+# Check if a name is a valid domain
+#
+# Arguments:
+#   ${1} = ${name}
+#
+# Outputs:
+#   0 if it is a domain with a supported TLD, 1 otherwise.
+#
+# Note: silent by design. Project directories under PROJECTS_PATH are not
+# always domains (e.g. "compreface-monitor" is a docker-compose project with
+# no public name), and reports like the certificate section must label them
+# as "not a domain" instead of failing with an unsupported-TLD error.
+################################################################################
+
+function domain_is_valid() {
+
+  local domain="${1}"
+
+  # A domain always has at least one dot
+  if [[ -z "${domain}" ]] || [[ "${domain}" != *.* ]]; then
+
+    return 1
+
+  fi
+
+  # Quiet: no red FAIL display and no ERROR log for non-domain names
+  domain_get_extension "${domain}" "quiet" > /dev/null 2>&1
+
+}
+
+################################################################################
 # Get domain extension
 #
 # Arguments:
 #   ${1} = ${domain}
+#   ${2} = quiet (optional) - suppress the FAIL display and log the
+#         unsupported-TLD message at debug level instead of error. Used by
+#         read-only reports that iterate over PROJECTS_PATH, where folders
+#         that are not domains are expected and must not raise an error.
 #
 # Outputs:
 #   ${domain_ext}
@@ -156,12 +191,15 @@ function domain_get_subdomain_part() {
 function domain_get_extension() {
 
   local domain="${1}"
+  local quiet="${2:-}"
 
   local first_lvl
   local next_lvl
   local domain_ext
 
-  log_event "info" "Working with domain: ${domain}" "false"
+  # Skipped in quiet mode: domain_is_valid() is a pure predicate, and one INFO
+  # line per non-domain project folder on every report run is just noise.
+  [[ "${quiet}" != "quiet" ]] && log_event "info" "Working with domain: ${domain}" "false"
 
   # Get first_lvl domain name
   first_lvl="$(cut -d'.' -f1 <<<"${domain}")"
@@ -195,10 +233,18 @@ function domain_get_extension() {
 
   else
 
-    # Logging
-    log_event "error" "Domain extension not supported for '${domain}'. If this is a valid TLD, add it to ${BROLIT_MAIN_DIR}/config/domain_extension-list and retry." "false"
-    display --indent 6 --text "- Domain extension for ${domain}" --result "FAIL" --color RED
-    display --indent 8 --text "TLD not in config/domain_extension-list, add it and retry"
+    if [[ "${quiet}" == "quiet" ]]; then
+
+      log_event "debug" "Domain extension not supported for '${domain}' (not a domain)." "false"
+
+    else
+
+      # Logging
+      log_event "error" "Domain extension not supported for '${domain}'. If this is a valid TLD, add it to ${BROLIT_MAIN_DIR}/config/domain_extension-list and retry." "false"
+      display --indent 6 --text "- Domain extension for ${domain}" --result "FAIL" --color RED
+      display --indent 8 --text "TLD not in config/domain_extension-list, add it and retry"
+
+    fi
 
     return 1
 
