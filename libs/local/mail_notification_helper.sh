@@ -572,37 +572,43 @@ function mail_backup_section() {
     if [[ ${error_msg} != "none" ]]; then
         backup_status="ERROR"
         backup_status_icon="⛔"
-        section_content="<b>${backup_type} backup with errors:<br />${error_type}<br /><br />Please check log file.</b> <br />"
+        section_content="<b>${backup_type} backup with errors:<br />${error_type}<br />${error_msg}<br /><br />Please check log file.</b> <br />"
 
-    else
+    fi
+
+    # Always render the list (successes) so partial results stay visible
+    # even when some items failed. Previously the error branch discarded
+    # both error_msg details and the backuped_list.
+    files_inc=""
+
+    for backup_file in "${backuped_list[@]}"; do
+
+        bk_name="$(echo "${backup_file}" | cut -d ";" -f1)"
+        bk_size="$(echo "${backup_file}" | cut -d ";" -f2)"
+
+        log_event "debug" "backup_file=${backup_file}" "false"
+        log_event "debug" "bk_name=${bk_name}" "false"
+        log_event "debug" "bk_size=${bk_size}" "false"
+
+        # File list section
+        files_inc_line_p1="<div class=\"backup-details-line\">"
+        files_inc_line_p2="<span style=\"margin-right:5px;\">${bk_name}</span>"
+        files_inc_line_p3="<span style=\"background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;\">${bk_size}</span>"
+        files_inc_line_p4="</div>"
+
+        files_inc_buff="${files_inc}"
+        files_inc="${files_inc_line_p1}${files_inc_line_p2}${files_inc_line_p3}${files_inc_line_p4}${files_inc_buff}"
+
+    done
+
+    if [[ ${error_msg} == "none" ]]; then
         backup_status="OK"
         backup_status_icon="✅"
-        section_content=""
-        files_inc=""
-
-        for backup_file in "${backuped_list[@]}"; do
-
-            bk_name="$(echo "${backup_file}" | cut -d ";" -f1)"
-            bk_size="$(echo "${backup_file}" | cut -d ";" -f2)"
-
-            log_event "debug" "backup_file=${backup_file}" "false"
-            log_event "debug" "bk_name=${bk_name}" "false"
-            log_event "debug" "bk_size=${bk_size}" "false"
-
-            # File list section
-            files_inc_line_p1="<div class=\"backup-details-line\">"
-            files_inc_line_p2="<span style=\"margin-right:5px;\">${bk_name}</span>"
-            files_inc_line_p3="<span style=\"background:#1da0df;border-radius:12px;padding:2px 7px;font-size:11px;color:white;\">${bk_size}</span>"
-            files_inc_line_p4="</div>"
-
-            files_inc_buff="${files_inc}"
-            files_inc="${files_inc_line_p1}${files_inc_line_p2}${files_inc_line_p3}${files_inc_line_p4}${files_inc_buff}"
-
-        done
-
         files_label_d_end="</div>"
         section_content="${files_inc}${files_label_d_end}"
-
+    else
+        # Append the (partial) success list below the error header
+        section_content="${section_content}${files_inc}</div>"
     fi
 
     # Create temporary file with tracking

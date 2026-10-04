@@ -61,6 +61,17 @@ function backup_manager_menu() {
         STATUS_BACKUP_BORG=0  # Set to success since it's intentionally skipped
       fi
 
+      # Borg mail section so manual backups also show borg status in the body
+      if [[ "${BACKUP_BORG_STATUS}" == "enabled" ]]; then
+        if [[ ${STATUS_BACKUP_BORG} -eq 0 ]]; then
+          mail_backup_section "none" "none" "borg" "Borg backup completed;OK"
+        else
+          mail_backup_section "Borg backup failed, check logs" "borg_backup" "borg" "Borg backup;FAIL"
+        fi
+      else
+        mail_backup_section "none" "none" "borg" "Borg backup disabled - skipped;SKIPPED"
+      fi
+
       # Footer
       mail_footer "${SCRIPT_V}"
 
@@ -75,6 +86,7 @@ function backup_manager_menu() {
         "databases_backup_section=${BROLIT_TMP_DIR}/databases-bk-${NOW}.mail" \
         "configs_backup_section=${BROLIT_TMP_DIR}/configuration-bk-${NOW}.mail" \
         "files_backup_section=${BROLIT_TMP_DIR}/files-bk-${NOW}.mail" \
+        "borg_backup_section=${BROLIT_TMP_DIR}/borg-bk-${NOW}.mail" \
         "footer=${BROLIT_TMP_DIR}/footer-${NOW}.mail"; then
         log_event "error" "Failed to assemble complete backup email template" "false"
       fi
