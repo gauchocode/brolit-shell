@@ -248,23 +248,54 @@ function mysql_list_databases() {
 
     log_event "info" "Listing '${stage}' MySQL databases" "false"
 
-    # Execute command and capture stderr separately
+    # Execute command.
+    #
+    # stderr MUST NOT be merged into stdout. mysql prints
+    #   mysql: [Warning] Using a password on the command line interface can be insecure.
+    # on stderr, and with `2>&1` every whitespace-separated token of that
+    # warning became a "database name": gaucho-docker-host03 reported 12
+    # databases including mysql:, [Warning], Using, password, the, command,
+    # line, interface, can, be, insecure. -- one failing dump per token,
+    # every run. The system-database filter below cannot catch it because the
+    # token is "mysql:", not "mysql" -- hence the optional ":?" there.
+    local mysql_stderr_file
+    mysql_stderr_file="$(mktemp "${BROLIT_TMP_DIR:-/tmp}/mysql-list-stderr-XXXXXX")"
     local mysql_output mysql_errors
 
     if [[ ${stage} == "all" ]]; then
-        # Run command and filter out system databases (stderr redirected to variable)
-        mysql_output="$(${mysql_exec} -Bse 'show databases' 2>&1)"
+        # Run command and filter out system databases
+        mysql_output="$(${mysql_exec} -Bse 'show databases' 2>"${mysql_stderr_file}")"
         mysql_result=$?
-        databases="$(echo "${mysql_output}" | grep -Ev '^(information_schema|performance_schema|mysql|sys)$')"
+        databases="$(echo "${mysql_output}" | grep -Ev '^(information_schema|performance_schema|mysql:?|sys:?)$')"
     else
         # Run command and filter out system databases
-        mysql_output="$(${mysql_exec} -Bse 'show databases' 2>&1)"
+        mysql_output="$(${mysql_exec} -Bse 'show databases' 2>"${mysql_stderr_file}")"
         mysql_result=$?
-        databases="$(echo "${mysql_output}" | grep -Ev '^(information_schema|performance_schema|mysql|sys)$' | grep "${stage}")"
+        databases="$(echo "${mysql_output}" | grep -Ev '^(information_schema|performance_schema|mysql:?|sys:?)$' | grep "${stage}")"
     fi
 
-    # Check result and validate output doesn't contain error messages
-    if [[ ${mysql_result} -eq 0 && ${databases} != "error" && ! "${mysql_output}" =~ (OCI|runtime|exec|failed|Error|ERROR) ]]; then
+    mysql_errors="$(cat "${mysql_stderr_file}" 2>/dev/null)"
+    rm -f "${mysql_stderr_file}"
+
+    # Defense in depth: in batch mode each database is one whitespace-free
+    # line, so "no whitespace" is the complete invariant -- an allowlist like
+    # ^[A-Za-z0-9_-]+$ would silently drop legal names such as my.app_db,
+    # db$1 or non-ASCII ones. Bracketed tokens like "[Warning]" are dropped
+    # too, in case stderr ever gets merged back in. Log what was dropped
+    # instead of skipping it silently.
+    local databases_raw="${databases}"
+    databases="$(echo "${databases}" | grep -E '^[^[:space:]]+$' | grep -Ev '^\[')"
+
+    if [[ "${databases_raw}" != "${databases}" ]]; then
+        local dropped_db_names
+        dropped_db_names="$(comm -23 <(echo "${databases_raw}" | grep -Ev '^[[:space:]]*$' | sort -u) <(echo "${databases}" | grep -Ev '^[[:space:]]*$' | sort -u) | tr '\n' ' ')"
+        log_event "warning" "Ignoring non-database tokens in 'show databases' output: ${dropped_db_names}" "false"
+    fi
+
+    # Check result and validate output doesn't contain error messages.
+    # stderr is inspected too: docker exec failures ("OCI runtime exec
+    # failed") land there now that it is no longer merged into stdout.
+    if [[ ${mysql_result} -eq 0 && ${databases} != "error" && ! "${mysql_output}${mysql_errors}" =~ (OCI|runtime|exec|failed|Error|ERROR) ]]; then
 
         # Replace all newlines with a space
         databases="${databases//$'\n'/ }"
