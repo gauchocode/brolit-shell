@@ -194,6 +194,31 @@ function mysql_count_databases() {
 }
 
 ################################################################################
+# Redact credentials from a MySQL command before logging it
+#
+# Arguments:
+#  ${1} = ${command} - a mysql/mysqldump command string
+#
+# Outputs:
+#  ${command} with the password argument replaced by "****"
+#
+# Note: mysql_exec is built with the plaintext password inline ("-p<password>")
+# for the Docker path, so logging it verbatim writes database credentials to
+# the persistent log file. Always log through this helper instead.
+################################################################################
+
+function mysql_redact_command() {
+
+    local command="${1}"
+
+    # Order matters and -p must be anchored to a word boundary: an unanchored
+    # "(-p)([^[:space:]]+)" also matches the "-p" inside "--password=..." and
+    # would render it as "--p****". The long form is rewritten first.
+    echo "${command}" | sed -E 's/(--password=)[^[:space:]]+/\1****/g; s/(^|[[:space:]])(-p)[^[:space:]]+/\1\2****/g'
+
+}
+
+################################################################################
 # List databases on MySQL
 #
 # Arguments:
@@ -253,13 +278,12 @@ function mysql_list_databases() {
     # stderr MUST NOT be merged into stdout. mysql prints
     #   mysql: [Warning] Using a password on the command line interface can be insecure.
     # on stderr, and with `2>&1` every whitespace-separated token of that
-    # warning became a "database name": gaucho-docker-host03 reported 12
-    # databases including mysql:, [Warning], Using, password, the, command,
-    # line, interface, can, be, insecure. -- one failing dump per token,
-    # every run. The system-database filter below cannot catch it because the
-    # token is "mysql:", not "mysql" -- hence the optional ":?" there.
+    # warning became a "database name" -- mysql:, [Warning], Using, password,
+    # the, command, ... -- producing one failing dump per token on every run.
+    # The system-database filter below cannot catch it because the token is
+    # "mysql:", not "mysql" -- hence the optional ":?" there.
     local mysql_stderr_file
-    mysql_stderr_file="$(mktemp "${BROLIT_TMP_DIR:-/tmp}/mysql-list-stderr-XXXXXX")"
+    mysql_stderr_file="$(mktemp "${BROLIT_TMP_DIR:-/tmp}/mysql-list-stderr-XXXXXX")" || mysql_stderr_file="/dev/null"
     local mysql_output mysql_errors
 
     if [[ ${stage} == "all" ]]; then
@@ -275,7 +299,10 @@ function mysql_list_databases() {
     fi
 
     mysql_errors="$(cat "${mysql_stderr_file}" 2>/dev/null)"
-    rm -f "${mysql_stderr_file}"
+    # Never rm the /dev/null fallback: brolit runs as root and coreutils has
+    # no guard against it, so deleting it would break every >/dev/null and
+    # 2>/dev/null redirection on the host.
+    [[ -n "${mysql_stderr_file}" && "${mysql_stderr_file}" != "/dev/null" ]] && rm -f "${mysql_stderr_file}"
 
     # Defense in depth: in batch mode each database is one whitespace-free
     # line, so "no whitespace" is the complete invariant -- an allowlist like
@@ -315,7 +342,7 @@ function mysql_list_databases() {
         display --indent 6 --text "- Listing MySQL databases" --result "FAIL" --color RED
         log_event "error" "Something went wrong listing MySQL databases" "false"
         log_event "error" "MySQL output: ${mysql_output}" "false"
-        log_event "debug" "Last command executed: ${mysql_exec} -Bse 'show databases'" "false"
+        log_event "debug" "Last command executed: $(mysql_redact_command "${mysql_exec}") -Bse 'show databases'" "false"
         log_event "debug" "Exit code: ${mysql_result}" "false"
 
         # Show container info if applicable
@@ -390,7 +417,7 @@ function mysql_users_list() {
         # Log
         display --indent 6 --text "- Listing MySQL users" --result "FAIL" --color RED
         log_event "error" "Something went wrong listing MySQL users" "false"
-        log_event "debug" "Last command executed: ${mysql_exec} -e SELECT user FROM mysql.user;'" "false"
+        log_event "debug" "Last command executed: $(mysql_redact_command "${mysql_exec}") -e SELECT user FROM mysql.user;'" "false"
 
         return 1
 
@@ -957,7 +984,7 @@ function mysql_database_import() {
     # Log
     display --indent 6 --text "- Importing backup into: ${database}" --tcolor YELLOW
     log_event "info" "Importing dump file ${dump_file} into database: ${database}" "false"
-    log_event "debug" "Running: pv ${dump_file} | ${mysql_exec}" "false"
+    log_event "debug" "Running: pv ${dump_file} | $(mysql_redact_command "${mysql_exec}")" "false"
 
     # String "utf8mb4_0900_ai_ci" replaced it with "utf8mb4_general_ci"
     # This is a workaround for a bug in MySQL 5.7.x and 5.6.x where the default collation is "utf8mb4_0900_ai_ci".
@@ -982,7 +1009,7 @@ function mysql_database_import() {
         display --indent 6 --text "- Database backup import" --result "ERROR" --color RED
         display --indent 8 --text "Please, read the log file!" --tcolor RED
         log_event "error" "Something went wrong importing database: ${database}"
-        log_event "debug" "Last command executed: pv ${dump_file} | ${mysql_exec}"
+        log_event "debug" "Last command executed: pv ${dump_file} | $(mysql_redact_command "${mysql_exec}")"
 
         return 1
 
@@ -1010,6 +1037,8 @@ function mysql_database_export() {
 
     local mysql_exec
     local dump_status
+    local dump_stderr
+    local dump_stderr_file
 
     if [[ -n ${container_name} && ${container_name} != "false" ]]; then
 
@@ -1035,10 +1064,33 @@ function mysql_database_export() {
 
     # Run mysqldump
     # For large tables use --max_allowed_packet=128M or bigger (default is 25MB)
-    ${mysql_exec} --max_allowed_packet=512M "${database}" >"${dump_file}"
+    #
+    # --skip-lock-tables: mysqldump locks every table by default, and MariaDB
+    # aborts the whole dump on error 1932 -- "Table 'X' doesn't exist in
+    # engine" -- which happens with an orphaned InnoDB table (a table still in
+    # the data dictionary but missing from the engine, typically left behind
+    # by a removed plugin). That silently cost a whole database backup. Without
+    # locking, each table is dumped on its own; for a backup the small loss of
+    # cross-table consistency is far better than having no dump at all.
+    #
+    # stderr goes to a file instead of the terminal so the real reason is
+    # logged on failure. It used to be dropped entirely, leaving only
+    # "Last command executed:" and no explanation.
+    dump_stderr_file="$(mktemp "${BROLIT_TMP_DIR:-/tmp}/mysqldump-stderr-XXXXXX")" || dump_stderr_file="/dev/null"
+
+    ${mysql_exec} --max_allowed_packet=512M --skip-lock-tables "${database}" >"${dump_file}" 2>"${dump_stderr_file}"
 
     dump_status=$?
     spinner_stop "${dump_status}"
+
+    # mysqldump always emits "Using a password on the command line interface can
+    # be insecure." on stderr when the password is inline, i.e. on every single
+    # dump. Filtering it keeps the warning channel meaningful for real issues.
+    dump_stderr="$(grep -v 'Using a password on the command line interface can be insecure' "${dump_stderr_file}" 2>/dev/null || true)"
+    # Never rm the /dev/null fallback: brolit runs as root and coreutils has
+    # no guard against it, so deleting it would break every >/dev/null and
+    # 2>/dev/null redirection on the host.
+    [[ -n "${dump_stderr_file}" && "${dump_stderr_file}" != "/dev/null" ]] && rm -f "${dump_stderr_file}"
 
     # Check dump result
     if [[ ${dump_status} -eq 0 ]]; then
@@ -1046,6 +1098,13 @@ function mysql_database_export() {
         # Log
         display --indent 6 --text "- Database backup for ${YELLOW}${database}${ENDCOLOR}" --result "DONE" --color GREEN
         log_event "info" "Database ${database} exported successfully" "false"
+
+        # --skip-lock-tables lets mysqldump continue past an unreadable table,
+        # so it can still exit 0 after writing an ERROR for one of them. Only
+        # log it, never fail the backup on it.
+        if [[ -n "${dump_stderr}" ]]; then
+            log_event "warning" "mysqldump reported issues for ${database} (dump completed): ${dump_stderr}" "false"
+        fi
 
         return 0
 
@@ -1055,7 +1114,8 @@ function mysql_database_export() {
         display --indent 6 --text "- Database backup for ${YELLOW}${database}${ENDCOLOR}" --result "ERROR" --color RED
         display --indent 8 --text "Please, read the log file!" --tcolor RED
         log_event "error" "Something went wrong exporting database: ${database}." "false"
-        log_event "error" "Last command executed: ${MYSQLDUMP_ROOT} ${database} > ${dump_file}" "false"
+        log_event "error" "mysqldump output: ${dump_stderr}" "false"
+        log_event "debug" "Last command executed: $(mysql_redact_command "${mysql_exec}") ${database} > ${dump_file}" "false"
 
         return 1
 

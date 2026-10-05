@@ -462,13 +462,12 @@ function mail_certificates_section() {
             if ! domain_is_valid "${domain}"; then
 
                 # GREY LABEL - Not a domain
-                # Project directories are not always domains (e.g. a
-                # docker-compose project named "compreface-monitor"). There
-                # is nothing to check and nothing wrong, so this must NOT
-                # raise an unsupported-TLD error nor flip the section to
-                # WARNING -- otherwise every server with a non-domain
-                # project gets a daily false "SSL certificates need
-                # attention" email.
+                # Project directories are not always domains: a folder may
+                # hold a docker-compose project with no public name at all.
+                # There is nothing to check and nothing wrong, so this must
+                # NOT raise an unsupported-TLD error nor flip the section to
+                # WARNING -- otherwise every server with a non-domain project
+                # gets a daily false "SSL certificates need attention" email.
                 log_event "debug" "Skipping certificate check for ${domain}: not a domain" "false"
                 email_cert_days_container=" <span style=\"color:white;background-color:#5d5d5d;border-radius:12px;padding:0 5px 0 5px;\">"
                 email_cert_days="${email_cert_days_container} not a domain"

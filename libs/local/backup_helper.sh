@@ -846,8 +846,8 @@ function backup_all_databases() {
   # Global accumulator: backup_databases() appends here. Previously each
   # backup_databases() call rendered its own "databases-bk" mail file with a
   # local list starting at index 0, so every call overwrote the previous one
-  # and the email only showed the last container (e.g. anfibia-cronos showed
-  # a single revistaanfibia_prod file as OK while other DBs were invisible).
+  # and the email only showed the last container, reporting a single database
+  # as OK while the rest stayed invisible.
   declare -g -a BACKUP_ALL_DATABASES_LIST=()
   BACKUP_ALL_DATABASES_LIST=()
 
@@ -1357,7 +1357,7 @@ function borg_backup_database() {
   # When Borg is disabled, Docker databases are already covered by the
   # traditional Dropbox/SFTP backup (backup_all_databases). Trying an SCP
   # upload to an empty Borg destination only produces a false ERROR in the
-  # backup report subject (e.g. anfibia-cronos 2026-10-03).
+  # backup report subject.
   if [[ "${BACKUP_BORG_STATUS}" != "enabled" ]]; then
     log_event "info" "Skipping Borg database backup for ${project_domain}: Borg backup is not enabled (covered by traditional backup)." "false"
     display --indent 6 --text "- Database backup with Borg" --result "SKIPPED" --color WHITE
