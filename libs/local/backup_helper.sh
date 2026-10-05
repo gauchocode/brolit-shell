@@ -863,10 +863,11 @@ function backup_all_databases() {
     display --indent 6 --text "- Initializing database backup script" --result "SKIPPED" --color YELLOW
     display --indent 8 --text "No database engine present on server or Docker containers" --tcolor YELLOW
 
-    # Create empty mail file to prevent sed errors
-    touch "${BROLIT_TMP_DIR}/databases-bk-${NOW}.mail"
+    # No database engine to back up here (e.g. Postgres-only Docker hosts,
+    # covered per-project). Skipped, not an error, so subject and body agree.
+    mail_backup_section "none" "none" "databases" "No database engine present - skipped;SKIPPED"
 
-    return 1
+    return 0
 
   fi
 
