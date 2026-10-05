@@ -693,6 +693,11 @@ function wpcli_core_update() {
 #
 # Outputs:
 #   ${wp_verify_checksum_output_file} if checksum is not ok.
+#
+# Notes:
+#   Ignores benign missing readme.html when Wordfence "Hide WordPress
+#   version" is active (readme.html renamed to readme.<hash>.html).
+#   Extra files ("should not exist") always alert.
 ################################################################################
 
 function wpcli_core_verify() {
@@ -719,7 +724,23 @@ function wpcli_core_verify() {
     ${wpcli_cmd} core verify-checksums 2>&1 | awk -F": " '/File (doesn'\''t|should not) exist/ {print $3}' >"${wp_verify_checksum_output_file}"
 
     # Replace new lines with ","
-    sed -i 's/\r//g; :a;N;$!ba;s/\n/,/g' ${wp_verify_checksum_output_file}
+    sed -i 's/\r//g; :a;N;$!ba;s/\n/,/g' "${wp_verify_checksum_output_file}"
+
+    # Filter benign Wordfence "Hide WordPress version" false positive:
+    # Wordfence renames readme.html to readme.<hash>.html, which makes
+    # `wp core verify-checksums` report "File doesn't exist: readme.html".
+    # That is expected hardening, not a compromise indicator.
+    if grep -q "readme.html" "${wp_verify_checksum_output_file}" 2>/dev/null; then
+        if ls "${wp_site}"/readme.*.html >/dev/null 2>&1; then
+            # Remove readme.html entries from the comma-separated list
+            sed -i 's/,*readme\.html,*/,/g; s/^,//; s/,$//; s/,,*/,/g; s/^,//; s/,$//' "${wp_verify_checksum_output_file}"
+            # If only commas/whitespace remain, truncate to empty (checksum OK)
+            if ! grep -q "[A-Za-z0-9]" "${wp_verify_checksum_output_file}" 2>/dev/null; then
+                : >"${wp_verify_checksum_output_file}"
+            fi
+            log_event "info" "Ignoring benign missing readme.html (Wordfence hide-version active) on ${wp_site}" "false"
+        fi
+    fi
 
     # Check if file is not empty
     if [[ -s "${wp_verify_checksum_output_file}" ]]; then
