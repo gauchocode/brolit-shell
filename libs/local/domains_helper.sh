@@ -153,9 +153,9 @@ function domain_get_subdomain_part() {
 #   0 if it is a domain with a supported TLD, 1 otherwise.
 #
 # Note: silent by design. Project directories under PROJECTS_PATH are not
-# always domains (e.g. "compreface-monitor" is a docker-compose project with
-# no public name), and reports like the certificate section must label them
-# as "not a domain" instead of failing with an unsupported-TLD error.
+# always domains: a folder may hold a docker-compose project with no public
+# name. Reports like the certificate section must label those as "not a
+# domain" instead of failing with an unsupported-TLD error.
 ################################################################################
 
 function domain_is_valid() {
