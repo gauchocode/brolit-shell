@@ -32,6 +32,13 @@ clean_disk_apt
 
 clean_disk_journal
 
+# Truncate runaway Docker container logs (json-file) before they fill the
+# root filesystem. Observed live: a single crash-looping container grew its
+# json log to 108GB and took the disk to 100%, which wedged the whole
+# nightly backup chain (borgmatic cannot allocate temp files on a full
+# disk). Only logs over 1GB are touched; each truncation is reported.
+truncate_large_docker_logs
+
 # If NETDATA is installed, enable alarms
 if [[ ${PACKAGES_NETDATA_STATUS} == "enabled" ]]; then
   netdata_alerts_enable

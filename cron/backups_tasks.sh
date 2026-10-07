@@ -311,7 +311,16 @@ function backup_project_all_enabled_methods() {
             initialize_repository "/etc/borgmatic.d/${project_domain}.yml"
 
             # Run borgmatic backup
-            if borgmatic --config "/etc/borgmatic.d/${project_domain}.yml" --stats; then
+            # NOTE: resolve the absolute command (cron PATH lacks pipx
+            # bin dir) and bound it with a timeout so a wedged borgmatic
+            # cannot keep this run alive indefinitely.
+            local borg_cmd
+            borg_cmd="$(_borgmatic_resolve_cmd)"
+            if [[ -z "${borg_cmd}" ]]; then
+                log_event "error" "Borgmatic executable not found via PATH, /root/.local/bin, pipx, or python3 -m" "false"
+                display --indent 8 --text "Backup failed" --result "FAIL" --color RED
+                backup_status=1
+            elif eval "timeout \"${BROLIT_BORG_BACKUP_TIMEOUT:-28800}\" ${borg_cmd} --config \"/etc/borgmatic.d/${project_domain}.yml\" --stats"; then
                 log_event "info" "Borgmatic backup completed for ${project_domain}" "false"
                 display --indent 8 --text "Backup completed" --result "DONE" --color GREEN
             else
@@ -384,6 +393,18 @@ script_init "true"
 
 # Running from cron
 log_event "info" "Running backups_tasks.sh ..." "false"
+
+# Single-instance guard: a previous run still working (or hung) must never
+# accumulate nightly copies. Observed live: 44 stacked runs on one host
+# whose borgmatic loop wedged for 18 days (disk 100% full), load ~30.
+# flock is released automatically when this process dies, even on kill -9.
+# shellcheck disable=SC2094
+exec 200>"${BROLIT_RUNTIME_STATE_DIR:-/tmp}/brolit_backups_tasks.lock"
+if ! flock -n 200; then
+    log_event "warning" "Another backups_tasks.sh is still running (lock held). Exiting to avoid stacking runs." "false"
+    send_notification "${SERVER_NAME}" "Backup run skipped: the previous backup run is still active. If this fires every night, a run is hung -- check for old backups_tasks.sh processes on the server." "alert"
+    exit 1
+fi
 
 # Global counter incremented by storage_delete_old_backups() every time it
 # fails to remove an old backup from a remote storage (e.g. Dropbox). Reset

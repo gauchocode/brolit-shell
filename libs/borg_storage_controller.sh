@@ -1130,8 +1130,15 @@ function _initialize_repository_for_config() {
     local borg_cmd="${2}"
     local log_label="${3:-${config_file}}"
 
+    # Timeouts: a wedged borgmatic (e.g. disk 100% full makes the python
+    # interpreter spin forever trying to allocate temp files) must never
+    # hang the nightly backup chain. Observed live: one `info` call kept a
+    # backup run alive for 18 days at ~100% CPU.
+    local info_timeout="${BROLIT_BORG_INFO_TIMEOUT:-120}"
+    local init_timeout="${BROLIT_BORG_INIT_TIMEOUT:-300}"
+
     # Check if repository already exists
-    if eval "${borg_cmd} --config \"${config_file}\" info" >/dev/null 2>&1; then
+    if eval "timeout \"${info_timeout}\" ${borg_cmd} --config \"${config_file}\" info" >/dev/null 2>&1; then
         log_event "info" "Repository already exists, skipping initialization (${log_label})" "false"
         return 0
     fi
@@ -1141,12 +1148,12 @@ function _initialize_repository_for_config() {
 
     # Try to initialize and capture output for diagnostics (e.g., Python Traceback)
     local init_output
-    if ! init_output=$(eval "${borg_cmd} init --encryption=none --config \"${config_file}\"" 2>&1); then
+    if ! init_output=$(eval "timeout \"${init_timeout}\" ${borg_cmd} init --encryption=none --config \"${config_file}\"" 2>&1); then
 
         # Log
         clear_previous_lines "1"
         display --indent 6 --text "- Repository initialization (${log_label})" --result "FAIL" --color RED
-        log_event "error" "Repository initialization failed for ${log_label}. Command='${borg_cmd} init --encryption=none --config ${config_file}'" "false"
+        log_event "error" "Repository initialization failed for ${log_label}. Command='timeout ${init_timeout} ${borg_cmd} init --encryption=none --config ${config_file}'" "false"
         # Surface a short snippet to logs to aid troubleshooting
         log_event "error" "borgmatic stderr: $(echo "${init_output}" | tail -n 10 | tr '\n' ' ')" "true"
 

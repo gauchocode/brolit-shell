@@ -771,11 +771,24 @@ function truncate_large_docker_logs() {
   # Log
   log_event "info" "Truncating large Docker container logs ..." "false"
 
-  # Find and truncate Docker container logs larger than 1GB
-  ${FIND} /var/lib/docker/containers/ -name "*-json.log" -exec du -sh {} + | awk '$1 ~ /^[0-9.]+G/ {print $2}' | while read -r log; do
-    log_event "info" "Truncating large log: $log" "false"
-    truncate -s 0 "$log"
-  done
+  # Find and truncate Docker container logs larger than 1GB. Report the
+  # container behind each log and notify: observed live, one runaway
+  # container grew a single json log to 108GB unnoticed because
+  # truncation (where it ran) was silent, and the disk hit 100%.
+  local truncated_report=""
+  local log_file container_id container_name size_human
+  while read -r size_human log_file; do
+    [[ -z "${log_file}" ]] && continue
+    container_id="$(basename "$(dirname "${log_file}")")"
+    container_name="$(docker ps --no-trunc --format '{{.ID}} {{.Names}}' 2>/dev/null | awk -v id="${container_id:0:12}" '$1==id {print $2}')"
+    truncate -s 0 "${log_file}"
+    log_event "info" "Truncated large log (${size_human}): ${log_file} (container: ${container_name:-unknown})" "false"
+    truncated_report+="<br/>${container_name:-${container_id:0:12}}: ${size_human}"
+  done < <(${FIND} /var/lib/docker/containers/ -name "*-json.log" -size +1G -exec du -sh {} + 2>/dev/null | sort -rh | head -n 10)
+
+  if [[ -n "${truncated_report}" ]]; then
+    send_notification "${SERVER_NAME}" "Docker container logs over 1GB were truncated:${truncated_report}<br/><br/>If the same container shows up every cycle, its logging is unbounded -- add json-file max-size/max-file options to its compose service." "alert"
+  fi
 
 }
 
