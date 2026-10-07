@@ -123,6 +123,10 @@ _security_tasks() {
 
     SCAN_STATUS="Found Issues"
 
+  elif [[ ${process_scanner_result} == "warning" ]]; then
+
+    log_event "info" "Process scanner found only low-severity indicators (no alert sent)." "false"
+
   else
 
     log_event "info" "Process scanner has not found suspicious activity" "false"

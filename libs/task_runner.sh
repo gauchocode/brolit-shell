@@ -513,6 +513,8 @@ function security_scan_handler() {
       display --indent 2 --text "Process scanner" --result "SUSPICIOUS" --color RED
       send_notification "${SERVER_NAME}" "Suspicious processes detected on ${SERVER_NAME}" "alert"
       scan_status="Found Issues"
+    elif [[ "${proc_result}" == "warning" ]]; then
+      display --indent 2 --text "Process scanner" --result "WARNING" --color YELLOW
     else
       display --indent 2 --text "Process scanner" --result "CLEAN" --color GREEN
     fi

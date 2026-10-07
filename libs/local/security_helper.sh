@@ -137,14 +137,23 @@ function security_custom_scan() {
 #  none
 #
 # Outputs:
-#  Scanner results with suspicious processes detected.
+#  "true" if critical malware signals found, "warning" if only
+#  low-severity indicators found, "false" if clean.
+#
+# Notes:
+#  Severity tiers keep sensitivity without alarm fatigue: high CPU alone
+#  or generic filename matches never raise a cryptominer alert by
+#  themselves; they escalate to critical only with corroboration
+#  (deleted executable, mining-port connection, unbracketed miner name
+#  with a resolvable executable).
 ################################################################################
 
 function security_process_scanner() {
 
   local timestamp
   local report_file
-  local suspicious_found=false
+  local critical_found=false
+  local warning_found=false
   local temp_results
 
   timestamp="$(date +%Y%m%d_%H%M%S)"
@@ -169,24 +178,41 @@ function security_process_scanner() {
   while IFS= read -r line; do
     if [[ -n "${line}" ]]; then
       echo "${line}" >>"${report_file}"
-      suspicious_found=true
+      critical_found=true
     fi
   done < <(find /proc/*/exe -ls 2>/dev/null | grep -i "deleted" | awk '{print "PID:", $9, "->", $11, $12, $13}' | sed 's|/proc/||g' | sed 's|/exe||g')
 
-  if [[ ${suspicious_found} == false ]]; then
+  if [[ ${critical_found} == false ]]; then
     echo "No processes with deleted executables found." >>"${report_file}"
   fi
   echo "" >>"${report_file}"
 
   # 2. Check for high CPU usage processes (potential cryptominers)
-  echo "[2] HIGH CPU USAGE PROCESSES (>30%):" >>"${report_file}"
-  echo "-------------------------------------" >>"${report_file}"
+  # NOTE: sustained high CPU alone is only a warning on backup hosts
+  # (lbzip2/borg/tar routinely exceed this). It escalates to critical only
+  # when the same PID also shows a deleted executable or talks to a known
+  # mining port (checked below).
+  echo "[2] HIGH CPU USAGE PROCESSES (>30% - warning unless corroborated):" >>"${report_file}"
+  echo "------------------------------------------------------------------" >>"${report_file}"
 
   ps aux --sort=-%cpu | awk 'NR==1 || $3>30.0 {print $0}' >>"${report_file}"
 
-  high_cpu_count=$(ps aux --sort=-%cpu | awk '$3>30.0 {print $0}' | wc -l)
+  high_cpu_pids=$(ps -eo pid,pcpu,args | awk '$2>30.0 {print $1}')
+  high_cpu_count=$(echo "${high_cpu_pids}" | grep -c . || true)
   if [[ ${high_cpu_count} -gt 0 ]]; then
-    suspicious_found=true
+    warning_found=true
+    for high_cpu_pid in ${high_cpu_pids}; do
+      exe_target="$(readlink "/proc/${high_cpu_pid}/exe" 2>/dev/null)"
+      if [[ "${exe_target}" == *" (deleted)" ]]; then
+        echo "PID ${high_cpu_pid} also has a deleted executable -> CRITICAL" >>"${report_file}"
+        critical_found=true
+      fi
+      pid_conns="$(ss -antp 2>/dev/null | grep "pid=${high_cpu_pid},")"
+      if [[ -n "${pid_conns}" ]] && echo "${pid_conns}" | grep -Eq ':(3333|4444|5555|7777|14444)([^0-9]|$)'; then
+        echo "PID ${high_cpu_pid} also talks to a mining port -> CRITICAL" >>"${report_file}"
+        critical_found=true
+      fi
+    done
   fi
   echo "" >>"${report_file}"
 
@@ -194,14 +220,27 @@ function security_process_scanner() {
   echo "[3] PROCESSES WITH SUSPICIOUS NAMES:" >>"${report_file}"
   echo "-------------------------------------" >>"${report_file}"
 
-  # Known malware/miner names - excluding legitimate system processes (kworker, systemd-resolve are legit)
+  # Known malware/miner names.
+  # Kernel threads (e.g. [kdevtmpfs]) are excluded: they show bracketed
+  # with no executable, while real malware such as kdevtmpfsi runs
+  # unbracketed with a resolvable executable. Each match is verified
+  # against /proc/PID/exe before counting as critical.
   suspicious_patterns="(xmrig|minerd|ccminer|ethminer|cryptonight|coinhive|crypto-pool|stratum|linux64|linuxsys|kdevtmpfsi|kdevtmpfs|\.\/\.|\.\-)"
 
-  suspicious_processes=$(ps aux | grep -iE "${suspicious_patterns}" | grep -v grep | grep -v "security_helper")
+  suspicious_processes=""
+  while read -r match_pid match_args || [[ -n "${match_pid}" ]]; do
+    [[ -z "${match_pid}" ]] && continue
+    # Skip kernel threads: bracketed cmdline
+    [[ "${match_args}" =~ ^\[.*\]$ ]] && continue
+    # Skip entries without a resolvable executable (kernel threads, zombies)
+    exe_target="$(readlink "/proc/${match_pid}/exe" 2>/dev/null)"
+    [[ -z "${exe_target}" ]] && continue
+    suspicious_processes+="${match_pid} ${match_args} -> ${exe_target}"$'\n'
+  done < <(ps -eo pid,args | grep -iE "${suspicious_patterns}" | grep -v grep | grep -v "security_helper")
 
   if [[ -n "${suspicious_processes}" ]]; then
     echo "${suspicious_processes}" >>"${report_file}"
-    suspicious_found=true
+    critical_found=true
   else
     echo "No suspicious process names found." >>"${report_file}"
   fi
@@ -214,12 +253,12 @@ function security_process_scanner() {
 
   suspicious_ports="(3333|4444|5555|7777|14444)"
 
-  suspicious_connections=$(netstat -antp 2>/dev/null | grep ESTABLISHED | grep -E ":${suspicious_ports}" | grep -v "docker-proxy" || \
-  ss -antp 2>/dev/null | grep ESTAB | grep -E ":${suspicious_ports}" | grep -v "docker-proxy")
+  suspicious_connections=$(netstat -antp 2>/dev/null | grep ESTABLISHED | grep -E ":(${suspicious_ports})([^0-9]|$)" | grep -v "docker-proxy" || \
+  ss -antp 2>/dev/null | grep ESTAB | grep -E ":(${suspicious_ports})([^0-9]|$)" | grep -v "docker-proxy")
 
   if [[ -n "${suspicious_connections}" ]]; then
     echo "${suspicious_connections}" >>"${report_file}"
-    suspicious_found=true
+    critical_found=true
   else
     echo "No suspicious network connections found." >>"${report_file}"
   fi
@@ -235,11 +274,16 @@ function security_process_scanner() {
     fi
   done
 
-  hidden_files_count=$(for dir in /tmp /var/tmp /dev/shm /home/*/.config /opt; do [[ -d "${dir}" ]] && find "${dir}" -name ".*" -type f -executable 2>/dev/null; done | wc -l)
-  if [[ ${hidden_files_count} -eq 0 ]]; then
-    echo "No suspicious hidden files found." >>"${report_file}"
+  # World-writable temp dirs are critical; /opt and per-user .config are
+  # warning-only (legitimate software drops executables there).
+  hidden_files_critical=$(for dir in /tmp /var/tmp /dev/shm; do [[ -d "${dir}" ]] && find "${dir}" -name ".*" -type f -executable 2>/dev/null; done | wc -l)
+  hidden_files_other=$(for dir in /opt /home/*/.config; do [[ -d "${dir}" ]] && find "${dir}" -name ".*" -type f -executable 2>/dev/null; done | wc -l)
+  if [[ ${hidden_files_critical} -gt 0 ]]; then
+    critical_found=true
+  elif [[ ${hidden_files_other} -gt 0 ]]; then
+    warning_found=true
   else
-    suspicious_found=true
+    echo "No suspicious hidden files found." >>"${report_file}"
   fi
   echo "" >>"${report_file}"
 
@@ -261,12 +305,18 @@ function security_process_scanner() {
   if [[ ${cron_suspicious} == false ]]; then
     echo "No suspicious cron jobs found." >>"${report_file}"
   else
-    suspicious_found=true
+    critical_found=true
   fi
   echo "" >>"${report_file}"
 
   echo "Checking systemd services..." >>"${report_file}"
-  systemctl list-units --type=service --all | grep -iE "(miner|crypto|xmr|monero)" >>"${report_file}" 2>/dev/null || echo "No suspicious systemd services found." >>"${report_file}"
+  suspicious_services=$(systemctl list-units --type=service --all 2>/dev/null | grep -iE "(miner|crypto|xmr|monero)" || true)
+  if [[ -n "${suspicious_services}" ]]; then
+    echo "${suspicious_services}" >>"${report_file}"
+    critical_found=true
+  else
+    echo "No suspicious systemd services found." >>"${report_file}"
+  fi
   echo "" >>"${report_file}"
 
   # 7. Check projects directory for suspicious files (host and docker volumes)
@@ -280,15 +330,26 @@ function security_process_scanner() {
     # A) Check host files
     echo "A) HOST FILES SCAN:" >>"${report_file}"
 
-    # Look for suspicious executables with common malware names
-    suspicious_files=$(find "${PROJECTS_PATH}" -type f -executable \( -name "*linux*" -o -name "*miner*" -o -name "*xmr*" -o -name "*kdev*" \) 2>/dev/null | head -20)
+    # Look for suspicious executables with common malware names.
+    # NOTE: generic "*linux*" matches legitimate runtimes (e.g. Node
+    # linux-x64), so it is warning-only. Narrow miner patterns stay critical.
+    suspicious_files=$(find "${PROJECTS_PATH}" -type f -executable \( -name "*miner*" -o -name "*xmr*" -o -name "*kdev*" \) 2>/dev/null | head -20)
 
     if [[ -n "${suspicious_files}" ]]; then
       echo "Suspicious executables found:" >>"${report_file}"
       echo "${suspicious_files}" >>"${report_file}"
-      suspicious_found=true
+      critical_found=true
     else
       echo "No suspicious executables found in host projects." >>"${report_file}"
+    fi
+    echo "" >>"${report_file}"
+
+    linux_like_files=$(find "${PROJECTS_PATH}" -type f -executable -name "*linux*" 2>/dev/null | head -20)
+
+    if [[ -n "${linux_like_files}" ]]; then
+      echo "Generic *linux* executables (low confidence, warning only):" >>"${report_file}"
+      echo "${linux_like_files}" >>"${report_file}"
+      warning_found=true
     fi
     echo "" >>"${report_file}"
 
@@ -330,25 +391,35 @@ function security_process_scanner() {
           if [[ -n "${suspicious_container_procs}" ]]; then
             echo "  ⚠️  Suspicious processes found:" >>"${report_file}"
             echo "${suspicious_container_procs}" >>"${report_file}"
-            suspicious_found=true
+            critical_found=true
           fi
 
-          # Check for suspicious executables in container
-          suspicious_container_files=$(docker exec "${container_id}" find /var/www /app /usr/local /opt -type f -executable \( -name "*linux*" -o -name "*miner*" -o -name "*kdev*" \) 2>/dev/null | head -5)
+          # Check for suspicious executables in container (narrow miner
+          # patterns stay critical; generic *linux* is warning-only)
+          suspicious_container_files=$(docker exec "${container_id}" find /var/www /app /usr/local /opt -type f -executable \( -name "*miner*" -o -name "*xmr*" -o -name "*kdev*" \) 2>/dev/null | head -5)
 
           if [[ -n "${suspicious_container_files}" ]]; then
             echo "  ⚠️  Suspicious files found:" >>"${report_file}"
             echo "${suspicious_container_files}" >>"${report_file}"
-            suspicious_found=true
+            critical_found=true
           fi
 
-          # Check high CPU usage inside container
+          linux_container_files=$(docker exec "${container_id}" find /var/www /app /usr/local /opt -type f -executable -name "*linux*" 2>/dev/null | head -5)
+
+          if [[ -n "${linux_container_files}" ]]; then
+            echo "  ℹ️  Generic *linux* files (warning only):" >>"${report_file}"
+            echo "${linux_container_files}" >>"${report_file}"
+            warning_found=true
+          fi
+
+          # Check high CPU usage inside container (warning tier: app
+          # workloads inside containers legitimately spike)
           high_cpu_container=$(docker exec "${container_id}" ps aux --sort=-%cpu 2>/dev/null | head -5 | awk '$3>50.0 {print $0}')
 
           if [[ -n "${high_cpu_container}" ]]; then
-            echo "  ⚠️  High CPU processes (>50%):" >>"${report_file}"
+            echo "  ⚠️  High CPU processes (>50%, warning):" >>"${report_file}"
             echo "${high_cpu_container}" >>"${report_file}"
-            suspicious_found=true
+            warning_found=true
           fi
 
           echo "" >>"${report_file}"
@@ -390,7 +461,7 @@ function security_process_scanner() {
   echo "SCAN SUMMARY" >>"${report_file}"
   echo "==================================" >>"${report_file}"
 
-  if [[ ${suspicious_found} == true ]]; then
+  if [[ ${critical_found} == true ]]; then
     echo "⚠️  WARNING: Suspicious activity detected!" >>"${report_file}"
     echo "" >>"${report_file}"
     echo "Recommended actions:" >>"${report_file}"
@@ -410,6 +481,16 @@ function security_process_scanner() {
     display --indent 8 --text "⚠️  Suspicious activity detected!" --tcolor RED
     log_event "warning" "Process malware scanner found suspicious activity. Check: ${report_file}" "false"
 
+  elif [[ ${warning_found} == true ]]; then
+    echo "ℹ️  NOTICE: only low-severity indicators found (high CPU and/or generic matches, no corroboration)." >>"${report_file}"
+    echo "No critical malware signals. Review the sections above when convenient." >>"${report_file}"
+
+    # Log
+    clear_previous_lines "1"
+    display --indent 6 --text "- Scanning for malicious processes" --result "DONE" --color GREEN
+    display --indent 8 --text "No critical signals (warnings only, see report)" --tcolor YELLOW
+    log_event "info" "Process malware scanner completed - warnings only, no alert. Check: ${report_file}" "false"
+
   else
     echo "✓ No obvious malware detected in running processes." >>"${report_file}"
 
@@ -427,13 +508,20 @@ function security_process_scanner() {
   display --indent 8 --text "Full report: ${report_file}"
   log_event "info" "Full report saved to: ${report_file}" "false"
 
-  # Interactive menu for next steps (only if suspicious activity found)
-  if [[ ${suspicious_found} == true ]]; then
+  # Interactive menu for next steps (only on critical findings)
+  if [[ ${critical_found} == true ]]; then
     security_scanner_action_menu "${report_file}"
   fi
 
-  # Return result
-  echo "${suspicious_found}"
+  # Return result: "true" = critical, "warning" = low-severity only,
+  # "false" = clean. Callers alert on "true" only.
+  if [[ ${critical_found} == true ]]; then
+    echo "true"
+  elif [[ ${warning_found} == true ]]; then
+    echo "warning"
+  else
+    echo "false"
+  fi
 
 }
 
