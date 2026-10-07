@@ -654,7 +654,7 @@ function backup_all_files_with_borg() {
       display --indent 6 --text "- Backup with Borg (${config_count} projects)" --result "FAIL" --color RED
       return 1
     fi
-    eval "${borg_cmd} --config /etc/borgmatic.d/ --list --stats"
+    eval "timeout \"${BROLIT_BORG_BACKUP_TIMEOUT:-28800}\" ${borg_cmd} --config /etc/borgmatic.d/ --list --stats"
 
     if [[ $? -eq 0 ]]; then
 
@@ -1323,6 +1323,8 @@ function backup_project_with_borg() {
     # Run borgmatic backup
     # NOTE: resolve the absolute command; cron PATH lacks /root/.local/bin
     # (pipx), so a bare `borgmatic` fails with 127 and zero output.
+    # Timeout (default 8h, override with BROLIT_BORG_BACKUP_TIMEOUT) keeps
+    # a wedged backup from pinning the nightly chain forever.
     local borg_cmd
     borg_cmd="$(_borgmatic_resolve_cmd)"
     if [[ -z "${borg_cmd}" ]]; then
@@ -1330,7 +1332,7 @@ function backup_project_with_borg() {
       log_event "error" "Borgmatic executable not found via PATH, /root/.local/bin, pipx, or python3 -m" "true"
       return 1
     fi
-    eval "${borg_cmd} --config \"${config_directory}\""
+    eval "timeout \"${BROLIT_BORG_BACKUP_TIMEOUT:-28800}\" ${borg_cmd} --config \"${config_directory}\""
     if [[ $? -eq 0 ]]; then
     
       display --indent 6 --text "- Project backup with Borg" --result "DONE" --color GREEN
