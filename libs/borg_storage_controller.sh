@@ -17,6 +17,16 @@
 #
 ################################################################################
 
+# Borgmatic 2.x normalizes repository URLs, stripping the `/./` path marker
+# borg uses to anchor the repository prefix. Repositories created under 1.x
+# then look "relocated" and borg prompts `[yN]` on a dead stdin, which
+# aborts every operation (observed live: 16k failed init retries in a
+# single night on a host running borgmatic 2.0.6). Brolit always talks to
+# the same storage boxes it provisioned, so relocated/unknown-unencrypted
+# repos are expected; accept them explicitly. Works on borgmatic 1.x too.
+export BORG_RELOCATED_REPO_ACCESS_IS_OK="${BORG_RELOCATED_REPO_ACCESS_IS_OK:-yes}"
+export BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK="${BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK:-yes}"
+
 ################################################
 # umount storage box
 #
