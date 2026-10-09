@@ -1144,21 +1144,30 @@ function _initialize_repository_for_config() {
     # interpreter spin forever trying to allocate temp files) must never
     # hang the nightly backup chain. Observed live: one `info` call kept a
     # backup run alive for 18 days at ~100% CPU.
-    local info_timeout="${BROLIT_BORG_INFO_TIMEOUT:-120}"
     local init_timeout="${BROLIT_BORG_INIT_TIMEOUT:-300}"
 
-    # Check if repository already exists
-    if eval "timeout \"${info_timeout}\" ${borg_cmd} --config \"${config_file}\" info" >/dev/null 2>&1; then
-        log_event "info" "Repository already exists, skipping initialization (${log_label})" "false"
-        return 0
-    fi
-
+    # Initialize idempotently: attempt init directly and treat borg's
+    # "already exists" answer as success.
+    # NOTE: the previous `borgmatic info` pre-check was removed -- on large
+    # repositories it enumerated all archive metadata before answering
+    # (observed: 20-42 minutes per repository per night on a 7.9 TB repo),
+    # while `borg init` on an existing repo fails fast with a recognizable
+    # message and touches nothing.
     display --indent 6 --text "- Initializing Borg repository (${log_label})" --result "RUNNING" --color YELLOW
     log_event "info" "Initializing new repository with '${borg_cmd}' (${log_label})" "false"
 
     # Try to initialize and capture output for diagnostics (e.g., Python Traceback)
     local init_output
     if ! init_output=$(eval "timeout \"${init_timeout}\" ${borg_cmd} init --encryption=none --config \"${config_file}\"" 2>&1); then
+
+        # borg refuses to re-init an existing repository (exit 2) -- that is
+        # the normal, healthy case: the repo is already there.
+        if echo "${init_output}" | grep -qi "already exists"; then
+            clear_previous_lines "1"
+            display --indent 6 --text "- Repository initialization (${log_label})" --result "DONE" --color GREEN
+            log_event "info" "Repository already exists (borg init reported it) (${log_label})" "false"
+            return 0
+        fi
 
         # Log
         clear_previous_lines "1"
