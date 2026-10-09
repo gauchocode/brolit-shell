@@ -443,6 +443,22 @@ function mail_certificates_section() {
     local cert_status_icon
     local status_certs="OK"
 
+    # TLS responsibility detection: a backend server that does not listen
+    # on 443 and holds no local certificate store has its TLS terminated
+    # upstream (observed: arqa-web-vm sits behind the OpenResty edge VM
+    # that owns the Let's Encrypt certificates; the backend legitimately
+    # has none and got a nightly false "no certificate" alarm). Only
+    # servers that actually serve TLS locally get per-domain checks and
+    # can raise the certificates WARNING.
+    local tls_local="no"
+    if [[ -d "/etc/letsencrypt/live" ]] && [[ -n "$(ls -A /etc/letsencrypt/live 2>/dev/null)" ]]; then
+        tls_local="yes"
+    fi
+    if ss -tlnH 2>/dev/null | awk '{print $4}' | grep -q ':443$'; then
+        tls_local="yes"
+    fi
+    log_event "debug" "Local TLS termination: ${tls_local}" "false"
+
     # Initialize
     cert_status_icon="✅"
     email_cert_line=""
@@ -473,6 +489,17 @@ function mail_certificates_section() {
                 email_cert_days="${email_cert_days_container} not a domain"
 
             else
+
+                if [[ "${tls_local}" != "yes" ]]; then
+                    # GREY LABEL - TLS terminates upstream (proxy/edge).
+                    # This server does not listen on 443 and holds no local
+                    # certificate store: certificates are not its
+                    # responsibility, so this must never flip the section
+                    # to WARNING (observed on arqa-web-vm behind OpenResty).
+                    log_event "debug" "Skipping certificate check for ${domain}: TLS handled upstream" "false"
+                    email_cert_days_container=" <span style=\"color:white;background-color:#5d5d5d;border-radius:12px;padding:0 5px 0 5px;\">"
+                    email_cert_days="${email_cert_days_container} TLS upstream"
+                else
 
                 log_event "info" "Getting certificate info for: ${domain}" "false"
 
@@ -515,6 +542,8 @@ function mail_certificates_section() {
                     fi
 
                     email_cert_days="${email_cert_days_container}${cert_days} days"
+                fi
+
                 fi
 
             fi
