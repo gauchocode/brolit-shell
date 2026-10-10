@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.14.0
+# Version: 3.14.1
 ################################################################################
 
 ################################################################################
@@ -2372,8 +2372,8 @@ if [[ -f "${BROLIT_MAIN_DIR}/release/version.env" ]]; then
     # shellcheck disable=SC1090
     source "${BROLIT_MAIN_DIR}/release/version.env"
 fi
-BROLIT_VERSION="${BROLIT_RELEASE_VERSION:-3.14.0}"
-BROLIT_LITE_VERSION="${BROLIT_RELEASE_VERSION:-3.14.0}"
+BROLIT_VERSION="${BROLIT_RELEASE_VERSION:-3.14.1}"
+BROLIT_LITE_VERSION="${BROLIT_RELEASE_VERSION:-3.14.1}"
 
 _brolit_dropbox_list() {
     local path="${1}"
