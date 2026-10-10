@@ -171,18 +171,41 @@ function security_process_scanner() {
   echo "==================================" >>"${report_file}"
   echo "" >>"${report_file}"
 
-  # 1. Check for processes with deleted executables (common malware technique)
+  # 1. Check for processes with deleted executables.
+  # A deleted exe is CRITICAL only when the path is unknown to dpkg and
+  # not a trusted self-updating tool: right after an apt upgrade, legit
+  # system binaries (agetty, python3.12, ...) show "(deleted)" until
+  # their processes restart -- observed live flagging util-linux and
+  # python3.12 after an upgrade, and OpenCode self-updates under
+  # /root/.opencode/bin the same way. Owned/trusted paths degrade the
+  # finding to a warning; unknown paths stay critical.
   echo "[1] PROCESSES WITH DELETED EXECUTABLES:" >>"${report_file}"
   echo "----------------------------------------" >>"${report_file}"
 
-  while IFS= read -r line; do
-    if [[ -n "${line}" ]]; then
-      echo "${line}" >>"${report_file}"
+  local trusted_prefixes="${BROLIT_SCANNER_TRUSTED_PREFIXES:-/root/.opencode/bin}"
+  local -a prefix_array
+  local exe_target exe_path pkg_owner trusted prefix
+  while IFS= read -r pid; do
+    [[ -z "${pid}" ]] && continue
+    exe_target="$(readlink "/proc/${pid}/exe" 2>/dev/null)"
+    [[ "${exe_target}" == *" (deleted)"* ]] || continue
+    exe_path="${exe_target% (deleted)}"
+    pkg_owner="$(dpkg -S "${exe_path}" 2>/dev/null | head -n 1)"
+    trusted="no"
+    IFS=':' read -ra prefix_array <<< "${trusted_prefixes}"
+    for prefix in "${prefix_array[@]}"; do
+      [[ -n "${prefix}" && "${exe_path}" == "${prefix}"* ]] && trusted="yes"
+    done
+    if [[ -n "${pkg_owner}" || "${trusted}" == "yes" ]]; then
+      echo "PID: ${pid} -> ${exe_target} [${pkg_owner:-trusted tool}] - WARNING (upgraded in place; restart the process to clear)" >>"${report_file}"
+      warning_found=true
+    else
+      echo "PID: ${pid} -> ${exe_target} - CRITICAL (unknown origin)" >>"${report_file}"
       critical_found=true
     fi
-  done < <(find /proc/*/exe -ls 2>/dev/null | grep -i "deleted" | awk '{print "PID:", $9, "->", $11, $12, $13}' | sed 's|/proc/||g' | sed 's|/exe||g')
+  done < <(find /proc/*/exe -ls 2>/dev/null | grep -i "deleted" | awk '{print $9}' | sed 's|/proc/||; s|/exe||')
 
-  if [[ ${critical_found} == false ]]; then
+  if [[ ${critical_found} == false && ${warning_found} == false ]]; then
     echo "No processes with deleted executables found." >>"${report_file}"
   fi
   echo "" >>"${report_file}"
