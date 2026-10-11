@@ -18,6 +18,13 @@ import sys
 MAX_FILE_BYTES = 262144
 TOKEN_RE = re.compile(r"\{([A-Za-z0-9_]+)\}")
 LEFTOVER_TOKEN_RE = re.compile(r"\{[^{}]*\}")
+# Flat keys used/documented by the repository's Borgmatic templates. Presence
+# is metadata only: hook bodies and database credentials are never projected.
+RETENTION_KEYS = (
+    "keep_within", "keep_secondly", "keep_minutely", "keep_hourly",
+    "keep_daily", "keep_weekly", "keep_monthly", "keep_yearly",
+)
+HOOK_KEYS = ("before_backup", "after_backup", "on_error")
 
 
 def fail(status, message):
@@ -120,13 +127,48 @@ def parse_yml(path):
                 fail("unsupported", "retention values must be scalar")
             retention[str(key)] = str(value)
 
+    for key in RETENTION_KEYS:
+        if key not in document:
+            continue
+        value = document[key]
+        if isinstance(value, bool) or not isinstance(value, (int, str)):
+            fail("unsupported", "top-level retention values must be literal counts or intervals")
+        rendered = str(value)
+        pattern = r"[0-9]+[Hdwmy]" if key == "keep_within" else r"-?[0-9]+"
+        if not re.fullmatch(pattern, rendered):
+            fail("unsupported", "top-level retention values must be literal counts or intervals")
+        if retention is None:
+            retention = {}
+        if key in retention and retention[key] != rendered:
+            fail("unsupported", "conflicting flat and nested retention is not supported")
+        retention[key] = rendered
+
     database_hints = []
-    if isinstance(document.get("mysql_databases"), list) and document["mysql_databases"]:
-        database_hints.append("mysql")
-    if isinstance(document.get("mariadb_databases"), list) and document["mariadb_databases"]:
-        database_hints.append("mariadb")
-    if isinstance(document.get("postgresql_databases"), list) and document["postgresql_databases"]:
-        database_hints.append("postgresql")
+    for key, engine in (
+        ("mysql_databases", "mysql"),
+        ("mariadb_databases", "mariadb"),
+        ("postgresql_databases", "postgresql"),
+        ("postgres_databases", "postgresql"),
+    ):
+        declarations = document.get(key)
+        if declarations is None:
+            continue
+        if not isinstance(declarations, list):
+            fail("unsupported", "database declarations must be a list")
+        for declaration in declarations:
+            if not isinstance(declaration, dict) or not isinstance(declaration.get("name"), str) or not declaration["name"]:
+                fail("unsupported", "database declarations must contain a literal name")
+        if declarations and engine not in database_hints:
+            database_hints.append(engine)
+
+    has_hooks = isinstance(document.get("hooks"), dict)
+    for key in HOOK_KEYS:
+        commands = document.get(key)
+        if commands is None:
+            continue
+        if not isinstance(commands, list) or any(not isinstance(command, str) for command in commands):
+            fail("unsupported", "top-level hooks must be lists of strings")
+        has_hooks = has_hooks or bool(commands)
 
     json.dump({
         "status": "ok",
@@ -134,7 +176,7 @@ def parse_yml(path):
         "repositories": repositories,
         "source_directories": sources,
         "database_hints": database_hints,
-        "has_hooks": isinstance(document.get("hooks"), dict),
+        "has_hooks": has_hooks,
         "retention": retention,
         "project": constants.get("project") or None,
         "hostname": constants.get("hostname") or None,

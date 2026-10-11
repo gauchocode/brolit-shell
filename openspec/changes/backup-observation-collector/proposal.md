@@ -32,3 +32,15 @@ Canonical upstream references are in the sibling **brolit-admin** repository:
 - `docs/architecture/backup-observation-contract.md` (canonical protocol checkpoint and links to its formal schemas/fixtures as published).
 
 Exact wire fields, enum values, limits, exit codes and schema versions are defined upstream, not independently here. The approved revision and fixtures are pinned before implementation. No new dependency is approved; missing tools produce explicit limitations. Production operations, pilot authorization and release remain outside this proposal.
+
+### Approved local corrective slice (2026-10-11)
+
+The user approved source implementation of Admin's
+`docs/plan/active/2026-10-backup-status-and-troubleshooting.md` with "implementa".
+Its bounded P2.1 slice corrects safe metadata parsing of this repository's
+PostgreSQL/Docker templates: top-level retention, hook presence and the
+`postgres_databases` declaration spelling. Add sanitized template regressions,
+preserve existing nested metadata profiles and the pinned strict wire `1.0`,
+and do not expand Borg executable support, execute hooks, inspect dump contents,
+change backup execution, release or deploy. Independent code/security review
+remains required before the coordinating session finishes.

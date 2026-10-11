@@ -56,6 +56,7 @@ assert_monotonic_budget() {
 run_observer() {
     local request="${1}"
     local borg_mode="${2:-}"
+    local borgmatic_dir="${3:-${FIXTURE_DIR}/borgmatic.d}"
     printf '%s\n' "${request}" | env \
         PATH="${FAKE_BIN_DIR}:/usr/bin:/bin" \
         BO_EXEC_PATH="${FAKE_BIN_DIR}:/usr/bin:/bin" \
@@ -65,7 +66,7 @@ run_observer() {
         BROLIT_OBSERVER_TEST_BORG_MODE="${borg_mode}" \
         BROLIT_OBSERVER_TEST_MODE=1 \
         BROLIT_OBSERVER_TEST_CONFIG_FILE="${FIXTURE_DIR}/config-valid.json" \
-        BROLIT_OBSERVER_TEST_BORGMATIC_DIR="${FIXTURE_DIR}/borgmatic.d" \
+        BROLIT_OBSERVER_TEST_BORGMATIC_DIR="${borgmatic_dir}" \
         "${OBSERVER}" --test-mode
 }
 
@@ -129,7 +130,8 @@ fi
 
 # Every shipped Admin report fixture must validate against the pinned schema;
 # request fixtures are validated by the Admin contract suite separately.
-for report_fixture in /home/user/work/brolit-admin/application/contracts/backup-observation/fixtures/*.json; do
+for report_fixture in "${ADMIN_ROOT}"/application/contracts/backup-observation/fixtures/*.json; do
+    [[ -f "${report_fixture}" ]] || fail "Admin contract fixtures are unavailable"
     [[ "$(basename -- "${report_fixture}")" == request-* ]] && continue
     jsonschema -i "${report_fixture}" "${ADMIN_SCHEMA}" >/dev/null 2>&1 || fail "Admin report fixture does not validate: ${report_fixture}"
 done
@@ -172,7 +174,25 @@ cancel_request='{"schema_version":"1.0","collection_id":"test-cancel","operation
 set +e
 env PATH="${FAKE_BIN_DIR}:/usr/bin:/bin" BO_ATTEMPT_LOG="${ATTEMPT_LOG}" BROLIT_OBSERVER_TEST_MODE=1 BROLIT_OBSERVER_TEST_CONFIG_FILE="${FIXTURE_DIR}/config-valid.json" BROLIT_OBSERVER_TEST_DELAY_SECONDS=2 "${OBSERVER}" --test-mode <<<"${cancel_request}" >"${TEMP_DIR}/cancel.json" 2>"${TEMP_DIR}/cancel.err" &
 cancel_pid=$!
-sleep 0.1
+# Wait for the controlled delay child, which starts only after validation.
+# A fixed 100 ms sleep races Python startup under load and can instead test
+# pre-validation cancellation (correctly exit 20), not the correlated report.
+cancel_ready=0
+declare -a cancel_children=()
+for cancel_attempt in {1..100}; do
+    if [[ -r "/proc/${cancel_pid}/task/${cancel_pid}/children" ]]; then
+        read -r -a cancel_children <"/proc/${cancel_pid}/task/${cancel_pid}/children"
+        for cancel_child in "${cancel_children[@]}"; do
+            if [[ -r "/proc/${cancel_child}/comm" && "$(cat "/proc/${cancel_child}/comm")" == "sleep" ]]; then
+                cancel_ready=1
+                break
+            fi
+        done
+    fi
+    [[ ${cancel_ready} -eq 1 ]] && break
+    sleep 0.05
+done
+[[ ${cancel_ready} -eq 1 ]] || fail "cancellation fixture never reached the validated delay"
 kill -TERM "${cancel_pid}"
 wait "${cancel_pid}"
 status=$?
@@ -238,6 +258,40 @@ validate_report "${TEMP_DIR}/forged.json"
 assert_file_empty "${ATTEMPT_LOG}" "provider command was invoked for forged handle"
 
 # ── Borg adapter (fixture-backed, network-free) ──────────────────────────
+: >"${ATTEMPT_LOG}"
+
+python3 "${TEST_DIR}/test_borgmatic_profile.py" || fail "safe template projection regressions failed"
+set +e
+template_output="$(run_observer "${valid_discover}" "" "${FIXTURE_DIR}/templates" 2>"${TEMP_DIR}/templates.err")"
+status=$?
+set -e
+assert_eq "${status}" "0" "template discovery exit"
+printf '%s\n' "${template_output}" >"${TEMP_DIR}/templates.json"
+validate_report "${TEMP_DIR}/templates.json"
+jq -e '.schema_version == "1.0" and .outcome == "complete" and (.items | length) == 4
+  and all(.items[]; .retention.value == "keep_monthly=6,keep_yearly=1" and .retention.reason == null)
+  and ([.items[].scope.location_id] | unique | length) == 4
+  and all(.items[]; (has("database_hints") | not) and (has("has_hooks") | not))' \
+  "${TEMP_DIR}/templates.json" >/dev/null || fail "template metadata broke retention, scope or pinned wire"
+if grep -qE 'fixture-secret-canary|pg_dumpall|docker compose|send_notification' \
+    "${TEMP_DIR}/templates.json" "${TEMP_DIR}/templates.err" "${ATTEMPT_LOG}"; then
+    fail "template credentials or hook text escaped the safe projection"
+fi
+[[ ! -e /tmp/brolit-template-hook-canary ]] || fail "template hooks were executed"
+# Configuration database hints do not upgrade an archive's naming-only evidence.
+template_inventory="$(printf '%s' "${valid_inventory}" | jq -c '.scope.location_id = "borg-postgres-r0"')"
+set +e
+template_inventory_output="$(run_observer "${template_inventory}" "" "${FIXTURE_DIR}/templates")"
+status=$?
+set -e
+assert_eq "${status}" "0" "template inventory exit"
+printf '%s\n' "${template_inventory_output}" >"${TEMP_DIR}/templates-inventory.json"
+validate_report "${TEMP_DIR}/templates-inventory.json"
+jq -e 'all(.items[]; .classification.type == "files" and .classification.provenance == "naming_inference")' \
+  "${TEMP_DIR}/templates-inventory.json" >/dev/null || fail "database configuration fabricated archive coverage"
+if grep -qE '^borg (create|prune|compact|check|extract|init|break-lock)' "${ATTEMPT_LOG}"; then
+    fail "template discovery invoked a mutation command"
+fi
 : >"${ATTEMPT_LOG}"
 
 set +e

@@ -1,0 +1,28 @@
+# Sanitized excerpt of config/borg/borgmatic.template-postgres.yml.
+# Repository entries reflect generated config, not live provider evidence.
+constants:
+  project: fixture-postgres.example
+  hostname: fixture-host
+  group: fixture-group
+  postgres_user: fixture-user
+  postgres_password: fixture-secret-canary
+source_directories:
+  - /var/www/{project}
+repositories:
+  - path: ssh://fixture@primary.example:23/./projects/{project}
+  - path: ssh://fixture@mirror.example:23/./projects/{project}
+archive_name_format: '{project}_site-files-{now:%Y-%m-%dT%H:%M:%S}'
+keep_monthly: 6
+keep_yearly: 1
+before_backup:
+  - pg_dumpall -U {postgres_user} -W{postgres_password} --clean > /tmp/{project}_backup.sql
+after_backup:
+  - rm -f /tmp/{project}_backup.sql
+postgres_databases:
+  - name: "{database}"
+    username: "{postgres_user}"
+    password: "{postgres_password}"
+    format: sql
+    options: --no-tablespaces
+on_error:
+  - send_notification "Borgmatic" "Error during backup for {project}" "alert"

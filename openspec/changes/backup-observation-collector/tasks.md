@@ -41,3 +41,18 @@
 - [x] 5.4 Run targeted shell syntax/lint checks on implemented files using available approved tooling and `git diff --check`; record unavailable checks without installing tools silently.
 - [x] 5.5 Publish only tested tool/parser/authentication compatibility profiles, unsupported limitations and the pinned protocol revision; distinguish simulated fixtures from runtime validation.
 - [ ] 5.6 Complete code/security review and obtain separate pilot/deployment authorization before any server operation; document additive rollout and rollback through Admin scheduling controls.
+
+## 6. Approved P2.1 local template correction (2026-10-11)
+
+- [x] 6.1 Correct the safe projection for repository-template top-level retention and hook presence, and normalize PostgreSQL declaration spelling without evaluating commands or credentials.
+- [x] 6.2 Add sanitized real-template and existing-profile regressions, including unknown database dump freshness, strict wire conformance and non-execution canaries; run only isolated Docker tests.
+- [x] 6.3 Document tested local scope and limitations, and hand off independent read-only review to the coordinating session; no release/deployment authorization is implied.
+
+Local evidence: 13 parser tests and the isolated observer suite passed with
+network disabled and read-only source/tool mounts; strict wire `1.0` remained
+unchanged. See `docs/backup-observation-compatibility.md` for commands/environment
+scope and the initial cancellation-test timing failure. Independent read-only
+code/security review of the corrective diff completed without findings; the
+reviewer independently reran all 13 parser tests and verified syntax/contract
+pins. Task 5.6 remains open only for its separate release/pilot authorization
+and rollout gates: no pilot/deployment authorization was requested or obtained.

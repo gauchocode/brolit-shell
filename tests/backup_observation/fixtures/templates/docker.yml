@@ -1,0 +1,21 @@
+# Sanitized excerpt of config/borg/borgmatic.template-docker.yml.
+# Repository entries reflect generated config, not live provider evidence.
+constants:
+  project: fixture-docker.example
+  hostname: fixture-host
+  group: fixture-group
+source_directories:
+  - /var/www/{project}
+repositories:
+  - path: ssh://fixture@primary.example:23/./projects/{project}
+  - path: ssh://fixture@mirror.example:23/./projects/{project}
+archive_name_format: '{project}_site-files-{now:%Y-%m-%dT%H:%M:%S}'
+keep_monthly: 6
+keep_yearly: 1
+before_backup:
+  - docker compose -f /var/www/{project}/docker-compose.yml pause
+after_backup:
+  - docker compose -f /var/www/{project}/docker-compose.yml unpause
+  - docker compose -f /var/www/{project}/docker-compose.yml logs -t > /var/log/{project}_docker.log
+on_error:
+  - send_notification "Borgmatic" "Error during backup for {project}" "alert"

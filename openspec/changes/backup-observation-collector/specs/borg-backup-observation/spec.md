@@ -11,6 +11,11 @@ Discovery SHALL parse only a tested typed configuration subset without invoking 
 - **WHEN** configuration defines two repositories and both file and database sources
 - **THEN** each repository retains independent identity and association evidence without a files-only classification inferred from its name
 
+#### Scenario: Repository PostgreSQL and Docker templates
+- **WHEN** the repository's flat templates declare `keep_*` retention, top-level backup/error hooks or `postgres_databases`
+- **THEN** the safe projection preserves retention and hook presence and normalizes the declared database engine to `postgresql`, without exposing credentials or hook text
+- **AND** these are configuration hints only, not evidence of fresh database dumps, successful execution or archive contents; wire `1.0` and exact executable profiles remain unchanged
+
 ### Requirement: Structured per-repository metadata
 Inventory SHALL use a tested structured Borg metadata profile for exactly one resolved repository, preserve native identity and available timestamp/size semantics, and compute oldest/newest from explicit archive timestamps. It MUST NOT use listing order, archive names or repository modification time as authoritative backup time.
 

@@ -1,0 +1,19 @@
+# Existing nested-retention/hooks metadata profile and declaration spellings.
+repositories:
+  - ssh://fixture@primary.example:23/./database
+source_directories: []
+retention:
+  keep_daily: 1
+  keep_weekly: 0
+hooks:
+  before_backup:
+    - touch /tmp/brolit-template-hook-canary
+mysql_databases:
+  - name: all
+    password: fixture-secret-canary
+mariadb_databases:
+  - name: all
+postgresql_databases:
+  - name: all
+postgres_databases:
+  - name: all
