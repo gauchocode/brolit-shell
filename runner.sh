@@ -2,7 +2,7 @@
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
 # Script Name: BROLIT Shell
-# Version: 3.14.0
+# Version: 3.14.2
 ################################################################################
 
 ### Environment checks
@@ -33,7 +33,7 @@ for arg in "$@"; do
       exit 0
       ;;
     --version)
-      echo "BROLIT Shell v${BROLIT_RELEASE_VERSION:-3.14.1}"
+      echo "BROLIT Shell v${BROLIT_RELEASE_VERSION:-3.14.2}"
       exit 0
       ;;
   esac
