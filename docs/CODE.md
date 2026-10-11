@@ -37,6 +37,7 @@ Always use long parameter notation when available. This makes the script more re
 ## Code: Variables
 
 * Prefer local variables within functions over global variables.
+* Declare loop indices local in every function. Bash uses dynamic scoping, so an unqualified loop variable in a nested helper can overwrite the caller's loop counter and prevent the caller from terminating.
 * If you need global variables, make them read-only.
 * Variables should always be referred to in the ${var} form (as opposed to $var).
 * Variables should always be quoted, especially if their value may contain a whitespace or separator character: "${var}".

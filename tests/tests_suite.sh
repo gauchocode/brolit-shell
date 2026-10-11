@@ -35,7 +35,10 @@ function tests_suite_menu() {
   if [[ ${exitstatus} -eq 0 ]]; then
 
     if [[ ${chosen_tests_options} == *"00"* ]]; then
-      test_display_functions
+      test_display_functions || {
+        log_event "error" "Display helper regression tests failed" "false"
+        return 1
+      }
       test_mysql_helper
       test_php_helper_funtions
       test_nginx_helper_functions
@@ -86,7 +89,10 @@ function tests_suite_menu() {
 
     fi
     if [[ ${chosen_tests_options} == *"10"* ]]; then
-      test_display_functions
+      test_display_functions || {
+        log_event "error" "Display helper regression tests failed" "false"
+        return 1
+      }
 
     fi
     if [[ ${chosen_tests_options} == *"11"* ]]; then
@@ -150,7 +156,7 @@ script_init "true"
 
 log_section "Running Tests Suite"
 
-tests_suite_menu
+tests_suite_menu || exit $?
 
 # Log End
 log_event "info" "Exiting script ..." "false" "1"

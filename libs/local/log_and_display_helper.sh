@@ -143,6 +143,7 @@ function spinner_stop() {
 function _string_remove_color_chars() {
 
   local string="${1}"
+  local i j k
 
   # Text Styles
   declare -a text_styles=("${NORMAL}" "${BOLD}" "${ITALIC}" "${UNDERLINED}" "${INVERTED}")
@@ -436,6 +437,7 @@ function clear_screen() {
 function clear_previous_lines() {
 
   local lines="${1}"
+  local i
 
   [[ ${QUIET} == "true" || ${BROLIT_EXEC_TYPE} != "default" ]] && return 0
 

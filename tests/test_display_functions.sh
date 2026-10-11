@@ -7,7 +7,8 @@
 function test_display_functions() {
 
     test_display
-    test_string_remove_color_chars
+    test_string_remove_color_chars || return $?
+    test_display_helpers_preserve_caller_loop_index || return $?
 
 }
 
@@ -40,6 +41,8 @@ function test_display() {
 
 function test_string_remove_color_chars() {
 
+    local i=17
+
     # Test 1
     message1="${YELLOW}- Testing colored message${ENDCOLOR}"
     echo "${message1}"
@@ -51,5 +54,27 @@ function test_string_remove_color_chars() {
     echo "${message2}"
     colored_test_2=$(_string_remove_color_chars "${message2}")
     echo "${colored_test_2}"
+
+    # Invoke directly (not through command substitution) so this checks that
+    # the helper does not mutate the caller's dynamically scoped loop index.
+    _string_remove_color_chars "${message1}" >/dev/null
+    if [[ ${i} -ne 17 ]]; then
+        echo "FAIL: _string_remove_color_chars clobbered caller loop index" >&2
+        return 1
+    fi
+
+}
+
+function test_display_helpers_preserve_caller_loop_index() {
+
+    local i=7
+
+    QUIET=false BROLIT_EXEC_TYPE=default TERM="${TERM:-xterm}" \
+        clear_previous_lines "2" >/dev/null 2>&1
+
+    if [[ ${i} -ne 7 ]]; then
+        echo "FAIL: clear_previous_lines clobbered caller loop index" >&2
+        return 1
+    fi
 
 }
