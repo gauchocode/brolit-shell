@@ -2383,8 +2383,27 @@ _brolit_dropbox_list() {
         # A project or database path that has never been created is an empty
         # backup set, not a provider outage. Timeouts, auth failures, and
         # transport errors remain failures for the caller to report.
-        if grep -Eqi 'not found|does not exist|no such file|path.*exist' <<<"${output}"; then
+        if grep -Eqi 'not[ _]found|does not exist|no such file|path.*exist' <<<"${output}"; then
             return 0
+        fi
+        # The uploader reports a missing folder with a generic failure that
+        # carries no recognizable message. Distinguish it without trusting
+        # text: if the parent lists fine, the child was never created (empty
+        # set, e.g. a per-project database folder with dumps stored under a
+        # different name). If the parent fails too, or the child IS listed
+        # there (exists but unreadable), this is a real provider failure.
+        # Fail closed in every ambiguous case.
+        local stripped_path parent_path child_name parent_listing parent_status=0
+        stripped_path="${path%/}"
+        parent_path="${stripped_path%/*}"
+        child_name="${stripped_path##*/}"
+        if [[ -n "${parent_path}" && -n "${child_name}" && "${parent_path}" != "${stripped_path}" ]]; then
+            parent_listing="$(timeout 60 "${DROPBOX_UPLOADER}" -q list "${parent_path}" 2>&1)" || parent_status=$?
+            if [[ "${parent_status}" -eq 0 ]]; then
+                if ! awk -v name="${child_name}" '$NF == name {found=1} END {exit !found}' <<<"${parent_listing}"; then
+                    return 0
+                fi
+            fi
         fi
         printf '%s\n' "${output}" >&2
         return "${status}"
