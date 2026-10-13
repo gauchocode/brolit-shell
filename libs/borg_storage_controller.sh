@@ -1115,6 +1115,74 @@ function _borgmatic_resolve_cmd() {
 }
 
 ################################################################################
+# Classify why a borgmatic invocation failed, from its captured output.
+#
+# Live incident: a host whose borg destinations became unreachable produced a
+# nightly email where every project and the global run showed the same generic
+# "borg backup failed" line. The root cause (transport/repo level) was already
+# in the borgmatic output but never surfaced. This maps the output to a short
+# reason so logs, display, the email section and the notification all state
+# the same single root cause instead of N identical symptoms.
+#
+# Arguments:
+#   ${1} = ${borgmatic_output} (stdout+stderr of the failed invocation)
+#
+# Outputs:
+#   One of: network, auth, repo_missing, space, python_env, lock, unknown
+################################################################################
+
+function borg_init_failure_reason() {
+
+    local borgmatic_output="${1}"
+    local lower
+    lower="$(echo "${borgmatic_output}" | tr '[:upper:]' '[:lower:]')"
+
+    if echo "${lower}" | grep -qE "failed to create/acquire lock|lock.*\(timeout\)|repository is locked|lock.*held"; then
+        echo "lock"
+    elif echo "${lower}" | grep -qE "connection refused|connection reset|connection timed out|network is unreachable|temporary failure in name resolution|could not resolve hostname|no route to host|operation timed out|timed out|timeout"; then
+        echo "network"
+    elif echo "${lower}" | grep -qE "permission denied|authentication failed|publickey|host key verification failed|too many authentication failures"; then
+        echo "auth"
+    elif echo "${lower}" | grep -qE "no space left on device|quota exceeded|disk quota"; then
+        echo "space"
+    elif echo "${lower}" | grep -qE "traceback|modulenotfounderror|no module named|importerror|command not found"; then
+        echo "python_env"
+    elif echo "${lower}" | grep -qE "does not exist|no such file or directory|cannot access|not a repository"; then
+        echo "repo_missing"
+    else
+        echo "unknown"
+    fi
+
+}
+
+################################################################################
+# Effective consecutive-repository-failure limit that trips the run-level
+# circuit breaker in cron/backups_tasks.sh. When a shared borg destination is
+# unreachable, every project fails identically; after this many consecutive
+# failures the run stops hammering the dead destination and reports the root
+# cause once.
+#
+# Arguments:
+#   none (reads BROLIT_BORG_REPO_FAILURE_LIMIT from the environment)
+#
+# Outputs:
+#   Integer >= 0. 0 disables the breaker (legacy behavior).
+################################################################################
+
+function borg_repo_failure_limit() {
+
+    local raw="${BROLIT_BORG_REPO_FAILURE_LIMIT:-3}"
+
+    if [[ ! "${raw}" =~ ^[0-9]+$ ]]; then
+        echo "3"
+        return 0
+    fi
+
+    echo "${raw}"
+
+}
+
+################################################################################
 # Private: initialize the repository (or repositories) in a single borgmatic
 # config file, as one combined borgmatic call. Borgmatic aborts the whole
 # command on the first repository it can't reach/init -- fine for a
@@ -1175,6 +1243,13 @@ function _initialize_repository_for_config() {
         log_event "error" "Repository initialization failed for ${log_label}. Command='timeout ${init_timeout} ${borg_cmd} init --encryption=none --config ${config_file}'" "false"
         # Surface a short snippet to logs to aid troubleshooting
         log_event "error" "borgmatic stderr: $(echo "${init_output}" | tail -n 10 | tr '\n' ' ')" "true"
+
+        # Single root-cause classification shared by logs, display and (via
+        # the caller) the email section and notification.
+        local init_reason
+        init_reason="$(borg_init_failure_reason "${init_output}")"
+        log_event "error" "Repository init failure class: ${init_reason} (${log_label})" "false"
+        display --indent 8 --text "Failure class: ${init_reason}" --tcolor RED
 
         # Detect Python traceback to provide a specific hint
         if echo "${init_output}" | grep -qi "Traceback"; then

@@ -294,6 +294,16 @@ function backup_project_all_enabled_methods() {
     # Check if Borg is enabled
     if [[ ${BACKUP_BORG_STATUS} == "enabled" ]]; then
 
+        # Circuit breaker already tripped this run: the shared destination is
+        # down, not this project. Skip instead of hammering a dead repo.
+        if [[ ${BORG_REPO_UNAVAILABLE} -eq 1 ]]; then
+            log_event "info" "Skipping borg backup for ${project_domain}: repository unavailable this run (${BORG_FIRST_FAILURE_REASON})" "false"
+            display --indent 6 --text "- ${project_domain}" --result "SKIPPED" --color YELLOW
+            display --indent 8 --text "Repository unavailable this run: ${BORG_FIRST_FAILURE_REASON}" --tcolor YELLOW
+            borg_project_status_line="${project_domain};SKIPPED (repository unavailable)"
+            return 0
+        fi
+
         # Verify config file exists
         if [[ -f "/etc/borgmatic.d/${project_domain}.yml" ]]; then
 
@@ -308,7 +318,29 @@ function backup_project_all_enabled_methods() {
             # codebase -- every project whose repo wasn't already initialized
             # by some other path silently never got one, and the nightly
             # `borgmatic --stats` run below failed on it forever after.)
-            initialize_repository "/etc/borgmatic.d/${project_domain}.yml"
+            # A failure here means the destination itself is unusable: fail
+            # fast with the classified root cause instead of attempting a
+            # create that would only produce the same generic error.
+            if ! initialize_repository "/etc/borgmatic.d/${project_domain}.yml"; then
+
+                ((BORG_REPO_INIT_FAILURES++))
+                [[ -z "${BORG_FIRST_FAILURE_REASON}" ]] && BORG_FIRST_FAILURE_REASON="repository initialization failed"
+
+                log_event "error" "Borg repository unavailable for ${project_domain} (${BORG_FIRST_FAILURE_REASON}); skipping create attempt" "false"
+                display --indent 8 --text "Backup failed" --result "FAIL" --color RED
+                borg_project_status_line="${project_domain};FAIL (repository: ${BORG_FIRST_FAILURE_REASON})"
+
+                local repo_limit
+                repo_limit="$(borg_repo_failure_limit)"
+                if [[ "${repo_limit}" -gt 0 && ${BORG_REPO_INIT_FAILURES} -ge ${repo_limit} ]]; then
+                    BORG_REPO_UNAVAILABLE=1
+                    log_event "error" "Borg repository circuit breaker tripped after ${BORG_REPO_INIT_FAILURES} consecutive failures; remaining projects skipped this run" "true"
+                    send_notification "Borg Backup: repository unavailable" "${BORG_REPO_INIT_FAILURES} consecutive borg repository failures this run. Root cause: ${BORG_FIRST_FAILURE_REASON}. Remaining projects were skipped; backups for this run are NOT complete." "alert"
+                fi
+
+                backup_status=1
+
+            else
 
             # Run borgmatic backup
             # NOTE: resolve the absolute command (cron PATH lacks pipx
@@ -327,6 +359,8 @@ function backup_project_all_enabled_methods() {
                 log_event "error" "Borgmatic backup failed for ${project_domain}" "false"
                 display --indent 8 --text "Backup failed" --result "FAIL" --color RED
                 backup_status=1
+            fi
+
             fi
 
         elif [[ -z "$(find "${PROJECTS_PATH}/${project_domain}" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]]; then
@@ -464,6 +498,15 @@ borg_backup_result=0
 borg_failed_projects=()
 borg_backup_list=()
 
+# Circuit-breaker state for an unreachable shared borg destination: after N
+# consecutive repository-init failures the rest of the run is skipped and the
+# root cause is reported once (see backup_project_all_enabled_methods and
+# borg_repo_failure_limit in libs/borg_storage_controller.sh).
+declare -i BORG_REPO_INIT_FAILURES=0
+declare -i BORG_REPO_UNAVAILABLE=0
+BORG_FIRST_FAILURE_REASON=""
+borg_project_status_line=""
+
 # Iterate over projects in PROJECTS_PATH
 for project_dir in "${PROJECTS_PATH}"/*/; do
     # Verify that the directory exists and is actually a directory
@@ -472,12 +515,27 @@ for project_dir in "${PROJECTS_PATH}"/*/; do
 
         # Multi-method backup for each project
         backup_project_all_enabled_methods "${project_domain}"
+        project_rc=$?
+
+        # The function may set a detailed status line (e.g.
+        # "domain;FAIL (repository: network)" or
+        # "domain;SKIPPED (repository unavailable)") when the circuit
+        # breaker or the init gate classified the failure. Prefer it so the
+        # email body carries the root cause instead of N identical "FAIL".
+        project_status_line="${borg_project_status_line}"
+        borg_project_status_line=""
 
         # Capture any borg failures during project backups
-        if [[ $? -ne 0 ]]; then
+        if [[ ${project_rc} -ne 0 ]]; then
             borg_backup_result=1
             borg_failed_projects+=("${project_domain}")
-            borg_backup_list+=("${project_domain};FAIL")
+            if [[ -n "${project_status_line}" ]]; then
+                borg_backup_list+=("${project_status_line}")
+            else
+                borg_backup_list+=("${project_domain};FAIL")
+            fi
+        elif [[ -n "${project_status_line}" ]]; then
+            borg_backup_list+=("${project_status_line}")
         else
             borg_backup_list+=("${project_domain};OK")
         fi
@@ -492,22 +550,35 @@ files_backup_result=$?
 
 # Backup All with Borg (runs borgmatic for all project configs if enabled)
 if [[ ${BACKUP_BORG_STATUS} == "enabled" ]]; then
-    backup_all_files_with_borg
-    if [[ $? -ne 0 ]]; then
-        borg_backup_result=1
-        borg_failed_projects+=("borgmatic-global")
-        borg_backup_list+=("borgmatic-global;FAIL")
+    if [[ ${BORG_REPO_UNAVAILABLE} -eq 1 ]]; then
+        # Destination already proven down this run; running the global pass
+        # would only reproduce the same failure and burn the full timeout.
+        log_event "info" "Skipping global borgmatic run: repository unavailable this run (${BORG_FIRST_FAILURE_REASON})" "false"
+        borg_backup_list+=("borgmatic-global;SKIPPED (repository unavailable)")
+    else
+        backup_all_files_with_borg
+        if [[ $? -ne 0 ]]; then
+            borg_backup_result=1
+            borg_failed_projects+=("borgmatic-global")
+            borg_backup_list+=("borgmatic-global;FAIL")
+        fi
     fi
 fi
 
 # Borg mail section: previously borg failures only drove the subject (ERROR)
 # while the body showed all OK. Render them explicitly so subject and body
-# always agree.
+# always agree. When the run-level circuit breaker classified a shared
+# destination failure, state that single root cause in the section title
+# instead of a bare list of identical per-project failures.
 if [[ "${BACKUP_BORG_STATUS}" == "enabled" ]]; then
     if [[ ${borg_backup_result} -eq 0 ]]; then
         mail_backup_section "none" "none" "borg" "${borg_backup_list[@]}"
     else
-        mail_backup_section "Borg backup failed for: ${borg_failed_projects[*]}" "borg_backup" "borg" "${borg_backup_list[@]}"
+        borg_failure_title="Borg backup failed for: ${borg_failed_projects[*]}"
+        if [[ -n "${BORG_FIRST_FAILURE_REASON}" ]]; then
+            borg_failure_title="${borg_failure_title} — repository unavailable (${BORG_FIRST_FAILURE_REASON})"
+        fi
+        mail_backup_section "${borg_failure_title}" "borg_backup" "borg" "${borg_backup_list[@]}"
     fi
 else
     mail_backup_section "none" "none" "borg" "Borg backup disabled - skipped;SKIPPED"
