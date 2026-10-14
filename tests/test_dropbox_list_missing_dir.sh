@@ -45,6 +45,14 @@ case "${requested_path}" in
         printf '[D] presentproj  \n[D] other  \n[D] deniedproj  \n'
         exit 0
         ;;
+    HOST2/projects-online)
+        printf '[D] site  \n'
+        exit 0
+        ;;
+    HOST2/projects-online/database|HOST2/projects-online/database/*)
+        echo 'Some error occured. rerun the script with "-d" option.'
+        exit 1
+        ;;
     */projects-online/database/presentproj)
         printf '[F] 12345 2026-10-12;02:20:18 presentproj_db_2026-10-12.tar.bz2\n'
         exit 0
@@ -62,7 +70,7 @@ case "${requested_path}" in
         echo 'list_folder/path/not_found/.'
         exit 1
         ;;
-    DOWN/*)
+    DOWN/*|DOWN2|DOWN2/*)
         echo 'Timeout while connecting.'
         exit 1
         ;;
@@ -271,6 +279,68 @@ function test_dropbox_list_parentless_path_stays_failure() {
 
 }
 
+################################################################################
+# Test: whole missing database tree reads as empty via ancestor probe
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function test_dropbox_list_missing_tree_is_empty() {
+
+    echo "=== Test: whole missing database tree reads as empty ==="
+
+    local output status stderr_output
+    stderr_output="$(mktemp)"
+    output="$(_brolit_dropbox_list "HOST2/projects-online/database/projx" 2>"${stderr_output}")"
+    status=$?
+
+    if [[ ${status} -ne 0 ]]; then
+        echo "FAILED: expected exit 0, got ${status}"
+        rm -f "${stderr_output}"
+        return 1
+    fi
+    if [[ -n "${output}" ]]; then
+        echo "FAILED: expected empty output, got: ${output}"
+        rm -f "${stderr_output}"
+        return 1
+    fi
+    if [[ -s "${stderr_output}" ]]; then
+        echo "FAILED: expected no stderr diagnostic, got:"
+        cat "${stderr_output}"
+        rm -f "${stderr_output}"
+        return 1
+    fi
+
+    rm -f "${stderr_output}"
+    echo "PASSED: missing database tree reads as empty without error flag"
+
+}
+
+################################################################################
+# Test: outage at every ancestor stays a failure (fail closed)
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function test_dropbox_list_deep_outage_stays_failure() {
+
+    echo "=== Test: outage at every ancestor stays a failure ==="
+
+    local output status
+    output="$(_brolit_dropbox_list "DOWN2/a/b" 2>/dev/null)"
+    status=$?
+
+    if [[ ${status} -eq 0 ]]; then
+        echo "FAILED: total outage must not read as empty"
+        return 1
+    fi
+
+    echo "PASSED: total outage stays a failure"
+
+}
+
 # Run all tests when executed directly (the full suite sources libs first).
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     echo ""
@@ -293,6 +363,10 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     test_dropbox_list_healthy_passthrough || exit 1
     echo ""
     test_dropbox_list_parentless_path_stays_failure || exit 1
+    echo ""
+    test_dropbox_list_missing_tree_is_empty || exit 1
+    echo ""
+    test_dropbox_list_deep_outage_stays_failure || exit 1
     echo ""
 
     dropbox_list_test_teardown

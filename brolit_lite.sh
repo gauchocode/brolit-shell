@@ -2388,23 +2388,33 @@ _brolit_dropbox_list() {
         fi
         # The uploader reports a missing folder with a generic failure that
         # carries no recognizable message. Distinguish it without trusting
-        # text: if the parent lists fine, the child was never created (empty
-        # set, e.g. a per-project database folder with dumps stored under a
-        # different name). If the parent fails too, or the child IS listed
-        # there (exists but unreadable), this is a real provider failure.
+        # text by walking up: if any ancestor lists fine, the original path
+        # was never created (empty set, e.g. a per-project database folder
+        # with dumps stored under a different name, or a whole database/
+        # tree that was never created because no database is uploaded).
+        # If no ancestor lists, or an existing ancestor contains the child
+        # (it exists but is unreadable), this is a real provider failure.
         # Fail closed in every ambiguous case.
-        local stripped_path parent_path child_name parent_listing parent_status=0
-        stripped_path="${path%/}"
-        parent_path="${stripped_path%/*}"
-        child_name="${stripped_path##*/}"
-        if [[ -n "${parent_path}" && -n "${child_name}" && "${parent_path}" != "${stripped_path}" ]]; then
-            parent_listing="$(timeout 60 "${DROPBOX_UPLOADER}" -q list "${parent_path}" 2>&1)" || parent_status=$?
-            if [[ "${parent_status}" -eq 0 ]]; then
-                if ! awk -v name="${child_name}" '$NF == name {found=1} END {exit !found}' <<<"${parent_listing}"; then
-                    return 0
-                fi
+        local probe_path probe_child parent_listing parent_status=0
+        local guardians=0
+        probe_child="${path%/}"
+        probe_path="${probe_child%/*}"
+        probe_child="${probe_child##*/}"
+        while [[ "${probe_path}" == */* && ${guardians} -lt 4 ]]; do
+            guardians=$((guardians + 1))
+            parent_listing=""
+            parent_status=0
+            parent_listing="$(timeout 60 "${DROPBOX_UPLOADER}" -q list "${probe_path}" 2>&1)" || parent_status=$?
+            if [[ "${parent_status}" -ne 0 ]]; then
+                probe_child="${probe_path##*/}"
+                probe_path="${probe_path%/*}"
+                continue
             fi
-        fi
+            if awk -v name="${probe_child}" '$NF == name {found=1} END {exit !found}' <<<"${parent_listing}"; then
+                break
+            fi
+            return 0
+        done
         printf '%s\n' "${output}" >&2
         return "${status}"
     fi
