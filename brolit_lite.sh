@@ -239,8 +239,12 @@ function _cloudflare_get_zone_id() {
     # captured with $(...), which forks and discards the write). Readers in
     # subshells still see previously stored entries. Pair with a prefetch
     # pass (see _sites_directories) rather than relying on incidental hits.
-    if [[ -n "${BROLIT_CF_ZONE_CACHE[${zone_name}]:-}" ]]; then
-        echo "${BROLIT_CF_ZONE_CACHE[${zone_name}]}" && return 0
+    local cached_zone="${BROLIT_CF_ZONE_CACHE[${zone_name}]:-}"
+    if [[ -n "${cached_zone}" && "${cached_zone}" != "__FAILED__" ]]; then
+        echo "${cached_zone}" && return 0
+    fi
+    if [[ "${cached_zone}" == "__FAILED__" ]]; then
+        echo "Domain ${zone_name} not found" && return 1
     fi
 
     # Bounded: an API stall must resolve to "not found" within seconds,
@@ -259,6 +263,11 @@ function _cloudflare_get_zone_id() {
         echo "${zone_id}" && return 0
 
     else
+
+        # Negative cache: a dead API must cost one bounded call per domain,
+        # not one per site plus one per per-site retry. The sentinel is never
+        # echoed as a zone id (checked explicitly on every read path).
+        BROLIT_CF_ZONE_CACHE[${zone_name}]="__FAILED__"
 
         # Return
         echo "Domain ${zone_name} not found" && return 1
@@ -2080,14 +2089,14 @@ function _sites_directories() {
     # Prefetch unique root-domain zone IDs once, in the main shell (output
     # to a file, never $(...), so the cache writes persist). The per-site
     # lookups below then hit the cache instead of the API one by one; a
-    # single stalled call can no longer serialize N timeouts.
-    local prefetch_tmp prefetch_domain
+    # single stalled call can no longer serialize N timeouts. Failed domains
+    # stay cached as failures for the rest of the run.
     prefetch_tmp="$(mktemp)"
     for site_path in ${all_directories}; do
         site="$(basename "${site_path}")"
         if [[ $(_project_is_ignored "${site}") == "false" ]]; then
             prefetch_domain="$(_get_root_domain "${site}")"
-            if [[ -z "${BROLIT_CF_ZONE_CACHE[${prefetch_domain}]:-}" ]]; then
+            if [[ -n "${prefetch_domain}" && -z "${BROLIT_CF_ZONE_CACHE[${prefetch_domain}]:-}" ]]; then
                 _cloudflare_get_zone_id "${prefetch_domain}" >"${prefetch_tmp}" 2>/dev/null || true
             fi
         fi

@@ -172,6 +172,47 @@ function test_inventory_prefetch_collapses_lookups() {
 }
 
 ################################################################################
+# Test: per-site subshell reads are served from the prefetched cache
+#
+# Outputs:
+#   0 if ok, 1 on error.
+################################################################################
+
+function test_inventory_subshell_reads_hit_cache() {
+
+    echo "=== Test: per-site subshell reads hit the prefetched cache ==="
+
+    # Re-source the library to restore the REAL _cloudflare_domain_exists
+    # and _get_root_domain, then stub only the non-network helpers. Both
+    # fixture sites share one root domain, so the whole run must cost a
+    # single API call with every per-site read served from the prefetch.
+    # shellcheck disable=SC1090
+    source "${TEST_LOADER_DIR}/../brolit_lite.sh" >/dev/null 2>&1
+    function _project_is_ignored() { echo "false"; }
+    function _project_get_type() { echo "other"; }
+    function _project_get_install_type() { echo "docker-compose"; }
+    function _certbot_certificate_get_valid_days() { echo "70"; }
+    export PATH="${INVENTORY_TEST_DIR}/bin:${PATH}"
+    mkdir -p "${INVENTORY_TEST_DIR}/www2/alpha.cachetest.com" "${INVENTORY_TEST_DIR}/www2/beta.cachetest.com"
+    export PROJECTS_PATH="${INVENTORY_TEST_DIR}/www2"
+    : > "${INVENTORY_CALL_LOG}"
+    local output
+    output="$(_sites_directories 2>/dev/null)"
+
+    if [[ "$(inventory_curl_calls)" -ne 1 ]]; then
+        echo "FAILED: expected 1 API call total, got $(inventory_curl_calls)"
+        return 1
+    fi
+    if ! grep -q '"domain_on_cloudflare":"true"' <<<"${output}"; then
+        echo "FAILED: cached zone must resolve domains, got: ${output}"
+        return 1
+    fi
+
+    echo "PASSED: per-site subshell reads hit the prefetched cache"
+
+}
+
+################################################################################
 # Test: failed disk sizing resolves to unknown, never zero or empty
 #
 # Outputs:
@@ -239,6 +280,8 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     test_cloudflare_timeout_is_failure || exit 1
     echo ""
     test_inventory_prefetch_collapses_lookups || exit 1
+    echo ""
+    test_inventory_subshell_reads_hit_cache || exit 1
     echo ""
     test_site_size_unknown_on_du_failure || exit 1
     echo ""
