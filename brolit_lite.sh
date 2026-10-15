@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Author: GauchoCode - A Software Development Agency - https://gauchocode.com
-# Version: 3.14.4
+# Version: 3.14.5
 ################################################################################
 
 ################################################################################
@@ -232,14 +232,28 @@ function _cloudflare_get_zone_id() {
 
     # Using globals: ${SUPPORT_CLOUDFLARE_EMAIL} and ${SUPPORT_CLOUDFLARE_API_KEY}
 
-    # Get Zone ID
-    zone_id="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${zone_name}" \
+    # Serve repeat lookups from the per-process cache: one API call per
+    # distinct root domain per inventory run instead of one per site.
+    # NOTE on shell semantics: assignments to this cache only persist when
+    # the function runs in the main shell (output redirected to a file, not
+    # captured with $(...), which forks and discards the write). Readers in
+    # subshells still see previously stored entries. Pair with a prefetch
+    # pass (see _sites_directories) rather than relying on incidental hits.
+    if [[ -n "${BROLIT_CF_ZONE_CACHE[${zone_name}]:-}" ]]; then
+        echo "${BROLIT_CF_ZONE_CACHE[${zone_name}]}" && return 0
+    fi
+
+    # Bounded: an API stall must resolve to "not found" within seconds,
+    # never hang the inventory past the worker's SSH budget.
+    zone_id="$(curl -s --connect-timeout 5 --max-time 10 -X GET "https://api.cloudflare.com/client/v4/zones?name=${zone_name}" \
         -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
         -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
         -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1)"
 
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 && ${zone_id} != "" ]]; then
+
+        BROLIT_CF_ZONE_CACHE[${zone_name}]="${zone_id}"
 
         # Return
         echo "${zone_id}" && return 0
@@ -2057,9 +2071,28 @@ function _sites_directories() {
     local site_cert
     local site_size_du
     local site_size
+    local prefetch_tmp
+    local prefetch_domain
 
     ## List only directories
     all_directories="$(find -L "${PROJECTS_PATH}" -maxdepth 1 -mindepth 1 -type d -not -path '*/.*' | sort)"
+
+    # Prefetch unique root-domain zone IDs once, in the main shell (output
+    # to a file, never $(...), so the cache writes persist). The per-site
+    # lookups below then hit the cache instead of the API one by one; a
+    # single stalled call can no longer serialize N timeouts.
+    local prefetch_tmp prefetch_domain
+    prefetch_tmp="$(mktemp)"
+    for site_path in ${all_directories}; do
+        site="$(basename "${site_path}")"
+        if [[ $(_project_is_ignored "${site}") == "false" ]]; then
+            prefetch_domain="$(_get_root_domain "${site}")"
+            if [[ -z "${BROLIT_CF_ZONE_CACHE[${prefetch_domain}]:-}" ]]; then
+                _cloudflare_get_zone_id "${prefetch_domain}" >"${prefetch_tmp}" 2>/dev/null || true
+            fi
+        fi
+    done
+    rm -f "${prefetch_tmp}"
 
     for site_path in ${all_directories}; do
 
@@ -2067,9 +2100,13 @@ function _sites_directories() {
 
         if [[ $(_project_is_ignored "${site}") == "false" ]]; then
 
-            # Size in MBs
-            site_size_du="$(du --human-readable --block-size=1M --max-depth=0 "${PROJECTS_PATH}/${site}")"
+            # Size in MBs. Bounded: under backup I/O load du can crawl for
+            # minutes; an unknown size must never become a zero or stall the
+            # whole inventory past the worker's SSH budget. The timeout
+            # seconds are overridable for isolated tests (default 60).
+            site_size_du="$(timeout "${BROLIT_INVENTORY_DU_TIMEOUT:-60}" du --human-readable --block-size=1M --max-depth=0 "${PROJECTS_PATH}/${site}" 2>/dev/null)" || site_size_du=""
             site_size="$(echo "${site_size_du}" | awk '{print $1;}')"
+            [[ -z "${site_size}" ]] && site_size="unknown"
 
             # Project Type
             site_type="$(_project_get_type "${PROJECTS_PATH}/${site}")"
@@ -2321,6 +2358,12 @@ BROLIT_MAIN_DIR=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" &>/dev/nu
 declare -g BROLIT_PROJECT_CONFIG_PATH="/etc/brolit"
 
 declare -g BROLIT_CONFIG_FILE=~/.brolit_conf.json
+
+# Per-process Cloudflare zone-id cache for inventory. show_server_data
+# resolves one zone per site sequentially; without this, N sites mean N API
+# round-trips and a single stalled call (curl had no timeout) hangs the whole
+# inventory past the worker's SSH budget. Lives only for the process run.
+declare -gA BROLIT_CF_ZONE_CACHE=()
 
 # Keep generated observer output outside immutable release directories. Legacy
 # Git-tree installations retain their historical local path until migrated.
