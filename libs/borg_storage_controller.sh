@@ -1128,7 +1128,8 @@ function _borgmatic_resolve_cmd() {
 #   ${1} = ${borgmatic_output} (stdout+stderr of the failed invocation)
 #
 # Outputs:
-#   One of: network, auth, repo_missing, space, python_env, lock, unknown
+#   One of: network, auth, repo_missing, space, python_env, lock,
+#   encryption_mismatch, unknown
 ################################################################################
 
 function borg_init_failure_reason() {
@@ -1201,7 +1202,8 @@ function borg_repo_failure_limit() {
 #          called once per repository)
 #
 # Outputs:
-#   0 if ok (already existed or freshly initialized), 1 on error.
+#   0 if ok (already existed, exists under a different encryption mode, or
+#   freshly initialized), 1 on error.
 ################################################################################
 
 function _initialize_repository_for_config() {

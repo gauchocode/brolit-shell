@@ -176,33 +176,41 @@ function test_fresh_init_success() {
 
 }
 
+# Suite entry point: runs every case with its own setup/teardown so the
+# interactive tests suite (tests_suite.sh) can call this by name.
+function test_borg_init_mismatch() {
+
+    mismatch_setup
+
+    local failed=0
+    test_classifier_classes || failed=1
+    echo ""
+    : > "${EVENTS_FILE}"
+    test_encryption_mismatch_is_usable || failed=1
+    echo ""
+    : > "${EVENTS_FILE}"
+    test_already_exists_is_usable || failed=1
+    echo ""
+    : > "${EVENTS_FILE}"
+    test_genuine_failure_still_fails || failed=1
+    echo ""
+    : > "${EVENTS_FILE}"
+    test_fresh_init_success || failed=1
+    echo ""
+
+    mismatch_teardown
+
+    return ${failed}
+
+}
+
 # Run all tests when executed directly (the full suite sources libs first).
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     echo ""
     echo "========================================="
     echo "Borg Init Mismatch Tests"
     echo "========================================="
-    echo ""
-
-    mismatch_setup
-
-    test_classifier_classes || exit 1
-    echo ""
-    : > "${EVENTS_FILE}"
-    test_encryption_mismatch_is_usable || exit 1
-    echo ""
-    : > "${EVENTS_FILE}"
-    test_already_exists_is_usable || exit 1
-    echo ""
-    : > "${EVENTS_FILE}"
-    test_genuine_failure_still_fails || exit 1
-    echo ""
-    : > "${EVENTS_FILE}"
-    test_fresh_init_success || exit 1
-    echo ""
-
-    mismatch_teardown
-
+    test_borg_init_mismatch || exit 1
     echo "========================================="
     echo "All tests completed"
 fi

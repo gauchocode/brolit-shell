@@ -28,6 +28,7 @@ function tests_suite_menu() {
     "15)" "RUN WORDFENCE CLI TESTS"
     "16)" "RUN USER MANAGER TESTS"
     "17)" "RUN BORG REPOSITORY RECOVERY TESTS"
+    "18)" "RUN BORG INIT MISMATCH TESTS"
   )
 
   chosen_tests_options=$(whiptail --title "TESTS SUITE" --menu " " 20 78 10 "${tests_options[@]}" 3>&1 1>&2 2>&3)
@@ -52,6 +53,7 @@ function tests_suite_menu() {
       test_wordfencecli_helper
       test_user_manager
       test_borg_repository_recovery
+      test_borg_init_mismatch
     fi
     if [[ ${chosen_tests_options} == *"01"* ]]; then
       test_borg_backup_database
@@ -122,6 +124,9 @@ function tests_suite_menu() {
     fi
     if [[ ${chosen_tests_options} == *"17"* ]]; then
       test_borg_repository_recovery
+    fi
+    if [[ ${chosen_tests_options} == *"18"* ]]; then
+      test_borg_init_mismatch
     fi
 
   else
