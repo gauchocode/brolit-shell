@@ -1139,6 +1139,8 @@ function borg_init_failure_reason() {
 
     if echo "${lower}" | grep -qE "failed to create/acquire lock|lock.*\(timeout\)|repository is locked|lock.*held"; then
         echo "lock"
+    elif echo "${lower}" | grep -qE "does not match existing repository encryption mode"; then
+        echo "encryption_mismatch"
     elif echo "${lower}" | grep -qE "connection refused|connection reset|connection timed out|network is unreachable|temporary failure in name resolution|could not resolve hostname|no route to host|operation timed out|timed out|timeout"; then
         echo "network"
     elif echo "${lower}" | grep -qE "permission denied|authentication failed|publickey|host key verification failed|too many authentication failures"; then
@@ -1234,6 +1236,23 @@ function _initialize_repository_for_config() {
             clear_previous_lines "1"
             display --indent 6 --text "- Repository initialization (${log_label})" --result "DONE" --color GREEN
             log_event "info" "Repository already exists (borg init reported it) (${log_label})" "false"
+            return 0
+        fi
+
+        # A repo that already exists under a DIFFERENT encryption mode is
+        # still a reachable, initialized repository: the mode check is all
+        # that failed, and the data flow itself is unaffected (observed live:
+        # a legacy repokey repo kept receiving archives on every run while
+        # this check alone turned the whole job red, daily). Treat it as
+        # existing, with a visible warning so the deviation from the
+        # unencrypted standard stays auditable. If the repo is genuinely
+        # unreadable for us (a real passphrase we don't have), the subsequent
+        # create fails and gets classified as auth there -- the job then
+        # fails for the true reason instead of a mode-check artifact.
+        if [[ "$(borg_init_failure_reason "${init_output}")" == "encryption_mismatch" ]]; then
+            clear_previous_lines "1"
+            display --indent 6 --text "- Repository initialization (${log_label})" --result "DONE" --color GREEN
+            log_event "warning" "Repository exists with a different encryption mode than 'none'; treating as usable (${log_label})" "false"
             return 0
         fi
 
