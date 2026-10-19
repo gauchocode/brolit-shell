@@ -29,6 +29,7 @@ function tests_suite_menu() {
     "16)" "RUN USER MANAGER TESTS"
     "17)" "RUN BORG REPOSITORY RECOVERY TESTS"
     "18)" "RUN BORG INIT MISMATCH TESTS"
+    "19)" "RUN CLOUDFLARE DNS FLOW TESTS"
   )
 
   chosen_tests_options=$(whiptail --title "TESTS SUITE" --menu " " 20 78 10 "${tests_options[@]}" 3>&1 1>&2 2>&3)
@@ -54,6 +55,7 @@ function tests_suite_menu() {
       test_user_manager
       test_borg_repository_recovery
       test_borg_init_mismatch
+      test_cloudflare_dns_flow
     fi
     if [[ ${chosen_tests_options} == *"01"* ]]; then
       test_borg_backup_database
@@ -127,6 +129,9 @@ function tests_suite_menu() {
     fi
     if [[ ${chosen_tests_options} == *"18"* ]]; then
       test_borg_init_mismatch
+    fi
+    if [[ ${chosen_tests_options} == *"19"* ]]; then
+      test_cloudflare_dns_flow
     fi
 
   else

@@ -20,6 +20,36 @@
 #   0 if ok, 1 on error.
 ################################################################################
 
+################################################################################
+# Private: log a Cloudflare API command without leaking credentials.
+#
+# The debug logs used to embed full curl commands, including the Cloudflare
+# account email and Global API key, in clear text (observed live 2026-10-16:
+# the key landed in a nightly log file). Everything is REDACTED here; the
+# real values only live inside the actual curl invocations.
+#
+# Arguments:
+#   ${1} = command string (variables already expanded)
+#
+# Outputs:
+#   none (writes to the log).
+################################################################################
+
+function _cloudflare_log_cmd_safe() {
+
+    local cmd="${1}"
+
+    if [[ -n "${SUPPORT_CLOUDFLARE_API_KEY:-}" ]]; then
+        cmd="${cmd//"${SUPPORT_CLOUDFLARE_API_KEY}"/REDACTED}"
+    fi
+    if [[ -n "${SUPPORT_CLOUDFLARE_EMAIL:-}" ]]; then
+        cmd="${cmd//"${SUPPORT_CLOUDFLARE_EMAIL}"/REDACTED}"
+    fi
+
+    log_event "debug" "${cmd}" "false"
+
+}
+
 function _cloudflare_get_zone_id() {
 
     local zone_name="${1}"
@@ -58,7 +88,7 @@ function _cloudflare_get_zone_id() {
     else
         # Log
         log_event "info" "Zone ID not found for domain ${zone_name}. Maybe domain is not configured yet."
-        log_event "debug" "Last command executed: curl -s -X GET \"https://api.cloudflare.com/client/v4/zones?name=${zone_name}\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\" | grep -Po '(?<=\"id\":\")[^\"]*' | head -1"
+        _cloudflare_log_cmd_safe "Last command executed: curl -s -X GET \"https://api.cloudflare.com/client/v4/zones?name=${zone_name}\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\" | grep -Po '(?<=\"id\":\")[^\"]*' | head -1"
         display --indent 8 --text "Domain ${zone_name} not found" --tcolor YELLOW
         return 1
     fi
@@ -153,7 +183,7 @@ function cloudflare_clear_cache() {
 
         # Log
         log_event "info" "Clearing Cloudflare cache for domain: ${root_domain}" "false"
-        log_event "debug" "Running: curl -s -X DELETE \"https://api.cloudflare.com/client/v4/zones/${zone_id}/purge_cache\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type:application/json\" --data '{\"purge_everything\":true}')"
+        _cloudflare_log_cmd_safe "Running: curl -s -X DELETE \"https://api.cloudflare.com/client/v4/zones/${zone_id}/purge_cache\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type:application/json\" --data '{\"purge_everything\":true}')"
 
         purge_cache="$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${zone_id}/purge_cache" \
             -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
@@ -218,7 +248,7 @@ function cloudflare_set_development_mode() {
         if [[ ${dev_mode_result} == *"\"success\":false"* || ${dev_mode_result} == "" ]]; then
             message="Error trying to change development mode for ${root_domain}. Results:\n ${dev_mode_result}"
             log_event "error" "${message}"
-            log_event "debug" "Last command executed: curl -X PATCH \"https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/development_mode\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\" --data \"{\"value\":\"${dev_mode}\"}\""
+            _cloudflare_log_cmd_safe "Last command executed: curl -X PATCH \"https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/development_mode\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\" --data \"{\"value\":\"${dev_mode}\"}\""
             display --indent 6 --text "- Enabling development mode" --result "FAIL" --color RED
 
             return 1
@@ -300,6 +330,16 @@ function cloudflare_set_ssl_mode() {
 
     local ssl_mode_result
 
+    # Callers pass the site domain (e.g. dev.broobe.com), but Cloudflare
+    # zones only exist for the registrable root (broobe.com). Derive it
+    # defensively: a zone lookup with the full subdomain always fails and
+    # the SSL mode change is silently skipped (observed live 2026-10-16).
+    local derived_root
+    derived_root="$(domain_get_root "${root_domain}" 2>/dev/null)"
+    if [[ -n "${derived_root}" ]]; then
+        root_domain="${derived_root}"
+    fi
+
     zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
 
     exitstatus=$?
@@ -372,7 +412,7 @@ function cloudflare_record_exists() {
         # Log
         display --indent 6 --text "- Record ${record_name} not found"
         log_event "error" "Record ${record_name} not found on Cloudflare" "false"
-        log_event "debug" "Last command executed: curl -s -X GET \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}&type=${record_type}\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\" | grep -Po '(?<=\"id\":\")[^\"]*'"
+        _cloudflare_log_cmd_safe "Last command executed: curl -s -X GET \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}&type=${record_type}\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\" | grep -Po '(?<=\"id\":\")[^\"]*'"
         return 1
     else
         # Clean output
@@ -510,14 +550,14 @@ function cloudflare_set_record() {
         display --indent 6 --text "- Changing ${record_name} record ..."
 
         # First delete existing entry
-        log_event "debug" "Running: curl -s -X DELETE \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\""
+        _cloudflare_log_cmd_safe "Running: curl -s -X DELETE \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\""
 
         delete="$(curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
             -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
             -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
             -H "Content-Type: application/json")"
 
-        log_event "debug" "Running: curl -s -X POST \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\" --data \"{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}\""
+        _cloudflare_log_cmd_safe "Running: curl -s -X POST \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\" --data \"{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}\""
 
         # Then create (work-around because sometimes update an entry does not work)
         update="$(curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records" \
@@ -558,7 +598,7 @@ function cloudflare_set_record() {
         # Log
         display --indent 6 --text "- Creating subdomain ${record_name}"
         log_event "debug" "Record ID not found. Trying to add the subdomain: ${record_name}"
-        log_event "debug" "Running: curl -s -X POST \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\" --data \"{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}\""
+        _cloudflare_log_cmd_safe "Running: curl -s -X POST \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\" --data \"{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}\""
 
         # Command
         update="$(curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records" \
@@ -629,20 +669,36 @@ function cloudflare_update_record() {
     record_id="$(cloudflare_record_exists "${record_name}" "${zone_id}" "${record_type}")"
 
     exitstatus=$?
-    if [[ ${exitstatus} -eq 0 && -n ${record_id} ]]; then
+    if [[ ${exitstatus} -ne 0 || -z ${record_id} ]]; then
+
+        # Typed lookup missed. The creation flow provisions A records while
+        # this step asks for CNAME (and vice versa); the record exists and
+        # the actual goal here is the proxy flag, not the type. Fall back to
+        # an untyped lookup instead of declaring the record missing
+        # (observed live 2026-10-16: an existing A record was reported as
+        # "not found" and the proxy flag was silently left off).
+        log_event "debug" "No ${record_type} record for ${record_name}; falling back to untyped lookup" "false"
+        record_id="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}&per_page=1" \
+            -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+            -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
+            -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1)"
+
+    fi
+
+    if [[ -n ${record_id} ]]; then
 
         log_event "info" "Trying to update the record '${record_name}'" "false"
-        log_event "debug" "Running: curl -s -X PATCH \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}\" \ 
-        -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" \ 
-        -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" \ 
-        -H \"Content-Type: application/json\" \
-        --data \"{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}\""
+        # Proxy-only patch: keep the existing record type and content, flip
+        # the proxy flag. Replacing the full payload could convert an A
+        # record to CNAME (or fail on the type change) and rewrite content
+        # that is already correct.
+        _cloudflare_log_cmd_safe "Running: curl -s -X PATCH \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\" --data \"{\"proxied\":${proxy_status}}\""
 
         update="$(curl -s -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
             -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
             -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
             -H "Content-Type: application/json" \
-            --data "{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"priority\":10,\"proxied\":${proxy_status}}")"
+            --data "{\"proxied\":${proxy_status}}")"
 
         # Remove Cloudflare API garbage output
         #clear_previous_lines "4"
@@ -663,7 +719,10 @@ function cloudflare_update_record() {
 
     else
 
-        # TODO: add an error message trying to update a record that does not exist.
+        # Record genuinely does not exist in this zone (typed and untyped
+        # lookups both missed): say so instead of failing silently.
+        display --indent 6 --text "- Updating subdomain ${record_name}" --result "FAIL" --color RED
+        log_event "error" "Record ${record_name} not found in zone ${root_domain}; nothing to update" "false"
         return 1
 
     fi
@@ -715,7 +774,7 @@ function cloudflare_delete_record() {
         if [[ ${delete} == *"\"success\":false"* || ${delete} == "" ]]; then
             # Log
             log_event "error" "'${record_type}' record delete failed. Results:\n${delete}" "false"
-            log_event "debug" "Last command executed: curl -s -X DELETE \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\""
+            _cloudflare_log_cmd_safe "Last command executed: curl -s -X DELETE \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\""
             display --indent 6 --text "- Deleting '${record_type}' record from Cloudflare" --result "FAIL" --color RED
             display --indent 8 --text "Results:\n${delete}" --tcolor RED
 

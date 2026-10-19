@@ -59,7 +59,20 @@ function _setup_globals_and_options() {
 
   # Script
   declare -g SCRIPT_N="BROLIT SHELL"
+  # Banner version: release/version.env is authoritative (it is what the
+  # rollout tooling bumps); the constant only covers legacy checkouts where
+  # that file is absent. Without this the banner showed 3.13 on every
+  # release-based install regardless of the real version.
   declare -g SCRIPT_V="3.13"
+  local version_env_file="${BROLIT_MAIN_DIR}/release/version.env"
+  if [[ -z "${BROLIT_MAIN_DIR:-}" ]]; then
+    version_env_file="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)/release/version.env"
+  fi
+  if [[ -f "${version_env_file}" ]]; then
+    # shellcheck disable=SC1090
+    source "${version_env_file}"
+    [[ -n "${BROLIT_RELEASE_VERSION:-}" ]] && declare -g SCRIPT_V="${BROLIT_RELEASE_VERSION}"
+  fi
 
   # Hostname
   declare -g SERVER_NAME="$HOSTNAME"
