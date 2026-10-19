@@ -406,7 +406,10 @@ function cloudflare_record_exists() {
     record_name="${domain}"
 
     # Retrieve record_id
-    record_id="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}&type=${record_type}" -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*')"
+    # head -1: a name with several records of the same type must never glue
+    # multiple ids into one garbage id (pre-existing flaw observed while
+    # fixing the 2026-10-16 DNS flow).
+    record_id="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}&type=${record_type}" -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1)"
 
     if [[ -z ${record_id} ]]; then
         # Log
@@ -634,14 +637,21 @@ function cloudflare_set_record() {
 }
 
 ################################################################################
-# Update record details for the configured domain
+# Update a DNS record, ensuring the Cloudflare proxy flag.
+#
+# The primary goal is the proxy flag: a typed lookup first, then an untyped
+# fallback for records created under a different type (the creation flow
+# provisions A while callers may ask CNAME). The payload is a full refresh
+# only when the found record matches the requested type; otherwise it is a
+# proxy-only patch that keeps the record's own type and content.
 #
 # Arguments:
-#   ${1} = ${root_domain}
-#   ${2} = ${domain}
-#   ${3} = ${record_type} - valid values: A, AAAA, CNAME, HTTPS, TXT, SRV, LOC, MX, NS, SPF, CERT, DNSKEY, DS, NAPTR, SMIMEA, SSHFP, SVCB, TLSA, URI
-#   ${4} = ${proxy_status} - true/false
-#   ${5} = ${cur_ip}
+#   ${1} = ${root_domain} - zone the record lives in
+#   ${2} = ${domain} - record name (FQDN)
+#   ${3} = ${record_type} - preferred type: A, AAAA, CNAME, ... (advisory
+#          when the record exists under another type)
+#   ${4} = ${proxy_status} - "true" or "false" (JSON booleans, enforced)
+#   ${5} = ${cur_ip} - desired content, applied only on a type match
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -660,12 +670,28 @@ function cloudflare_update_record() {
     local cur_ip
     local zone_id
     local record_id
+    local patch_payload
 
     ttl=3600
 
     record_name="${domain}"
 
+    # Accept JSON booleans only; reject lookalike words ("enable"/"disable")
+    # that would otherwise ship invalid JSON to the API.
+    if [[ "${proxy_status}" != "true" && "${proxy_status}" != "false" ]]; then
+        log_event "error" "cloudflare_update_record: proxy_status must be 'true' or 'false' (got '${proxy_status}')" "false"
+        display --indent 6 --text "- Updating subdomain ${record_name}" --result "FAIL" --color RED
+        return 1
+    fi
+
     zone_id="$(_cloudflare_get_zone_id "${root_domain}")"
+    if [[ -z "${zone_id}" ]]; then
+        # Zone resolution failed: skip the record lookups entirely, they
+        # would only produce doomed calls against an empty zone id.
+        display --indent 6 --text "- Updating subdomain ${record_name}" --result "FAIL" --color RED
+        log_event "error" "Zone not resolvable for ${root_domain}; cannot update ${record_name}" "false"
+        return 1
+    fi
     record_id="$(cloudflare_record_exists "${record_name}" "${zone_id}" "${record_type}")"
 
     exitstatus=$?
@@ -678,27 +704,42 @@ function cloudflare_update_record() {
         # (observed live 2026-10-16: an existing A record was reported as
         # "not found" and the proxy flag was silently left off).
         log_event "debug" "No ${record_type} record for ${record_name}; falling back to untyped lookup" "false"
-        record_id="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}&per_page=1" \
+        local fallback_response
+        fallback_response="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records?name=${record_name}&per_page=1" \
             -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
             -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
-            -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1)"
+            -H "Content-Type: application/json")"
+        record_id="$(echo "${fallback_response}" | grep -Po '(?<="id":")[^"]*' | head -1)"
+
+        # Patch payload: proxy-only by default (keep the record's own type
+        # and content). Only when the found record matches the requested
+        # type do we also refresh the content, so an apex A record follows
+        # a server IP migration.
+        patch_payload="{\"proxied\":${proxy_status}}"
+        if [[ -n "${record_id}" ]]; then
+            local fallback_type
+            fallback_type="$(echo "${fallback_response}" | grep -Po "\"id\":\"${record_id}\",\"type\":\"\K[^\"]*" | head -1)"
+            [[ "${fallback_type}" == "${record_type}" ]] && patch_payload="{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"proxied\":${proxy_status}}"
+        fi
+
+    else
+
+        # Typed hit: safe to refresh type/content together with the proxy
+        # flag (the caller passes the exact record it manages).
+        patch_payload="{\"type\":\"${record_type}\",\"name\":\"${record_name}\",\"content\":\"${cur_ip}\",\"ttl\":${ttl},\"proxied\":${proxy_status}}"
 
     fi
 
     if [[ -n ${record_id} ]]; then
 
         log_event "info" "Trying to update the record '${record_name}'" "false"
-        # Proxy-only patch: keep the existing record type and content, flip
-        # the proxy flag. Replacing the full payload could convert an A
-        # record to CNAME (or fail on the type change) and rewrite content
-        # that is already correct.
-        _cloudflare_log_cmd_safe "Running: curl -s -X PATCH \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\" --data \"{\"proxied\":${proxy_status}}\""
+        _cloudflare_log_cmd_safe "Running: curl -s -X PATCH \"https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}\" -H \"X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}\" -H \"X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}\" -H \"Content-Type: application/json\" --data \"${patch_payload}\""
 
         update="$(curl -s -X PATCH "https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records/${record_id}" \
             -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
             -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
             -H "Content-Type: application/json" \
-            --data "{\"proxied\":${proxy_status}}")"
+            --data "${patch_payload}")"
 
         # Remove Cloudflare API garbage output
         #clear_previous_lines "4"

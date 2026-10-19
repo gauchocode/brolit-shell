@@ -64,9 +64,11 @@ function _setup_globals_and_options() {
   # that file is absent. Without this the banner showed 3.13 on every
   # release-based install regardless of the real version.
   declare -g SCRIPT_V="3.13"
-  local version_env_file="${BROLIT_MAIN_DIR}/release/version.env"
+  local version_env_file
   if [[ -z "${BROLIT_MAIN_DIR:-}" ]]; then
     version_env_file="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)/release/version.env"
+  else
+    version_env_file="${BROLIT_MAIN_DIR}/release/version.env"
   fi
   if [[ -f "${version_env_file}" ]]; then
     # shellcheck disable=SC1090

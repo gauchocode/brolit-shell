@@ -12,6 +12,7 @@
 #      the creation flow provisions A records: "record not found" plus the
 #      proxy flag silently left off.
 #   3. Debug logs embedded the Cloudflare API key in clear text.
+#   4. Non-boolean proxy_status values shipped invalid JSON to the API.
 #
 # Drives the real functions with a PATH-faked curl and stubbed display/log
 # helpers. No network, no credentials.
@@ -46,7 +47,8 @@ function cf_dns_setup() {
     export SUPPORT_CLOUDFLARE_EMAIL="test@example.com"
     export SUPPORT_CLOUDFLARE_API_KEY="secretkey123"
 
-    cat > "${TEST_TMP}/curl" <<'FAKE_EOF'
+    mkdir -p "${TEST_TMP}/bin"
+    cat > "${TEST_TMP}/bin/curl" <<'FAKE_EOF'
 #!/usr/bin/env bash
 printf '%s\n' "$*" >> "${CURL_LOG}"
 case "${CURL_FAKE_MODE:-ok}" in
@@ -77,16 +79,25 @@ case "${CURL_FAKE_MODE:-ok}" in
                 ;;
         esac
         ;;
+    norecord)
+        # Zone resolves fine, but the record genuinely does not exist.
+        case "$*" in
+            *"zones?"*)
+                printf '{"result":[{"id":"zone111"}],"success":true}'
+                ;;
+            *)
+                printf '{"result":[],"success":true}'
+                ;;
+        esac
+        ;;
     fail)
         printf '{"success":false,"errors":[]}'
         ;;
 esac
 exit 0
 FAKE_EOF
-    chmod +x "${TEST_TMP}/curl"
+    chmod +x "${TEST_TMP}/bin/curl"
     export PATH="${TEST_TMP}/bin:${PATH}"
-    mkdir -p "${TEST_TMP}/bin"
-    mv "${TEST_TMP}/curl" "${TEST_TMP}/bin/curl"
 
 }
 
@@ -94,13 +105,20 @@ function cf_dns_teardown() {
 
     rm -rf "${TEST_TMP}"
 
+    # Drop the stubs and re-source the real helpers so later tests in the
+    # interactive suite never inherit them (the domain_get_root stub is
+    # hardwired to the fixture and MUST NOT leak).
+    unset -f display log_event clear_previous_lines domain_get_root
+    # shellcheck disable=SC1090
+    source "${TEST_LOADER_DIR}/../libs/local/log_and_display_helper.sh" >/dev/null 2>&1
+    # shellcheck disable=SC1090
+    source "${TEST_LOADER_DIR}/../libs/local/domains_helper.sh" >/dev/null 2>&1
+
 }
 
-function curl_calls() {
-
-    grep -c . "${CURL_LOG}" 2>/dev/null || true
-
-}
+################################################################################
+# Tests
+################################################################################
 
 function test_ssl_mode_uses_root_zone() {
 
@@ -135,7 +153,8 @@ function test_update_record_tolerates_other_type() {
     echo "=== Test: record update falls back to untyped lookup and patches proxy only ==="
 
     # Typed (CNAME) lookup misses; the A record must still be found and the
-    # patch must carry ONLY the proxy flag, never a type/content rewrite.
+    # patch must carry ONLY the proxy flag (type/content untouched).
+    : > "${CURL_LOG}"
     cloudflare_update_record "broobe.com" "dev.broobe.com" "CNAME" "true" "broobe.com"
     local rc=$?
 
@@ -156,11 +175,36 @@ function test_update_record_tolerates_other_type() {
 
 }
 
+function test_update_record_typed_hit_refreshes_content() {
+
+    echo "=== Test: typed hit refreshes type/content alongside the proxy flag ==="
+
+    # A-type lookup matches: the patch must be a full refresh (this is what
+    # keeps an apex A record following a server IP migration).
+    : > "${CURL_LOG}"
+    cloudflare_update_record "broobe.com" "dev.broobe.com" "A" "true" "1.2.3.4"
+    local rc=$?
+
+    if [[ ${rc} -ne 0 ]]; then
+        echo "FAILED: typed A lookup must succeed (rc ${rc})"
+        return 1
+    fi
+    if ! grep -q -- '--data {"type":"A","name":"dev.broobe.com","content":"1.2.3.4","ttl":3600,"proxied":true}' "${CURL_LOG}"; then
+        echo "FAILED: expected a full refresh payload on the typed path"
+        return 1
+    fi
+
+    echo "PASSED: typed hit refreshes content"
+
+}
+
 function test_update_record_missing_is_an_error() {
 
     echo "=== Test: genuinely missing record keeps failing ==="
 
-    CURL_FAKE_MODE="fail" cloudflare_update_record "broobe.com" "ghost.broobe.com" "CNAME" "true" "broobe.com"
+    # norecord: the zone resolves but no record is returned — the real
+    # incident shape (a zone-miss would mask the record-miss path).
+    CURL_FAKE_MODE="norecord" cloudflare_update_record "broobe.com" "ghost.broobe.com" "CNAME" "true" "broobe.com"
     local rc=$?
 
     if [[ ${rc} -eq 0 ]]; then
@@ -176,14 +220,40 @@ function test_update_record_missing_is_an_error() {
 
 }
 
+function test_invalid_proxy_status_rejected() {
+
+    echo "=== Test: non-boolean proxy_status is rejected before the API ==="
+
+    : > "${CURL_LOG}"
+    CURL_FAKE_MODE="norecord" cloudflare_update_record "broobe.com" "x.broobe.com" "A" "enable" "1.2.3.4"
+    local rc=$?
+
+    if [[ ${rc} -eq 0 ]]; then
+        echo "FAILED: 'enable' must be rejected (invalid JSON payload)"
+        return 1
+    fi
+    if ! grep -q "proxy_status must be" "${EVENTS_FILE}"; then
+        echo "FAILED: expected the validation error event"
+        return 1
+    fi
+    if [[ "$(curl_calls_count)" -ne 0 ]]; then
+        echo "FAILED: validation must happen before any API call"
+        return 1
+    fi
+
+    echo "PASSED: non-boolean proxy_status rejected"
+
+}
+
 function test_logs_redact_credentials() {
 
     echo "=== Test: logged commands never contain the API key ==="
 
     : > "${EVENTS_FILE}"
+    : > "${CURL_LOG}"
     # The update path logs the full API command (with credentials embedded
     # in the historical code); the log stream must carry REDACTED only.
-    cloudflare_update_record "broobe.com" "dev.broobe.com" "A" "true" "broobe.com"
+    cloudflare_update_record "broobe.com" "dev.broobe.com" "A" "true" "1.2.3.4"
 
     if grep -q "secretkey123" "${EVENTS_FILE}"; then
         echo "FAILED: the API key leaked into the log stream"
@@ -198,6 +268,12 @@ function test_logs_redact_credentials() {
 
 }
 
+function curl_calls_count() {
+
+    grep -c . "${CURL_LOG}" 2>/dev/null || true
+
+}
+
 # Suite entry point: runs every case with its own setup/teardown so the
 # interactive tests suite (tests_suite.sh) can call this by name.
 function test_cloudflare_dns_flow() {
@@ -209,8 +285,11 @@ function test_cloudflare_dns_flow() {
     echo ""
     test_update_record_tolerates_other_type || failed=1
     echo ""
-    : > "${CURL_LOG}"
+    test_update_record_typed_hit_refreshes_content || failed=1
+    echo ""
     test_update_record_missing_is_an_error || failed=1
+    echo ""
+    test_invalid_proxy_status_rejected || failed=1
     echo ""
     test_logs_redact_credentials || failed=1
     echo ""

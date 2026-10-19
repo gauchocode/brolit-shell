@@ -52,7 +52,7 @@ function cloudflare_manager_menu() {
       if [[ ${exitstatus} -eq 0 ]]; then
 
         root_domain="$(domain_get_root "${dns_entry}")"
-        cloudflare_update_record "${root_domain}" "${dns_entry}" "A" "enable" "${SERVER_IP}"
+        cloudflare_update_record "${root_domain}" "${dns_entry}" "A" "true" "${SERVER_IP}"
 
       fi
 
@@ -67,7 +67,7 @@ function cloudflare_manager_menu() {
       if [[ ${exitstatus} -eq 0 ]]; then
 
         root_domain="$(domain_get_root "${dns_entry}")"
-        cloudflare_update_record "${root_domain}" "${dns_entry}" "A" "disable" "${SERVER_IP}"
+        cloudflare_update_record "${root_domain}" "${dns_entry}" "A" "false" "${SERVER_IP}"
 
       fi
 
