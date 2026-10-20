@@ -1422,7 +1422,13 @@ function restore_backup_from_public_url() {
 
   # Remove tmp files
   log_event "info" "Removing temporary folders ..." "false"
-  rm --force --recursive "${BROLIT_TMP_DIR}/${project_domain:?}"
+  # Guarded: the project domain can legitimately be empty (e.g. a restore
+    # driven by a storage key instead of a domain). An empty value must not
+    # abort the restore with "parameter null or not set" (same class of bug
+    # fixed in backup_helper.sh on 2026-10-20).
+    if [[ -n "${project_domain}" && -d "${BROLIT_TMP_DIR}/${project_domain}" ]]; then
+      rm --force --recursive "${BROLIT_TMP_DIR}/${project_domain}"
+    fi
 
   # Send notifications
   send_notification "${SERVER_NAME}" "Project ${project_name} restored!" ""

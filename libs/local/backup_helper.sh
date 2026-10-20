@@ -1024,7 +1024,10 @@ function backup_all_databases_docker() {
             display --indent 6 --text "- Backing up project: ${project_name}" --result "RUNNING" --color YELLOW
             log_event "info" "Backing up project: ${project_name}" "false"
 
-            backup_docker_project "${project_name}" "docker_backup"
+            # Database-only: the nightly files pass already uploads the
+            # site archives; doing it here would compress and upload every
+            # docker project twice (observed live 2026-10-20).
+            backup_docker_project "${project_name}" "docker_backup" "database_only"
  
             exitstatus=$?
             if [[ ${exitstatus} -eq 0 ]]; then
@@ -1627,7 +1630,7 @@ function backup_project() {
       log_event "info" "Docker project detected, backing up the containerized database..." "false"
       log_subsection "Backup Project Database (Docker)"
 
-      backup_docker_project "${project_domain}" "docker_backup"
+      backup_docker_project "${project_domain}" "docker_backup" "database_only"
       exitstatus=$?
       if [[ ${exitstatus} -ne 0 ]]; then
         got_error=1
@@ -1652,7 +1655,12 @@ function backup_project() {
     # Log
     log_break "false"
     log_event "info" "Project backup finished!" "false"
-    display --indent 6 --text "- Project Backup" --result "DONE" --color GREEN
+    if [[ ${got_error} -eq 0 ]]; then
+      display --indent 6 --text "- Project Backup" --result "DONE" --color GREEN
+    else
+      display --indent 6 --text "- Project Backup" --result "FAIL" --color RED
+      display --indent 8 --text "Some parts of the project backup failed" --tcolor RED
+    fi
 
     return ${got_error}
 
@@ -1675,7 +1683,8 @@ function backup_project() {
 #
 # Arguments:
 #  ${1} = ${project_domain}
-#  ${2} = ${backup_type} - (all,configs,sites,databases) - Default: all
+#  ${2} = ${legacy_tag} - unused label kept for call-site compatibility
+#  ${3} = ${mode} - "files_and_db" (default) or "database_only"
 #
 # Outputs:
 #   0 if ok, 1 if error
@@ -1685,6 +1694,7 @@ function backup_docker_project() {
 
   local project_domain="${1}"
   local backup_type="${2}"
+  local mode="${3:-files_and_db}"
 
   local got_error=0
 
@@ -1711,9 +1721,14 @@ function backup_docker_project() {
 
     docker_compose_file="${PROJECTS_PATH}/${project_domain}/docker-compose.yaml"
     if [[ ! -f "${docker_compose_file}" ]]; then
-      log_event "error" "docker-compose file not found for project ${project_domain}" "false"
-      display --indent 6 --text "- Backup for ${project_domain}" --result "FAIL" --color RED
-      return 1
+      # No compose file at the project root: the database step cannot run,
+      # but the FILES backup still can and must (the project may keep its
+      # compose file in a subdirectory - project_get_install_type accepts
+      # that). Warn and continue instead of aborting the whole backup.
+      log_event "warning" "docker-compose file not found at the project root for ${project_domain}; database backup skipped" "false"
+      display --indent 8 --text "No compose file at project root, skipping database" --tcolor YELLOW
+      has_database_service="false"
+      detected_databases=""
     fi
 
   fi
@@ -1834,11 +1849,19 @@ function backup_docker_project() {
 
   fi
 
-  # Backup files
-  log_subsection "Backup Project Files"
-  backup_file_size="$(backup_project_files "site" "${PROJECTS_PATH}" "${project_domain}")"
+  # Backup files (skipped in database_only mode: the caller already did
+  # the files backup, and doing it twice compresses and uploads the whole
+  # site archive twice to the same path - observed live 2026-10-20).
+  if [[ "${mode}" == "database_only" ]]; then
+    log_event "debug" "database_only mode: skipping the files backup for ${project_domain}" "false"
+    backup_file_size="0"
+    exitstatus=0
+  else
+    log_subsection "Backup Project Files"
+    backup_file_size="$(backup_project_files "site" "${PROJECTS_PATH}" "${project_domain}")"
 
-  exitstatus=$?
+    exitstatus=$?
+  fi
   if [[ ${exitstatus} -eq 0 ]]; then
 
     # Project Type
@@ -1871,6 +1894,21 @@ function backup_docker_project() {
 
         storage_key="${db_dbname}"
         [[ ${multi_db} == "true" ]] && storage_key="${project_name_for_key}_${db_service}"
+
+        # A stopped container cannot be dumped. This is normal: the delete
+        # flow stops the stack BEFORE the final backup so the files are
+        # consistent. Skip the database with a warning instead of failing
+        # the project (observed live 2026-10-20, where this aborted the
+        # whole project deletion).
+        if [[ -n "${db_container}" ]]; then
+          local container_running
+          container_running="$(docker inspect -f '{{.State.Running}}' "${db_container}" 2>/dev/null)"
+          if [[ "${container_running}" != "true" ]]; then
+            log_event "warning" "Container ${db_container} is not running; skipping database backup for ${db_dbname}" "false"
+            display --indent 8 --text "Container not running, database skipped" --tcolor YELLOW
+            continue
+          fi
+        fi
 
         log_subsection "Backup Project Database (${db_engine_loop^}${db_service:+: ${db_service}})"
         backup_project_database "${db_dbname}" "${db_engine_loop}" "${db_container}" "${storage_key}"
@@ -1910,7 +1948,12 @@ function backup_docker_project() {
     # Log
     log_break "false"
     log_event "info" "Project backup finished!" "false"
-    display --indent 6 --text "- Project Backup" --result "DONE" --color GREEN
+    if [[ ${got_error} -eq 0 ]]; then
+      display --indent 6 --text "- Project Backup" --result "DONE" --color GREEN
+    else
+      display --indent 6 --text "- Project Backup" --result "FAIL" --color RED
+      display --indent 8 --text "Some parts of the project backup failed" --tcolor RED
+    fi
 
     return ${got_error}
 
