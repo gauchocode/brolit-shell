@@ -48,6 +48,7 @@ function bkp_setup() {
     export BROLIT_TMP_DIR="${TEST_TMP}/tmp"
     export NOW="2026-10-20"
     mkdir -p "${PROJECTS_PATH}/site.example.com" "${BROLIT_TMP_DIR}/${NOW}"
+    mkdir -p "${PROJECTS_PATH}/nocompose.example.com"
     cat > "${PROJECTS_PATH}/site.example.com/docker-compose.yml" <<'COMPOSE_EOF'
 services:
   db:
@@ -120,7 +121,11 @@ FAKE_EOF
     # Database detection needs jq (not present in the test image); the
     # detection itself is not what this slice changes, so it is stubbed
     # while the rest of backup_docker_project runs for real.
-    function docker_list_project_databases() { printf 'db\tmysql\n'; }
+    function docker_list_project_databases() {
+        local compose_file="${1}"
+        [[ -f "${compose_file}" ]] || return 1
+        printf 'db\tmysql\n'
+    }
 
 }
 
@@ -294,6 +299,87 @@ function test_docker_database_failure_is_reported() {
 
 }
 
+
+function test_docker_missing_compose_still_backs_up_files() {
+
+    echo "=== Test: a missing compose file skips the database, not the backup ==="
+
+    : > "${CALLS_FILE}"
+    : > "${EVENTS_FILE}"
+    eval "${BKPK_REAL_DOCKER_FN}"
+    backup_docker_project "nocompose.example.com" "docker_backup" "files_and_db" >/dev/null 2>&1
+    local rc=$?
+
+    if [[ ${rc} -ne 0 ]]; then
+        echo "FAILED: a missing compose file must not fail the backup (rc ${rc})"
+        return 1
+    fi
+    if [[ "$(call_count files)" -lt 1 ]]; then
+        echo "FAILED: the files backup must still run"
+        return 1
+    fi
+    if [[ "$(call_count database)" -ne 0 ]]; then
+        echo "FAILED: no database dump may be attempted without a compose file"
+        return 1
+    fi
+    if ! grep -qi "compose" "${EVENTS_FILE}"; then
+        echo "FAILED: expected the skip to be logged"
+        return 1
+    fi
+
+    echo "PASSED: missing compose file keeps the files backup"
+
+}
+
+function test_docker_failure_marks_project_backup_failed() {
+
+    echo "=== Test: a failing docker database backup shows FAIL ==="
+
+    : > "${EVENTS_FILE}"
+    : > "${CALLS_FILE}"
+    # Stub the docker path so it reports a failure.
+    function backup_docker_project() { return 1; }
+    backup_project "site.example.com" "" >/dev/null 2>&1
+    local rc=$?
+
+    if [[ ${rc} -eq 0 ]]; then
+        echo "FAILED: a failed docker database backup must fail the project"
+        return 1
+    fi
+    if ! grep -q -- "- Project Backup --result FAIL" "${EVENTS_FILE}"; then
+        echo "FAILED: expected the FAIL result to be displayed"
+        return 1
+    fi
+
+    echo "PASSED: failing docker database shows FAIL"
+
+}
+
+function test_successful_project_backup_shows_done() {
+
+    echo "=== Test: a successful project backup shows DONE ==="
+
+    : > "${EVENTS_FILE}"
+    : > "${CALLS_FILE}"
+    # Restore the healthy stub: a previous case replaces it with a failing
+    # one and function definitions persist for the whole shell.
+    function backup_docker_project() { echo "docker:$2:$3" >> "${CALLS_FILE}"; return 0; }
+    backup_project "site.example.com" "" >/dev/null 2>&1
+    local rc=$?
+
+    if [[ ${rc} -ne 0 ]]; then
+        echo "FAILED: a successful backup must return 0 (rc ${rc})"
+        return 1
+    fi
+    if ! grep -q -- "- Project Backup --result DONE" "${EVENTS_FILE}"; then
+        echo "FAILED: expected the DONE result to be displayed"
+        return 1
+    fi
+
+    echo "PASSED: successful project backup shows DONE"
+
+}
+
 # Suite entry point: runs every case with its own setup/teardown so the
 # interactive tests suite (tests_suite.sh) can call this by name.
 function test_backup_project_resilience() {
@@ -314,6 +400,12 @@ function test_backup_project_resilience() {
     test_docker_stopped_container_is_skipped || failed=1
     echo ""
     test_docker_database_failure_is_reported || failed=1
+    echo ""
+    test_docker_missing_compose_still_backs_up_files || failed=1
+    echo ""
+    test_docker_failure_marks_project_backup_failed || failed=1
+    echo ""
+    test_successful_project_backup_shows_done || failed=1
     echo ""
 
     bkp_teardown

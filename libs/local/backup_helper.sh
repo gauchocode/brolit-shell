@@ -1538,7 +1538,9 @@ function borg_backup_database() {
 #
 # Arguments:
 #  ${1} = ${project_domain}
-#  ${2} = ${backup_type} - (all,configs,sites,databases) - Default: all
+#  ${2} = ${backup_type} - the project type (wordpress, html, ...) or the
+#         literal "all"; callers pass either. Only used to name the temp
+#         subdirectory swept at the end.
 #
 # Outputs:
 #   0 if ok, 1 if error
@@ -1683,7 +1685,8 @@ function backup_project() {
 #
 # Arguments:
 #  ${1} = ${project_domain}
-#  ${2} = ${legacy_tag} - unused label kept for call-site compatibility
+#  ${2} = ${legacy_tag} - label of the temp subdirectory swept at the end
+#         (kept for call-site compatibility; no caller depends on it)
 #  ${3} = ${mode} - "files_and_db" (default) or "database_only"
 #
 # Outputs:
@@ -1728,7 +1731,6 @@ function backup_docker_project() {
       log_event "warning" "docker-compose file not found at the project root for ${project_domain}; database backup skipped" "false"
       display --indent 8 --text "No compose file at project root, skipping database" --tcolor YELLOW
       has_database_service="false"
-      detected_databases=""
     fi
 
   fi
@@ -1903,9 +1905,19 @@ function backup_docker_project() {
         if [[ -n "${db_container}" ]]; then
           local container_running
           container_running="$(docker inspect -f '{{.State.Running}}' "${db_container}" 2>/dev/null)"
-          if [[ "${container_running}" != "true" ]]; then
+          if [[ "${container_running}" == "false" ]]; then
             log_event "warning" "Container ${db_container} is not running; skipping database backup for ${db_dbname}" "false"
             display --indent 8 --text "Container not running, database skipped" --tcolor YELLOW
+            continue
+          fi
+          if [[ -z "${container_running}" ]]; then
+            # The container state could not be read (docker daemon down,
+            # missing binary, permission). That is a real failure, not a
+            # stopped container: report it instead of silently skipping
+            # the database and showing DONE.
+            log_event "error" "Could not read the state of container ${db_container}; database backup for ${db_dbname} failed" "false"
+            display --indent 8 --text "Container state unavailable, database failed" --tcolor RED
+            got_error=1
             continue
           fi
         fi

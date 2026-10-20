@@ -1389,7 +1389,11 @@ function restore_backup_from_public_url() {
   # Move to ${PROJECTS_PATH}
   log_event "info" "Moving ${project_domain} to ${PROJECTS_PATH} ..." "false"
 
-  mv "${BROLIT_TMP_DIR}/${project_domain}" "${PROJECTS_PATH}/${project_domain}"
+  # Guard: an empty domain would make this move the WHOLE tmp directory.
+  # Same class of bug as the rm above (fixed 2026-10-20).
+  if [[ -n "${project_domain}" ]]; then
+    mv "${BROLIT_TMP_DIR}/${project_domain}" "${PROJECTS_PATH}/${project_domain}"
+  fi
 
   #change_ownership "www-data" "www-data" "${PROJECTS_PATH}/${project_domain}"
 
