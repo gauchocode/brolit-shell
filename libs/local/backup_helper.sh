@@ -1617,12 +1617,36 @@ function backup_project() {
 
       fi
 
+    elif [[ "${project_install_type}" == docker* ]]; then
+
+      # Docker projects keep the database in a container, so the generic
+      # path above (local MySQL/Postgres lookup) cannot see it. Delegate to
+      # the docker-aware backup, which dumps the containerized database and
+      # uploads it (observed live 2026-10-20: the single-project backup
+      # skipped the database entirely for docker installs).
+      log_event "info" "Docker project detected, backing up the containerized database..." "false"
+      log_subsection "Backup Project Database (Docker)"
+
+      backup_docker_project "${project_domain}" "docker_backup"
+      exitstatus=$?
+      if [[ ${exitstatus} -ne 0 ]]; then
+        got_error=1
+      fi
+
     fi
 
     log_break "false"
 
-    # Delete local backup
-    rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${backup_type:?}"
+    # Delete local backup leftovers. The per-artifact cleanup already
+    # removes every file it uploaded; this only sweeps a legacy temp
+    # subdirectory when one exists. It must NEVER abort the run: the
+    # parameter is legitimately empty for projects without a brolit config
+    # (observed live 2026-10-20, where the whole per-project backup died
+    # on this single line AFTER the files and database backups had
+    # already completed and been uploaded).
+    if [[ -n "${backup_type}" && -d "${BROLIT_TMP_DIR}/${NOW}/${backup_type}" ]]; then
+        rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${backup_type}"
+    fi
     #log_event "info" "Deleting backup from server ..." "false"
 
     # Log
@@ -1871,8 +1895,16 @@ function backup_docker_project() {
 
     log_break "false"
 
-    # Delete local backup
-    rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${backup_type:?}"
+    # Delete local backup leftovers. The per-artifact cleanup already
+    # removes every file it uploaded; this only sweeps a legacy temp
+    # subdirectory when one exists. It must NEVER abort the run: the
+    # parameter is legitimately empty for projects without a brolit config
+    # (observed live 2026-10-20, where the whole per-project backup died
+    # on this single line AFTER the files and database backups had
+    # already completed and been uploaded).
+    if [[ -n "${backup_type}" && -d "${BROLIT_TMP_DIR}/${NOW}/${backup_type}" ]]; then
+        rm --recursive --force "${BROLIT_TMP_DIR}/${NOW}/${backup_type}"
+    fi
     #log_event "info" "Deleting backup from server ..." "false"
 
     # Log
