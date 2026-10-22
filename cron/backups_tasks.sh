@@ -278,7 +278,8 @@ function prepare_borgmatic_environment() {
     # Load configuration and ensure borgmatic templates exist
     load_configurations
     generate_config    # Only generates missing configs
-    
+    sanitize_borgmatic_pause_hooks    # Self-heal configs generated before the template dropped the pause hooks
+
     log_event "info" "Borgmatic environment preparation completed" "false"
     
 }

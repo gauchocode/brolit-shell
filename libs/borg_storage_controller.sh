@@ -2040,3 +2040,34 @@ function borg_prune_archives() {
     return 0
 
 }
+
+# Remove docker pause/unpause backup hooks from existing borgmatic configs.
+#
+# Those hooks (docker compose pause in before_backup, unpause in
+# after_backup) froze entire stacks for the duration of every nightly
+# backup — the per-project pass and the global pass each paused everything
+# once — and any interruption between the hooks (the cron timeout, a
+# crashed borgmatic, a failed compose call) left the containers paused
+# indefinitely. Database consistency is already handled by the database
+# dumps, so the freeze bought nothing and risked everything. Idempotent:
+# configs without the hooks are left untouched. Runs nightly from
+# prepare_borgmatic_environment so every host self-heals even if its
+# configs were generated before the template dropped the hooks.
+function sanitize_borgmatic_pause_hooks() {
+
+    local config_dir="/etc/borgmatic.d"
+    local config_file
+
+    [[ -d "${config_dir}" ]] || return 0
+
+    for config_file in "${config_dir}"/*.yml; do
+        [[ -f "${config_file}" ]] || continue
+        if grep -qE "docker-compose\.yml (pause|unpause)" "${config_file}" 2>/dev/null; then
+            sed -i '/docker-compose\.yml pause/d; /docker-compose\.yml unpause/d' "${config_file}"
+            log_event "info" "Removed docker pause/unpause backup hooks from ${config_file}" "false"
+        fi
+    done
+
+    return 0
+
+}

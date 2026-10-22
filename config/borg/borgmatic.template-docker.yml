@@ -39,11 +39,14 @@ checks:
 check_last: 3
 
 # Backup hooks
-before_backup:
-    - docker compose -f /var/www/{project}/docker-compose.yml pause
-
+# NOTE: docker compose pause/unpause hooks used to live here. They froze the
+# whole stack for the entire backup (twice per night: the per-project pass
+# and the global pass) and any interruption between the hooks — the cron
+# timeout, a crashed borgmatic, a failed compose call — left the containers
+# paused indefinitely. Database consistency is already handled by the
+# database dumps, so the site freeze bought nothing and risked everything.
+# sanitize_borgmatic_pause_hooks() strips them from existing configs too.
 after_backup:
-    - docker compose -f /var/www/{project}/docker-compose.yml unpause
     - docker compose -f /var/www/{project}/docker-compose.yml logs -t > /var/log/{project}_docker.log
 
 on_error:
