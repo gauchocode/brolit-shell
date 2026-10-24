@@ -462,10 +462,10 @@ mail_html="$(cat "${email_html_file}")"
 retention_backup_result=0
 [[ ${STORAGE_DELETE_ERRORS} -gt 0 ]] && retention_backup_result=1
 
-# Checking result status for mail subject (including borg backup status)
-# Certificate status is deliberately excluded: cert health is monitored
-# separately (security scan, Brolit UI) and must not mix with backup status.
-email_status="$(mail_subject_status "${database_backup_result}" "${files_backup_result}" "${STATUS_SERVER}" "0" "${OUTDATED_PACKAGES}" "${borg_backup_result}" "${retention_backup_result}")"
+# The complete-backup subject describes this backup run only. Server health,
+# certificates and packages remain visible in the body and in their dedicated
+# monitoring, but cannot turn successful backup results into an error.
+email_status="$(mail_backup_subject_status "${database_backup_result}" "${files_backup_result}" "${borg_backup_result}" "${retention_backup_result}")"
 
 # Preparing email to send
 email_subject="${email_status} [${NOWDISPLAY}] - Complete Backup on ${SERVER_NAME}"
@@ -474,10 +474,10 @@ email_subject="${email_status} [${NOWDISPLAY}] - Complete Backup on ${SERVER_NAM
 notification_status="success"
 notification_message="Complete backup completed successfully."
 
-if [[ ${database_backup_result} -eq 1 ]] || [[ ${files_backup_result} -eq 1 ]] || [[ ${borg_backup_result} -eq 1 ]]; then
+if [[ ${database_backup_result} -ne 0 ]] || [[ ${files_backup_result} -ne 0 ]] || [[ ${borg_backup_result} -ne 0 ]]; then
     notification_status="alert"
     notification_message="Complete backup completed with errors. Check logs for details."
-elif [[ ${retention_backup_result} -eq 1 ]]; then
+elif [[ ${retention_backup_result} -ne 0 ]]; then
     notification_status="alert"
     notification_message="Backup completed, but ${STORAGE_DELETE_ERRORS} old backup(s) could not be deleted from remote storage. Check logs to avoid filling up storage quota."
 fi

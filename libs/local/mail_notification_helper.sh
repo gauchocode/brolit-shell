@@ -246,6 +246,39 @@ function mail_subject_status() {
 
 }
 
+################################################################################
+# Backup mail subject status.
+#
+# Backup report severity must describe the backup run only. Server health,
+# certificates and outdated packages are rendered in their own sections and
+# monitored independently; they must not turn a successful backup into an
+# error. Unknown or malformed results fail closed.
+#
+# Arguments:
+#   ${1} = Database backup exit status
+#   ${2} = Files backup exit status
+#   ${3} = Borg backup exit status
+#   ${4} = Retention/storage cleanup exit status
+#
+# Outputs:
+#   A subject prefix: green when every backup result is 0, error otherwise.
+################################################################################
+
+function mail_backup_subject_status() {
+
+    local status_d="${1:-missing}"
+    local status_f="${2:-missing}"
+    local status_b="${3:-missing}"
+    local status_r="${4:-missing}"
+
+    if [[ "${status_d}:${status_f}:${status_b}:${status_r}" == "0:0:0:0" ]]; then
+        echo "🟢"
+    else
+        echo "⛔ ERROR"
+    fi
+
+}
+
 function _remove_mail_notifications_files() {
 
     # Call the new cleanup function

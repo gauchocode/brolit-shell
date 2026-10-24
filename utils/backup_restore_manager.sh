@@ -22,6 +22,10 @@ function backup_manager_menu() {
 
   local backup_options
   local chosen_backup_type
+  local database_backup_result
+  local files_backup_result
+  local borg_backup_result
+  local retention_backup_result
 
   backup_options=(
     "01)" "BACKUP ALL"
@@ -43,27 +47,33 @@ function backup_manager_menu() {
       # BACKUP_ALL
       log_section "Backup All"
 
+      # Track retention failures for this run only, matching the scheduled
+      # complete-backup flow.
+      declare -g -i STORAGE_DELETE_ERRORS=0
+
       # Preparing Mail Notifications Template
       mail_server_status_section
 
       # Databases Backup
       backup_all_databases
+      database_backup_result=$?
 
       # Files Backup
       backup_all_files
+      files_backup_result=$?
 
       # Backup All with Borg (runs borgmatic for all project configs)
       if [[ "${BACKUP_BORG_STATUS}" == "enabled" ]]; then
         backup_all_files_with_borg
-        STATUS_BACKUP_BORG=$?
+        borg_backup_result=$?
       else
         log_event "debug" "Borg backup skipped (disabled in configuration)" "false"
-        STATUS_BACKUP_BORG=0  # Set to success since it's intentionally skipped
+        borg_backup_result=0  # Set to success since it's intentionally skipped
       fi
 
       # Borg mail section so manual backups also show borg status in the body
       if [[ "${BACKUP_BORG_STATUS}" == "enabled" ]]; then
-        if [[ ${STATUS_BACKUP_BORG} -eq 0 ]]; then
+        if [[ ${borg_backup_result} -eq 0 ]]; then
           mail_backup_section "none" "none" "borg" "Borg backup completed;OK"
         else
           mail_backup_section "Borg backup failed, check logs" "borg_backup" "borg" "Borg backup;FAIL"
@@ -94,17 +104,23 @@ function backup_manager_menu() {
       # Send html to a var
       mail_html="$(cat "${email_html_file}")"
 
-      # Checking result status for mail subject
-      email_status="$(mail_subject_status "${STATUS_BACKUP_DBS}" "${STATUS_BACKUP_FILES}" "${STATUS_SERVER}" "${OUTDATED_PACKAGES}" "${STATUS_BACKUP_BORG}")"
+      # The subject reports backup outcomes only. Server/package health stays
+      # in the detailed body and must not hide or fabricate a backup failure.
+      retention_backup_result=0
+      [[ ${STORAGE_DELETE_ERRORS} -gt 0 ]] && retention_backup_result=1
+      email_status="$(mail_backup_subject_status "${database_backup_result}" "${files_backup_result}" "${borg_backup_result}" "${retention_backup_result}")"
 
       email_subject="${email_status} [${NOWDISPLAY}] - Complete Backup on ${SERVER_NAME}"
 
       # Determine notification status based on all backup results
       notification_status="success"
       local status_text="completed successfully"
-      if [[ ${STATUS_BACKUP_DBS} -eq 1 ]] || [[ ${STATUS_BACKUP_FILES} -eq 1 ]] || [[ ${STATUS_BACKUP_BORG} -eq 1 ]]; then
+      if [[ ${database_backup_result} -ne 0 ]] || [[ ${files_backup_result} -ne 0 ]] || [[ ${borg_backup_result} -ne 0 ]]; then
         notification_status="alert"
         status_text="completed with errors"
+      elif [[ ${retention_backup_result} -ne 0 ]]; then
+        notification_status="alert"
+        status_text="completed with retention errors"
       fi
 
       # Sending notifications
@@ -114,9 +130,10 @@ function backup_manager_menu() {
       local backup_summary="Complete backup ${status_text}.<br><br>"
       backup_summary+="<b>Server:</b> ${SERVER_NAME}<br>"
       backup_summary+="<b>Time:</b> ${NOWDISPLAY}<br>"
-      backup_summary+="<b>Databases:</b> $([ "${STATUS_BACKUP_DBS}" -eq 0 ] && echo '✅ OK' || echo '❌ ERROR')<br>"
-      backup_summary+="<b>Files:</b> $([ "${STATUS_BACKUP_FILES}" -eq 0 ] && echo '✅ OK' || echo '❌ ERROR')<br>"
-      backup_summary+="<b>Borg:</b> $([ "${STATUS_BACKUP_BORG}" -eq 0 ] && echo '✅ OK' || echo '❌ ERROR')<br><br>"
+      backup_summary+="<b>Databases:</b> $([ "${database_backup_result}" -eq 0 ] && echo '✅ OK' || echo '❌ ERROR')<br>"
+      backup_summary+="<b>Files:</b> $([ "${files_backup_result}" -eq 0 ] && echo '✅ OK' || echo '❌ ERROR')<br>"
+      backup_summary+="<b>Borg:</b> $([ "${borg_backup_result}" -eq 0 ] && echo '✅ OK' || echo '❌ ERROR')<br>"
+      backup_summary+="<b>Retention:</b> $([ "${retention_backup_result}" -eq 0 ] && echo '✅ OK' || echo '❌ ERROR')<br><br>"
       backup_summary+="Check email for detailed report."
 
       send_notification "${SERVER_NAME} - Complete Backup ${status_text^}" "${backup_summary}" "${notification_status}" "email"
