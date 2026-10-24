@@ -1,7 +1,7 @@
 # Plan: Borg Configuration Safety — First Delivery
 
 ## Status
-- **Phase**: In Progress (real-tool integration and publication; not deployed)
+- **Phase**: Complete (3.14.10 published and sandbox-tested; production not activated)
 - **Last Updated**: 2026-10-24
 
 ## Overview
@@ -195,7 +195,7 @@ outside this delivery, as does the separate Brolit Admin report discrepancy.
 - [x] Build and test `tests/borg-safety-integration/docker-compose.yml`.
 - [x] Record real versions and generation/init/create/extract results.
 - [x] Re-run offline regressions and independent read-only review.
-- [ ] Commit the reviewed code, bump to 3.14.10, and merge/push master (user's updated request).
+- [x] Commit the reviewed code, bump to 3.14.10, and merge/push master (user's updated request).
 
 The pre-existing `tests/test-environment` exposes root-password SSH and requests
 privileged mode; its Ubuntu yq package is not the Mike Farah yq required by the
@@ -255,10 +255,10 @@ version, and a test on epica-apps01. The actual default branch is `master`, not
 headers together without changing report protocol versions.
 
 - [x] Run isolated release packaging/installer regressions and check metadata.
-- [ ] Commit and merge into master; push without force and verify the remote SHA.
-- [ ] Transfer only the published code/test fixtures into a separate root-only
+- [x] Commit and merge into master; push without force and verify the remote SHA.
+- [x] Transfer only the published code/test fixtures into a separate root-only
   validation directory on epica-apps01 and run controlled synthetic-data tests.
-- [ ] Record tested and active versions independently; do not activate a release
+- [x] Record tested and active versions independently; do not activate a release
   or change cron, security metadata, existing configurations or backup archives.
 
 Read-only server preflight on 2026-10-24 found a clean tracked legacy checkout at
@@ -276,3 +276,44 @@ could not read owner-only checkout paths or preserve another UID's metadata;
 running as the checkout owner's UID/GID resolved the harness issue without adding
 capabilities. The exact passing invocation is documented in the integration
 README. No generated private test keys or artifacts survived container removal.
+
+### Publication and Server Evidence
+
+- Runtime release: **3.14.10**, commit
+  `2102e4fd6ac1199b294f80fabe788c041b8e0bde` (`fix(backup): harden Borg safety for 3.14.10`).
+- Local feature branch was fast-forward merged into the actual default `master`.
+  Non-force `git push origin master` succeeded; `git ls-remote` matched the full
+  local SHA. No separate main branch, release tag or GitHub release was created.
+- A publishable bundle was then built from the clean committed tree in Docker,
+  without `BROLIT_RELEASE_BUILD_ALLOW_DIRTY`. Artifact SHA-256:
+  `5a228ccf837ac843814ab84e9d0521772f221441cbd54fe0c98ea9ed6ce572a6`.
+- Source/test fixture archive SHA-256:
+  `1d7d40376f632d7d11189f8bb991e097a9c49d0f1aa62d560446834b05633cb4`.
+- Server validation root:
+  `/root/brolit-validation-3.14.10-2102e4fd.NIXA65` (root-only parent).
+  Only this new validation root was written; no production Git update occurred.
+- Both transferred checksums were verified. The official installer validated the
+  bundle and created an isolated `install/current` **inside that root**, not
+  `/opt/brolit-shell/current`. Sandbox metadata reported version 3.14.10, the
+  published commit, and no `legacy_runtime` error. The changed runtime files were
+  compared byte-for-byte with the source/test archive before testing.
+- Full integration and regressions passed on the native **Borg 1.2.8 / Borgmatic
+  2.1.7 / yq 4.44.6** toolchain, with isolated HOME, TMPDIR and Borg cache/config/
+  security directories. All archive operations used synthetic local fixtures.
+- A controlled local archive was created and extracted; `cmp` verified payload
+  equality. Real-template schema checks, repeated/multi-repo initialization,
+  blocked relocation, missing-environment rejection, six Bash suites and all 13
+  observer parser tests passed. No production database dump or Docker hook ran.
+- Before/after snapshots of `/root/.brolit_conf.json`, every regular file and
+  symlink in `/etc/borgmatic.d`, the crontab, and tracked production checkout
+  commit/status matched exactly. No raw configuration values were logged.
+- **Active production remains 3.14.9** at
+  `6f5d25a4e7e4e8044805785dd0ca5c2b7bda144a`. Version 3.14.10 is tested in the
+  sandbox only. Production activation, legacy profile remediation, shared path/
+  trust policy changes, and verification against real provider repositories
+  require separate explicit approval. Logs and checksums remain in the root-only
+  validation directory; temporary synthetic repositories were cleaned by traps.
+
+Final documentation/evidence-only closeout uses structured self-review: observed
+versions, commits, checksums and pass results match command output; no new code
+or deployment behavior was added after the independently approved implementation.

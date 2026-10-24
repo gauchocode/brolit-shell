@@ -32,10 +32,17 @@ deployment gates.
 - [x] 5.1 Build an isolated Ubuntu container with real yq, Borgmatic and Borg, without production mounts, SSH or runtime networking.
 - [x] 5.2 Run real-template generation, initialization, negative interpolation and file backup/restore integration tests; record exact versions and results.
 - [x] 5.3 Re-run offline regressions and read-only review; resolve findings before commit.
-- [ ] 5.4 Commit the reviewed changes, bump to 3.14.10, merge/push the actual default branch (master), and record publication verification.
+- [x] 5.4 Commit the reviewed changes, bump to 3.14.10, merge/push the actual default branch (master), and record publication verification.
 
 ## 6. Versioned server smoke test
 
 - [x] 6.1 Validate release packaging and runtime metadata for 3.14.10 before publication.
-- [ ] 6.2 Test the published commit in an isolated directory on epica-apps01 without activating it or changing production configurations, archives, or cron.
-- [ ] 6.3 Record tested/active versions separately and leave production activation and legacy remediation behind an explicit operator gate.
+- [x] 6.2 Test the published commit in an isolated directory on epica-apps01 without activating it or changing production configurations, archives, or cron.
+- [x] 6.3 Record tested/active versions separately and leave production activation and legacy remediation behind an explicit operator gate.
+
+Published runtime: 3.14.10 at `2102e4fd6ac1199b294f80fabe788c041b8e0bde`,
+merged fast-forward and pushed to master with matching remote SHA. Clean-checkout
+bundle checksum/install validation and the complete synthetic-data test suite
+passed in a separate epica-apps01 validation root. Native toolchain: Borg 1.2.8,
+Borgmatic 2.1.7, yq 4.44.6. Production remains 3.14.9 at `6f5d25a4`; before/after
+configuration/profile/crontab/tracked-checkout snapshots matched exactly.
