@@ -1,0 +1,23 @@
+services:
+  borg-safety:
+    image: brolit-borg-safety-test:${BORGMATIC_VERSION:-2.1.7}
+    build:
+      context: .
+      args:
+        BORGMATIC_VERSION: ${BORGMATIC_VERSION:-2.1.7}
+    network_mode: none
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - ../..:/workspace:ro
+    tmpfs:
+      - /tmp:size=512m,mode=1777,exec
+    environment:
+      HOME: /tmp/opencode/home
+      TMPDIR: /tmp/opencode
+      PYTHONDONTWRITEBYTECODE: "1"
+      BORG_RELOCATED_REPO_ACCESS_IS_OK: "no"
+      BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK: "no"

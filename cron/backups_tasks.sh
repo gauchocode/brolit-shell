@@ -39,9 +39,6 @@ function generate_config() {
     # Check if Borg backup is enabled
     if [ "${BACKUP_BORG_STATUS}" == "enabled" ]; then
 
-        local number_of_servers
-        number_of_servers=$(jq ".BACKUPS.methods[].borg[].config | length" /root/.brolit_conf.json 2>/dev/null || echo "0")
-
         # Counters for reporting
         local total_projects=0
         local configs_created=0
@@ -127,150 +124,7 @@ function generate_config() {
 
 }
 
-# Generate Borg configuration file for a specific project
-function generate_borg_config() {
-
-    local project_name="${1}"
-    local yml_file="/etc/borgmatic.d/${project_name}.yml"
-    local project_dir="/var/www/${project_name}"
-    local project_install_type
-
-    # Some domains only exist under PROJECTS_PATH to follow brolit's
-    # convention (one directory per site), while the site itself is served
-    # from elsewhere (e.g. an nginx alias/proxy_pass to another project's
-    # docker-compose). There's nothing to detect an engine for or back up
-    # here -- generating a config for these was defaulting to the mysql
-    # template with an unresolved {database} constant, which broke
-    # borgmatic's parsing of the file on every run. Skip them instead.
-    if [[ -d "${project_dir}" ]] && [[ -z "$(find "${project_dir}" -mindepth 1 -maxdepth 1 -print -quit)" ]]; then
-
-        log_event "info" "${project_name} directory is empty (alias/placeholder project) -- skipping borgmatic config" "false"
-
-        # Remove any stale config left over from before this project became empty
-        if [[ -f "${yml_file}" ]]; then
-            log_event "warning" "Removing stale borgmatic config for now-empty project: ${yml_file}" "false"
-            rm -f "${yml_file}"
-        fi
-
-        echo "skipped"
-        return 0
-
-    fi
-
-    project_install_type="$(project_get_install_type "${project_dir}" 2>/dev/null || echo "unknown")"
-
-    # Check if config file already exists
-    if [ ! -f "${yml_file}" ]; then
-
-        log_event "info" "Config file ${yml_file} does not exist" "false"
-        log_event "info" "Generating configuration file..." "false"
-
-        # Determine template file based on project type
-        if [ "${project_install_type}" == "default" ]; then
-            # For non-Docker projects, determine DB engine
-            db_engine=$(project_get_database_engine "${project_name}" "${project_install_type}" 2>/dev/null || echo "")
-
-            if [ -z "${db_engine}" ]; then
-                # Default to mysql template if engine cannot be determined
-                template_file="borgmatic.template-mysql.yml"
-            else
-                template_file="borgmatic.template-${db_engine}.yml"
-            fi
-        else
-            # Normalize Docker install types to existing template
-            if [[ "${project_install_type}" == "docker"* ]]; then
-                template_file="borgmatic.template-docker.yml"
-            else
-                template_file="borgmatic.template-${project_install_type}.yml"
-            fi
-        fi
-
-        # Verify template exists
-        if [ ! -f "${BROLIT_MAIN_DIR}/config/borg/${template_file}" ]; then
-            log_event "error" "Template ${template_file} not found, using default template" "false"
-            template_file="borgmatic.template-default.yml"
-        fi
-
-        # Final check if default template exists
-        if [ ! -f "${BROLIT_MAIN_DIR}/config/borg/${template_file}" ]; then
-            log_event "error" "No template file available for ${project_name}" "false"
-            echo "failed"
-            return 1
-        fi
-
-        # /etc/borgmatic.d doesn't exist on a fresh install -- nothing else in
-        # the codebase creates it (borg_update_templates() even treats its
-        # absence as a hard failure), so without this every cp below fails
-        # and no config ever gets generated for any project.
-        mkdir -p "$(dirname "${yml_file}")"
-
-        cp "${BROLIT_MAIN_DIR}/config/borg/${template_file}" "${yml_file}"
-
-        if [ $? -ne 0 ]; then
-            log_event "error" "Failed to copy template for ${project_name}" "false"
-            echo "failed"
-            return 1
-        fi
-
-        # Erase placeholder repositories to avoid duplication
-        yq -i '.repositories = []' "${yml_file}" 2>/dev/null || true
-
-        # Update configuration file with project-specific values
-        PROJECT="${project_name}" yq -i '.constants.project = strenv(PROJECT)' "${yml_file}" 2>/dev/null || true
-        GROUP="${BACKUP_BORG_GROUP}" yq -i '.constants.group = strenv(GROUP)' "${yml_file}" 2>/dev/null || true
-        HOST="${HOSTNAME}" yq -i '.constants.hostname = strenv(HOST)' "${yml_file}" 2>/dev/null || true
-
-        # The mysql/postgres templates reference a {database} constant in
-        # their *_databases hook. Leaving it unset doesn't just skip the DB
-        # dump -- borgmatic fails to parse the *entire* file ("cannot find
-        # variable database"), blocking the file-level backup too. Best-effort
-        # detect it; fall back to the project name (a common convention for
-        # single-site installs) rather than leave it unresolved.
-        local db_name
-        db_name="$(project_get_database_name "${project_name}" "${project_install_type}")"
-        if [[ -z "${db_name}" ]]; then
-            db_name="${project_name}"
-            log_event "warning" "Could not detect database name for ${project_name}, defaulting borgmatic's {database} constant to the project name -- verify this is correct" "false"
-        fi
-        DATABASE="${db_name}" yq -i '.constants.database = strenv(DATABASE)' "${yml_file}" 2>/dev/null || true
-
-        # Add server configuration for each backup server
-        local number_of_servers
-        number_of_servers=$(jq ".BACKUPS.methods[].borg[].config | length" /root/.brolit_conf.json 2>/dev/null || echo "0")
-        for i in $(seq 1 "$number_of_servers"); do
-
-            local user_var="user_${i}"
-            local server_var="server_${i}"
-            local port_var="port_${i}"
-
-            # Add server configuration to constants
-            USER_VALUE="${BACKUP_BORG_USERS[i-1]}" yq -i ".constants.${user_var} = strenv(USER_VALUE)" "${yml_file}" 2>/dev/null || true
-            SERVER_VALUE="${BACKUP_BORG_SERVERS[i-1]}" yq -i ".constants.${server_var} = strenv(SERVER_VALUE)" "${yml_file}" 2>/dev/null || true
-            PORT_VALUE="${BACKUP_BORG_PORTS[i-1]}" yq -i ".constants.${port_var} = strenv(PORT_VALUE)" "${yml_file}" 2>/dev/null || true
-
-            # Add repository configuration using yq for safety
-            yq -i ".repositories += [{\"path\": \"ssh://{${user_var}}@{${server_var}}:{${port_var}}/home/applications/{group}/{hostname}/projects-online/site/{project}\", \"label\": \"storage-{${user_var}}\"}]" "${yml_file}" 2>/dev/null || true
-
-        done
-
-        # Verify the config file was created successfully
-        if [ -f "${yml_file}" ]; then
-            log_event "info" "Config file ${yml_file} generated successfully." "false"
-            echo "created"
-            return 0
-        else
-            log_event "error" "Config file ${yml_file} creation failed." "false"
-            echo "failed"
-            return 1
-        fi
-
-    else
-        log_event "debug" "Config file ${yml_file} already exists." "false"
-        echo "exists"
-        return 0
-    fi
-
-}
+# Generation lives in libs/local/borg_config_helper.sh (loaded by commons).
 
 # Prepare borgmatic environment if enabled
 function prepare_borgmatic_environment() {
@@ -312,32 +166,22 @@ function backup_project_all_enabled_methods() {
             display --indent 6 --text "- Backing up ${project_domain} with borgmatic" --tcolor YELLOW
 
             # Initialize the repository if it doesn't exist yet. Idempotent --
-            # initialize_repository() checks via `borgmatic info` first and is
+            # initialize_repository() checks via a bounded manifest probe and is
             # a no-op if the repo is already there. (The two calls this
             # replaced, setup_project_directories() and
             # initialize_repository_if_needed(), don't exist anywhere in the
             # codebase -- every project whose repo wasn't already initialized
             # by some other path silently never got one, and the nightly
             # `borgmatic --stats` run below failed on it forever after.)
-            # A failure here means the destination itself is unusable: fail
-            # fast with the classified root cause instead of attempting a
-            # create that would only produce the same generic error.
-            if ! initialize_repository "/etc/borgmatic.d/${project_domain}.yml"; then
+            # Project-local failures do not imply a shared destination outage.
+            # The helper records only clear shared failures in the breaker.
+            if ! borg_initialize_for_backup "/etc/borgmatic.d/${project_domain}.yml"; then
 
-                ((BORG_REPO_INIT_FAILURES++))
-                [[ -z "${BORG_FIRST_FAILURE_REASON}" ]] && BORG_FIRST_FAILURE_REASON="repository initialization failed"
+                local init_reason="${BORG_INIT_FAILURE_REASON:-unknown}"
 
-                log_event "error" "Borg repository unavailable for ${project_domain} (${BORG_FIRST_FAILURE_REASON}); skipping create attempt" "false"
+                log_event "error" "Borg repository unavailable for ${project_domain} (${init_reason}); skipping create attempt" "false"
                 display --indent 8 --text "Backup failed" --result "FAIL" --color RED
-                borg_project_status_line="${project_domain};FAIL (repository: ${BORG_FIRST_FAILURE_REASON})"
-
-                local repo_limit
-                repo_limit="$(borg_repo_failure_limit)"
-                if [[ "${repo_limit}" -gt 0 && ${BORG_REPO_INIT_FAILURES} -ge ${repo_limit} ]]; then
-                    BORG_REPO_UNAVAILABLE=1
-                    log_event "error" "Borg repository circuit breaker tripped after ${BORG_REPO_INIT_FAILURES} consecutive failures; remaining projects skipped this run" "true"
-                    send_notification "Borg Backup: repository unavailable" "${BORG_REPO_INIT_FAILURES} consecutive borg repository failures this run. Root cause: ${BORG_FIRST_FAILURE_REASON}. Remaining projects were skipped; backups for this run are NOT complete." "alert"
-                fi
+                borg_project_status_line="${project_domain};FAIL (repository: ${init_reason})"
 
                 backup_status=1
 

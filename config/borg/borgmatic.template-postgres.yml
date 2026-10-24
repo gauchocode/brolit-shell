@@ -49,7 +49,7 @@ before_backup:
 after_backup:
     - rm -f /tmp/{project}_backup.sql
 
-postgres_databases:
+postgresql_databases:
     # Quoted -- an unquoted bare "{name}" is valid YAML flow-mapping syntax
     # for the whole value (a mapping with key "name" and a null value), not
     # a plain string. yq re-serializes the file on every `-i` call in
@@ -58,7 +58,7 @@ postgres_databases:
     - name: "{database}"
       username: "{postgres_user}"
       password: "{postgres_password}"
-      format: sql
+      format: plain
       options: --no-tablespaces
 
 on_error:

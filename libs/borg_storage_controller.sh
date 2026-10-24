@@ -1128,8 +1128,8 @@ function _borgmatic_resolve_cmd() {
 #   ${1} = ${borgmatic_output} (stdout+stderr of the failed invocation)
 #
 # Outputs:
-#   One of: network, auth, repo_missing, space, python_env, lock,
-#   encryption_mismatch, unknown
+#   One of: config, relocation, network, auth, repo_missing, space, python_env,
+#   lock, encryption_mismatch, unknown. Never returns captured diagnostics.
 ################################################################################
 
 function borg_init_failure_reason() {
@@ -1138,10 +1138,12 @@ function borg_init_failure_reason() {
     local lower
     lower="$(echo "${borgmatic_output}" | tr '[:upper:]' '[:lower:]')"
 
-    if echo "${lower}" | grep -qE "failed to create/acquire lock|lock.*\(timeout\)|repository is locked|lock.*held"; then
+    if echo "${lower}" | grep -qE "cannot find (variable|environment)|environment variable.*(not set|missing|not found)|variable.*(not defined|undefined)|error (parsing|validating) configuration|configuration.*(invalid|validation error)|failed to (parse|validate).*config|could not (read|parse).*configuration|unrecognized configuration option|validationerror"; then
+        echo "config"
+    elif echo "${lower}" | grep -qE "repository.*(relocated|relocation|previously located|location changed)|previously located repository|borg_relocated_repo_access_is_ok|repository access aborted"; then
+        echo "relocation"
+    elif echo "${lower}" | grep -qE "failed to create/acquire (the )?lock|lock.*\(timeout\)|repository is locked|lock.*held"; then
         echo "lock"
-    elif echo "${lower}" | grep -qE "does not match existing repository encryption mode"; then
-        echo "encryption_mismatch"
     elif echo "${lower}" | grep -qE "connection refused|connection reset|connection timed out|network is unreachable|temporary failure in name resolution|could not resolve hostname|no route to host|operation timed out|timed out|timeout"; then
         echo "network"
     elif echo "${lower}" | grep -qE "permission denied|authentication failed|publickey|host key verification failed|too many authentication failures"; then
@@ -1150,7 +1152,9 @@ function borg_init_failure_reason() {
         echo "space"
     elif echo "${lower}" | grep -qE "traceback|modulenotfounderror|no module named|importerror|command not found"; then
         echo "python_env"
-    elif echo "${lower}" | grep -qE "does not exist|no such file or directory|cannot access|not a repository"; then
+    elif echo "${lower}" | grep -qE "does not match existing repository encryption mode"; then
+        echo "encryption_mismatch"
+    elif echo "${lower}" | grep -qE "repository [^[:space:]]+ does not exist|repository does not exist|repositorynotfound"; then
         echo "repo_missing"
     else
         echo "unknown"
@@ -1186,6 +1190,59 @@ function borg_repo_failure_limit() {
 }
 
 ################################################################################
+# Record an init result in the run-level shared-destination circuit breaker.
+# Project-local, mixed and unknown failures are not evidence of an outage.
+# Arguments:
+#   ${1} = exit status (0 for success)
+#   ${2} = fixed failure class
+# Outputs:
+#   0; updates BORG_REPO_* state and sends one notification on trip.
+################################################################################
+function borg_record_init_result() {
+    local exitstatus="${1}" reason="${2:-unknown}" repo_limit
+    if [[ "${exitstatus}" -eq 0 ]]; then
+        BORG_REPO_INIT_FAILURES=0
+        BORG_FIRST_FAILURE_REASON=""
+        return 0
+    fi
+    case "${reason}" in
+        network|auth|space) ;;
+        *)
+            BORG_REPO_INIT_FAILURES=0
+            BORG_FIRST_FAILURE_REASON=""
+            return 0
+            ;;
+    esac
+    BORG_REPO_INIT_FAILURES=$(( ${BORG_REPO_INIT_FAILURES:-0} + 1 ))
+    [[ -n "${BORG_FIRST_FAILURE_REASON}" ]] || BORG_FIRST_FAILURE_REASON="${reason}"
+    repo_limit="$(borg_repo_failure_limit)"
+    if [[ "${repo_limit}" -gt 0 && "${BORG_REPO_INIT_FAILURES}" -ge "${repo_limit}" && "${BORG_REPO_UNAVAILABLE:-0}" -eq 0 ]]; then
+        BORG_REPO_UNAVAILABLE=1
+        log_event "error" "Borg repository circuit breaker tripped after ${BORG_REPO_INIT_FAILURES} consecutive shared failures (${reason})" "true"
+        send_notification "Borg Backup: repository unavailable" "${BORG_REPO_INIT_FAILURES} consecutive shared repository failures. Failure class: ${reason}. Borg backups for this run are NOT complete." "alert"
+    fi
+    return 0
+}
+
+################################################################################
+# Initialize a project's repositories and record the actual classified result.
+# Arguments:
+#   ${1} = config_file
+# Outputs:
+#   0 if usable, 1 otherwise; BORG_INIT_FAILURE_REASON is preserved for cron.
+#   Independent traditional backup scheduling is not changed by this gate.
+################################################################################
+function borg_initialize_for_backup() {
+    local config_file="${1}"
+    if initialize_repository "${config_file}"; then
+        borg_record_init_result 0 ""
+        return 0
+    fi
+    borg_record_init_result 1 "${BORG_INIT_FAILURE_REASON:-unknown}"
+    return 1
+}
+
+################################################################################
 # Private: initialize the repository (or repositories) in a single borgmatic
 # config file, as one combined borgmatic call. Borgmatic aborts the whole
 # command on the first repository it can't reach/init -- fine for a
@@ -1210,7 +1267,6 @@ function _initialize_repository_for_config() {
 
     local config_file="${1}"
     local borg_cmd="${2}"
-    local log_label="${3:-${config_file}}"
 
     # Timeouts: a wedged borgmatic (e.g. disk 100% full makes the python
     # interpreter spin forever trying to allocate temp files) must never
@@ -1218,74 +1274,53 @@ function _initialize_repository_for_config() {
     # backup run alive for 18 days at ~100% CPU.
     local init_timeout="${BROLIT_BORG_INIT_TIMEOUT:-300}"
 
-    # Initialize idempotently: attempt init directly and treat borg's
-    # "already exists" answer as success.
-    # NOTE: the previous `borgmatic info` pre-check was removed -- on large
-    # repositories it enumerated all archive metadata before answering
-    # (observed: 20-42 minutes per repository per night on a 7.9 TB repo),
-    # while `borg init` on an existing repo fails fast with a recognizable
-    # message and touches nothing.
-    display --indent 6 --text "- Initializing Borg repository (${log_label})" --result "RUNNING" --color YELLOW
-    log_event "info" "Initializing new repository with '${borg_cmd}' (${log_label})" "false"
-
-    # Try to initialize and capture output for diagnostics (e.g., Python Traceback)
-    local init_output
-    if ! init_output=$(eval "timeout \"${init_timeout}\" ${borg_cmd} init --encryption=none --config \"${config_file}\"" 2>&1); then
-
-        # borg refuses to re-init an existing repository (exit 2) -- that is
-        # the normal, healthy case: the repo is already there.
-        if echo "${init_output}" | grep -qi "already exists"; then
-            clear_previous_lines "1"
-            display --indent 6 --text "- Repository initialization (${log_label})" --result "DONE" --color GREEN
-            log_event "info" "Repository already exists (borg init reported it) (${log_label})" "false"
-            return 0
-        fi
-
-        # A repo that already exists under a DIFFERENT encryption mode is
-        # still a reachable, initialized repository: the mode check is all
-        # that failed, and the data flow itself is unaffected (observed live:
-        # a legacy repokey repo kept receiving archives on every run while
-        # this check alone turned the whole job red, daily). Treat it as
-        # existing, with a visible warning so the deviation from the
-        # unencrypted standard stays auditable. If the repo is genuinely
-        # unreadable for us (a real passphrase we don't have), the subsequent
-        # create fails and gets classified as auth there -- the job then
-        # fails for the true reason instead of a mode-check artifact.
-        if [[ "$(borg_init_failure_reason "${init_output}")" == "encryption_mismatch" ]]; then
-            clear_previous_lines "1"
-            display --indent 6 --text "- Repository initialization (${log_label})" --result "DONE" --color GREEN
-            log_event "warning" "Repository exists with a different encryption mode than 'none'; treating as usable (${log_label})" "false"
-            return 0
-        fi
-
-        # Log
-        clear_previous_lines "1"
-        display --indent 6 --text "- Repository initialization (${log_label})" --result "FAIL" --color RED
-        log_event "error" "Repository initialization failed for ${log_label}. Command='timeout ${init_timeout} ${borg_cmd} init --encryption=none --config ${config_file}'" "false"
-        # Surface a short snippet to logs to aid troubleshooting
-        log_event "error" "borgmatic stderr: $(echo "${init_output}" | tail -n 10 | tr '\n' ' ')" "true"
-
-        # Single root-cause classification shared by logs, display and (via
-        # the caller) the email section and notification.
-        local init_reason
-        init_reason="$(borg_init_failure_reason "${init_output}")"
-        log_event "error" "Repository init failure class: ${init_reason} (${log_label})" "false"
-        display --indent 8 --text "Failure class: ${init_reason}" --tcolor RED
-
-        # Detect Python traceback to provide a specific hint
-        if echo "${init_output}" | grep -qi "Traceback"; then
-            log_event "warning" "Python traceback detected during borgmatic execution. Environment may have broken pipx/venv or mismatched borgmatic install. Consider reinstalling borgmatic with pipx and ensuring PATH includes ~/.local/bin." "true"
-        fi
-
-        return 1
+    local init_output init_reason exitstatus
+    BORG_INIT_FAILURE_REASON=""
+    # Do not interpolate a config path into eval. The resolver's trusted command
+    # string can contain 'python3 -m borgmatic'; arguments remain positional.
+    # Manifest listing avoids archive statistics. Limit the returned archive
+    # names; unsupported syntax fails closed rather than falling back to info.
+    if init_output=$(eval 'timeout "${init_timeout}" '"${borg_cmd}"' repo-list --short --last 1 --config "${config_file}"' 2>&1); then
+        exitstatus=0
+    else
+        exitstatus=$?
     fi
-
-    # Log
-    clear_previous_lines "1"
-    display --indent 6 --text "- Repository initialization (${log_label})" --result "DONE" --color GREEN
-    log_event "info" "Repository initialized successfully (${log_label})" "false"
-
-    return 0
+    if [[ "${exitstatus}" -eq 0 ]]; then
+        log_event "info" "Repository already exists (preflight succeeded)" "false"
+        return 0
+    fi
+    init_reason="$(borg_init_failure_reason "${init_output}")"
+    if [[ "${exitstatus}" -eq 124 && "${init_reason}" != "config" && "${init_reason}" != "relocation" ]]; then
+        init_reason="network"
+    fi
+    if [[ "${init_reason}" == "repo_missing" ]]; then
+        if init_output=$(eval 'timeout "${init_timeout}" '"${borg_cmd}"' init --encryption=none --config "${config_file}"' 2>&1); then
+            exitstatus=0
+        else
+            exitstatus=$?
+        fi
+        if [[ "${exitstatus}" -eq 0 ]]; then
+            log_event "info" "Repository initialized successfully" "false"
+            return 0
+        fi
+        init_reason="$(borg_init_failure_reason "${init_output}")"
+        if [[ "${exitstatus}" -eq 124 && "${init_reason}" != "config" && "${init_reason}" != "relocation" ]]; then
+            init_reason="network"
+        fi
+        # A concurrent initializer may win the race. Config/trust failures
+        # always outrank text that otherwise looks like an existing repository.
+        if [[ "${init_reason}" == "encryption_mismatch" ]]; then
+            log_event "warning" "Repository exists with a different encryption mode than 'none'" "false"
+            return 0
+        elif [[ "${init_reason}" == "unknown" ]] && grep -qi 'already exists' <<< "${init_output}"; then
+            log_event "info" "Repository already exists (concurrent initialization)" "false"
+            return 0
+        fi
+    fi
+    BORG_INIT_FAILURE_REASON="${init_reason}"
+    log_event "error" "Repository init failure class: ${init_reason}" "false"
+    display --indent 8 --text "Failure class: ${init_reason}" --tcolor RED
+    return 1
 
 }
 
@@ -1313,9 +1348,11 @@ function _initialize_repository_for_config() {
 function initialize_repository() {
 
     local config_file="${1}"
+    BORG_INIT_FAILURE_REASON=""
 
     # Check if config file exists
     if [[ ! -f "${config_file}" ]]; then
+        BORG_INIT_FAILURE_REASON="config"
         log_event "error" "Borgmatic config file not found: ${config_file}" "false"
         display --indent 6 --text "- Borgmatic config file not found" --result "FAIL" --color RED
         display --indent 8 --text "${config_file}" --tcolor YELLOW
@@ -1327,16 +1364,20 @@ function initialize_repository() {
     borg_cmd="$(_borgmatic_resolve_cmd)"
 
     if [[ -z "${borg_cmd}" ]]; then
+        BORG_INIT_FAILURE_REASON="python_env"
         log_event "error" "Borgmatic executable not found via PATH, /root/.local/bin, pipx, or python3 -m" "true"
         display --indent 6 --text "- Borgmatic executable not found" --result "FAIL" --color RED
         return 1
     fi
 
     local repo_count
-    repo_count="$(yq '.repositories | length' "${config_file}" 2>/dev/null || echo "1")"
-    [[ -z "${repo_count}" || ! "${repo_count}" =~ ^[0-9]+$ ]] && repo_count=1
+    if ! repo_count="$(yq '.repositories | length' "${config_file}" 2>/dev/null)" || [[ ! "${repo_count}" =~ ^[0-9]+$ || "${repo_count}" -eq 0 ]]; then
+        BORG_INIT_FAILURE_REASON="config"
+        log_event "error" "Repository init failure class: config" "false"
+        return 1
+    fi
 
-    # Single (or no) repository -- one combined call, same as always.
+    # One repository: no temporary config required.
     if [[ "${repo_count}" -le 1 ]]; then
         _initialize_repository_for_config "${config_file}" "${borg_cmd}"
         return $?
@@ -1344,21 +1385,31 @@ function initialize_repository() {
 
     # Multiple repositories: initialize each independently via a per-repo
     # temp config, so one broken destination can't block the others.
-    local i label ok_count=0 fail_labels=()
+    local i label ok_count=0 aggregate_reason="" reason
+    local -a fail_labels=()
     for (( i=0; i<repo_count; i++ )); do
 
-        label="$(yq ".repositories[${i}].label" "${config_file}" 2>/dev/null)"
-        [[ -z "${label}" || "${label}" == "null" ]] && label="repo-${i}"
+        label="repo-${i}"
 
         local repo_config_file
-        repo_config_file="$(mktemp --suffix=".yml")"
-        cp "${config_file}" "${repo_config_file}"
-        yq -i ".repositories = [.repositories[${i}]]" "${repo_config_file}" 2>/dev/null
+        repo_config_file="$(mktemp "$(dirname "${config_file}")/.brolit-init.XXXXXX")" || { BORG_INIT_FAILURE_REASON="config"; return 1; }
+        if ! cp -- "${config_file}" "${repo_config_file}" 2>/dev/null || ! chmod 600 "${repo_config_file}" || ! yq -i ".repositories = [.repositories[${i}]]" "${repo_config_file}" 2>/dev/null; then
+            rm --force -- "${repo_config_file}"
+            BORG_INIT_FAILURE_REASON="config"
+            log_event "error" "Repository init failure class: config" "false"
+            return 1
+        fi
 
         if _initialize_repository_for_config "${repo_config_file}" "${borg_cmd}" "${label}"; then
-            ((ok_count++))
+            ok_count=$((ok_count + 1))
         else
             fail_labels+=("${label}")
+            reason="${BORG_INIT_FAILURE_REASON:-unknown}"
+            if [[ -z "${aggregate_reason}" ]]; then
+                aggregate_reason="${reason}"
+            elif [[ "${aggregate_reason}" != "${reason}" ]]; then
+                aggregate_reason="unknown"
+            fi
         fi
 
         rm -f "${repo_config_file}"
@@ -1366,6 +1417,7 @@ function initialize_repository() {
     done
 
     if [[ "${ok_count}" -eq 0 ]]; then
+        BORG_INIT_FAILURE_REASON="${aggregate_reason:-unknown}"
         log_event "error" "All ${repo_count} repositories failed to initialize for $(basename "${config_file}")" "false"
         return 1
     fi
@@ -1374,6 +1426,7 @@ function initialize_repository() {
         log_event "warning" "${ok_count}/${repo_count} repositories usable for $(basename "${config_file}"); failed: ${fail_labels[*]} -- redundancy is reduced until this is fixed" "false"
     fi
 
+    BORG_INIT_FAILURE_REASON=""
     return 0
 
 }

@@ -33,6 +33,14 @@ function mismatch_setup() {
 
     cat > "${TEST_TMP}/fake-borgmatic" <<'FAKE_EOF'
 #!/usr/bin/env bash
+if [[ "${1}" == "repo-list" && "${2}" == "--short" && "${3}" == "--last" && "${4}" == "1" ]]; then
+    echo 'Repository /fixture/repo does not exist'
+    exit 2
+fi
+if [[ "${1}" != init ]]; then
+    echo 'Unsupported action or probe options' >&2
+    exit 2
+fi
 cat "${FAKE_MSG}"
 exit "${FAKE_RC}"
 FAKE_EOF

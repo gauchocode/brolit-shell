@@ -631,8 +631,8 @@ function project_get_database_engine() {
 ################################################################################
 # Get the project's database name (best-effort). Used to fill borgmatic's
 # {database} constant -- an unresolved constant fails the *entire* config
-# file to parse (not just the DB dump section), so callers should fall back
-# to something rather than leave this empty.
+# file to parse (not just the DB dump section). Callers must reject missing or
+# unresolved values rather than guess a database name.
 #
 # Arguments:
 #   ${1} = ${project_name}
@@ -669,7 +669,39 @@ function project_get_database_name() {
 
     # WordPress
     if [[ -z "${db_name}" && -f "${project_path}/wp-config.php" ]]; then
-        db_name="$(wp_config_get_option "${project_path}" "DB_NAME" 2>/dev/null)"
+        # Read literal definitions only, without evaluating PHP or using the
+        # interactive option reader (which also prints/logs the value).
+        # Accept only one plain definition line. Any other DB_NAME mention
+        # (including comments, duplicates and expressions) is ambiguous. This
+        # deliberately conservative comment scan is not a general PHP parser.
+        db_name="$(awk '
+            /DB_NAME/ {
+                mentions++
+                if (in_block || /\/\*|\*\//) ambiguous=1
+                candidate=$0
+            }
+            {
+                rest=$0
+                while (length(rest)) {
+                    if (in_block) {
+                        end=index(rest, "*/")
+                        if (!end) break
+                        in_block=0
+                        rest=substr(rest, end+2)
+                    } else {
+                        start=index(rest, "/*")
+                        if (!start) break
+                        in_block=1
+                        rest=substr(rest, start+2)
+                    }
+                }
+            }
+            END { if (mentions == 1 && !ambiguous && !in_block) print candidate }
+        ' "${project_path}/wp-config.php" | sed -nE "s/^[[:space:]]*define[[:space:]]*\([[:space:]]*['\"]DB_NAME['\"][[:space:]]*,[[:space:]]*['\"]([^'\"]+)['\"][[:space:]]*\)[[:space:]]*;[[:space:]]*$/\1/p")"
+        # Do not substitute another application configuration for an ambiguous
+        # WordPress definition (for example a stale sibling .env database).
+        echo "${db_name}"
+        return 0
     fi
 
     # Laravel/PHP frameworks (.env DB_DATABASE)
