@@ -59,6 +59,7 @@ function tests_suite_menu() {
       test_cloudflare_dns_flow
       test_backup_project_resilience
       test_backup_subject_status
+      test_process_scanner_notifications
     fi
     if [[ ${chosen_tests_options} == *"01"* ]]; then
       test_borg_backup_database

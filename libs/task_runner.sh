@@ -507,16 +507,36 @@ function security_scan_handler() {
 
   if [[ "${subtask}" == "full" || "${subtask}" == "processes" ]]; then
     log_subsection "Process Scanner"
+    local proc_output
+    local proc_line
     local proc_result
-    proc_result="$(security_process_scanner)"
+    local proc_reasons
+    local proc_report
+    if ! proc_output="$(security_process_scanner "machine")"; then
+      display --indent 2 --text "Process scanner" --result "ERROR" --color RED
+      scan_failed="true"
+      proc_result="error"
+    else
+      proc_line="${proc_output##*$'\n'}"
+      if security_process_scanner_parse_machine_result "${proc_line}"; then
+        proc_result="${PROCESS_SCANNER_PARSED_STATUS}"
+        proc_reasons="${PROCESS_SCANNER_PARSED_REASONS}"
+        proc_report="${PROCESS_SCANNER_PARSED_REPORT}"
+      else
+        proc_result="error"
+      fi
+    fi
     if [[ "${proc_result}" == "true" ]]; then
       display --indent 2 --text "Process scanner" --result "SUSPICIOUS" --color RED
-      send_notification "${SERVER_NAME}" "Suspicious processes detected on ${SERVER_NAME}" "alert"
+      send_notification "${SERVER_NAME} - Malware scanner alert" "$(security_process_scanner_alert_message "${proc_reasons}" "${proc_report}")" "alert"
       scan_status="Found Issues"
     elif [[ "${proc_result}" == "warning" ]]; then
       display --indent 2 --text "Process scanner" --result "WARNING" --color YELLOW
-    else
+    elif [[ "${proc_result}" == "false" ]]; then
       display --indent 2 --text "Process scanner" --result "CLEAN" --color GREEN
+    else
+      display --indent 2 --text "Process scanner" --result "ERROR" --color RED
+      scan_failed="true"
     fi
   fi
 

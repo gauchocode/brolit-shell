@@ -49,6 +49,11 @@ _security_tasks() {
 
   SCAN_STATUS="No Issues"
   local scan_failed="false"
+  local process_scanner_output
+  local process_scanner_line
+  local process_scanner_result
+  local process_scanner_reasons
+  local process_scanner_report
 
   for project_dir in "${PROJECTS_PATH}"/*; do
 
@@ -110,16 +115,27 @@ _security_tasks() {
   fi
 
   # Process Malware Scanner
-  if ! process_scanner_result="$(security_process_scanner)"; then
+  if ! process_scanner_output="$(security_process_scanner "machine")"; then
     log_event "error" "Process malware scan failed; result is not authoritative" "false"
     scan_failed="true"
     process_scanner_result="error"
+  else
+    process_scanner_line="${process_scanner_output##*$'\n'}"
+    if ! security_process_scanner_parse_machine_result "${process_scanner_line}"; then
+      log_event "error" "Process malware scan returned an invalid machine result" "false"
+      scan_failed="true"
+      process_scanner_result="error"
+    else
+      process_scanner_result="${PROCESS_SCANNER_PARSED_STATUS}"
+      process_scanner_reasons="${PROCESS_SCANNER_PARSED_REASONS}"
+      process_scanner_report="${PROCESS_SCANNER_PARSED_REPORT}"
+    fi
   fi
 
   if [[ ${process_scanner_result} == "true" ]]; then
 
-    log_event "warning" "Process scanner found suspicious activity! Please check result file." "false"
-    send_notification "${SERVER_NAME}" "Process malware scanner detected suspicious processes! Possible cryptominer or malware running. Check server immediately." "alert"
+    log_event "warning" "Process scanner found critical indicators. Report: ${process_scanner_report}" "false"
+    send_notification "${SERVER_NAME} - Malware scanner alert" "$(security_process_scanner_alert_message "${process_scanner_reasons}" "${process_scanner_report}")" "alert"
 
     SCAN_STATUS="Found Issues"
 
@@ -127,9 +143,14 @@ _security_tasks() {
 
     log_event "info" "Process scanner found only low-severity indicators (no alert sent)." "false"
 
-  else
+  elif [[ ${process_scanner_result} == "false" ]]; then
 
     log_event "info" "Process scanner has not found suspicious activity" "false"
+
+  else
+
+    log_event "error" "Process scanner result is not authoritative" "false"
+    scan_failed="true"
 
   fi
 

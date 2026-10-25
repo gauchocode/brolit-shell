@@ -131,14 +131,159 @@ function security_custom_scan() {
 }
 
 ################################################################################
+# Convert fixed process-scanner reason codes into notification-safe labels.
+#
+# Arguments:
+#  ${1} = Comma-separated fixed reason codes.
+#
+# Outputs:
+#  A human-readable summary containing only fixed labels.
+################################################################################
+
+function security_process_scanner_reason_summary() {
+
+  local reason_codes="${1}"
+  local reason
+  local -a reasons
+  local -a labels=()
+
+  IFS=',' read -ra reasons <<< "${reason_codes}"
+  for reason in "${reasons[@]}"; do
+    case "${reason}" in
+      unknown_deleted_executable) labels+=("unknown deleted executable") ;;
+      high_cpu_deleted_executable) labels+=("high-CPU process with deleted executable") ;;
+      high_cpu_mining_port) labels+=("high-CPU process using a mining-associated port") ;;
+      suspicious_process_name) labels+=("process matching a known miner signature") ;;
+      suspicious_network_port) labels+=("connection using a mining-associated port") ;;
+      hidden_temp_executable) labels+=("hidden executable in a temporary directory") ;;
+      suspicious_cron_download) labels+=("cron download command requiring review") ;;
+      suspicious_systemd_service) labels+=("systemd service matching a miner signature") ;;
+      suspicious_project_executable) labels+=("project executable matching a miner signature") ;;
+      suspicious_container_process) labels+=("container process matching a miner signature") ;;
+      suspicious_container_executable) labels+=("container executable matching a miner signature") ;;
+      "") ;;
+      *) labels+=("unclassified critical indicator") ;;
+    esac
+  done
+
+  if [[ ${#labels[@]} -eq 0 ]]; then
+    echo "unclassified critical indicator"
+  else
+    local summary
+    printf -v summary '%s; ' "${labels[@]}"
+    echo "${summary%; }"
+  fi
+
+}
+
+################################################################################
+# Build a process-scanner alert without including raw scanner evidence.
+#
+# Arguments:
+#  ${1} = Comma-separated fixed reason codes.
+#  ${2} = Validated server-local report path.
+#
+# Outputs:
+#  A notification-safe alert message.
+################################################################################
+
+function security_process_scanner_alert_message() {
+
+  local reason_codes="${1}"
+  local report_file="${2}"
+  local reason_summary
+
+  reason_summary="$(security_process_scanner_reason_summary "${reason_codes}")"
+  echo "Process malware scanner found critical indicators: ${reason_summary}. Review the server report: ${report_file}. Treat the finding as unverified until investigated."
+
+}
+
+################################################################################
+# Parse and validate the process-scanner machine protocol.
+#
+# Arguments:
+#  ${1} = status|comma-separated-reasons|report-path record.
+#
+# Outputs:
+#  Sets PROCESS_SCANNER_PARSED_STATUS, PROCESS_SCANNER_PARSED_REASONS and
+#  PROCESS_SCANNER_PARSED_REPORT. Returns nonzero for every malformed record.
+################################################################################
+
+function security_process_scanner_parse_machine_result() {
+
+  local record="${1}"
+  local status
+  local reasons
+  local report_file
+  local reports_dir="${BROLIT_RUNTIME_STATE_DIR:-${BROLIT_MAIN_DIR}}/reports"
+  local report_name
+  local reason
+  local -a reason_array
+  local reason_pattern='(unknown_deleted_executable|high_cpu_deleted_executable|high_cpu_mining_port|suspicious_process_name|suspicious_network_port|hidden_temp_executable|suspicious_cron_download|suspicious_systemd_service|suspicious_project_executable|suspicious_container_process|suspicious_container_executable)'
+
+  PROCESS_SCANNER_PARSED_STATUS=""
+  PROCESS_SCANNER_PARSED_REASONS=""
+  PROCESS_SCANNER_PARSED_REPORT=""
+
+  [[ "${record}" != *$'\n'* && "${record}" =~ ^[^|]*\|[^|]*\|[^|]*$ ]] || return 1
+  IFS='|' read -r status reasons report_file <<< "${record}"
+
+  [[ "${status}" == "true" || "${status}" == "warning" || "${status}" == "false" ]] || return 1
+  [[ "$(dirname -- "${report_file}")" == "${reports_dir}" ]] || return 1
+  report_name="$(basename -- "${report_file}")"
+  [[ "${report_name}" =~ ^process-malware-scan-[0-9]{8}_[0-9]{6}\.log$ ]] || return 1
+  [[ -f "${report_file}" && ! -L "${report_file}" ]] || return 1
+  [[ "$(tail -n 1 -- "${report_file}" 2>/dev/null)" == "SCAN_COMPLETE" ]] || return 1
+
+  if [[ "${status}" == "true" ]]; then
+    [[ "${reasons}" =~ ^${reason_pattern}(,${reason_pattern})*$ ]] || return 1
+    IFS=',' read -ra reason_array <<< "${reasons}"
+    for reason in "${reason_array[@]}"; do
+      case "${reason}" in
+        unknown_deleted_executable|high_cpu_deleted_executable|high_cpu_mining_port|suspicious_process_name|suspicious_network_port|hidden_temp_executable|suspicious_cron_download|suspicious_systemd_service|suspicious_project_executable|suspicious_container_process|suspicious_container_executable) ;;
+        *) return 1 ;;
+      esac
+    done
+  elif [[ -n "${reasons}" ]]; then
+    return 1
+  fi
+
+  PROCESS_SCANNER_PARSED_STATUS="${status}"
+  PROCESS_SCANNER_PARSED_REASONS="${reasons}"
+  PROCESS_SCANNER_PARSED_REPORT="${report_file}"
+
+}
+
+################################################################################
+# Decide whether the scanner may open its interactive remediation menu.
+#
+# Arguments:
+#  ${1} = Output mode.
+#  ${2} = Scanner status.
+#
+# Outputs:
+#  Returns zero only for an explicitly interactive critical scan.
+################################################################################
+
+function security_process_scanner_should_open_menu() {
+
+  local output_mode="${1}"
+  local scanner_status="${2}"
+
+  [[ "${output_mode}" == "interactive" && "${scanner_status}" == "true" ]]
+
+}
+
+################################################################################
 # Process Malware Scanner: Detects cryptominers and suspicious processes
 #
 # Arguments:
-#  none
+#  ${1} = output mode: "interactive" (default) or "machine"
 #
 # Outputs:
-#  "true" if critical malware signals found, "warning" if only
-#  low-severity indicators found, "false" if clean.
+#  Interactive mode: "true" if critical malware signals found, "warning" if
+#  only low-severity indicators found, "false" if clean.
+#  Machine mode: status|comma-separated fixed reason codes|report path.
 #
 # Notes:
 #  Severity tiers keep sensitivity without alarm fatigue: high CPU alone
@@ -150,15 +295,44 @@ function security_custom_scan() {
 
 function security_process_scanner() {
 
+  local output_mode="${1:-interactive}"
   local timestamp
+  local reports_dir
   local report_file
   local critical_found=false
   local warning_found=false
   local temp_results
+  local -a critical_reasons=()
+
+  if [[ "${output_mode}" != "interactive" && "${output_mode}" != "machine" ]]; then
+    echo "Invalid process scanner output mode" >&2
+    return 2
+  fi
+
+  local required_command
+  for required_command in awk basename crontab cut date dirname dpkg find getent grep head mktemp ps readlink sed systemctl tail wc; do
+    command -v "${required_command}" &>/dev/null || {
+      echo "Process scanner requires ${required_command}" >&2
+      return 2
+    }
+  done
+  if ! command -v ss &>/dev/null && ! command -v netstat &>/dev/null; then
+    echo "Process scanner requires ss or netstat" >&2
+    return 2
+  fi
 
   timestamp="$(date +%Y%m%d_%H%M%S)"
-  report_file="${BROLIT_RUNTIME_STATE_DIR:-${BROLIT_MAIN_DIR}}/reports/process-malware-scan-${timestamp}.log"
-  temp_results=$(mktemp)
+  reports_dir="${BROLIT_RUNTIME_STATE_DIR:-${BROLIT_MAIN_DIR}}/reports"
+  report_file="${reports_dir}/process-malware-scan-${timestamp}.log"
+  [[ -d "${reports_dir}" && ! -L "${reports_dir}" && ! -e "${report_file}" && ! -L "${report_file}" ]] || {
+    echo "Process scanner report path is unavailable or unsafe" >&2
+    return 2
+  }
+  temp_results="$(mktemp)" || return 2
+  (umask 077; : > "${report_file}") || {
+    rm -f "${temp_results}"
+    return 2
+  }
 
   log_subsection "Process Malware Scanner"
 
@@ -202,6 +376,7 @@ function security_process_scanner() {
     else
       echo "PID: ${pid} -> ${exe_target} - CRITICAL (unknown origin)" >>"${report_file}"
       critical_found=true
+      critical_reasons+=("unknown_deleted_executable")
     fi
   done < <(find /proc/*/exe -ls 2>/dev/null | grep -i "deleted" | awk '{print $9}' | sed 's|/proc/||; s|/exe||')
 
@@ -229,11 +404,13 @@ function security_process_scanner() {
       if [[ "${exe_target}" == *" (deleted)" ]]; then
         echo "PID ${high_cpu_pid} also has a deleted executable -> CRITICAL" >>"${report_file}"
         critical_found=true
+        critical_reasons+=("high_cpu_deleted_executable")
       fi
       pid_conns="$(ss -antp 2>/dev/null | grep "pid=${high_cpu_pid},")"
       if [[ -n "${pid_conns}" ]] && echo "${pid_conns}" | grep -Eq ':(3333|4444|5555|7777|14444)([^0-9]|$)'; then
         echo "PID ${high_cpu_pid} also talks to a mining port -> CRITICAL" >>"${report_file}"
         critical_found=true
+        critical_reasons+=("high_cpu_mining_port")
       fi
     done
   fi
@@ -264,6 +441,7 @@ function security_process_scanner() {
   if [[ -n "${suspicious_processes}" ]]; then
     echo "${suspicious_processes}" >>"${report_file}"
     critical_found=true
+    critical_reasons+=("suspicious_process_name")
   else
     echo "No suspicious process names found." >>"${report_file}"
   fi
@@ -282,6 +460,7 @@ function security_process_scanner() {
   if [[ -n "${suspicious_connections}" ]]; then
     echo "${suspicious_connections}" >>"${report_file}"
     critical_found=true
+    critical_reasons+=("suspicious_network_port")
   else
     echo "No suspicious network connections found." >>"${report_file}"
   fi
@@ -303,6 +482,7 @@ function security_process_scanner() {
   hidden_files_other=$(for dir in /opt /home/*/.config; do [[ -d "${dir}" ]] && find "${dir}" -name ".*" -type f -executable 2>/dev/null; done | wc -l)
   if [[ ${hidden_files_critical} -gt 0 ]]; then
     critical_found=true
+    critical_reasons+=("hidden_temp_executable")
   elif [[ ${hidden_files_other} -gt 0 ]]; then
     warning_found=true
   else
@@ -329,6 +509,7 @@ function security_process_scanner() {
     echo "No suspicious cron jobs found." >>"${report_file}"
   else
     critical_found=true
+    critical_reasons+=("suspicious_cron_download")
   fi
   echo "" >>"${report_file}"
 
@@ -337,6 +518,7 @@ function security_process_scanner() {
   if [[ -n "${suspicious_services}" ]]; then
     echo "${suspicious_services}" >>"${report_file}"
     critical_found=true
+    critical_reasons+=("suspicious_systemd_service")
   else
     echo "No suspicious systemd services found." >>"${report_file}"
   fi
@@ -362,6 +544,7 @@ function security_process_scanner() {
       echo "Suspicious executables found:" >>"${report_file}"
       echo "${suspicious_files}" >>"${report_file}"
       critical_found=true
+      critical_reasons+=("suspicious_project_executable")
     else
       echo "No suspicious executables found in host projects." >>"${report_file}"
     fi
@@ -415,6 +598,7 @@ function security_process_scanner() {
             echo "  ⚠️  Suspicious processes found:" >>"${report_file}"
             echo "${suspicious_container_procs}" >>"${report_file}"
             critical_found=true
+            critical_reasons+=("suspicious_container_process")
           fi
 
           # Check for suspicious executables in container (narrow miner
@@ -425,6 +609,7 @@ function security_process_scanner() {
             echo "  ⚠️  Suspicious files found:" >>"${report_file}"
             echo "${suspicious_container_files}" >>"${report_file}"
             critical_found=true
+            critical_reasons+=("suspicious_container_executable")
           fi
 
           linux_container_files=$(docker exec "${container_id}" find /var/www /app /usr/local /opt -type f -executable -name "*linux*" 2>/dev/null | head -5)
@@ -531,19 +716,38 @@ function security_process_scanner() {
   display --indent 8 --text "Full report: ${report_file}"
   log_event "info" "Full report saved to: ${report_file}" "false"
 
-  # Interactive menu for next steps (only on critical findings)
+  # A checked completion marker prevents a failed/partial report write from
+  # being represented as an authoritative scanner result.
+  if ! echo "SCAN_COMPLETE" >>"${report_file}"; then
+    rm -f "${temp_results}"
+    return 2
+  fi
+
+  # Interactive remediation is only appropriate when a person explicitly ran
+  # the menu. Cron/API tasks must never open whiptail or wait for a TTY.
+  local scanner_status="false"
   if [[ ${critical_found} == true ]]; then
+    scanner_status="true"
+  elif [[ ${warning_found} == true ]]; then
+    scanner_status="warning"
+  fi
+
+  if security_process_scanner_should_open_menu "${output_mode}" "${scanner_status}"; then
     security_scanner_action_menu "${report_file}"
   fi
 
-  # Return result: "true" = critical, "warning" = low-severity only,
-  # "false" = clean. Callers alert on "true" only.
-  if [[ ${critical_found} == true ]]; then
-    echo "true"
-  elif [[ ${warning_found} == true ]]; then
-    echo "warning"
+  if [[ "${output_mode}" == "machine" ]]; then
+    local reason
+    local reason_codes=""
+    local -A seen_reasons=()
+    for reason in "${critical_reasons[@]}"; do
+      [[ -n "${seen_reasons[${reason}]:-}" ]] && continue
+      seen_reasons["${reason}"]=1
+      reason_codes+="${reason_codes:+,}${reason}"
+    done
+    printf '%s|%s|%s\n' "${scanner_status}" "${reason_codes}" "${report_file}"
   else
-    echo "false"
+    echo "${scanner_status}"
   fi
 
 }
