@@ -143,70 +143,18 @@ function backup_project_all_enabled_methods() {
 
     local project_domain="${1}"
     local backup_status=0
+    local config_dir="${BROLIT_BORGMATIC_CONFIG_DIR:-/etc/borgmatic.d}"
+    local config_file="${config_dir}/${project_domain}.yml"
 
     log_event "info" "Starting multi-method backup for: ${project_domain}" "false"
 
     # Check if Borg is enabled
     if [[ ${BACKUP_BORG_STATUS} == "enabled" ]]; then
 
-        # Circuit breaker already tripped this run: the shared destination is
-        # down, not this project. Skip instead of hammering a dead repo.
-        if [[ ${BORG_REPO_UNAVAILABLE} -eq 1 ]]; then
-            log_event "info" "Skipping borg backup for ${project_domain}: repository unavailable this run (${BORG_FIRST_FAILURE_REASON})" "false"
-            display --indent 6 --text "- ${project_domain}" --result "SKIPPED" --color YELLOW
-            display --indent 8 --text "Repository unavailable this run: ${BORG_FIRST_FAILURE_REASON}" --tcolor YELLOW
-            borg_project_status_line="${project_domain};SKIPPED (repository unavailable)"
-            return 0
-        fi
-
         # Verify config file exists
-        if [[ -f "/etc/borgmatic.d/${project_domain}.yml" ]]; then
+        if [[ -f "${config_file}" ]]; then
 
-            log_event "info" "Running borgmatic backup for ${project_domain}" "false"
-            display --indent 6 --text "- Backing up ${project_domain} with borgmatic" --tcolor YELLOW
-
-            # Initialize the repository if it doesn't exist yet. Idempotent --
-            # initialize_repository() checks via a bounded manifest probe and is
-            # a no-op if the repo is already there. (The two calls this
-            # replaced, setup_project_directories() and
-            # initialize_repository_if_needed(), don't exist anywhere in the
-            # codebase -- every project whose repo wasn't already initialized
-            # by some other path silently never got one, and the nightly
-            # `borgmatic --stats` run below failed on it forever after.)
-            # Project-local failures do not imply a shared destination outage.
-            # The helper records only clear shared failures in the breaker.
-            if ! borg_initialize_for_backup "/etc/borgmatic.d/${project_domain}.yml"; then
-
-                local init_reason="${BORG_INIT_FAILURE_REASON:-unknown}"
-
-                log_event "error" "Borg repository unavailable for ${project_domain} (${init_reason}); skipping create attempt" "false"
-                display --indent 8 --text "Backup failed" --result "FAIL" --color RED
-                borg_project_status_line="${project_domain};FAIL (repository: ${init_reason})"
-
-                backup_status=1
-
-            else
-
-            # Run borgmatic backup
-            # NOTE: resolve the absolute command (cron PATH lacks pipx
-            # bin dir) and bound it with a timeout so a wedged borgmatic
-            # cannot keep this run alive indefinitely.
-            local borg_cmd
-            borg_cmd="$(_borgmatic_resolve_cmd)"
-            if [[ -z "${borg_cmd}" ]]; then
-                log_event "error" "Borgmatic executable not found via PATH, /root/.local/bin, pipx, or python3 -m" "false"
-                display --indent 8 --text "Backup failed" --result "FAIL" --color RED
-                backup_status=1
-            elif eval "timeout \"${BROLIT_BORG_BACKUP_TIMEOUT:-28800}\" ${borg_cmd} --config \"/etc/borgmatic.d/${project_domain}.yml\" --stats"; then
-                log_event "info" "Borgmatic backup completed for ${project_domain}" "false"
-                display --indent 8 --text "Backup completed" --result "DONE" --color GREEN
-            else
-                log_event "error" "Borgmatic backup failed for ${project_domain}" "false"
-                display --indent 8 --text "Backup failed" --result "FAIL" --color RED
-                backup_status=1
-            fi
-
-            fi
+            backup_borgmatic_config_once "${config_file}" "${project_domain}" || backup_status=1
 
         elif [[ -z "$(find "${PROJECTS_PATH}/${project_domain}" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]]; then
 
@@ -215,12 +163,14 @@ function backup_project_all_enabled_methods() {
             # project's docker-compose). Nothing to back up; not an error.
             log_event "info" "${project_domain} is an empty/alias project directory -- no backup needed" "false"
             display --indent 6 --text "- ${project_domain} (empty/alias project)" --result "SKIPPED" --color YELLOW
+            borg_project_status_line="${project_domain};SKIPPED (empty/alias project)"
 
         else
 
             # Config file missing - log warning
-            log_event "warning" "Borgmatic config missing for ${project_domain} at /etc/borgmatic.d/${project_domain}.yml" "false"
+            log_event "warning" "Borgmatic config missing for ${project_domain} at ${config_file}" "false"
             display --indent 6 --text "- No borgmatic config for ${project_domain}" --result "SKIP" --color YELLOW
+            borg_project_status_line="${project_domain};SKIPPED (borgmatic config missing)"
 
             # Fallback to traditional database backup for Docker projects
             if [[ -f "${PROJECTS_PATH}/${project_domain}/.env" ]]; then
@@ -342,6 +292,9 @@ log_subsection "Backup Projects with Multi-Method Support"
 borg_backup_result=0
 borg_failed_projects=()
 borg_backup_list=()
+BORG_CONFIG_DIR="${BROLIT_BORGMATIC_CONFIG_DIR:-/etc/borgmatic.d}"
+BORG_CONFIG_DIR="${BORG_CONFIG_DIR%/}"
+declare -A BORG_HANDLED_CONFIGS=()
 
 # Circuit-breaker state for an unreachable shared borg destination: after N
 # consecutive repository-init failures the rest of the run is skipped and the
@@ -361,6 +314,9 @@ for project_dir in "${PROJECTS_PATH}"/*/; do
         # Multi-method backup for each project
         backup_project_all_enabled_methods "${project_domain}"
         project_rc=$?
+
+        PROJECT_CONFIG="${BORG_CONFIG_DIR}/${project_domain}.yml"
+        [[ -f "${PROJECT_CONFIG}" ]] && BORG_HANDLED_CONFIGS["${PROJECT_CONFIG}"]=1
 
         # The function may set a detailed status line (e.g.
         # "domain;FAIL (repository: network)" or
@@ -393,20 +349,14 @@ done
 backup_all_files
 files_backup_result=$?
 
-# Backup All with Borg (runs borgmatic for all project configs if enabled)
+# Run custom/standalone configs that were not owned by a project directory.
+# Project configs were already executed above and must never run a second time.
 if [[ ${BACKUP_BORG_STATUS} == "enabled" ]]; then
-    if [[ ${BORG_REPO_UNAVAILABLE} -eq 1 ]]; then
-        # Destination already proven down this run; running the global pass
-        # would only reproduce the same failure and burn the full timeout.
-        log_event "info" "Skipping global borgmatic run: repository unavailable this run (${BORG_FIRST_FAILURE_REASON})" "false"
-        borg_backup_list+=("borgmatic-global;SKIPPED (repository unavailable)")
-    else
-        backup_all_files_with_borg
-        if [[ $? -ne 0 ]]; then
-            borg_backup_result=1
-            borg_failed_projects+=("borgmatic-global")
-            borg_backup_list+=("borgmatic-global;FAIL")
-        fi
+    backup_unhandled_borgmatic_configs BORG_HANDLED_CONFIGS borg_backup_result borg_failed_projects borg_backup_list
+    if ! check_borgmatic_config_coverage; then
+        borg_backup_result=1
+        borg_failed_projects+=("configuration-coverage")
+        borg_backup_list+=("configuration-coverage;FAIL")
     fi
 fi
 

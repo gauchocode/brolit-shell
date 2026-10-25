@@ -561,6 +561,187 @@ function backup_all_files() {
 }
 
 ################################################################################
+# Run one borgmatic configuration through the shared initialization gate.
+#
+# Arguments:
+#  ${1} = Absolute borgmatic configuration path.
+#  ${2} = Safe display/report label.
+#
+# Outputs:
+#  0 on completed backup or run-level breaker skip, 1 on failure. Sets
+#  borg_project_status_line for the caller's aggregate report.
+################################################################################
+
+function backup_borgmatic_config_once() {
+
+  local config_file="${1}"
+  local config_label="${2}"
+  local config_dir="${BROLIT_BORGMATIC_CONFIG_DIR:-/etc/borgmatic.d}"
+  local init_reason
+  local borg_cmd
+  local -a borg_cmd_parts
+
+  config_dir="${config_dir%/}"
+
+  borg_project_status_line=""
+
+  [[ -n "${config_label}" && -f "${config_file}" && "$(dirname -- "${config_file}")" == "${config_dir}" ]] || {
+    log_event "error" "Invalid borgmatic config route for ${config_label:-unknown}" "false"
+    borg_project_status_line="${config_label:-unknown};FAIL (invalid config route)"
+    return 1
+  }
+
+  if [[ ${BORG_REPO_UNAVAILABLE:-0} -eq 1 ]]; then
+    log_event "info" "Skipping borg backup for ${config_label}: repository unavailable this run (${BORG_FIRST_FAILURE_REASON:-unknown})" "false"
+    display --indent 6 --text "- ${config_label}" --result "SKIPPED" --color YELLOW
+    borg_project_status_line="${config_label};SKIPPED (repository unavailable)"
+    return 0
+  fi
+
+  log_event "info" "Running borgmatic backup for ${config_label}" "false"
+  display --indent 6 --text "- Backing up ${config_label} with borgmatic" --tcolor YELLOW
+
+  if ! borg_initialize_for_backup "${config_file}"; then
+    init_reason="${BORG_INIT_FAILURE_REASON:-unknown}"
+    log_event "error" "Borg repository unavailable for ${config_label} (${init_reason}); skipping create attempt" "false"
+    display --indent 8 --text "Backup failed" --result "FAIL" --color RED
+    borg_project_status_line="${config_label};FAIL (repository: ${init_reason})"
+    return 1
+  fi
+
+  borg_cmd="$(_borgmatic_resolve_cmd)"
+  if [[ -z "${borg_cmd}" ]]; then
+    log_event "error" "Borgmatic executable not found via PATH, /root/.local/bin, pipx, or python3 -m" "false"
+    display --indent 8 --text "Backup failed" --result "FAIL" --color RED
+    borg_project_status_line="${config_label};FAIL (borgmatic unavailable)"
+    return 1
+  fi
+
+  read -ra borg_cmd_parts <<< "${borg_cmd}"
+  if timeout "${BROLIT_BORG_BACKUP_TIMEOUT:-28800}" "${borg_cmd_parts[@]}" --config "${config_file}" --stats; then
+    log_event "info" "Borgmatic backup completed for ${config_label}" "false"
+    display --indent 8 --text "Backup completed" --result "DONE" --color GREEN
+    borg_project_status_line="${config_label};OK"
+    return 0
+  fi
+
+  log_event "error" "Borgmatic backup failed for ${config_label}" "false"
+  display --indent 8 --text "Backup failed" --result "FAIL" --color RED
+  borg_project_status_line="${config_label};FAIL"
+  return 1
+
+}
+
+################################################################################
+# Run top-level borgmatic configs not already handled by project routing.
+#
+# Arguments:
+#  ${1} = Name of associative array containing handled absolute config paths.
+#  ${2} = Name of aggregate numeric result variable (set to 1 on failure).
+#  ${3} = Name of aggregate failed-label array.
+#  ${4} = Name of aggregate status-line array.
+#
+# Outputs:
+#  Updates the referenced aggregate values; each unhandled config runs once.
+################################################################################
+
+function backup_unhandled_borgmatic_configs() {
+
+  local handled_name="${1}"
+  local result_name="${2}"
+  local failed_name="${3}"
+  local status_name="${4}"
+  local config_dir="${BROLIT_BORGMATIC_CONFIG_DIR:-/etc/borgmatic.d}"
+  local config_file
+  local config_label
+  local config_status
+  local status_line
+  local -n handled_ref="${handled_name}"
+  local -n result_ref="${result_name}"
+  local -n failed_ref="${failed_name}"
+  local -n status_ref="${status_name}"
+
+  config_dir="${config_dir%/}"
+  for config_file in "${config_dir}"/*.yml; do
+    [[ -f "${config_file}" ]] || continue
+    [[ -n "${handled_ref[${config_file}]:-}" ]] && continue
+
+    config_label="$(basename "${config_file}" .yml)"
+    backup_borgmatic_config_once "${config_file}" "${config_label}"
+    config_status=$?
+    status_line="${borg_project_status_line}"
+    borg_project_status_line=""
+
+    if [[ ${config_status} -ne 0 ]]; then
+      result_ref=1
+      failed_ref+=("${config_label}")
+      status_ref+=("${status_line:-${config_label};FAIL}")
+    else
+      status_ref+=("${status_line:-${config_label};OK}")
+    fi
+  done
+
+}
+
+################################################################################
+# Check borgmatic configuration coverage without executing a backup.
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  0 when at least one config exists and every non-empty project except html
+#  has one; 1 otherwise. Empty alias directories are intentionally skipped.
+################################################################################
+
+function check_borgmatic_config_coverage() {
+
+  local config_dir="${BROLIT_BORGMATIC_CONFIG_DIR:-/etc/borgmatic.d}"
+  local config_count
+  local project_dir
+  local project_name
+  local missing_count
+  local -a projects_without_config=()
+
+  config_dir="${config_dir%/}"
+
+  config_count=0
+  for project_dir in "${config_dir}"/*.yml; do
+    [[ -f "${project_dir}" ]] && config_count=$((config_count + 1))
+  done
+  if [[ ${config_count} -eq 0 ]]; then
+    log_event "error" "No borgmatic configuration files found in ${config_dir}" "false"
+    display --indent 6 --text "- Backup with Borg" --result "FAIL" --color RED
+    send_notification "Borg Backup Configuration Required" "No borgmatic configs found. Generate templates from IT UTILS menu option 16." "alert"
+    return 1
+  fi
+
+  if [[ -d "${PROJECTS_PATH}" ]]; then
+    for project_dir in "${PROJECTS_PATH}"/*/; do
+      [[ -d "${project_dir}" ]] || continue
+      project_name="$(basename "${project_dir}")"
+      [[ "${project_name}" == "html" ]] && continue
+      [[ -z "$(find "${project_dir}" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]] && continue
+      [[ -f "${config_dir}/${project_name}.yml" ]] || projects_without_config+=("${project_name}")
+    done
+  fi
+
+  missing_count=${#projects_without_config[@]}
+  if [[ ${missing_count} -eq 0 ]]; then
+    log_event "info" "Found ${config_count} borgmatic configuration(s); project coverage is complete" "false"
+    return 0
+  fi
+
+  log_event "warning" "${missing_count} non-empty project(s) without borgmatic configuration" "false"
+  for project_name in "${projects_without_config[@]}"; do
+    log_event "warning" "Missing borgmatic config for: ${project_name}" "false"
+  done
+  send_notification "Borg Backup: Missing Configurations" "${missing_count} non-empty project(s) without borgmatic config. Check logs for details." "alert"
+  return 1
+
+}
+
+################################################################################
 # Make all files Backup with Borg
 #
 # Arguments:

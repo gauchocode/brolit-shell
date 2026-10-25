@@ -60,9 +60,17 @@ function tests_suite_menu() {
       test_backup_project_resilience
       test_backup_subject_status
       test_process_scanner_notifications
+      test_borg_scheduled_routing || {
+        log_event "error" "Scheduled Borg routing regression tests failed" "false"
+        return 1
+      }
     fi
     if [[ ${chosen_tests_options} == *"01"* ]]; then
       test_borg_backup_database
+      test_borg_scheduled_routing || {
+        log_event "error" "Scheduled Borg routing regression tests failed" "false"
+        return 1
+      }
 
     fi
     if [[ ${chosen_tests_options} == *"02"* ]]; then
