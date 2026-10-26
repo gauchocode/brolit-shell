@@ -495,6 +495,7 @@ function mail_certificates_section() {
     # Initialize
     cert_status_icon="✅"
     email_cert_line=""
+    local real_warning_count=0
 
     all_sites="$(get_all_directories "${PROJECTS_PATH}")"
 
@@ -542,11 +543,31 @@ function mail_certificates_section() {
                 cert_days="$(certbot_certificate_valid_days "${domain}")"
 
                 if [[ -z "${cert_days}" ]]; then
-                    # GREY LABEL - No certificate
-                    email_cert_days_container=" <span style=\"color:white;background-color:#5d5d5d;border-radius:12px;padding:0 5px 0 5px;\">"
-                    email_cert_days="${email_cert_days_container} no certificate"
-                    cert_status_icon="⚠️"
-                    status_certs="WARNING"
+                    # A domain without a certificate is only a WARNING when
+                    # nginx is actually configured to serve it locally. Many
+                    # PROJECTS_PATH directories are docker-compose services,
+                    # internal agents, or backup aliases that never request a
+                    # certificate, so flagging them produces daily noise.
+                    local has_vhost=false
+                    if [[ -f "/etc/nginx/sites-enabled/${domain}" ]] || [[ -f "/etc/nginx/conf.d/${domain}.conf" ]]; then
+                        has_vhost=true
+                    elif command -v nginx &>/dev/null && nginx -T 2>/dev/null | grep -qE "server_name[^;]*[[:space:]]${domain}([[:space:]]|;|\$)"; then
+                        has_vhost=true
+                    fi
+
+                    if [[ "${has_vhost}" == "true" ]]; then
+                        # RED LABEL - expected certificate missing
+                        email_cert_days_container=" <span style=\"color:white;background-color:#df1d1d;border-radius:12px;padding:0 5px 0 5px;\">"
+                        email_cert_days="${email_cert_days_container} no certificate"
+                        cert_status_icon="⚠️"
+                        status_certs="WARNING"
+                        real_warning_count=$((real_warning_count + 1))
+                    else
+                        # GREY LABEL - no vhost, no certificate expected
+                        log_event "debug" "Skipping certificate warning for ${domain}: no nginx vhost" "false"
+                        email_cert_days_container=" <span style=\"color:white;background-color:#5d5d5d;border-radius:12px;padding:0 5px 0 5px;\">"
+                        email_cert_days="${email_cert_days_container} no certificate"
+                    fi
 
                 elif [[ "${cert_days}" == "EXPIRED" ]]; then
                     # RED LABEL - Expired
@@ -558,6 +579,7 @@ function mail_certificates_section() {
                     email_cert_days="${email_cert_days_container} EXPIRED"
                     cert_status_icon="⚠️"
                     status_certs="WARNING"
+                    real_warning_count=$((real_warning_count + 1))
 
                 else
                     # Certificate found - color based on days remaining
@@ -572,6 +594,7 @@ function mail_certificates_section() {
                         email_cert_days_container=" <span style=\"color:white;background-color:#df1d1d;border-radius:12px;padding:0 5px 0 5px;\">"
                         cert_status_icon="⚠️"
                         status_certs="WARNING"
+                        real_warning_count=$((real_warning_count + 1))
                     fi
 
                     email_cert_days="${email_cert_days_container}${cert_days} days"

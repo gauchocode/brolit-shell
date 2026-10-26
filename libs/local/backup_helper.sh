@@ -736,7 +736,9 @@ function check_borgmatic_config_coverage() {
   for project_name in "${projects_without_config[@]}"; do
     log_event "warning" "Missing borgmatic config for: ${project_name}" "false"
   done
-  send_notification "Borg Backup: Missing Configurations" "${missing_count} non-empty project(s) without borgmatic config. Check logs for details." "alert"
+  local missing_list
+  missing_list="$(printf '\n- %s' "${projects_without_config[@]}")"
+  send_notification "Borg Backup: Missing Configurations" "${missing_count} non-empty project(s) without borgmatic config:${missing_list}" "alert"
   return 1
 
 }
@@ -818,8 +820,12 @@ function backup_all_files_with_borg() {
 
       display --indent 8 --text "Run IT UTILS menu option 16 to generate configs" --tcolor YELLOW
 
+      # Build a readable list of projects without configs for the alert.
+      local missing_list
+      missing_list="$(printf '\n- %s' "${projects_without_config[@]}")"
+
       # Send notification about missing configs
-      send_notification "Borg Backup: Missing Configurations" "${missing_count} project(s) without borgmatic config. Check logs for details." "alert"
+      send_notification "Borg Backup: Missing Configurations" "${missing_count} project(s) without borgmatic config:${missing_list}" "alert"
     else
       display --indent 6 --text "- Backup with Borg (${config_count} projects)" --result "RUNNING" --color YELLOW
     fi
