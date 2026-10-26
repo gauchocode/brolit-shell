@@ -105,6 +105,32 @@ existing generator integration tests are separate evidence, not doctor evidence.
 - MySQL/MariaDB/PostgreSQL declarations always require operator review. Project
   names, proxies and `.env` existence do not prove intended database coverage.
 
+## Borgmatic compatibility evidence (2026-10-26)
+
+Checked against Borgmatic **1.9.14** and **2.1.7** (pip, disposable Ubuntu 24.04
+containers, network disconnected after install, synthetic profiles generated
+from `config/borg/borgmatic.template-default.yml`, a fake `borg` that only
+logs its arguments). `config validate --show` was used for interpolation and
+`--dry-run create` for runtime loading. Results were identical in both
+versions unless noted:
+
+| Doctor assumption | Result |
+|---|---|
+| An unused `constants.database: "${VAR}"` with `VAR` unset breaks the profile | Confirmed: runtime loading fails with "Cannot find variable … in environment" for the whole file. `config validate` does **not** resolve environment variables and accepts it. |
+| Deleting that single line repairs loading | Confirmed: the doctor's prospective bytes are identical to the generated template and load normally. |
+| `{now:…}` in `archive_name_format` reaches Borg untouched | Confirmed. |
+| A bare `{hostname}` that is a defined constant is a constant reference | Confirmed (constants are interpolated first). |
+| Constants are interpolated inside hooks | Confirmed (1.9.14 shell-quotes the substituted value). |
+| A constant referencing another constant | **Differs**: 1.9.14 resolves it transitively; 2.1.7 leaves `{database}` literal. The doctor treats any such reference as possible use, which is safe for both. |
+| `${VAR:-default}` | Supported by Borgmatic; the doctor reports `unsupported_profile` (conservative). |
+| `<<: !include` | Supported by Borgmatic; the doctor refuses tags (conservative) and suppresses every proposal in the run. |
+| Default discovery | Both load `/etc/borgmatic/config.yaml`, top-level `*.yaml`/`*.yml` in `/etc/borgmatic.d`, `/root/.config/borgmatic/config.yaml` and top-level `*.yaml`/`*.yml` in `/root/.config/borgmatic.d`; nested directories and other suffixes are ignored. The doctor inventories the same files and, conservatively, reports the ignored entries as `discovery_unsupported`. |
+| Hook keys | 2.1.7 deprecates `before_backup`/`after_backup`/`on_error` in favour of `commands:`. The doctor does not accept `commands:` yet, so profiles migrated to it are `unsupported_profile` (no proposal) until a separately reviewed extension. |
+
+This verifies the semantics the single proposal rule depends on for these two
+versions; it is not full Borgmatic schema validation, so the
+`borgmatic_semantics_uncertified` limitation stays in the protocol.
+
 ## Discovery and filesystem safety
 
 Production scope is exactly `/etc/borgmatic/config.yaml`, direct `.yml` and

@@ -23,7 +23,8 @@
 - [x] Round-2 fixes: descriptor swap, outer timeout guard, `RLIMIT_CORE`, per-profile `MemoryError`, unparsed-sibling suppression, hook guard (literal command word, constant expansion, more locations), `CapEff` test-mode check, wrapper `PATH` pin, tests (40), docs.
 - [x] Round-3 review (2026-10-26): request changes (minor).
 - [x] Round-3 fixes: hook guard on raw and expanded bodies, memoized constant expansion with one shared budget, one-shot-safe `main()`, absolute `DOCTOR_DIR`, wording, tests (43), docs.
-- [ ] Round-4 focused verification with no open findings.
+- [x] Round-4 focused verification (2026-10-26): clear to close Phase A after nit fixes.
+- [x] Borgmatic 1.9.14 / 2.1.7 semantics check (2026-10-26, user-approved; disposable containers, fake `borg`): rule premise and fix confirmed; differences recorded in `docs/backup-config-doctor.md`.
 
 ## Explicitly excluded
 
