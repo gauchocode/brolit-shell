@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:brolit:backup-config-doctor:1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["protocol_version", "doctor_version", "capability_profile", "parser_profile", "inspected_at", "outcome", "complete", "truncated", "findings", "profiles", "limitations"],
+  "properties": {
+    "protocol_version": {"const": "backup-config-doctor/1"},
+    "doctor_version": {"const": "0.2.0"},
+    "capability_profile": {"const": "flat-static-v1"},
+    "parser_profile": {"oneOf": [{"type": "null"}, {"type": "string", "pattern": "^pyyaml-safe/[0-9]{1,3}\\.[0-9]{1,3}$"}]},
+    "inspected_at": {"type": "string", "format": "date-time", "maxLength": 40},
+    "outcome": {"enum": ["complete", "partial", "failed", "unsupported"]},
+    "complete": {"type": "boolean"},
+    "truncated": {"type": "boolean"},
+    "findings": {"type": "array", "maxItems": 18, "items": {"$ref": "#/$defs/finding"}},
+    "profiles": {"type": "array", "maxItems": 64, "items": {"$ref": "#/$defs/profile"}},
+    "limitations": {
+      "const": ["static_checks_only", "borgmatic_semantics_uncertified", "explicit_config_paths_not_inspected", "hook_programs_not_inspected", "no_environment_resolution", "no_production_source_locality_policy", "no_execution_or_restore_evidence", "no_apply_authority"]
+    }
+  },
+  "$defs": {
+    "finding": {
+      "type": "object", "additionalProperties": false, "required": ["code", "message"],
+      "properties": {
+        "code": {"enum": ["yaml_invalid", "duplicate_key", "unsupported_profile", "inspection_incomplete", "discovery_unsupported", "filesystem_unsupported", "unresolved_constant", "constant_cycle", "environment_dependency_unavailable", "source_path_missing", "source_path_unknown", "database_mapping_ambiguous", "hook_intent_unknown", "unused_constant_candidate", "manual_review_required", "parser_unavailable", "invalid_invocation"]},
+        "message": {"enum": [
+          "Configuration is not valid supported YAML.",
+          "Duplicate mapping keys are not supported.",
+          "Input uses constructs outside the static profile.",
+          "Inspection could not establish complete evidence.",
+          "Discovery contains unsupported entries or shapes.",
+          "Filesystem identity or locality is not supported.",
+          "A constant reference cannot be resolved statically.",
+          "Constant references contain a cycle.",
+          "Process environment availability is not established.",
+          "An authorized local source path is absent.",
+          "Source path existence or locality is not established.",
+          "Database and project correspondence needs operator review.",
+          "Hook commands may read configuration outside static analysis.",
+          "An unused database constant blocks static resolution.",
+          "A safe proposal cannot be established automatically.",
+          "The tested safe parser dependency is unavailable.",
+          "Invocation is outside the supported command contract."
+        ]}
+      }
+    },
+    "proposal": {
+      "type": "object", "additionalProperties": false,
+      "required": ["proposal_id", "rule", "rule_version", "operation", "authority", "dry_run"],
+      "properties": {
+        "proposal_id": {"type": "string", "pattern": "^i_[0-9a-f]{32}$"},
+        "rule": {"const": "unused-database-constant"},
+        "rule_version": {"const": 1},
+        "operation": {"const": "remove unreferenced constants.database"},
+        "authority": {"const": "informational_only"},
+        "dry_run": {"const": "memory_only_validated"}
+      }
+    },
+    "profile": {
+      "type": "object", "additionalProperties": false,
+      "required": ["file", "location", "profile_id", "configuration_state", "complete", "findings", "proposal"],
+      "properties": {
+        "file": {"oneOf": [{"type": "null"}, {"type": "string", "pattern": "^[A-Za-z0-9._-]{1,128}$"}]},
+        "location": {"enum": ["etc_borgmatic", "etc_borgmatic_d", "root_config_borgmatic", "root_config_borgmatic_d"]},
+        "profile_id": {"type": "string", "pattern": "^p_[0-9a-f]{32}$"},
+        "configuration_state": {"enum": ["valid_for_supported_static_checks", "invalid", "ambiguous", "unsupported", "unknown"]},
+        "complete": {"type": "boolean"},
+        "findings": {"type": "array", "maxItems": 18, "items": {"$ref": "#/$defs/finding"}},
+        "proposal": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/proposal"}]}
+      }
+    }
+  }
+}
