@@ -556,12 +556,28 @@ function mail_certificates_section() {
                     fi
 
                     if [[ "${has_vhost}" == "true" ]]; then
-                        # RED LABEL - expected certificate missing
-                        email_cert_days_container=" <span style=\"color:white;background-color:#df1d1d;border-radius:12px;padding:0 5px 0 5px;\">"
-                        email_cert_days="${email_cert_days_container} no certificate"
-                        cert_status_icon="⚠️"
-                        status_certs="WARNING"
-                        real_warning_count=$((real_warning_count + 1))
+                        # A missing origin certificate is only a real problem
+                        # when this server is supposed to terminate TLS. Behind
+                        # Cloudflare it is expected, so it must not raise the
+                        # daily WARNING; a dead or moved domain gets an
+                        # actionable label instead of a bare "no certificate".
+                        local triage
+                        triage="$(certbot_domain_triage "${domain}")"
+                        if [[ "${triage}" == "cloudflare" ]]; then
+                            log_event "debug" "Skipping certificate warning for ${domain}: behind Cloudflare" "false"
+                            email_cert_days_container=" <span style=\"color:white;background-color:#5d5d5d;border-radius:12px;padding:0 5px 0 5px;\">"
+                            email_cert_days="${email_cert_days_container} CF fronted"
+                        else
+                            email_cert_days_container=" <span style=\"color:white;background-color:#df1d1d;border-radius:12px;padding:0 5px 0 5px;\">"
+                            if [[ "${triage}" == "nxdomain" || "${triage}" == "moved" ]]; then
+                                email_cert_days="${email_cert_days_container} ${triage}"
+                            else
+                                email_cert_days="${email_cert_days_container} no certificate"
+                            fi
+                            cert_status_icon="⚠️"
+                            status_certs="WARNING"
+                            real_warning_count=$((real_warning_count + 1))
+                        fi
                     else
                         # GREY LABEL - no vhost, no certificate expected
                         log_event "debug" "Skipping certificate warning for ${domain}: no nginx vhost" "false"
@@ -570,13 +586,18 @@ function mail_certificates_section() {
                     fi
 
                 elif [[ "${cert_days}" == "EXPIRED" ]]; then
-                    # RED LABEL - Expired
-                    # certbot reports "(INVALID: EXPIRED)" for these. Handled
-                    # explicitly instead of being fed to the arithmetic
-                    # comparison below, where a bareword resolves to 0 and
-                    # prints the meaningless "EXPIRED) days" label.
+                    # RED LABEL - Expired. The triage only changes the label:
+                    # an expired certificate behind Cloudflare still warns
+                    # (Full/strict would break the site), while a dead or moved
+                    # domain is reported with its actual cause.
+                    local triage
+                    triage="$(certbot_domain_triage "${domain}")"
                     email_cert_days_container=" <span style=\"color:white;background-color:#df1d1d;border-radius:12px;padding:0 5px 0 5px;\">"
-                    email_cert_days="${email_cert_days_container} EXPIRED"
+                    if [[ "${triage}" == "nxdomain" || "${triage}" == "moved" ]]; then
+                        email_cert_days="${email_cert_days_container} ${triage}"
+                    else
+                        email_cert_days="${email_cert_days_container} EXPIRED"
+                    fi
                     cert_status_icon="⚠️"
                     status_certs="WARNING"
                     real_warning_count=$((real_warning_count + 1))

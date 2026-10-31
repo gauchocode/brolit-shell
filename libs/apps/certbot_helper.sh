@@ -1295,6 +1295,104 @@ function certbot_show_domain_certificates_expiration_date() {
 }
 
 ################################################################################
+# Resolve a domain's A records (space separated, empty when it does not exist).
+# Kept separate so tests can override it without touching DNS.
+#
+# Arguments:
+#   ${1} = domain
+# Outputs:
+#   IPv4 addresses or empty string.
+################################################################################
+function _certbot_domain_ipv4() {
+
+    getent ahostsv4 "${1}" 2>/dev/null | awk '{print $1}' | sort -u | tr '\n' ' '
+
+}
+
+################################################################################
+# Check whether an IPv4 address belongs to Cloudflare's published ranges.
+#
+# Arguments:
+#   ${1} = IPv4 address
+# Outputs:
+#   "yes" or "no".
+################################################################################
+function _certbot_ip_is_cloudflare() {
+
+    awk -v ip="${1}" 'BEGIN {
+        n = split("104.16.0.0/13 172.64.0.0/13 108.162.192.0/18 131.0.72.0/22 141.101.64.0/18 162.158.0.0/15 173.245.48.0/20 188.114.96.0/20 190.93.240.0/20 197.234.240.0/22 198.41.128.0/17", ranges, " ")
+        split(ip, o, "."); addr = (((o[1] * 256) + o[2]) * 256 + o[3]) * 256 + o[4]
+        for (i = 1; i <= n; i++) {
+            split(ranges[i], c, "/"); split(c[1], b, "."); bits = c[2]
+            base = (((b[1] * 256) + b[2]) * 256 + b[3]) * 256 + b[4]
+            size = 2 ^ (32 - bits)
+            if (addr >= base && addr < base + size) { print "yes"; exit }
+        }
+        print "no"
+    }'
+
+}
+
+################################################################################
+# Public IPv4 of this server, used to detect sites that moved elsewhere.
+# CERTBOT_TRIAGE_PUBLIC_IP overrides discovery (tests, NATed setups).
+#
+# Arguments:
+#   none
+# Outputs:
+#   Public IPv4 or empty string when it cannot be determined.
+################################################################################
+function _certbot_public_ip() {
+
+    if [[ -n "${CERTBOT_TRIAGE_PUBLIC_IP:-}" ]]; then
+        echo "${CERTBOT_TRIAGE_PUBLIC_IP}"
+        return 0
+    fi
+    curl -4 -s --max-time 6 https://api.ipify.org 2>/dev/null \
+        || curl -4 -s --max-time 6 http://ipv4.icanhazip.com 2>/dev/null || true
+
+}
+
+################################################################################
+# Classify a domain for the certificate report. A missing or expired origin
+# certificate means very different things depending on where the domain lives:
+#
+#   nxdomain  - no A record at all: nothing to renew, candidate for cleanup.
+#   cloudflare - fronted by Cloudflare: no origin certificate is required.
+#   moved     - resolves to a different server than this one: stale vhost here.
+#   ok        - anything else.
+#
+# Arguments:
+#   ${1} = domain
+# Outputs:
+#   One of nxdomain, cloudflare, moved, ok.
+################################################################################
+function certbot_domain_triage() {
+
+    local domain="${1}"
+    local ips ip server_ip found
+
+    ips="$(_certbot_domain_ipv4 "${domain}")"
+    [[ -z "${ips}" ]] && { echo "nxdomain"; return 0; }
+
+    for ip in ${ips}; do
+        [[ "$(_certbot_ip_is_cloudflare "${ip}")" == "yes" ]] && { echo "cloudflare"; return 0; }
+    done
+
+    server_ip="$(_certbot_public_ip)"
+    if [[ -n "${server_ip}" ]]; then
+        found="no"
+        for ip in ${ips}; do
+            [[ "${ip}" == "${server_ip}" ]] && found="yes"
+        done
+        [[ "${found}" == "no" ]] && { echo "moved"; return 0; }
+    fi
+
+    echo "ok"
+
+}
+
+################################################################################
 # Get certificate state for a cert name
 #
 # Arguments:
