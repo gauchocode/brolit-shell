@@ -75,6 +75,17 @@ local function get_ssl_listen()
     return listen:gsub("%s+", "")
 end
 
+-- Build the HTTPS listen directive. When the stream/SNI-preread layer owns
+-- the public 443, this internal listener receives a PROXY protocol header
+-- and must accept it (see _openresty_generate_nginx_conf in the installer).
+local function ssl_listen_directive(ssl_listen)
+    local directive = ssl_listen .. " ssl http2"
+    if ssl_listen ~= DEFAULT_SSL_LISTEN then
+        directive = directive .. " proxy_protocol"
+    end
+    return directive
+end
+
 -- Check request Authorization header
 local function check_auth()
     local expected = get_api_token()
@@ -286,7 +297,7 @@ local function generate_redirect_block(main_domain, redirect_domains, ssl_listen
             block = block .. [[
 
 server {
-    listen ]] .. ssl_listen .. [[ ssl http2;
+    listen ]] .. ssl_listen_directive(ssl_listen) .. [[;
     server_name ]] .. domain .. [[;
 
     ssl_certificate ]] .. LETSENCRYPT_DIR .. [[/]] .. main_domain .. [[/fullchain.pem;
@@ -325,7 +336,7 @@ function _M.generate_config(data)
     local ssl_block = BROLIT_MARKER .. [[
 
 server {
-    listen ]] .. ssl_listen .. [[ ssl http2;
+    listen ]] .. ssl_listen_directive(ssl_listen) .. [[;
     server_name ]] .. domain .. [[;
 
     ssl_certificate ]] .. LETSENCRYPT_DIR .. [[/]] .. cert_name .. [[/fullchain.pem;
@@ -391,7 +402,7 @@ server {
         return BROLIT_MARKER .. [[
 
 server {
-    listen ]] .. ssl_listen .. [[ ssl http2;
+    listen ]] .. ssl_listen_directive(ssl_listen) .. [[;
     server_name ]] .. domain .. [[;
     root /var/www/]] .. domain .. [[;
     index index.php;

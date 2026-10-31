@@ -203,6 +203,9 @@ function _openresty_generate_nginx_conf() {
     # .ssl_listen for routes.lua to read).
     local fallback_http_location=""
     local stream_block=""
+    # Appended to "server_tokens off;" below, so it leaves no trace when there
+    # is no fallback upstream (and therefore no stream layer).
+    local realip_block=""
 
     if [[ -n "${fallback_upstream}" ]]; then
 
@@ -216,17 +219,39 @@ function _openresty_generate_nginx_conf() {
             proxy_set_header X-Forwarded-Proto $scheme;
         }'
 
+        # The stream layer hides the client address behind 127.0.0.1, so it
+        # speaks PROXY protocol to its backends. A listen with proxy_protocol
+        # only *accepts* that header ($proxy_protocol_addr): the realip module
+        # is still required for $remote_addr - and therefore for the
+        # X-Real-IP header sites receive - to carry the real client address.
+        realip_block='
+    # Restore the client address sent by the stream layer (PROXY protocol).
+    # Listeners without PROXY protocol (API on 8080, ACME on 80) are unaffected.
+    set_real_ip_from 127.0.0.1;
+    real_ip_header proxy_protocol;'
+
         stream_block='
 stream {
     map $ssl_preread_server_name $backend {
         include /usr/local/openresty/nginx/conf/stream-map.d/*.conf;
-        default '"${fallback_upstream}"':443;
+        # Unmanaged SNI goes to a local relay instead of straight to the
+        # fallback: this server speaks PROXY protocol to every backend, and
+        # the fallback must keep receiving plain TLS as before.
+        default 127.0.0.1:9443;
     }
 
     server {
         listen 443;
         proxy_pass $backend;
         ssl_preread on;
+        proxy_protocol on;
+    }
+
+    # Relay for the fallback upstream: strips the PROXY header so the
+    # fallback keeps working exactly as before.
+    server {
+        listen 127.0.0.1:9443 proxy_protocol;
+        proxy_pass '"${fallback_upstream}"':443;
     }
 }'
     fi
@@ -265,7 +290,7 @@ http {
 
     charset utf-8;
     types_hash_max_size 2048;
-    server_tokens off;
+    server_tokens off;${realip_block}
     client_max_body_size 200M;
 
     map \$http_upgrade \$connection_upgrade {
