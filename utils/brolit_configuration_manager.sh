@@ -71,8 +71,23 @@ function _brolit_configuration_load_server_config() {
     # through to for any domain it doesn't have a route for. Empty = off,
     # unrouted domains just get a 404 (today's default behavior).
     OPENRESTY_FALLBACK_UPSTREAM="$(json_read_field "${server_config_file}" "SERVER_CONFIG.openresty_fallback_upstream")"
+    # Optional: extra attempts a network-class Borg failure gets before the
+    # backup is declared failed, and the base backoff delay in seconds
+    # (exponential, capped at 300s). A night without a backup stays a failure;
+    # these only absorb transient network/storage refusals. Defaults: 2, 30.
+    declare -g BROLIT_BORG_NETWORK_RETRIES
+    declare -g BROLIT_BORG_NETWORK_RETRY_DELAY
+    # Environment wins over the JSON default, so ad-hoc runs can override.
+    if [[ -z "${BROLIT_BORG_NETWORK_RETRIES:-}" ]]; then
+        BROLIT_BORG_NETWORK_RETRIES="$(json_read_field "${server_config_file}" "SERVER_CONFIG.borg_network_retries")"
+    fi
+    [[ -z "${BROLIT_BORG_NETWORK_RETRIES}" ]] && BROLIT_BORG_NETWORK_RETRIES="2"
+    if [[ -z "${BROLIT_BORG_NETWORK_RETRY_DELAY:-}" ]]; then
+        BROLIT_BORG_NETWORK_RETRY_DELAY="$(json_read_field "${server_config_file}" "SERVER_CONFIG.borg_network_retry_delay")"
+    fi
+    [[ -z "${BROLIT_BORG_NETWORK_RETRY_DELAY}" ]] && BROLIT_BORG_NETWORK_RETRY_DELAY="30"
 
-    export SERVER_TIMEZONE SERVER_ROLE_WEBSERVER SERVER_ROLE_DATABASE SERVER_ADDITIONAL_IPS PROXMOX_MODE OPENRESTY_VM_IP OPENRESTY_VM_PASS OPENRESTY_API_TOKEN OPENRESTY_API_ALLOW_NETWORK OPENRESTY_FALLBACK_UPSTREAM
+    export SERVER_TIMEZONE SERVER_ROLE_WEBSERVER SERVER_ROLE_DATABASE SERVER_ADDITIONAL_IPS PROXMOX_MODE OPENRESTY_VM_IP OPENRESTY_VM_PASS OPENRESTY_API_TOKEN OPENRESTY_API_ALLOW_NETWORK OPENRESTY_FALLBACK_UPSTREAM BROLIT_BORG_NETWORK_RETRIES BROLIT_BORG_NETWORK_RETRY_DELAY
     #export UNATTENDED_UPGRADES
 
 }

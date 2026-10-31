@@ -572,6 +572,28 @@ function backup_all_files() {
 #  borg_project_status_line for the caller's aggregate report.
 ################################################################################
 
+################################################################################
+# Seconds to wait before retrying a network-class Borg failure. Exponential
+# backoff capped at 300s; BROLIT_BORG_NETWORK_RETRY_DELAY=0 disables the wait
+# (used by offline tests, or to retry immediately).
+#
+# Arguments:
+#   ${1} = retry index (1 for the first retry, 2 for the second, ...)
+#
+# Outputs:
+#   Prints the delay in seconds.
+################################################################################
+function _borg_network_retry_delay() {
+
+  local attempt="${1}"
+  local base="${BROLIT_BORG_NETWORK_RETRY_DELAY:-30}"
+  local delay=$(( base * (1 << (attempt - 1)) ))
+
+  [[ ${delay} -gt 300 ]] && delay=300
+  echo "${delay}"
+
+}
+
 function backup_borgmatic_config_once() {
 
   local config_file="${1}"
@@ -601,34 +623,88 @@ function backup_borgmatic_config_once() {
   log_event "info" "Running borgmatic backup for ${config_label}" "false"
   display --indent 6 --text "- Backing up ${config_label} with borgmatic" --tcolor YELLOW
 
-  if ! borg_initialize_for_backup "${config_file}"; then
-    init_reason="${BORG_INIT_FAILURE_REASON:-unknown}"
-    log_event "error" "Borg repository unavailable for ${config_label} (${init_reason}); skipping create attempt" "false"
+  # Network failures are retried with backoff before declaring the backup
+  # failed: a night without a backup stays a failure, but a transient route
+  # or storage-side refusal must not cost a whole night. Every other failure
+  # class keeps the previous single-attempt behaviour. Attempts budget:
+  # 1 + BROLIT_BORG_NETWORK_RETRIES (default 2, so 3 attempts total).
+  local attempt=1
+  local max_attempts=$(( ${BROLIT_BORG_NETWORK_RETRIES:-2} + 1 ))
+  local reason create_output delay create_status
+
+  # Numeric knobs come from SERVER_CONFIG or the environment; a malformed
+  # value must not turn into an arithmetic error or a silent zero.
+  [[ "${BROLIT_BORG_NETWORK_RETRIES:-2}" =~ ^[0-9]+$ ]] || BROLIT_BORG_NETWORK_RETRIES=2
+  [[ "${BROLIT_BORG_NETWORK_RETRY_DELAY:-30}" =~ ^[0-9]+$ ]] || BROLIT_BORG_NETWORK_RETRY_DELAY=30
+  max_attempts=$(( BROLIT_BORG_NETWORK_RETRIES + 1 ))
+
+  while true; do
+
+    if ! borg_initialize_for_backup "${config_file}"; then
+      init_reason="${BORG_INIT_FAILURE_REASON:-unknown}"
+      if [[ "${init_reason}" == "network" && ${attempt} -lt ${max_attempts} ]]; then
+        delay="$(_borg_network_retry_delay "${attempt}")"
+        log_event "warning" "Borg network failure for ${config_label} (attempt ${attempt}/${max_attempts}); retrying in ${delay}s" "false"
+        display --indent 8 --text "Network failure, retry ${attempt}/$((max_attempts - 1)) in ${delay}s" --tcolor YELLOW
+        sleep "${delay}"
+        attempt=$((attempt + 1))
+        continue
+      fi
+      log_event "error" "Borg repository unavailable for ${config_label} (${init_reason}); skipping create attempt" "false"
+      display --indent 8 --text "Backup failed" --result "FAIL" --color RED
+      borg_project_status_line="${config_label};FAIL (repository: ${init_reason})"
+      return 1
+    fi
+
+    borg_cmd="$(_borgmatic_resolve_cmd)"
+    if [[ -z "${borg_cmd}" ]]; then
+      log_event "error" "Borgmatic executable not found via PATH, /root/.local/bin, pipx, or python3 -m" "false"
+      display --indent 8 --text "Backup failed" --result "FAIL" --color RED
+      borg_project_status_line="${config_label};FAIL (borgmatic unavailable)"
+      return 1
+    fi
+
+    read -ra borg_cmd_parts <<< "${borg_cmd}"
+    create_status=0
+    create_output="$(timeout "${BROLIT_BORG_BACKUP_TIMEOUT:-28800}" "${borg_cmd_parts[@]}" --config "${config_file}" --stats 2>&1)" || create_status=$?
+    if [[ ${create_status} -eq 0 ]]; then
+      printf '%s\n' "${create_output}"
+      # Succeeding after network retries proves the destination is reachable:
+      # clear the run-level breaker, otherwise later projects would be
+      # SKIPPED while this one reported OK.
+      if [[ ${BORG_REPO_UNAVAILABLE:-0} -eq 1 ]]; then
+        log_event "info" "Borg repository reachable again for ${config_label}; clearing the run-level unavailable flag" "false"
+        BORG_REPO_UNAVAILABLE=0
+        BORG_FIRST_FAILURE_REASON=""
+      fi
+      log_event "info" "Borgmatic backup completed for ${config_label}" "false"
+      display --indent 8 --text "Backup completed" --result "DONE" --color GREEN
+      borg_project_status_line="${config_label};OK"
+      return 0
+    fi
+
+    printf '%s\n' "${create_output}"
+    reason="$(borg_init_failure_reason "${create_output}")"
+    # GNU timeout exits 124 without printing anything classifiable; mirror the
+    # init path and treat it as network unless config/relocation said otherwise.
+    if [[ ${create_status} -eq 124 && "${reason}" != "config" && "${reason}" != "relocation" ]]; then
+      reason="network"
+    fi
+    if [[ "${reason}" == "network" && ${attempt} -lt ${max_attempts} ]]; then
+      delay="$(_borg_network_retry_delay "${attempt}")"
+      log_event "warning" "Borgmatic network failure for ${config_label} (attempt ${attempt}/${max_attempts}); retrying in ${delay}s" "false"
+      display --indent 8 --text "Network failure, retry ${attempt}/$((max_attempts - 1)) in ${delay}s" --tcolor YELLOW
+      sleep "${delay}"
+      attempt=$((attempt + 1))
+      continue
+    fi
+
+    log_event "error" "Borgmatic backup failed for ${config_label} (${reason})" "false"
     display --indent 8 --text "Backup failed" --result "FAIL" --color RED
-    borg_project_status_line="${config_label};FAIL (repository: ${init_reason})"
+    borg_project_status_line="${config_label};FAIL"
     return 1
-  fi
 
-  borg_cmd="$(_borgmatic_resolve_cmd)"
-  if [[ -z "${borg_cmd}" ]]; then
-    log_event "error" "Borgmatic executable not found via PATH, /root/.local/bin, pipx, or python3 -m" "false"
-    display --indent 8 --text "Backup failed" --result "FAIL" --color RED
-    borg_project_status_line="${config_label};FAIL (borgmatic unavailable)"
-    return 1
-  fi
-
-  read -ra borg_cmd_parts <<< "${borg_cmd}"
-  if timeout "${BROLIT_BORG_BACKUP_TIMEOUT:-28800}" "${borg_cmd_parts[@]}" --config "${config_file}" --stats; then
-    log_event "info" "Borgmatic backup completed for ${config_label}" "false"
-    display --indent 8 --text "Backup completed" --result "DONE" --color GREEN
-    borg_project_status_line="${config_label};OK"
-    return 0
-  fi
-
-  log_event "error" "Borgmatic backup failed for ${config_label}" "false"
-  display --indent 8 --text "Backup failed" --result "FAIL" --color RED
-  borg_project_status_line="${config_label};FAIL"
-  return 1
+  done
 
 }
 
@@ -1911,13 +1987,9 @@ function backup_docker_project() {
 
     docker_compose_file="${PROJECTS_PATH}/${project_domain}/docker-compose.yaml"
     if [[ ! -f "${docker_compose_file}" ]]; then
-      # No compose file at the project root: the database step cannot run,
-      # but the FILES backup still can and must (the project may keep its
-      # compose file in a subdirectory - project_get_install_type accepts
-      # that). Warn and continue instead of aborting the whole backup.
-      log_event "warning" "docker-compose file not found at the project root for ${project_domain}; database backup skipped" "false"
-      display --indent 8 --text "No compose file at project root, skipping database" --tcolor YELLOW
-      has_database_service="false"
+      log_event "error" "Compose file not found at project root; database coverage is unknown" "false"
+      display --indent 8 --text "Compose database coverage unavailable" --tcolor RED
+      got_error=1
     fi
 
   fi
@@ -1929,13 +2001,29 @@ function backup_docker_project() {
   # the same compose file).
   has_database_service="false"
   local detected_databases
-  detected_databases="$(docker_list_project_databases "${docker_compose_file}")"
+  if [[ -f "${docker_compose_file}" ]]; then
+    if ! detected_databases="$(docker_list_project_databases "${docker_compose_file}")"; then
+      log_event "error" "Could not discover Compose database services" "false"
+      got_error=1
+      detected_databases=""
+    fi
+  else
+    detected_databases=""
+  fi
   [[ -n "${detected_databases}" ]] && has_database_service="true"
 
   # Read the .env file if it exists
   if [[ -f "${PROJECTS_PATH}/${project_domain}/.env" ]]; then
 
-    export $(grep -v '^#' "${PROJECTS_PATH}/${project_domain}/.env" | xargs)
+    # Calling bare `export` on an empty .env prints the entire environment,
+    # including credentials, to the backup output.
+    local env_assignments
+    env_assignments="$(grep -v '^#' "${PROJECTS_PATH}/${project_domain}/.env" | xargs)"
+    if [[ -n "${env_assignments}" ]]; then
+      # Preserve the existing simple dotenv handling; this is not a shell eval.
+      # shellcheck disable=SC2086
+      export -- ${env_assignments}
+    fi
     
     # Check for database variables in .env
     mysql_database_var="${MYSQL_DATABASE}"
@@ -2003,13 +2091,21 @@ function backup_docker_project() {
     while IFS=$'\t' read -r db_service db_engine_found; do
       [[ -z "${db_service}" ]] && continue
 
-      # Resolve the actual running container name via `docker compose ps`
-      # instead of assuming the old Compose v1 "${PROJECT_NAME}_<engine>"
-      # naming - modern Compose v2 defaults to "<compose-project>-<service>-1"
-      # (hyphens), which doesn't match when PROJECT_NAME isn't set in .env or
-      # doesn't match the compose project name.
-      db_service_container="$(docker compose -f "${docker_compose_file}" ps --format '{{.Name}}' "${db_service}" 2>/dev/null | head -1)"
-      [[ -z "${db_service_container}" ]] && db_service_container="${PROJECT_NAME}_${db_engine_found}"
+      # Do not guess which replica contains the required data. Resolve exactly
+      # one container, including stopped ones, and fail on missing/ambiguous state.
+      local container_names container_running
+      if ! container_names="$(docker compose -f "${docker_compose_file}" ps --all --format '{{.Name}}' "${db_service}" 2>/dev/null)" ||
+         [[ -z "${container_names}" || "${container_names}" == *$'\n'* ]]; then
+        log_event "error" "Database service container is missing or ambiguous; database backup failed" "false"
+        got_error=1
+        continue
+      fi
+      db_service_container="${container_names}"
+      if ! container_running="$(docker inspect -f '{{.State.Running}}' "${db_service_container}" 2>/dev/null)" || [[ "${container_running}" != "true" ]]; then
+        log_event "error" "Database service is stopped or its state is unavailable; database backup failed" "false"
+        got_error=1
+        continue
+      fi
 
       # Prefer the running container's own MYSQL_DATABASE/POSTGRES_DB - it's
       # the ground truth regardless of whether it came from .env, a
@@ -2019,12 +2115,20 @@ function backup_docker_project() {
       container_db_name=""
       if [[ -n "${db_service_container}" ]]; then
         if [[ ${db_engine_found} == "mysql" ]]; then
-          container_db_name="$(docker exec -i "${db_service_container}" printenv MYSQL_DATABASE 2>/dev/null)"
+          if ! container_db_name="$(docker exec -i "${db_service_container}" printenv MYSQL_DATABASE 2>/dev/null)"; then
+            container_db_name=""
+          fi
         else
-          container_db_name="$(docker exec -i "${db_service_container}" printenv POSTGRES_DB 2>/dev/null)"
+          if ! container_db_name="$(docker exec -i "${db_service_container}" printenv POSTGRES_DB 2>/dev/null)"; then
+            container_db_name=""
+          fi
         fi
       fi
-      [[ -z "${container_db_name}" ]] && container_db_name="${PROJECT_NAME}"
+      if [[ -z "${container_db_name}" ]]; then
+        log_event "error" "Database name unavailable in container; database backup failed" "false"
+        got_error=1
+        continue
+      fi
 
       docker_databases+=("${db_service}" "${db_engine_found}" "${db_service_container}" "${container_db_name}")
 
@@ -2057,7 +2161,7 @@ function backup_docker_project() {
     project_type="$(project_get_type "${PROJECTS_PATH}/${project_domain}")"
 
     # Only backup database if we have a database service and it's not an HTML project
-    if [[ ${has_database_service} == "true" && ${project_type} != "html" ]]; then
+    if [[ ${has_database_service} == "true" ]]; then
 
       # Disambiguate storage keys only when there's more than one real
       # database (${#docker_databases[@]} is 4x the entry count) - two
@@ -2084,25 +2188,11 @@ function backup_docker_project() {
         storage_key="${db_dbname}"
         [[ ${multi_db} == "true" ]] && storage_key="${project_name_for_key}_${db_service}"
 
-        # A stopped container cannot be dumped. This is normal: the delete
-        # flow stops the stack BEFORE the final backup so the files are
-        # consistent. Skip the database with a warning instead of failing
-        # the project (observed live 2026-10-20, where this aborted the
-        # whole project deletion).
+        # Recheck immediately before dumping; stopped or uncertain is failure.
         if [[ -n "${db_container}" ]]; then
           local container_running
-          container_running="$(docker inspect -f '{{.State.Running}}' "${db_container}" 2>/dev/null)"
-          if [[ "${container_running}" == "false" ]]; then
-            log_event "warning" "Container ${db_container} is not running; skipping database backup for ${db_dbname}" "false"
-            display --indent 8 --text "Container not running, database skipped" --tcolor YELLOW
-            continue
-          fi
-          if [[ -z "${container_running}" ]]; then
-            # The container state could not be read (docker daemon down,
-            # missing binary, permission). That is a real failure, not a
-            # stopped container: report it instead of silently skipping
-            # the database and showing DONE.
-            log_event "error" "Could not read the state of container ${db_container}; database backup for ${db_dbname} failed" "false"
+          if ! container_running="$(docker inspect -f '{{.State.Running}}' "${db_container}" 2>/dev/null)" || [[ "${container_running}" != "true" ]]; then
+            log_event "error" "Database container stopped or state unavailable; database backup failed" "false"
             display --indent 8 --text "Container state unavailable, database failed" --tcolor RED
             got_error=1
             continue
@@ -2146,10 +2236,11 @@ function backup_docker_project() {
 
     # Log
     log_break "false"
-    log_event "info" "Project backup finished!" "false"
     if [[ ${got_error} -eq 0 ]]; then
+      log_event "info" "Project backup finished!" "false"
       display --indent 6 --text "- Project Backup" --result "DONE" --color GREEN
     else
+      log_event "error" "Project backup failed or database coverage is uncertain" "false"
       display --indent 6 --text "- Project Backup" --result "FAIL" --color RED
       display --indent 8 --text "Some parts of the project backup failed" --tcolor RED
     fi
