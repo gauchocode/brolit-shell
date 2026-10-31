@@ -19,6 +19,7 @@ function test_borg_storage_remediation() (
     set -e
     local root tmp config_file rc
     root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+    mkdir --parents "${TMPDIR:-/tmp/opencode}"
     tmp="$(mktemp -d "${TMPDIR:-/tmp/opencode}/borg-remediation.XXXXXX")"
     trap 'rm --recursive --force -- "${tmp}"' EXIT
 

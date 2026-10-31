@@ -18,6 +18,7 @@ function test_borg_network_retries() (
     set -e
     local root tmp config_dir rc
     root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+    mkdir --parents "${TMPDIR:-/tmp/opencode}"
     tmp="$(mktemp -d "${TMPDIR:-/tmp/opencode}/borg-retries.XXXXXX")"
     trap 'rm --recursive --force -- "${tmp}"' EXIT
 
