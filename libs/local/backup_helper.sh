@@ -690,6 +690,10 @@ function backup_borgmatic_config_once() {
     if [[ ${create_status} -eq 124 && "${reason}" != "config" && "${reason}" != "relocation" ]]; then
       reason="network"
     fi
+    if [[ "${reason}" == "network" && -z "${BORG_RSH:-}" ]] && grep -qiE "network is unreachable|no route to host" <<<"${create_output}"; then
+      export BORG_RSH="ssh -4"
+      log_event "info" "No IPv6 route on this host; using BORG_RSH=ssh -4 for Borg retries" "false"
+    fi
     if [[ "${reason}" == "network" && ${attempt} -lt ${max_attempts} ]]; then
       delay="$(_borg_network_retry_delay "${attempt}")"
       log_event "warning" "Borgmatic network failure for ${config_label} (attempt ${attempt}/${max_attempts}); retrying in ${delay}s" "false"

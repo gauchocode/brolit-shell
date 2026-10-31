@@ -1146,6 +1146,10 @@ function borg_init_failure_reason() {
         echo "lock"
     elif echo "${lower}" | grep -qE "connection refused|connection reset|connection timed out|network is unreachable|temporary failure in name resolution|could not resolve hostname|no route to host|operation timed out|timed out|timeout"; then
         echo "network"
+    elif echo "${lower}" | grep -qE "parent path of the repo directory.*does not exist|parent directory.*does not exist"; then
+        echo "parent_missing"
+    elif echo "${lower}" | grep -qE "there is already something at"; then
+        echo "stale_lock"
     elif echo "${lower}" | grep -qE "permission denied|authentication failed|publickey|host key verification failed|too many authentication failures"; then
         echo "auth"
     elif echo "${lower}" | grep -qE "no space left on device|quota exceeded|disk quota"; then
@@ -1154,7 +1158,7 @@ function borg_init_failure_reason() {
         echo "python_env"
     elif echo "${lower}" | grep -qE "does not match existing repository encryption mode"; then
         echo "encryption_mismatch"
-    elif echo "${lower}" | grep -qE "repository [^[:space:]]+ does not exist|repository does not exist|repositorynotfound"; then
+    elif echo "${lower}" | grep -qE "repository [^[:space:]]+ does not exist|repository does not exist|repositorynotfound|not a valid repository"; then
         echo "repo_missing"
     else
         echo "unknown"
@@ -1243,6 +1247,195 @@ function borg_initialize_for_backup() {
 }
 
 ################################################################################
+# Split a Borg ssh:// URL into REPO_USER, REPO_HOST, REPO_PORT and REPO_PATH.
+# Accepts ssh://user@host[:port]/absolute/path (port defaults to 22).
+#
+# Arguments:
+#   ${1} = repository URL
+# Outputs:
+#   0 on success; values are exported in the REPO_* variables.
+################################################################################
+function _borg_parse_repo_url() {
+
+    local url="${1}"
+    local hostport raw_path
+
+    REPO_USER=""
+    REPO_HOST=""
+    REPO_PORT=""
+    REPO_PATH=""
+
+    [[ "${url}" == ssh://* ]] || return 1
+
+    REPO_USER="$(sed -E 's#^ssh://([^@]+)@.*#\1#' <<<"${url}")"
+    hostport="$(sed -E 's#^ssh://[^@]+@([^/]+)/.*#\1#' <<<"${url}")"
+    raw_path="$(sed -E 's#^ssh://[^@]+@[^/]+/(.*)#\1#' <<<"${url}")"
+    [[ -n "${REPO_USER}" && -n "${hostport}" && -n "${raw_path}" ]] || return 1
+
+    # Fail closed on anything that could widen the operation.
+    [[ "${raw_path}" != *[\*\?\[\]]* && "${raw_path}" != *".."* ]] || return 1
+
+    if [[ "${hostport}" == *:* ]]; then
+        REPO_HOST="${hostport%%:*}"
+        REPO_PORT="${hostport##*:}"
+    else
+        REPO_HOST="${hostport}"
+        REPO_PORT="22"
+    fi
+
+    # ssh://host/./path is relative to the remote login directory and must stay
+    # relative for SFTP; only ssh://host/abs/path is filesystem-absolute.
+    if [[ "${raw_path}" == ./* ]]; then
+        REPO_PATH="${raw_path}"
+    else
+        REPO_PATH="/${raw_path}"
+    fi
+
+    # Never operate on the root, a bare login directory, or a single segment.
+    [[ "${REPO_PATH}" != "/" && "${REPO_PATH}" != "./" && "${REPO_PATH}" != "." ]] || return 1
+    [[ "${REPO_PATH}" == */*/* || "${REPO_PATH}" == ./*/* ]] || return 1
+    return 0
+
+}
+
+################################################################################
+# Run one SFTP batch against a storage host (Hetzner Storage Box uses a
+# restricted shell, so directory work goes through SFTP, not ssh commands).
+#
+# Arguments:
+#   ${1} = user, ${2} = host, ${3} = port
+# Outputs:
+#   sftp output; commands are read from stdin.
+################################################################################
+function _borg_sftp_run() {
+
+    sftp -P "${3}" -oBatchMode=yes -oStrictHostKeyChecking=accept-new "${1}@${2}" 2>&1
+
+}
+
+################################################################################
+# Create the parent directories of a Borg repository on the storage host.
+# borg init refuses to create a repository when its parent path is missing,
+# which is exactly what happens for a host/group that never backed up before.
+# Each level is created independently so existing directories are harmless.
+#
+# Arguments:
+#   ${1} = repository URL (ssh://user@host[:port]/path)
+# Outputs:
+#   0 always (best effort), 1 on parse error.
+################################################################################
+function borg_storage_create_parent_dirs() {
+
+    local url="${1}"
+    local parent current part
+
+    _borg_parse_repo_url "${url}" || return 1
+
+    parent="$(dirname -- "${REPO_PATH}")"
+    # Relative repositories (ssh://host/./path) must keep the login-directory
+    # prefix instead of being joined as if they were filesystem-absolute.
+    local prefix=""
+    if [[ "${parent}" == ./* ]]; then
+        prefix="."
+        parent="${parent#./}"
+    fi
+    current=""
+    IFS='/' read -ra _borg_path_parts <<< "${parent}"
+    for part in "${_borg_path_parts[@]}"; do
+        [[ -z "${part}" ]] && continue
+        current="${current}/${part}"
+        printf 'mkdir %s\n' "${prefix}${current}" \
+            | _borg_sftp_run "${REPO_USER}" "${REPO_HOST}" "${REPO_PORT}" >/dev/null 2>&1 || true
+    done
+    return 0
+
+}
+
+################################################################################
+# Remove leftover Borg lock files from a directory that is NOT a repository.
+# A crashed/killed borg can leave only lock.roster (and friends) behind, which
+# makes borg init abort with "There is already something at ...". Guard: the
+# cleanup happens only when every entry in the directory is a lock file, so a
+# real repository can never be damaged.
+#
+# Arguments:
+#   ${1} = repository URL (ssh://user@host[:port]/path)
+# Outputs:
+#   0 if at least one lock file was removed, 1 otherwise.
+################################################################################
+################################################################################
+# Remove one stale lock entry. Plain files go away with rm; lock.exclusive is a
+# directory (it holds an owner file), so it is emptied and then removed with
+# rmdir. Any failure is reported instead of being swallowed.
+#
+# Arguments:
+#   ${1} = full remote path of the lock entry
+# Outputs:
+#   0 only when the entry no longer exists, 1 otherwise.
+################################################################################
+function _borg_sftp_remove_entry() {
+
+    local target="${1}"
+    local children child
+
+    if printf 'rm %s\n' "${target}" \
+        | _borg_sftp_run "${REPO_USER}" "${REPO_HOST}" "${REPO_PORT}" >/dev/null 2>&1; then
+        return 0
+    fi
+
+    # Directory-based lock: list its contents and remove them one by one.
+    children="$(printf 'ls -la %s\n' "${target}" \
+        | _borg_sftp_run "${REPO_USER}" "${REPO_HOST}" "${REPO_PORT}" \
+        | awk '{print $NF}' | grep -vE '^sftp>|/\.$|/\.\.$' || true)"
+    [[ -n "${children}" ]] || return 1
+
+    while read -r child; do
+        [[ -z "${child}" ]] && continue
+        printf 'rm %s\n' "${child}" \
+            | _borg_sftp_run "${REPO_USER}" "${REPO_HOST}" "${REPO_PORT}" >/dev/null 2>&1 || return 1
+    done <<< "${children}"
+
+    printf 'rmdir %s\n' "${target}" \
+        | _borg_sftp_run "${REPO_USER}" "${REPO_HOST}" "${REPO_PORT}" >/dev/null 2>&1 || return 1
+    return 0
+
+}
+
+function borg_storage_clear_stale_locks() {
+
+    local url="${1}"
+    local listing line name failures=0
+    local -a entries=()
+
+    _borg_parse_repo_url "${url}" || return 1
+
+    # ls -la so dotfiles and symlinks are seen too: nothing may slip past the
+    # guard just because of the listing format.
+    listing="$(printf 'ls -la %s\n' "${REPO_PATH}" | _borg_sftp_run "${REPO_USER}" "${REPO_HOST}" "${REPO_PORT}")"
+    [[ -n "${listing}" ]] || return 1
+
+    while IFS= read -r line; do
+        [[ "${line}" == sftp\>* ]] && continue
+        name="$(awk '{print $NF}' <<<"${line}")"
+        [[ -z "${name}" || "${name}" == */. || "${name}" == */.. ]] && continue
+        case "${name}" in
+            */lock.roster|*/lock|*/lock.exclusive) entries+=("${name}") ;;
+            *) return 1 ;;
+        esac
+    done <<< "${listing}"
+    [[ ${#entries[@]} -gt 0 ]] || return 1
+
+    for name in "${entries[@]}"; do
+        _borg_sftp_remove_entry "${name}" || failures=$((failures + 1))
+    done
+    [[ ${failures} -eq 0 ]] || return 1
+
+    log_event "info" "Removed ${#entries[@]} stale Borg lock entr(y/ies) on ${REPO_HOST}" "false"
+    return 0
+
+}
+
+################################################################################
 # Private: initialize the repository (or repositories) in a single borgmatic
 # config file, as one combined borgmatic call. Borgmatic aborts the whole
 # command on the first repository it can't reach/init -- fine for a
@@ -1307,6 +1500,38 @@ function _initialize_repository_for_config() {
         if [[ "${exitstatus}" -eq 124 && "${init_reason}" != "config" && "${init_reason}" != "relocation" ]]; then
             init_reason="network"
         fi
+        # Auto-remediate the two storage-side layouts borg init cannot get
+        # past on its own, then retry once. Both are idempotent and guarded.
+        if [[ "${init_reason}" == "parent_missing" || "${init_reason}" == "stale_lock" ]]; then
+            local repo_url remediated="false"
+            repo_url="$(grep -oE 'ssh://[A-Za-z0-9._~:/?#@=-]+' <<<"${init_output}" | head -1)"
+            if [[ -n "${repo_url}" ]]; then
+                if [[ "${init_reason}" == "parent_missing" ]]; then
+                    borg_storage_create_parent_dirs "${repo_url}" && remediated="true"
+                else
+                    borg_storage_clear_stale_locks "${repo_url}" && remediated="true"
+                fi
+            fi
+            if [[ "${remediated}" == "true" ]]; then
+                log_event "info" "Retrying repository initialization after ${init_reason} remediation" "false"
+                if init_output=$(eval 'timeout "${init_timeout}" '"${borg_cmd}"' init --encryption=none --config "${config_file}"' 2>&1); then
+                    exitstatus=0
+                else
+                    exitstatus=$?
+                fi
+                if [[ "${exitstatus}" -eq 0 ]]; then
+                    log_event "info" "Repository initialized successfully after remediation" "false"
+                    return 0
+                fi
+                init_reason="$(borg_init_failure_reason "${init_output}")"
+                # Same classification as the first attempt: a silent timeout is
+                # a network failure, so the caller's network retries still fire.
+                if [[ "${exitstatus}" -eq 124 && "${init_reason}" != "config" && "${init_reason}" != "relocation" ]]; then
+                    init_reason="network"
+                fi
+            fi
+        fi
+
         # A concurrent initializer may win the race. Config/trust failures
         # always outrank text that otherwise looks like an existing repository.
         if [[ "${init_reason}" == "encryption_mismatch" ]]; then
@@ -1317,6 +1542,14 @@ function _initialize_repository_for_config() {
             return 0
         fi
     fi
+    # A host with no IPv6 default route fails against dual-stack storage
+    # hosts with "Network is unreachable". Arm the caller's retries with IPv4
+    # instead of repeating the identical unreachable attempt.
+    if [[ "${init_reason}" == "network" && -z "${BORG_RSH:-}" ]] && grep -qiE "network is unreachable|no route to host" <<<"${init_output}"; then
+        export BORG_RSH="ssh -4"
+        log_event "info" "No IPv6 route on this host; using BORG_RSH=ssh -4 for Borg retries" "false"
+    fi
+
     BORG_INIT_FAILURE_REASON="${init_reason}"
     log_event "error" "Repository init failure class: ${init_reason}" "false"
     display --indent 8 --text "Failure class: ${init_reason}" --tcolor RED
