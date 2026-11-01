@@ -27,6 +27,12 @@ function test_certbot_domain_triage() (
     [[ "$(_certbot_ip_is_cloudflare 198.41.255.255)" == "yes" ]]
     [[ "$(_certbot_ip_is_cloudflare 198.42.0.1)" == "no" ]]
     [[ "$(_certbot_ip_is_cloudflare 5.161.246.86)" == "no" ]]
+    # Ranges that the certificate helper used to be missing: a proxied domain
+    # resolving into any of them was mislabelled "moved".
+    [[ "$(_certbot_ip_is_cloudflare 103.21.244.5)" == "yes" ]]
+    [[ "$(_certbot_ip_is_cloudflare 103.22.200.9)" == "yes" ]]
+    [[ "$(_certbot_ip_is_cloudflare 103.31.4.9)" == "yes" ]]
+    [[ "$(_certbot_ip_is_cloudflare 104.24.1.1)" == "yes" ]]
 
     # shellcheck disable=SC2317
     function _certbot_domain_ipv4() { echo "${TEST_DNS:-}"; }
@@ -47,8 +53,20 @@ function test_certbot_domain_triage() (
     TEST_DNS="203.0.113.10 5.161.246.86"
     [[ "$(certbot_domain_triage multi.example)" == "ok" ]]
 
-    # Public IP unknown: must not guess "moved".
+    # A secondary address configured for this host is local, not "moved".
+    SERVER_ADDITIONAL_IPS="5.161.246.86,10.9.8.7"
+    TEST_DNS="5.161.246.86"
+    [[ "$(certbot_domain_triage secondary.example)" == "ok" ]]
+    unset SERVER_ADDITIONAL_IPS
+
+    # A non-IP body from the discovery service must not become "the server
+    # IP": comparing it against DNS would label every domain "moved".
     unset CERTBOT_TRIAGE_PUBLIC_IP
+    # shellcheck disable=SC2317
+    function curl() { echo "<html>captive portal</html>"; }
+    [[ -z "$(_certbot_public_ip)" ]]
+
+    # Public IP unknown: must not guess "moved".
     # shellcheck disable=SC2317
     function _certbot_public_ip() { echo ""; }
     TEST_DNS="5.161.246.86"

@@ -25,6 +25,9 @@ function test_borg_no_db_template() (
     source "${root}/libs/local/borg_config_helper.sh"
     function project_get_install_type() { echo "default"; }
     function project_get_database_engine() { echo ""; }
+    # Present so the pre-opt-out failure is the database-name validation, not a
+    # missing function (which would make this test pass for the wrong reason).
+    function project_get_database_name() { echo "${TEST_DB:-}"; }
     function log_event() { :; }
 
     mkdir --parents "${tmp}/bin" "${tmp}/templates/config/borg" "${tmp}/www/site.example" "${tmp}/out"
@@ -43,6 +46,7 @@ function test_borg_no_db_template() (
 
     # Without an opt-out, a project with no database still takes the MySQL
     # template and fails because {database} cannot be resolved.
+    TEST_DB=""
     if ! status="$(generate_borg_config site.example "${tmp}/out" "${tmp}/www")"; then
         : # expected failure path, asserted below
     fi
@@ -56,6 +60,15 @@ function test_borg_no_db_template() (
     [[ -f "${tmp}/out/site.example.yml" ]]
     ! grep -q 'mysql_databases' "${tmp}/out/site.example.yml"
     ! grep -q '\${database}' "${tmp}/out/site.example.yml"
+
+    # Positive control: a resolvable database keeps the MySQL template and its
+    # constant, proving the opt-out is the only thing changing the choice.
+    rm -f "${tmp}/out/site.example.yml" "${tmp}/www/site.example/.env"
+    TEST_DB="realdb"
+    status="$(generate_borg_config site.example "${tmp}/out" "${tmp}/www")"
+    [[ "${status}" == "created" ]]
+    grep -q 'mysql_databases' "${tmp}/out/site.example.yml"
+    grep -q 'realdb' "${tmp}/out/site.example.yml"
 )
 
 test_borg_no_db_template

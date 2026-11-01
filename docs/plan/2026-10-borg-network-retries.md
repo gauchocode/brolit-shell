@@ -115,6 +115,19 @@ covered by tests:
 `repo-list` action, which the init gate uses as preflight); it is now on
 2.1.7 like the rest, with relocations accepted and repositories initialized.
 
+### Review follow-ups (2026-11-01, after the fleet rollout)
+
+- The `network` classifier no longer matches a bare `connection closed`: it
+  also matched sshd's `Connection closed by authenticating user ... [preauth]`,
+  so an auth refusal was retried three times and reported as a network fault.
+  The preauth form is now classified `auth`.
+- Retries of one project record a single consecutive failure for the run-level
+  breaker. Previously every attempt counted, so a three-attempt network failure
+  tripped the limit of 3 inside the first project and skipped every later one.
+- The retries knob is read into a local with a default so the arithmetic is
+  safe under `set -u` (the previous form only worked because cron does not use
+  `set -u`).
+
 ## Tests
 
 `tests/test_borg_network_retries.sh` (offline, fake borgmatic + stubbed init

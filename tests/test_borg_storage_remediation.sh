@@ -100,6 +100,32 @@ EOF
     [[ "$(borg_init_failure_reason 'Network is unreachable')" == "network" ]]
     [[ "$(borg_init_failure_reason 'Connection closed by remote host. Is borg working on the server?')" == "network" ]]
     [[ "$(borg_init_failure_reason 'ssh_exchange_identification: Connection closed by remote host')" == "network" ]]
+    # An sshd preauth refusal is an auth failure, not a transient network cut:
+    # retrying it three times only delays the correct diagnosis.
+    [[ "$(borg_init_failure_reason 'Connection closed by authenticating user root 1.2.3.4 port 40212 [preauth]')" == "auth" ]]
+
+    # Retrying one project records a single consecutive failure. Counting each
+    # attempt would trip the run-level breaker (limit 3) inside the first
+    # project and skip every later one. Isolated in a subshell so the stubs do
+    # not affect the remediation flows below.
+    (
+        BORG_REPO_INIT_FAILURES=0
+        BORG_REPO_UNAVAILABLE=0
+        BORG_FIRST_FAILURE_REASON=""
+        # shellcheck disable=SC2317
+        function initialize_repository() { return 1; }
+        # shellcheck disable=SC2317
+        function borg_repo_failure_limit() { echo 3; }
+        # shellcheck disable=SC2317
+        function send_notification() { :; }
+        BORG_INIT_FAILURE_REASON="network"
+        borg_initialize_for_backup "${config_file}" no || true
+        borg_initialize_for_backup "${config_file}" no || true
+        [[ "${BORG_REPO_INIT_FAILURES}" -eq 0 ]]
+        borg_initialize_for_backup "${config_file}" || true
+        [[ "${BORG_REPO_INIT_FAILURES}" -eq 1 ]]
+        [[ "${BORG_REPO_UNAVAILABLE}" -eq 0 ]]
+    )
 
     # Parent directories are created level by level, stopping at the parent.
     borg_storage_create_parent_dirs "ssh://u372319@u372319.your-storagebox.de:23/home/applications/g/h/site/x"

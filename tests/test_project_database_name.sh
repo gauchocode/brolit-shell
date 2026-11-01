@@ -42,6 +42,20 @@ function test_project_database_name() (
     : > "${tmp}/www/site.example/.env"
     [[ -z "$(project_get_database_name site.example docker-compose)" ]]
 
+    # Compose defaulting forms resolve from .env, or fall back to the default.
+    printf 'services:\n  db:\n    environment:\n      MYSQL_DATABASE: ${MYSQL_DATABASE:-fallback_db}\n' \
+        > "${tmp}/www/site.example/docker-compose.yml"
+    printf 'MYSQL_DATABASE=from_env\n' > "${tmp}/www/site.example/.env"
+    [[ "$(project_get_database_name site.example docker-compose)" == "from_env" ]]
+    : > "${tmp}/www/site.example/.env"
+    [[ "$(project_get_database_name site.example docker-compose)" == "fallback_db" ]]
+
+    # Compose applies the last assignment and tolerates CRLF / `export`.
+    printf 'services:\n  db:\n    environment:\n      MYSQL_DATABASE: ${MYSQL_DATABASE}\n' \
+        > "${tmp}/www/site.example/docker-compose.yml"
+    printf 'MYSQL_DATABASE=first_db\nexport MYSQL_DATABASE=last_db\r\n' > "${tmp}/www/site.example/.env"
+    [[ "$(project_get_database_name site.example docker-compose)" == "last_db" ]]
+
     # No compose file: the .env fallback still works.
     rm -f "${tmp}/www/site.example/docker-compose.yml"
     printf 'POSTGRES_DB=pg_db\n' > "${tmp}/www/site.example/.env"

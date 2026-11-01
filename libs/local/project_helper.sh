@@ -664,20 +664,28 @@ function project_get_database_name() {
         # A compose-level ${VAR} reference is not a database name. Resolve it
         # against the sibling .env instead of propagating the placeholder into
         # the generated borgmatic constants (which borgmatic then cannot
-        # interpolate, failing the whole project with class "config").
-        if [[ "${db_name}" =~ ^\$\{?[A-Za-z_][A-Za-z0-9_]*\}?$ ]]; then
-            local db_var="${db_name#\$}"
-            db_var="${db_var#\{}"
-            db_var="${db_var%\}}"
+        # interpolate, failing the whole project with class "config"). Compose
+        # also allows ${VAR:-default} / ${VAR-default}, so honour those too.
+        local db_var="" db_default=""
+        if [[ "${db_name}" =~ ^\$\{?([A-Za-z_][A-Za-z0-9_]*)\}?$ ]]; then
+            db_var="${BASH_REMATCH[1]}"
+        elif [[ "${db_name}" =~ ^\$\{([A-Za-z_][A-Za-z0-9_]*):?-([^}]*)\}$ ]]; then
+            db_var="${BASH_REMATCH[1]}"
+            db_default="${BASH_REMATCH[2]}"
+        fi
+
+        if [[ -n "${db_var}" ]]; then
+            db_name=""
             if [[ -f "${project_path}/.env" ]]; then
-                db_name="$(grep -E "^${db_var}=" "${project_path}/.env" 2>/dev/null | head -1 | cut -d '=' -f2- | tr -d "\"'")"
-            else
-                db_name=""
+                # Compose applies the last assignment; strip CRLF from files
+                # edited on Windows and tolerate an `export ` prefix.
+                db_name="$(grep -E "^(export[[:space:]]+)?${db_var}=" "${project_path}/.env" 2>/dev/null | tail -1 | cut -d '=' -f2- | tr -d "\"'" | tr -d '\r')"
             fi
+            [[ -n "${db_name}" ]] || db_name="${db_default}"
         fi
 
         if [[ -z "${db_name}" && -f "${project_path}/.env" ]]; then
-            db_name="$(grep -E '^(MYSQL_DATABASE|POSTGRES_DB)=' "${project_path}/.env" 2>/dev/null | head -1 | cut -d '=' -f2- | tr -d "\"'")"
+            db_name="$(grep -E '^(export[[:space:]]+)?(MYSQL_DATABASE|POSTGRES_DB)=' "${project_path}/.env" 2>/dev/null | tail -1 | cut -d '=' -f2- | tr -d "\"'" | tr -d '\r')"
         fi
 
     fi

@@ -628,19 +628,21 @@ function backup_borgmatic_config_once() {
   # or storage-side refusal must not cost a whole night. Every other failure
   # class keeps the previous single-attempt behaviour. Attempts budget:
   # 1 + BROLIT_BORG_NETWORK_RETRIES (default 2, so 3 attempts total).
-  local attempt=1
-  local max_attempts=$(( ${BROLIT_BORG_NETWORK_RETRIES:-2} + 1 ))
+  local attempt=1 retries="${BROLIT_BORG_NETWORK_RETRIES:-2}"
   local reason create_output delay create_status
 
   # Numeric knobs come from SERVER_CONFIG or the environment; a malformed
-  # value must not turn into an arithmetic error or a silent zero.
-  [[ "${BROLIT_BORG_NETWORK_RETRIES:-2}" =~ ^[0-9]+$ ]] || BROLIT_BORG_NETWORK_RETRIES=2
+  # value must not turn into an arithmetic error or a silent zero. The local
+  # copy also keeps this working under `set -u` when the knob is unset.
+  [[ "${retries}" =~ ^[0-9]+$ ]] || retries=2
   [[ "${BROLIT_BORG_NETWORK_RETRY_DELAY:-30}" =~ ^[0-9]+$ ]] || BROLIT_BORG_NETWORK_RETRY_DELAY=30
-  max_attempts=$(( BROLIT_BORG_NETWORK_RETRIES + 1 ))
+  local max_attempts=$(( retries + 1 ))
 
   while true; do
 
-    if ! borg_initialize_for_backup "${config_file}"; then
+    # Retries of the same project must not each count as a separate
+    # consecutive failure: record only the final outcome below.
+    if ! borg_initialize_for_backup "${config_file}" no; then
       init_reason="${BORG_INIT_FAILURE_REASON:-unknown}"
       if [[ "${init_reason}" == "network" && ${attempt} -lt ${max_attempts} ]]; then
         delay="$(_borg_network_retry_delay "${attempt}")"
@@ -650,11 +652,13 @@ function backup_borgmatic_config_once() {
         attempt=$((attempt + 1))
         continue
       fi
+      borg_record_init_result 1 "${init_reason}"
       log_event "error" "Borg repository unavailable for ${config_label} (${init_reason}); skipping create attempt" "false"
       display --indent 8 --text "Backup failed" --result "FAIL" --color RED
       borg_project_status_line="${config_label};FAIL (repository: ${init_reason})"
       return 1
     fi
+    borg_record_init_result 0 ""
 
     borg_cmd="$(_borgmatic_resolve_cmd)"
     if [[ -z "${borg_cmd}" ]]; then

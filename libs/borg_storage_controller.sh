@@ -1144,13 +1144,13 @@ function borg_init_failure_reason() {
         echo "relocation"
     elif echo "${lower}" | grep -qE "failed to create/acquire (the )?lock|lock.*\(timeout\)|repository is locked|lock.*held"; then
         echo "lock"
-    elif echo "${lower}" | grep -qE "connection refused|connection reset|connection timed out|network is unreachable|temporary failure in name resolution|could not resolve hostname|no route to host|operation timed out|timed out|timeout|connection closed|closed by remote host|broken pipe|ssh_exchange_identification|kex_exchange_identification|connection aborted"; then
+    elif echo "${lower}" | grep -qE "connection refused|connection reset|connection timed out|network is unreachable|temporary failure in name resolution|could not resolve hostname|no route to host|operation timed out|timed out|timeout|closed by remote host|broken pipe|ssh_exchange_identification|kex_exchange_identification|connection aborted"; then
         echo "network"
     elif echo "${lower}" | grep -qE "parent path of the repo directory.*does not exist|parent directory.*does not exist"; then
         echo "parent_missing"
     elif echo "${lower}" | grep -qE "there is already something at"; then
         echo "stale_lock"
-    elif echo "${lower}" | grep -qE "permission denied|authentication failed|publickey|host key verification failed|too many authentication failures"; then
+    elif echo "${lower}" | grep -qE "permission denied|authentication failed|publickey|host key verification failed|too many authentication failures|connection closed by authenticating user"; then
         echo "auth"
     elif echo "${lower}" | grep -qE "no space left on device|quota exceeded|disk quota"; then
         echo "space"
@@ -1232,17 +1232,20 @@ function borg_record_init_result() {
 # Initialize a project's repositories and record the actual classified result.
 # Arguments:
 #   ${1} = config_file
+#   ${2} = record (default yes). Pass "no" when the caller retries the same
+#          project: recording every attempt would count one transient host as
+#          several consecutive failures and trip the run-level breaker early.
 # Outputs:
 #   0 if usable, 1 otherwise; BORG_INIT_FAILURE_REASON is preserved for cron.
 #   Independent traditional backup scheduling is not changed by this gate.
 ################################################################################
 function borg_initialize_for_backup() {
-    local config_file="${1}"
+    local config_file="${1}" record="${2:-yes}"
     if initialize_repository "${config_file}"; then
-        borg_record_init_result 0 ""
+        [[ "${record}" == "yes" ]] && borg_record_init_result 0 ""
         return 0
     fi
-    borg_record_init_result 1 "${BORG_INIT_FAILURE_REASON:-unknown}"
+    [[ "${record}" == "yes" ]] && borg_record_init_result 1 "${BORG_INIT_FAILURE_REASON:-unknown}"
     return 1
 }
 

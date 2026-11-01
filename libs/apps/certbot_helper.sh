@@ -1320,7 +1320,7 @@ function _certbot_domain_ipv4() {
 function _certbot_ip_is_cloudflare() {
 
     awk -v ip="${1}" 'BEGIN {
-        n = split("104.16.0.0/13 172.64.0.0/13 108.162.192.0/18 131.0.72.0/22 141.101.64.0/18 162.158.0.0/15 173.245.48.0/20 188.114.96.0/20 190.93.240.0/20 197.234.240.0/22 198.41.128.0/17", ranges, " ")
+        n = split("173.245.48.0/20 103.21.244.0/22 103.22.200.0/22 103.31.4.0/22 141.101.64.0/18 108.162.192.0/18 190.93.240.0/20 188.114.96.0/20 197.234.240.0/22 198.41.128.0/17 162.158.0.0/15 104.16.0.0/13 104.24.0.0/14 172.64.0.0/13 131.0.72.0/22", ranges, " ")
         split(ip, o, "."); addr = (((o[1] * 256) + o[2]) * 256 + o[3]) * 256 + o[4]
         for (i = 1; i <= n; i++) {
             split(ranges[i], c, "/"); split(c[1], b, "."); bits = c[2]
@@ -1344,12 +1344,40 @@ function _certbot_ip_is_cloudflare() {
 ################################################################################
 function _certbot_public_ip() {
 
+    local ip
+
     if [[ -n "${CERTBOT_TRIAGE_PUBLIC_IP:-}" ]]; then
         echo "${CERTBOT_TRIAGE_PUBLIC_IP}"
         return 0
     fi
-    curl -4 -s --max-time 6 https://api.ipify.org 2>/dev/null \
-        || curl -4 -s --max-time 6 http://ipv4.icanhazip.com 2>/dev/null || true
+    # Never trust the body of these services: an error page, a captive portal
+    # or a plain-HTTP MITM would otherwise be compared against DNS and label
+    # every resolved non-Cloudflare domain as "moved".
+    ip="$(curl -4 -fsS --connect-timeout 3 --max-time 6 https://api.ipify.org 2>/dev/null \
+        || curl -4 -fsS --connect-timeout 3 --max-time 6 https://ipv4.icanhazip.com 2>/dev/null || true)"
+    [[ "${ip}" =~ ^((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])$ ]] || { echo ""; return 0; }
+    echo "${ip}"
+
+}
+
+################################################################################
+# Every IPv4 address this host answers on: the public one, addresses bound to
+# interfaces, and SERVER_CONFIG.additional_ips (managed hosts may serve sites
+# from a secondary address or behind an edge VM). Used so a vhost pointing at
+# a legitimate local address is never reported as "moved".
+#
+# Arguments:
+#   none
+# Outputs:
+#   Space-separated IPv4 addresses, one per line is not guaranteed; deduplicated.
+################################################################################
+function _certbot_local_ipv4() {
+
+    {
+        hostname -I 2>/dev/null | tr ' ' '\n'
+        ip -4 -o addr show scope global 2>/dev/null | awk '{ print $4 }' | cut -d/ -f1
+        echo "${SERVER_ADDITIONAL_IPS:-}" | tr ',;' '  ' | tr ' ' '\n'
+    } | grep -Eo '^((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])$' | sort -u
 
 }
 
@@ -1370,10 +1398,20 @@ function _certbot_public_ip() {
 function certbot_domain_triage() {
 
     local domain="${1}"
-    local ips ip server_ip found
+    local ips ip server_ip found local_ip local_ips
 
     ips="$(_certbot_domain_ipv4 "${domain}")"
-    [[ -z "${ips}" ]] && { echo "nxdomain"; return 0; }
+    if [[ -z "${ips}" ]]; then
+        # An AAAA-only host is alive, not dead: only report nxdomain when the
+        # name resolves to nothing at all, otherwise the report would suggest
+        # deleting a working site.
+        if getent ahostsv6 "${domain}" >/dev/null 2>&1; then
+            echo "ok"
+            return 0
+        fi
+        echo "nxdomain"
+        return 0
+    fi
 
     for ip in ${ips}; do
         [[ "$(_certbot_ip_is_cloudflare "${ip}")" == "yes" ]] && { echo "cloudflare"; return 0; }
@@ -1381,9 +1419,15 @@ function certbot_domain_triage() {
 
     server_ip="$(_certbot_public_ip)"
     if [[ -n "${server_ip}" ]]; then
+        # Secondary addresses and an edge VM are legitimate answers for a
+        # vhost on this host; comparing only against the primary public IP
+        # would report those sites as "moved".
+        local_ips="${server_ip} $(_certbot_local_ipv4)"
         found="no"
         for ip in ${ips}; do
-            [[ "${ip}" == "${server_ip}" ]] && found="yes"
+            for local_ip in ${local_ips}; do
+                [[ "${ip}" == "${local_ip}" ]] && found="yes"
+            done
         done
         [[ "${found}" == "no" ]] && { echo "moved"; return 0; }
     fi

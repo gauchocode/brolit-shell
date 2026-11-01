@@ -38,6 +38,20 @@ domains.
 the triage in the "no certificate with vhost" and "EXPIRED" branches. An
 unknown public IP never produces a `moved` verdict.
 
+### Review follow-ups (2026-11-01, after the fleet rollout)
+
+- `_certbot_public_ip` requires HTTP success and validates the body: an error
+  page, captive portal or plain-HTTP MITM used to become "the server IP" and
+  label every resolved, non-Cloudflare domain `moved`.
+- The Cloudflare ranges now match the canonical list in
+  `config/nginx/conf.d/cloudflare-real-ip.conf`; four ranges were missing and
+  a proxied domain resolving into them was mislabelled `moved`.
+- `moved` also considers `SERVER_ADDITIONAL_IPS` and interface addresses (a
+  vhost served from a secondary IP or the edge VM is not stale), and an
+  AAAA-only name is no longer reported as `nxdomain`.
+- The mail section resolves the public IP once per run instead of twice per
+  broken domain.
+
 ## Tests
 
 `tests/test_certbot_domain_triage.sh` (offline, stubbed resolver and public

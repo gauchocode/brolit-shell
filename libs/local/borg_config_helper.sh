@@ -27,6 +27,13 @@ function generate_borg_config() (
     trap '[[ -z "${stage}" ]] || rm --force -- "${stage}"' EXIT
     trap 'exit 1' HUP INT TERM
     if [[ -e "${yml_file}" || -L "${yml_file}" ]]; then
+        # An existing config is never overwritten. Warn when it contradicts the
+        # project's no-database opt-out, otherwise the operator keeps an invalid
+        # config and the run keeps failing with a generic class "config".
+        if [[ -f "${project_dir}/.env" ]] && grep -qE '^BROLIT_DB_ENGINE=none$' "${project_dir}/.env" \
+            && grep -qE 'mysql_databases|\$\{database\}' "${yml_file}"; then
+            log_event "warning" "Existing borgmatic config for ${project_name} still has a database section but the project opts out (BROLIT_DB_ENGINE=none); remove ${yml_file} to regenerate it" "false"
+        fi
         echo "exists"
         return 0
     fi
@@ -45,12 +52,7 @@ function generate_borg_config() (
         fi
     fi
     project_install_type="$(project_get_install_type "${project_dir}" 2>/dev/null)" || project_install_type="unknown"
-    # Explicit opt-out for projects with no database (MinIO/S3, static sites):
-    # an empty engine would otherwise fall back to the MySQL template and emit
-    # a mysql_databases section whose ${database} constant cannot resolve.
-    if [[ -f "${project_dir}/.env" ]] && grep -qE '^BROLIT_DB_ENGINE=none$' "${project_dir}/.env"; then
-        template_file="borgmatic.template-default.yml"
-    elif [[ "${project_install_type}" == "default" ]]; then
+    if [[ "${project_install_type}" == "default" ]]; then
         db_engine="$(project_get_database_engine "${project_name}" "${project_install_type}" 2>/dev/null)" || db_engine=""
         template_file="borgmatic.template-${db_engine:-mysql}.yml"
     elif [[ "${project_install_type}" == docker* ]]; then
@@ -63,6 +65,19 @@ function generate_borg_config() (
     if [[ ! -f "${template_file}" ]]; then
         echo "failed"
         return 1
+    fi
+    # Explicit opt-out for projects with no database (MinIO/S3, static sites):
+    # an undetected engine falls back to the MySQL template and emits a
+    # mysql_databases section whose ${database} constant cannot resolve. Swap
+    # only database-aware templates so docker projects keep their log-capture
+    # and notification hooks.
+    if grep -qE '^BROLIT_DB_ENGINE=none$' "${project_dir}/.env" 2>/dev/null && grep -qF '{database}' "${template_file}"; then
+        log_event "info" "Project ${project_name} opts out of database dumps (BROLIT_DB_ENGINE=none); using the no-database borgmatic template" "false"
+        template_file="${BROLIT_MAIN_DIR}/config/borg/borgmatic.template-default.yml"
+        if [[ ! -f "${template_file}" ]]; then
+            echo "failed"
+            return 1
+        fi
     fi
     # Only database-aware templates need detection. Never interpret expressions.
     if grep -qF '{database}' "${template_file}"; then

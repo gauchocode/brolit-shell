@@ -492,6 +492,16 @@ function mail_certificates_section() {
     fi
     log_event "debug" "Local TLS termination: ${tls_local}" "false"
 
+    # Resolve the public IP once for the whole section: certbot_domain_triage
+    # runs inside command substitution (a subshell), so a cache inside the
+    # helper would not survive between domains and each broken domain would
+    # pay two curl calls inside the nightly mail.
+    if [[ -z "${CERTBOT_TRIAGE_PUBLIC_IP:-}" ]]; then
+        local detected_public_ip
+        detected_public_ip="$(_certbot_public_ip)"
+        [[ -z "${detected_public_ip}" ]] || export CERTBOT_TRIAGE_PUBLIC_IP="${detected_public_ip}"
+    fi
+
     # Initialize
     cert_status_icon="✅"
     email_cert_line=""
