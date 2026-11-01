@@ -45,7 +45,12 @@ function generate_borg_config() (
         fi
     fi
     project_install_type="$(project_get_install_type "${project_dir}" 2>/dev/null)" || project_install_type="unknown"
-    if [[ "${project_install_type}" == "default" ]]; then
+    # Explicit opt-out for projects with no database (MinIO/S3, static sites):
+    # an empty engine would otherwise fall back to the MySQL template and emit
+    # a mysql_databases section whose ${database} constant cannot resolve.
+    if [[ -f "${project_dir}/.env" ]] && grep -qE '^BROLIT_DB_ENGINE=none$' "${project_dir}/.env"; then
+        template_file="borgmatic.template-default.yml"
+    elif [[ "${project_install_type}" == "default" ]]; then
         db_engine="$(project_get_database_engine "${project_name}" "${project_install_type}" 2>/dev/null)" || db_engine=""
         template_file="borgmatic.template-${db_engine:-mysql}.yml"
     elif [[ "${project_install_type}" == docker* ]]; then

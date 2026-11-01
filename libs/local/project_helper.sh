@@ -661,6 +661,21 @@ function project_get_database_name() {
             [[ -n "${db_name}" ]] && break
         done
 
+        # A compose-level ${VAR} reference is not a database name. Resolve it
+        # against the sibling .env instead of propagating the placeholder into
+        # the generated borgmatic constants (which borgmatic then cannot
+        # interpolate, failing the whole project with class "config").
+        if [[ "${db_name}" =~ ^\$\{?[A-Za-z_][A-Za-z0-9_]*\}?$ ]]; then
+            local db_var="${db_name#\$}"
+            db_var="${db_var#\{}"
+            db_var="${db_var%\}}"
+            if [[ -f "${project_path}/.env" ]]; then
+                db_name="$(grep -E "^${db_var}=" "${project_path}/.env" 2>/dev/null | head -1 | cut -d '=' -f2- | tr -d "\"'")"
+            else
+                db_name=""
+            fi
+        fi
+
         if [[ -z "${db_name}" && -f "${project_path}/.env" ]]; then
             db_name="$(grep -E '^(MYSQL_DATABASE|POSTGRES_DB)=' "${project_path}/.env" 2>/dev/null | head -1 | cut -d '=' -f2- | tr -d "\"'")"
         fi
@@ -2536,6 +2551,126 @@ function project_install() {
 }
 
 ################################################################################
+# Detect recognizable Compose files or COMPOSE_FILE declarations recursively,
+# including hidden directories. This is not proof of complete exclusion.
+#
+# Arguments:
+#   ${1} = project directory
+#
+# Outputs:
+#   0 if a hint is found, 1 if none found, 2 on an inspection error.
+################################################################################
+function project_has_unsupported_compose_file() {
+  local dir_path="${1}"
+  local found env_results
+  [[ -d "${dir_path}" && ! -L "${dir_path}" ]] || return 2
+  # Do not follow directory symlinks out of the project. Match symlinked
+  # Compose files as hints, including dangling links, without opening them.
+  found="$(find -P "${dir_path}" \( -name 'docker-compose.yml' -o -name 'docker-compose.yaml' -o -name 'compose.yml' -o -name 'compose.yaml' -o -name 'docker-compose.*.yml' -o -name 'docker-compose.*.yaml' -o -name 'compose.*.yml' -o -name 'compose.*.yaml' -o -name 'docker-compose-*.yml' -o -name 'docker-compose-*.yaml' -o -name 'compose-*.yml' -o -name 'compose-*.yaml' \) ! -type d -print -quit 2>/dev/null)" || return 2
+  [[ -n "${found}" ]] && return 0
+
+  # Compose can select an arbitrary filename using COMPOSE_FILE. Inspect .env
+  # files without printing their contents; inaccessible files are uncertain.
+  env_results="$(find -P "${dir_path}" -name .env ! -type d -exec sh -c '
+    for file do
+      if [ ! -f "$file" ]; then printf "ERROR\n"; continue; fi
+      LC_ALL=C grep -qE "^[[:space:]]*(export[[:space:]]+)?COMPOSE_FILE[[:space:]]*=" -- "$file" 2>/dev/null
+      status=$?
+      if [ "$status" -eq 0 ]; then printf "MATCH\n"; elif [ "$status" -ne 1 ]; then printf "ERROR\n"; fi
+    done
+  ' sh {} + 2>/dev/null)" || return 2
+  [[ "${env_results}" == *ERROR* ]] && return 2
+  [[ "${env_results}" == *MATCH* ]] && return 0
+  return 1
+}
+
+################################################################################
+# Check the deletion gate; uncertainty is treated as unsafe.
+#
+# Arguments:
+#   ${1} = project directory, ${2} = installation type
+#
+# Outputs:
+#   0 if no known Compose hint was found, 1 if blocked or inspection failed.
+################################################################################
+function project_compose_deletion_safe() {
+  local dir_path="${1}" install_type="${2}" status
+  [[ "${install_type}" == docker* ]] && return 1
+  if project_has_unsupported_compose_file "${dir_path}"; then
+    return 1
+  else
+    status=$?
+  fi
+  [[ ${status} -eq 1 ]]
+}
+
+################################################################################
+# Inspect runtime mounts associated with a project directory. This is an
+# informational inventory, not proof of coverage or permission to delete.
+# Output contains paths and volume names and must be treated as sensitive.
+#
+# Arguments:
+#   ${1} = existing project directory
+#
+# Outputs:
+#   JSON inventory on success; nonzero if runtime inspection is incomplete.
+################################################################################
+function project_compose_runtime_inventory() {
+  local project_dir ids id record records='' result
+  project_dir="$(realpath -e -- "${1}")" || return 1
+  [[ -d "${project_dir}" ]] || return 1
+  command -v docker >/dev/null 2>&1 && command -v jq >/dev/null 2>&1 || return 1
+  ids="$(docker ps --all --quiet --no-trunc 2>/dev/null)" || return 1
+  while IFS= read -r id; do
+    [[ -z "${id}" ]] && continue
+    [[ "${id}" =~ ^[a-f0-9]{12,64}$ ]] || return 1
+    # Explicitly select fields: never fetch environment, command or other
+    # container configuration that may contain credentials.
+    record="$(docker inspect --format '{"id":{{json .Id}},"project":{{json (index .Config.Labels "com.docker.compose.project")}},"working_dir":{{json (index .Config.Labels "com.docker.compose.project.working_dir")}},"config_files":{{json (index .Config.Labels "com.docker.compose.project.config_files")}},"mounts":{{json .Mounts}}}' "${id}" 2>/dev/null)" || return 1
+    [[ -n "${record}" ]] || return 1
+    records+="${record}"$'\n'
+  done <<< "${ids}"
+  result="$(printf '%s' "${records}" | jq -s -e --arg dir "${project_dir}" '
+    def within($root): . == $root or startswith($root + "/");
+    def related: (.working_dir | type == "string" and within($dir)) or
+      any(.mounts[]; .Type == "bind" and (.Source | type == "string" and within($dir)));
+    if any(.[]; (type != "object") or (.id | type != "string" or length == 0) or
+       (.mounts | type != "array") or any(.mounts[]; (.Type != "bind" and .Type != "volume" and .Type != "tmpfs") or
+         (.Destination | type != "string" or length == 0) or
+         (if .Type == "bind" then (.Source | (type != "string") or ((startswith("/")) | not))
+          elif .Type == "volume" then (.Name | type != "string" or length == 0) else false end)))
+    then error("incomplete runtime inspection") else . end |
+    . as $all | [ .[] | select(related) ] as $matched |
+    if any($matched[]; (.project | type != "string" or length == 0) or
+      (.working_dir | (type != "string") or ((startswith("/")) | not)) or
+      (.config_files | type != "string" or length == 0))
+    then error("ambiguous compose context") else
+      {coverage: "unverified", exclusion: "not_proven", containers: [$matched[] | . as $container |
+        {id, project, working_dir, config_files, mounts: [.mounts[] | . as $mount |
+          {type: .Type, source: (if .Type == "volume" then .Name else .Source end), destination: .Destination,
+           classification: (if .Type == "bind" then "bind" elif .Type == "tmpfs" then "tmpfs" elif (.Name | test("^[a-f0-9]{64}$")) then "anonymous_candidate" else "named_or_external" end),
+           shared: (if .Type == "volume" then any($all[]; .id != $container.id and any(.mounts[]; .Type == "volume" and .Name == $mount.Name)) else null end),
+           external: "unknown"}]}]} end' 2>/dev/null)" || return 1
+  printf '%s\n' "${result}"
+}
+
+################################################################################
+# Reconcile an explicit Compose context against stopped runtime containers.
+# Detection only; output is sensitive and does not authorize deletion.
+#
+# Arguments:
+#   ${1} = Compose project name, ${2} = project directory,
+#   ${3}... = ordered absolute Compose configuration files
+#
+# Outputs:
+#   JSON on success; nonzero if reconciliation cannot be established.
+################################################################################
+function project_compose_reconcile() {
+  [[ $# -ge 3 && -n "${BROLIT_MAIN_DIR:-}" ]] || return 1
+  python3 "${BROLIT_MAIN_DIR}/tools/compose-reconcile.py" "$@"
+}
+
+################################################################################
 # Project delete files
 #
 # Arguments:
@@ -2550,7 +2685,6 @@ function project_delete_files() {
   local project_domain="${1}"
 
   local backup_type
-  local compose_file
   local project_type
   local project_install_type
 
@@ -2567,20 +2701,15 @@ function project_delete_files() {
 
   if [[ -n ${project_type} && -n ${project_install_type} ]]; then
 
-    # If project_install_type == "docker"*, stop and delete containers
-    if [[ ${project_install_type} == "docker"* ]]; then
+    # Docker deletion is blocked until persistent mount coverage is verified.
+    if ! project_compose_deletion_safe "${PROJECTS_PATH}/${project_domain}" "${project_install_type}"; then
 
-      compose_file="${PROJECTS_PATH}/${project_domain}/docker-compose.yml"
-
-      if [[ -f "${compose_file}" ]]; then
-
-        docker_compose_stop "${compose_file}"
-        [[ $? -eq 1 ]] && return 1
-
-        docker_compose_rm "${compose_file}"
-        [[ $? -eq 1 ]] && return 1
-
-      fi
+      # A file backup and database dump do not establish coverage of Compose
+      # volumes or external bind mounts. Until verified coverage exists, even
+      # direct callers of this destructive helper must fail closed.
+      log_event "error" "Docker project deletion blocked: persistent mount backup coverage is not verified." "false"
+      display --indent 6 --text "- Docker persistent mount backup coverage is not verified" --result "FAIL" --color RED
+      return 1
 
     fi
 
@@ -2800,6 +2929,19 @@ function project_delete() {
     project_type="$(project_get_type "${PROJECTS_PATH}/${project_domain}")"
     project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${project_domain}")"
 
+    if [[ -z ${project_type} || -z ${project_install_type} ]]; then
+      log_event "error" "Project deletion blocked: project type or installation type could not be determined." "false"
+      return 1
+    fi
+
+    # Block before stopping services or making any other destructive changes.
+    # No current backup verifies coverage of Compose persistent mounts.
+    if ! project_compose_deletion_safe "${PROJECTS_PATH}/${project_domain}" "${project_install_type}"; then
+      log_event "error" "Docker project deletion blocked: persistent mount backup coverage is not verified." "false"
+      display --indent 6 --text "- Docker persistent mount backup coverage is not verified" --result "FAIL" --color RED
+      return 1
+    fi
+
     # Get db credentials from project config
     project_db_name=$(project_get_configured_database "${PROJECTS_PATH}/${project_domain}" "${project_type}" "${project_install_type}")
     project_db_user=$(project_get_configured_database_user "${PROJECTS_PATH}/${project_domain}" "${project_type}" "${project_install_type}")
@@ -2807,31 +2949,16 @@ function project_delete() {
 
     [[ -z "${project_db_engine}" ]] && project_db_engine="$(database_ask_engine)"
 
-    # For Docker projects: stop containers FIRST to ensure consistent backup
-    if [[ ${project_install_type} == "docker"* ]]; then
-      local compose_file="${PROJECTS_PATH}/${project_domain}/docker-compose.yml"
-
-      if [[ -f "${compose_file}" ]]; then
-        log_subsection "Stopping Docker Containers"
-        docker_compose_stop "${compose_file}"
-        if [[ $? -eq 1 ]]; then
-          log_event "error" "Failed to stop Docker containers" "false"
-          display --indent 6 --text "- Stopping docker stack" --result "FAIL" --color RED
-          return 1
-        fi
-      fi
-    fi
-
     # Remove unwanted output
     clear_previous_lines "1"
 
-    # Make one last backup (now containers are stopped for Docker projects)
-    backup_project "${project_domain}" "all"
-    [[ $? -eq 1 ]] && return 1
+    # Make one last backup.
+    if ! backup_project "${project_domain}" "all"; then
+      return 1
+    fi
 
     # Delete Files
-    project_delete_files "${project_domain}"
-    if [[ $? -eq 1 ]]; then
+    if ! project_delete_files "${project_domain}"; then
 
       # Log
       display --indent 6 --text "- Deleting project files" --result "FAIL" --color RED

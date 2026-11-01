@@ -1144,7 +1144,7 @@ function borg_init_failure_reason() {
         echo "relocation"
     elif echo "${lower}" | grep -qE "failed to create/acquire (the )?lock|lock.*\(timeout\)|repository is locked|lock.*held"; then
         echo "lock"
-    elif echo "${lower}" | grep -qE "connection refused|connection reset|connection timed out|network is unreachable|temporary failure in name resolution|could not resolve hostname|no route to host|operation timed out|timed out|timeout"; then
+    elif echo "${lower}" | grep -qE "connection refused|connection reset|connection timed out|network is unreachable|temporary failure in name resolution|could not resolve hostname|no route to host|operation timed out|timed out|timeout|connection closed|closed by remote host|broken pipe|ssh_exchange_identification|kex_exchange_identification|connection aborted"; then
         echo "network"
     elif echo "${lower}" | grep -qE "parent path of the repo directory.*does not exist|parent directory.*does not exist"; then
         echo "parent_missing"

@@ -98,6 +98,8 @@ EOF
     [[ "$(borg_init_failure_reason 'The parent path of the repo directory [/x] does not exist.')" == "parent_missing" ]]
     [[ "$(borg_init_failure_reason 'There is already something at /x.')" == "stale_lock" ]]
     [[ "$(borg_init_failure_reason 'Network is unreachable')" == "network" ]]
+    [[ "$(borg_init_failure_reason 'Connection closed by remote host. Is borg working on the server?')" == "network" ]]
+    [[ "$(borg_init_failure_reason 'ssh_exchange_identification: Connection closed by remote host')" == "network" ]]
 
     # Parent directories are created level by level, stopping at the parent.
     borg_storage_create_parent_dirs "ssh://u372319@u372319.your-storagebox.de:23/home/applications/g/h/site/x"

@@ -94,6 +94,27 @@ Helpers live in `libs/borg_storage_controller.sh` (`_borg_parse_repo_url`,
 `_borg_sftp_run`, `borg_storage_create_parent_dirs`,
 `borg_storage_clear_stale_locks`).
 
+## Follow-up fixes from the first post-rollout night (2026-11-01)
+
+The first night after the rollout surfaced three more blockers, now fixed and
+covered by tests:
+
+- The `network` classifier missed the most common SSH disconnect texts
+  (`Connection closed by remote host`, `ssh_exchange_identification`, broken
+  pipe), so those failures were classified `unknown` and never retried.
+- `project_get_database_name` propagated compose-level `${VAR}` placeholders
+  into borgmatic constants instead of resolving them from the project's
+  `.env`. Affected project: `support.epicahub.com`.
+- Projects with no database engine detected used to fall back to the MySQL
+  template, producing a `mysql_databases` section whose `${database}` constant
+  cannot resolve. New explicit opt-out: `BROLIT_DB_ENGINE=none` in the
+  project's `.env` selects `borgmatic.template-default.yml`. Applied to
+  `s3.planning-mkt.broobe.net` (MinIO).
+
+`redcoach-test` additionally needed a borgmatic upgrade (1.8.11 had no
+`repo-list` action, which the init gate uses as preflight); it is now on
+2.1.7 like the rest, with relocations accepted and repositories initialized.
+
 ## Tests
 
 `tests/test_borg_network_retries.sh` (offline, fake borgmatic + stubbed init
