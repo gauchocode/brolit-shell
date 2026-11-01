@@ -43,19 +43,20 @@ function test_certbot_domain_triage() (
     TEST_DNS="104.21.57.32 172.67.188.235"
     [[ "$(certbot_domain_triage cf.example)" == "cloudflare" ]]
 
-    TEST_DNS="5.161.246.86"
+    TEST_DNS="198.51.100.7"
     [[ "$(certbot_domain_triage moved.example)" == "moved" ]]
 
     TEST_DNS="203.0.113.10"
     [[ "$(certbot_domain_triage local.example)" == "ok" ]]
 
     # Several A records, one of them this server: healthy, not moved.
-    TEST_DNS="203.0.113.10 5.161.246.86"
+    TEST_DNS="203.0.113.10 198.51.100.7"
     [[ "$(certbot_domain_triage multi.example)" == "ok" ]]
 
     # A secondary address configured for this host is local, not "moved".
-    SERVER_ADDITIONAL_IPS="5.161.246.86,10.9.8.7"
-    TEST_DNS="5.161.246.86"
+    # Fixtures use reserved TEST-NET space so they can never be a real local IP.
+    SERVER_ADDITIONAL_IPS="198.51.100.7,10.9.8.7"
+    TEST_DNS="198.51.100.7"
     [[ "$(certbot_domain_triage secondary.example)" == "ok" ]]
     unset SERVER_ADDITIONAL_IPS
 
@@ -69,7 +70,7 @@ function test_certbot_domain_triage() (
     # Public IP unknown: must not guess "moved".
     # shellcheck disable=SC2317
     function _certbot_public_ip() { echo ""; }
-    TEST_DNS="5.161.246.86"
+    TEST_DNS="198.51.100.7"
     [[ "$(certbot_domain_triage unknown-ip.example)" == "ok" ]]
 )
 
