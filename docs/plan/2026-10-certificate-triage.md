@@ -44,6 +44,34 @@ unknown public IP never produces a `moved` verdict.
 IP): Cloudflare range edges, NXDOMAIN, Cloudflare, moved, local, multi-A and
 unknown-public-IP cases.
 
+## Rollout
+
+| Date | Servers | Commit |
+|------|---------|--------|
+| 2026-10-31 | epica-apps01, arqa-web-vm, gaucho-dev04, redcoach-test, constructoradelbosque | d3b6884a |
+| 2026-11-01 | gaucho-docker-host01, gaucho-docker-host02, gaucho-docker-host04, tukiverse-apps01, redcoach-docker01, redcoach-website, redcoach-mirror-cpx41use, centum-ai-services01 | 75e2d0c8 |
+| pending | gaucho-automate01 | n/a |
+
+13 servers are on `75e2d0c8` with the triage wired into
+`mail_certificates_section` and `tests/test_certbot_domain_triage.sh`
+passing. `gaucho-automate01` rejects every key available locally, so it
+still runs `6f5d25a4` and did not take the triage; it needs a working
+credential or a push through brolit-admin's remote task runner.
+
+Operational notes from the rollout:
+
+- `redcoach-docker01` had a divergent history: an older, rebased snapshot of
+  master (86 files, ~8.4k lines behind, every local commit already present
+  upstream with a different SHA). Realigned with `git reset --hard
+  origin/master` after saving `backup/pre-rollout-20261101` (87e6bb7e).
+- Several servers carry pre-existing mode-only changes (644 -> 755 on shell
+  scripts). They reappear after updates, so some deployment/operator step is
+  marking them executable; content is untouched. Pre-existing stashes from
+  August/September were left alone.
+
+Rollback is per server: `git checkout <previous commit>` (or
+`backup/pre-rollout-20261101` on redcoach-docker01).
+
 ## Decisions Log
 
 | Date | Decision | Rationale |
