@@ -1128,8 +1128,9 @@ function _borgmatic_resolve_cmd() {
 #   ${1} = ${borgmatic_output} (stdout+stderr of the failed invocation)
 #
 # Outputs:
-#   One of: config, relocation, network, auth, repo_missing, space, python_env,
-#   lock, encryption_mismatch, unknown. Never returns captured diagnostics.
+#   One of: missing_source, config, relocation, network, auth, repo_missing,
+#   space, python_env, lock, encryption_mismatch, unknown. Never returns
+#   captured diagnostics.
 ################################################################################
 
 function borg_init_failure_reason() {
@@ -1138,7 +1139,9 @@ function borg_init_failure_reason() {
     local lower
     lower="$(echo "${borgmatic_output}" | tr '[:upper:]' '[:lower:]')"
 
-    if echo "${lower}" | grep -qE "cannot find (variable|environment)|environment variable.*(not set|missing|not found)|variable.*(not defined|undefined)|error (parsing|validating) configuration|configuration.*(invalid|validation error)|failed to (parse|validate).*config|could not (read|parse).*configuration|unrecognized configuration option|validationerror"; then
+    if echo "${lower}" | grep -qE "source directories or root pattern paths do not exist|source director(y|ies).*do(es)? not exist"; then
+        echo "missing_source"
+    elif echo "${lower}" | grep -qE "cannot find (variable|environment)|environment variable.*(not set|missing|not found)|variable.*(not defined|undefined)|error (parsing|validating) configuration|configuration.*(invalid|validation error)|failed to (parse|validate).*config|could not (read|parse).*configuration|unrecognized configuration option|validationerror"; then
         echo "config"
     elif echo "${lower}" | grep -qE "repository.*(relocated|relocation|previously located|location changed)|previously located repository|borg_relocated_repo_access_is_ok|repository access aborted"; then
         echo "relocation"

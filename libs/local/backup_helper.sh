@@ -722,7 +722,9 @@ function backup_borgmatic_config_once() {
 
     log_event "error" "Borgmatic backup failed for ${config_label} (${reason})" "false"
     display --indent 8 --text "Backup failed" --result "FAIL" --color RED
-    borg_project_status_line="${config_label};FAIL"
+    # Carry the class into the email: a bare "FAIL" made every cause look the
+    # same, including a config whose project directory no longer exists.
+    borg_project_status_line="${config_label};FAIL (${reason})"
     return 1
 
   done

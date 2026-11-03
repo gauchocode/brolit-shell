@@ -124,6 +124,9 @@ EOF
     [[ "$(borg_init_failure_reason 'The parent path of the repo directory [/x] does not exist.')" == "parent_missing" ]]
     [[ "$(borg_init_failure_reason 'There is already something at /x.')" == "stale_lock" ]]
     [[ "$(borg_init_failure_reason 'Network is unreachable')" == "network" ]]
+    # A stale config (project directory gone) is named for what it is instead
+    # of landing in "unknown" next to real transport failures.
+    [[ "$(borg_init_failure_reason 'Source directories or root pattern paths do not exist: /var/www/x')" == "missing_source" ]]
     [[ "$(borg_init_failure_reason 'Connection closed by remote host. Is borg working on the server?')" == "network" ]]
     [[ "$(borg_init_failure_reason 'ssh_exchange_identification: Connection closed by remote host')" == "network" ]]
     # An sshd preauth refusal is an auth failure, not a transient network cut:
