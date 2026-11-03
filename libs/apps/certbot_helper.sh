@@ -1700,3 +1700,234 @@ function certbot_helper_ask_domains() {
   fi
 
 }
+
+################################################################################
+# Decide the label and severity for one domain's certificate state.
+#
+# Pure function: every network/API fact is an argument, so the three mail
+# decisions (no certificate, expired, days remaining) can be tested offline.
+# The caller gathers the inputs: cert_days from certbot, the triage from
+# certbot_domain_triage, the Cloudflare SSL mode from
+# certbot_cloudflare_ssl_mode and the operator's expectation from
+# _certbot_cloudflare_ssl_expected.
+#
+# Cloudflare behaviour (decided with the operator): brolit never changes a
+# zone's SSL mode on its own; cloudflare_set_ssl_mode stays a manual action.
+# - flexible/off: the origin certificate is not used -> grey, no warning.
+# - full/strict: the origin certificate IS used -> warning when missing, with
+#   the expected mode called out when the operator pinned one.
+# - unknown (no API credentials or API error): grey by default so an
+#   unreachable API cannot produce daily noise; BROLIT_CERT_CF_UNKNOWN=warn
+#   opts a deployment into warning.
+#
+# Arguments:
+#   ${1} = cert_days (empty = no certificate, EXPIRED, or integer days)
+#   ${2} = triage result (ok/nxdomain/moved/cloudflare/empty)
+#   ${3} = has_vhost (true/false): nginx is configured to serve this domain
+#   ${4} = cf_ssl_mode (empty when not queried; off/flexible/full/strict/unknown)
+#   ${5} = cf_expected (empty, or the operator's expected SSL mode for the zone)
+#
+# Outputs:
+#   "<color>|<warn 0|1>|<label text>"; color in grey|red|green|orange
+################################################################################
+function mail_certificate_label() {
+
+    local cert_days="${1}" triage="${2}" has_vhost="${3}"
+    local cf_ssl_mode="${4}" cf_expected="${5}"
+
+    if [[ -z "${cert_days}" ]]; then
+        # No certificate: only a real problem when this server is supposed to
+        # serve the domain and TLS is not terminated upstream.
+        if [[ "${has_vhost}" != "true" ]]; then
+            echo "grey|0|no certificate"
+            return 0
+        fi
+        case "${triage}" in
+            nxdomain) echo "red|1|nxdomain"; return 0 ;;
+            moved) echo "red|1|moved"; return 0 ;;
+            cloudflare)
+                case "${cf_ssl_mode}" in
+                    ""|off|flexible)
+                        # TLS is terminated at the edge; the origin certificate
+                        # is not used, so this is expected, not a warning.
+                        echo "grey|0|CF fronted"
+                        ;;
+                    full|strict)
+                        # Full/strict mode pulls the origin certificate into
+                        # the trust chain: a missing one breaks the site.
+                        if [[ -n "${cf_expected}" && "${cf_ssl_mode}" != "${cf_expected}" ]]; then
+                            echo "red|1|CF ${cf_ssl_mode} != ${cf_expected}"
+                        else
+                            echo "red|1|CF ${cf_ssl_mode}: origin cert required"
+                        fi
+                        ;;
+                    unknown|*)
+                        if [[ "${BROLIT_CERT_CF_UNKNOWN:-info}" == "warn" ]]; then
+                            echo "red|1|CF mode unknown"
+                        else
+                            echo "grey|0|CF fronted"
+                        fi
+                        ;;
+                esac
+                return 0
+                ;;
+            *)
+                echo "red|1|no certificate"
+                return 0
+                ;;
+        esac
+    fi
+
+    if [[ "${cert_days}" == "EXPIRED" ]]; then
+        # Expired always warns, Cloudflare or not: full/strict mode would
+        # break the site, and direct hits reach the origin certificate.
+        case "${triage}" in
+            nxdomain) echo "red|1|nxdomain" ;;
+            moved) echo "red|1|moved" ;;
+            *) echo "red|1|EXPIRED" ;;
+        esac
+        return 0
+    fi
+
+    if (("${cert_days}" >= 14)); then
+        echo "green|0|${cert_days} days"
+    elif (("${cert_days}" >= 7)); then
+        echo "orange|0|${cert_days} days"
+    else
+        echo "red|1|${cert_days} days"
+    fi
+
+}
+
+################################################################################
+# Operator expectation map for Cloudflare SSL modes, matched by zone suffix:
+#   BROLIT_CLOUDFLARE_SSL_EXPECT="broobe.com=flexible example.com=full"
+# A zone entry applies to the zone itself and every subdomain of it. Empty
+# entries are ignored. The comparison happens per zone, not per host, because
+# the SSL mode is a zone-level Cloudflare setting.
+#
+# Arguments:
+#   ${1} = domain
+# Outputs:
+#   Expected mode, or empty when none is pinned for its zone.
+################################################################################
+function _certbot_cloudflare_ssl_expected() {
+
+    local domain="${1}" entry zone mode
+
+    for entry in ${BROLIT_CLOUDFLARE_SSL_EXPECT:-}; do
+        zone="${entry%%=*}"
+        mode="${entry#*=}"
+        [[ -n "${zone}" && -n "${mode}" ]] || continue
+        if [[ "${domain}" == "${zone}" || "${domain}" == *."${zone}" ]]; then
+            echo "${mode}"
+            return 0
+        fi
+    done
+
+    return 1
+
+}
+
+################################################################################
+# Quietly read the SSL/TLS mode of the zone in front of a domain:
+# off/flexible/full/strict, or nothing when it cannot be determined (no API
+# credentials, zone missing, API error). One API call per unique zone per
+# run: the mail section iterates every project and they share few zones, and
+# borgmatic's command substitutions fork subshells, so the cache travels in
+# an exported scalar of "zone=mode" pairs.
+#
+# Arguments:
+#   ${1} = domain
+# Outputs:
+#   The mode, or nothing on any failure. Never mutates the zone.
+################################################################################
+function certbot_cloudflare_ssl_mode() {
+
+    local domain="${1}" zone cached pair mode zone_id result
+
+    [[ -n "${domain}" ]] || return 1
+
+    if ! declare -F _cloudflare_get_zone_id >/dev/null 2>&1; then
+        if [[ -f "${BROLIT_MAIN_DIR:-}/libs/apps/cloudflare_helper.sh" ]]; then
+            # shellcheck disable=SC1090
+            source "${BROLIT_MAIN_DIR}/libs/apps/cloudflare_helper.sh" >/dev/null 2>&1
+        fi
+    fi
+    declare -F _cloudflare_get_zone_id >/dev/null 2>&1 || return 1
+
+    if [[ -z "${SUPPORT_CLOUDFLARE_EMAIL:-}" || -z "${SUPPORT_CLOUDFLARE_API_KEY:-}" ]]; then
+        # The nightly mail does not load the DNS section (the loader also
+        # writes ~/.cloudflare.conf and can abort), so read the credentials
+        # straight from the config. A bad or missing config must degrade to
+        # "not queried" (grey label), never abort the mail.
+        local conf="${BROLIT_CONFIG_FILE:-/root/.brolit_conf.json}"
+        if [[ -f "${conf}" ]] && command -v jq >/dev/null 2>&1; then
+            if [[ "$(jq -r '.DNS.cloudflare[0].status // ""' "${conf}" 2>/dev/null)" == "enabled" ]]; then
+                SUPPORT_CLOUDFLARE_EMAIL="$(jq -r '.DNS.cloudflare[0].config[0].email // ""' "${conf}" 2>/dev/null)"
+                SUPPORT_CLOUDFLARE_API_KEY="$(jq -r '.DNS.cloudflare[0].config[0].api_key // ""' "${conf}" 2>/dev/null)"
+            fi
+        fi
+    fi
+    [[ -n "${SUPPORT_CLOUDFLARE_EMAIL:-}" && -n "${SUPPORT_CLOUDFLARE_API_KEY:-}" ]] || return 1
+
+    zone="$(_certbot_cloudflare_zone_root "${domain}")"
+    [[ -n "${zone}" ]] || return 1
+
+    for cached in ${CERTBOT_CLOUDFLARE_SSL_MODE_CACHE:-}; do
+        if [[ "${cached%%=*}" == "${zone}" ]]; then
+            echo "${cached#*=}"
+            return 0
+        fi
+    done
+
+    # The helper logs via `display`, which writes to stdout; keep only the
+    # 32-char hex zone id.
+    zone_id="$(_cloudflare_get_zone_id "${zone}" 2>/dev/null | grep -E '^[a-f0-9]{32}$' | head -1)"
+    [[ -n "${zone_id}" ]] || return 1
+    result="$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${zone_id}/settings/ssl" \
+        -H "X-Auth-Email: ${SUPPORT_CLOUDFLARE_EMAIL}" \
+        -H "X-Auth-Key: ${SUPPORT_CLOUDFLARE_API_KEY}" \
+        -H "Content-Type: application/json")"
+    mode="$(grep -Po '(?<="value":")[^"]*' <<<"${result}" | head -1)"
+    [[ -n "${mode}" ]] || return 1
+
+    CERTBOT_CLOUDFLARE_SSL_MODE_CACHE="${CERTBOT_CLOUDFLARE_SSL_MODE_CACHE} ${zone}=${mode}"
+    export CERTBOT_CLOUDFLARE_SSL_MODE_CACHE
+    echo "${mode}"
+    return 0
+
+}
+
+################################################################################
+# Private: derive the registrable zone of a domain against the Cloudflare
+# API, walking the label hierarchy until a zone exists. Handles multi-level
+# public suffixes (arqa.com.ar) without shipping a public-suffix list.
+#
+# Arguments:
+#   ${1} = domain
+# Outputs:
+#   Zone root, or empty when none exists.
+################################################################################
+function _certbot_cloudflare_zone_root() {
+
+    local domain="${1}" candidate zone_id
+
+    [[ -n "${domain}" ]] || return 1
+
+    candidate="${domain}"
+    while [[ -n "${candidate}" ]]; do
+        # `display` writes to stdout; only a 32-char hex id proves the zone
+        # exists (a failure banner is not proof of a zone).
+        zone_id="$(_cloudflare_get_zone_id "${candidate}" 2>/dev/null | grep -E '^[a-f0-9]{32}$' | head -1)"
+        if [[ -n "${zone_id}" ]]; then
+            echo "${candidate}"
+            return 0
+        fi
+        [[ "${candidate}" == *.* ]] || break
+        candidate="${candidate#*.}"
+    done
+
+    return 1
+
+}

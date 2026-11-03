@@ -552,83 +552,64 @@ function mail_certificates_section() {
 
                 cert_days="$(certbot_certificate_valid_days "${domain}")"
 
-                if [[ -z "${cert_days}" ]]; then
-                    # A domain without a certificate is only a WARNING when
-                    # nginx is actually configured to serve it locally. Many
-                    # PROJECTS_PATH directories are docker-compose services,
-                    # internal agents, or backup aliases that never request a
-                    # certificate, so flagging them produces daily noise.
-                    local has_vhost=false
-                    if [[ -f "/etc/nginx/sites-enabled/${domain}" ]] || [[ -f "/etc/nginx/conf.d/${domain}.conf" ]]; then
-                        has_vhost=true
-                    elif command -v nginx &>/dev/null && nginx -T 2>/dev/null | grep -qE "server_name[^;]*[[:space:]]${domain}([[:space:]]|;|\$)"; then
-                        has_vhost=true
-                    fi
+                # A domain without a certificate is only a WARNING when nginx
+                # is actually configured to serve it locally. Many
+                # PROJECTS_PATH directories are docker-compose services,
+                # internal agents, or backup aliases that never request a
+                # certificate, so flagging them produces daily noise.
+                local has_vhost=false
+                if [[ -f "/etc/nginx/sites-enabled/${domain}" ]] || [[ -f "/etc/nginx/conf.d/${domain}.conf" ]]; then
+                    has_vhost=true
+                elif command -v nginx &>/dev/null && nginx -T 2>/dev/null | grep -qE "server_name[^;]*[[:space:]]${domain}([[:space:]]|;|\$)"; then
+                    has_vhost=true
+                fi
 
-                    if [[ "${has_vhost}" == "true" ]]; then
-                        # A missing origin certificate is only a real problem
-                        # when this server is supposed to terminate TLS. Behind
-                        # Cloudflare it is expected, so it must not raise the
-                        # daily WARNING; a dead or moved domain gets an
-                        # actionable label instead of a bare "no certificate".
-                        local triage
-                        triage="$(certbot_domain_triage "${domain}")"
-                        if [[ "${triage}" == "cloudflare" ]]; then
-                            log_event "debug" "Skipping certificate warning for ${domain}: behind Cloudflare" "false"
-                            email_cert_days_container=" <span style=\"color:white;background-color:#5d5d5d;border-radius:12px;padding:0 5px 0 5px;\">"
-                            email_cert_days="${email_cert_days_container} CF fronted"
-                        else
-                            email_cert_days_container=" <span style=\"color:white;background-color:#df1d1d;border-radius:12px;padding:0 5px 0 5px;\">"
-                            if [[ "${triage}" == "nxdomain" || "${triage}" == "moved" ]]; then
-                                email_cert_days="${email_cert_days_container} ${triage}"
-                            else
-                                email_cert_days="${email_cert_days_container} no certificate"
-                            fi
-                            cert_status_icon="⚠️"
-                            status_certs="WARNING"
-                            real_warning_count=$((real_warning_count + 1))
-                        fi
-                    else
-                        # GREY LABEL - no vhost, no certificate expected
-                        log_event "debug" "Skipping certificate warning for ${domain}: no nginx vhost" "false"
-                        email_cert_days_container=" <span style=\"color:white;background-color:#5d5d5d;border-radius:12px;padding:0 5px 0 5px;\">"
-                        email_cert_days="${email_cert_days_container} no certificate"
-                    fi
-
-                elif [[ "${cert_days}" == "EXPIRED" ]]; then
-                    # RED LABEL - Expired. The triage only changes the label:
-                    # an expired certificate behind Cloudflare still warns
-                    # (Full/strict would break the site), while a dead or moved
-                    # domain is reported with its actual cause.
-                    local triage
+                # Triage (and, behind Cloudflare, the zone SSL mode) is only
+                # gathered for the states where it changes the label. brolit
+                # never changes a zone's SSL mode; cloudflare_set_ssl_mode
+                # stays a manual action, and this read only feeds the label.
+                local triage="" cf_ssl_mode="" cf_expected=""
+                if [[ -z "${cert_days}" && "${has_vhost}" == "true" ]]; then
                     triage="$(certbot_domain_triage "${domain}")"
-                    email_cert_days_container=" <span style=\"color:white;background-color:#df1d1d;border-radius:12px;padding:0 5px 0 5px;\">"
-                    if [[ "${triage}" == "nxdomain" || "${triage}" == "moved" ]]; then
-                        email_cert_days="${email_cert_days_container} ${triage}"
-                    else
-                        email_cert_days="${email_cert_days_container} EXPIRED"
+                    if [[ "${triage}" == "cloudflare" ]]; then
+                        cf_ssl_mode="$(certbot_cloudflare_ssl_mode "${domain}")"
+                        cf_expected="$(_certbot_cloudflare_ssl_expected "${domain}")"
                     fi
+                elif [[ "${cert_days}" == "EXPIRED" ]]; then
+                    triage="$(certbot_domain_triage "${domain}")"
+                fi
+
+                # The three certificate decisions (no certificate, expired,
+                # days remaining) live in a pure function, so they are
+                # testable offline and the email states one actionable cause.
+                local label_result label_color label_warn label_text
+                label_result="$(mail_certificate_label "${cert_days}" "${triage}" "${has_vhost}" "${cf_ssl_mode}" "${cf_expected}")"
+                label_color="${label_result%%|*}"
+                label_text="${label_result##*|}"
+                label_warn="${label_result#*|}"
+                label_warn="${label_warn%%|*}"
+
+                case "${label_color}" in
+                    grey)
+                        log_event "debug" "No certificate warning for ${domain}: ${label_text}" "false"
+                        email_cert_days_container=" <span style=\"color:white;background-color:#5d5d5d;border-radius:12px;padding:0 5px 0 5px;\">"
+                        ;;
+                    green)
+                        email_cert_days_container=" <span style=\"color:white;background-color:#27b50d;border-radius:12px;padding:0 5px 0 5px;\">"
+                        ;;
+                    orange)
+                        email_cert_days_container=" <span style=\"color:white;background-color:#df761d;border-radius:12px;padding:0 5px 0 5px;\">"
+                        ;;
+                    red|*)
+                        email_cert_days_container=" <span style=\"color:white;background-color:#df1d1d;border-radius:12px;padding:0 5px 0 5px;\">"
+                        ;;
+                esac
+                email_cert_days="${email_cert_days_container}${label_text}"
+
+                if [[ "${label_warn}" == "1" ]]; then
                     cert_status_icon="⚠️"
                     status_certs="WARNING"
                     real_warning_count=$((real_warning_count + 1))
-
-                else
-                    # Certificate found - color based on days remaining
-                    if (("${cert_days}" >= 14)); then
-                        # GREEN LABEL
-                        email_cert_days_container=" <span style=\"color:white;background-color:#27b50d;border-radius:12px;padding:0 5px 0 5px;\">"
-                    elif (("${cert_days}" >= 7)); then
-                        # ORANGE LABEL
-                        email_cert_days_container=" <span style=\"color:white;background-color:#df761d;border-radius:12px;padding:0 5px 0 5px;\">"
-                    else
-                        # RED LABEL
-                        email_cert_days_container=" <span style=\"color:white;background-color:#df1d1d;border-radius:12px;padding:0 5px 0 5px;\">"
-                        cert_status_icon="⚠️"
-                        status_certs="WARNING"
-                        real_warning_count=$((real_warning_count + 1))
-                    fi
-
-                    email_cert_days="${email_cert_days_container}${cert_days} days"
                 fi
 
                 fi
