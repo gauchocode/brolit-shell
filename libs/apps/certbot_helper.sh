@@ -1849,9 +1849,15 @@ function certbot_cloudflare_ssl_mode() {
     [[ -n "${domain}" ]] || return 1
 
     if ! declare -F _cloudflare_get_zone_id >/dev/null 2>&1; then
-        if [[ -f "${BROLIT_MAIN_DIR:-}/libs/apps/cloudflare_helper.sh" ]]; then
+        # BROLIT_MAIN_DIR exists in the cron context; derive the repo root
+        # from this file so the read also works from standalone callers.
+        local helper_root="${BROLIT_MAIN_DIR:-}"
+        if [[ -z "${helper_root}" ]]; then
+            helper_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." 2>/dev/null && pwd)"
+        fi
+        if [[ -n "${helper_root}" && -f "${helper_root}/libs/apps/cloudflare_helper.sh" ]]; then
             # shellcheck disable=SC1090
-            source "${BROLIT_MAIN_DIR}/libs/apps/cloudflare_helper.sh" >/dev/null 2>&1
+            source "${helper_root}/libs/apps/cloudflare_helper.sh" >/dev/null 2>&1
         fi
     fi
     declare -F _cloudflare_get_zone_id >/dev/null 2>&1 || return 1
