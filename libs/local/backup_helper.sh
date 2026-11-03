@@ -713,7 +713,7 @@ function backup_borgmatic_config_once() {
     # which one. Break it (guarded, see borg_storage_break_repo_lock) and
     # retry once inside the same attempt budget as network failures.
     if [[ "${reason}" == "lock" && ${attempt} -lt ${max_attempts} ]] \
-        && borg_storage_break_locks_from_output "${create_output}"; then
+        && borg_storage_break_config_locks "${config_file}"; then
       log_event "warning" "Broke stale Borg lock for ${config_label} (attempt ${attempt}/${max_attempts}); retrying" "false"
       display --indent 8 --text "Stale lock cleared, retry ${attempt}/$((max_attempts - 1))" --tcolor YELLOW
       attempt=$((attempt + 1))

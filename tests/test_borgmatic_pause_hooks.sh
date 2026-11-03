@@ -94,7 +94,7 @@ fi
 TEMPLATE="${TEST_LOADER_DIR}/../config/borg/borgmatic.template-docker.yml"
 check "template has no pause hook" "! grep -qE 'docker-compose\.yml pause' '${TEMPLATE}'"
 check "template has no unpause hook" "! grep -qE 'docker-compose\.yml unpause' '${TEMPLATE}'"
-check "template keeps the docker logs hook" "grep -q 'docker-compose.yml logs' '${TEMPLATE}'"
+check "template keeps the docker logs hook (guarded)" "grep -qF 'docker compose -f \"\$compose\" logs' '${TEMPLATE}'"
 
 # 5) The function exists and is wired into the nightly preparation.
 check "sanitize function defined" "type sanitize_borgmatic_pause_hooks >/dev/null 2>&1"
@@ -114,6 +114,22 @@ for tpl in docker postgres; do
 done
 check "notification sanitizer defined" "type sanitize_borgmatic_notification_hooks >/dev/null 2>&1"
 check "notification sanitizer wired nightly" "grep -q 'sanitize_borgmatic_notification_hooks' '${TEST_LOADER_DIR}/../cron/backups_tasks.sh'"
+
+# 7) The docker log hook must not fail a backup whose project has no
+# docker-compose.yml: borgmatic reported the repository action as failed even
+# though the archive had been created.
+cat > "${TEST_TMP}/docker-hook.yml" <<'YAML'
+after_backup:
+  - docker compose -f /var/www/x.example/docker-compose.yml logs -t > /var/log/x.example_docker.log
+YAML
+BROLIT_BORGMATIC_CONFIG_DIR="${TEST_TMP}" sanitize_borgmatic_docker_log_hooks >/dev/null 2>&1
+check "docker log hook guarded" "grep -qF 'compose=/var/www/x.example/docker-compose.yml; if [ -f' '${TEST_TMP}/docker-hook.yml'"
+check "docker log hook still collects for docker projects" "grep -qF 'docker compose -f \"\$compose\" logs' '${TEST_TMP}/docker-hook.yml'"
+BROLIT_BORGMATIC_CONFIG_DIR="${TEST_TMP}" sanitize_borgmatic_docker_log_hooks >/dev/null 2>&1
+check "docker log sanitizer idempotent" "[[ \"\$(grep -c 'compose=/var/www' '${TEST_TMP}/docker-hook.yml')\" -eq 1 ]]"
+check "docker template hook is guarded" "grep -qF 'compose=/var/www/{project}/docker-compose.yml; if [ -f' '${TEST_LOADER_DIR}/../config/borg/borgmatic.template-docker.yml'"
+check "docker log sanitizer defined" "type sanitize_borgmatic_docker_log_hooks >/dev/null 2>&1"
+check "docker log sanitizer wired nightly" "grep -q 'sanitize_borgmatic_docker_log_hooks' '${TEST_LOADER_DIR}/../cron/backups_tasks.sh'"
 
 hooks_teardown
 

@@ -1439,90 +1439,50 @@ function borg_storage_clear_stale_locks() {
 }
 
 ################################################################################
-# Private: resolve the borg executable used for lock maintenance.
+# Break the locks left behind on the destinations of one borgmatic config.
 #
-# Outputs:
-#   Command string, or empty when borg is not installed.
-################################################################################
-function _borg_resolve_borg_cmd() {
-
-    if command -v borg >/dev/null 2>&1; then
-        echo "borg"
-    elif [[ -x "/root/.local/bin/borg" ]]; then
-        echo "/root/.local/bin/borg"
-    fi
-
-}
-
-################################################################################
-# Break the lock of a repository that a borgmatic call could not acquire.
+# Live incident: a Storage Box kept a lock from a borg process that died with
+# its ssh session. borg waits `lock_wait` seconds on every run and gives up, so
+# that destination stopped receiving backups for days while the nightly email
+# only said the project failed -- and the secondary (disaster-recovery)
+# destination is precisely the one nobody notices until it is needed.
 #
-# Live incident: a destination Storage Box kept a lock.roster entry from a
-# borg process that died with its ssh session. borg waits `lock_wait` seconds
-# on every run and gives up, so that destination stops receiving backups for
-# days while the nightly email only says the project failed -- and the second
-# (disaster-recovery) destination is precisely the one nobody looks at until
-# it is needed. `borg break-lock` is the supported way to clear it.
+# `borgmatic break-lock` is the supported way to clear it and covers every
+# repository in the config, which avoids guessing which destination failed
+# from the (often label-only) error output.
 #
-# Guard: never break a lock while this host has a borg process using the same
-# repository; a real lock must survive. Repositories are namespaced per host
-# on the storage side, so the local check covers the only possible owner.
+# Guard: fail closed while any borg/borgmatic process is alive on this host.
+# brolit runs one backup at a time (flock), so a live process means a real
+# lock, and breaking it would corrupt the running backup.
 #
 # Arguments:
-#   ${1} = repository URL (ssh://user@host[:port]/path, optional ::archive)
+#   ${1} = borgmatic config file
 # Outputs:
-#   0 when the lock is gone (had none or was broken), 1 otherwise.
+#   0 when borgmatic broke the locks, 1 otherwise (nothing done or unsafe).
 ################################################################################
-function borg_storage_break_repo_lock() {
+function borg_storage_break_config_locks() {
 
-    local url="${1%%::*}"
+    local config_file="${1}"
     local borg_cmd
+    local -a borg_cmd_parts
 
-    _borg_parse_repo_url "${url}" || return 1
+    [[ -f "${config_file}" ]] || return 1
 
-    if pgrep -af "borg" 2>/dev/null | grep -vE "pgrep|grep" | grep -qF -- "${REPO_PATH}"; then
-        log_event "warning" "Borg lock on ${REPO_HOST}:${REPO_PATH} is held by a local process; not breaking it" "false"
+    if pgrep -af "borg" 2>/dev/null | grep -vE "pgrep|grep" | grep -q .; then
+        log_event "warning" "A Borg process is running; not breaking locks for ${config_file}" "false"
         return 1
     fi
 
-    borg_cmd="$(_borg_resolve_borg_cmd)"
+    borg_cmd="$(_borgmatic_resolve_cmd)"
     [[ -n "${borg_cmd}" ]] || return 1
 
-    if timeout 120 "${borg_cmd}" break-lock "${url}" >/dev/null 2>&1; then
-        log_event "info" "Broke stale Borg lock on ${REPO_HOST}:${REPO_PATH}" "false"
+    read -ra borg_cmd_parts <<< "${borg_cmd}"
+    if timeout 180 "${borg_cmd_parts[@]}" --config "${config_file}" break-lock >/dev/null 2>&1; then
+        log_event "info" "Broke stale Borg lock(s) for ${config_file}" "false"
         return 0
     fi
 
     return 1
-
-}
-
-################################################################################
-# Break every distinct repository lock mentioned in a failed borgmatic output.
-#
-# Arguments:
-#   ${1} = captured stdout+stderr of the failed borgmatic invocation
-# Outputs:
-#   0 when at least one lock was broken, 1 otherwise.
-################################################################################
-function borg_storage_break_locks_from_output() {
-
-    local output="${1}"
-    local url broken=0
-    local -a urls=()
-
-    mapfile -t urls < <(
-        grep -oE 'ssh://[A-Za-z0-9._~:/?#@=-]+' <<<"${output}" \
-            | sed 's/::.*//' \
-            | awk '!seen[$0]++'
-    )
-    [[ ${#urls[@]} -gt 0 ]] || return 1
-
-    for url in "${urls[@]}"; do
-        borg_storage_break_repo_lock "${url}" && broken=1
-    done
-
-    [[ ${broken} -eq 1 ]]
 
 }
 
@@ -1580,7 +1540,7 @@ function _initialize_repository_for_config() {
     # A lock left behind on the destination makes the preflight fail even
     # though the repository is healthy. Break it (guarded) and retry the
     # preflight once before declaring the repository unavailable.
-    if [[ "${init_reason}" == "lock" ]] && borg_storage_break_locks_from_output "${init_output}"; then
+    if [[ "${init_reason}" == "lock" ]] && borg_storage_break_config_locks "${config_file}"; then
         log_event "info" "Retrying repository preflight after lock remediation" "false"
         if init_output=$(eval 'timeout "${init_timeout}" '"${borg_cmd}"' repo-list --short --last 1 --config "${config_file}"' 2>&1); then
             exitstatus=0
@@ -1620,7 +1580,7 @@ function _initialize_repository_for_config() {
             elif [[ "${init_reason}" == "stale_lock" && -n "${repo_url}" ]]; then
                 borg_storage_clear_stale_locks "${repo_url}" && remediated="true"
             elif [[ "${init_reason}" == "lock" ]]; then
-                borg_storage_break_locks_from_output "${init_output}" && remediated="true"
+                borg_storage_break_config_locks "${config_file}" && remediated="true"
             fi
             if [[ "${remediated}" == "true" ]]; then
                 log_event "info" "Retrying repository initialization after ${init_reason} remediation" "false"
@@ -2461,6 +2421,42 @@ function sanitize_borgmatic_pause_hooks() {
         if grep -qE "docker-compose\.yml (pause|unpause)" "${config_file}" 2>/dev/null; then
             sed -i '/docker-compose\.yml pause/d; /docker-compose\.yml unpause/d' "${config_file}"
             log_event "info" "Removed docker pause/unpause backup hooks from ${config_file}" "false"
+        fi
+    done
+
+    return 0
+
+}
+
+################################################################################
+# Make the docker log-collection after_backup hook non-fatal in existing
+# configs.
+#
+# Configs generated from the docker template all ran
+# `docker compose -f /var/www/<project>/docker-compose.yml logs` after every
+# backup. For projects that are not Docker stacks the file does not exist, the
+# hook exits 1, and borgmatic reports the repository action as failed even
+# though the archive was created -- a nightly false failure that hides real
+# ones. The rewrite keeps the hook for Docker projects and makes it a no-op
+# everywhere else.
+#
+# Arguments:
+#   none (operates on BROLIT_BORGMATIC_CONFIG_DIR, default /etc/borgmatic.d)
+# Outputs:
+#   0 always; logs each config it rewrites.
+################################################################################
+function sanitize_borgmatic_docker_log_hooks() {
+
+    local config_dir="${BROLIT_BORGMATIC_CONFIG_DIR:-/etc/borgmatic.d}"
+    local config_file
+
+    [[ -d "${config_dir}" ]] || return 0
+
+    for config_file in "${config_dir}"/*.yml; do
+        [[ -f "${config_file}" ]] || continue
+        if grep -qE "^[[:space:]]*-[[:space:]]*docker compose -f /var/www/" "${config_file}" 2>/dev/null; then
+            sed -i -E 's#^([[:space:]]*-[[:space:]]*)docker compose -f (/var/www/[^/]+/docker-compose\.yml) logs -t > (/var/log/[^[:space:]]+_docker\.log)[[:space:]]*$#\1compose=\2; if [ -f "$compose" ]; then docker compose -f "$compose" logs -t > \3 2>/dev/null || true; fi#' "${config_file}"
+            log_event "info" "Made the docker log hook non-fatal in ${config_file}" "false"
         fi
     done
 
