@@ -64,13 +64,16 @@ unknown-public-IP cases.
 |------|---------|--------|
 | 2026-10-31 | epica-apps01, arqa-web-vm, gaucho-dev04, redcoach-test, constructoradelbosque | d3b6884a |
 | 2026-11-01 | gaucho-docker-host01, gaucho-docker-host02, gaucho-docker-host04, tukiverse-apps01, redcoach-docker01, redcoach-website, redcoach-mirror-cpx41use, centum-ai-services01 | 75e2d0c8 |
-| pending | gaucho-automate01 | n/a |
+| 2026-11-03 | all of the above plus gaucho-automate01 | 5a6fdcc8 |
 
-13 servers are on `75e2d0c8` with the triage wired into
+14 servers are on `5a6fdcc8` with the triage wired into
 `mail_certificates_section` and `tests/test_certbot_domain_triage.sh`
-passing. `gaucho-automate01` rejects every key available locally, so it
-still runs `6f5d25a4` and did not take the triage; it needs a working
-credential or a push through brolit-admin's remote task runner.
+passing. `gaucho-automate01` took the rollout on 2026-11-03 via a temporary
+root password; its master was fully diverged (ahead 2453 / behind 2490) and
+was realigned with `git reset --hard origin/master` after saving
+`backup/pre-rollout-20261103` (7b05939e). Borg stays disabled there by
+operator config (`BACKUPS.methods[].borg[].status = disabled`), so only the
+certificate report matters on that host.
 
 Operational notes from the rollout:
 
@@ -86,6 +89,30 @@ Operational notes from the rollout:
 Rollback is per server: `git checkout <previous commit>` (or
 `backup/pre-rollout-20261101` on redcoach-docker01).
 
+### Cloudflare SSL mode classification (2026-11-03)
+
+The report now reads the zone SSL/TLS mode through the existing Cloudflare
+API helpers (`certbot_cloudflare_ssl_mode`, cached per zone per run) instead
+of labelling every Cloudflare-fronted domain "CF fronted":
+
+- `flexible` / `off` -> grey "CF fronted": the origin certificate is not
+  used, so a missing one is expected.
+- `full` / `strict` -> WARNING "CF <mode>: origin cert required": the origin
+  certificate is part of the trust chain.
+- unreadable mode -> grey by default (an unreachable API must not produce
+  daily noise); `BROLIT_CERT_CF_UNKNOWN=warn` opts into a warning.
+- `BROLIT_CLOUDFLARE_SSL_EXPECT="zone=mode ..."` pins the expected mode per
+  zone; a zone whose actual mode deviates warns with both modes called out.
+
+The three mail decisions (no certificate, expired, days remaining) live in a
+pure `mail_certificate_label` function (`color|warn|text`) covered by
+`tests/test_mail_certificate_label.sh`. brolit never mutates a zone:
+`cloudflare_set_ssl_mode` stays a manual, audited action; changing the mode
+remains an operator decision made through the API.
+
+Verified live on epica-apps01 2026-11-03: `broobe.com`,
+`brolit-admin.epicahub.com` and `cod.gauchocode.com` all report `full`.
+
 ## Decisions Log
 
 | Date | Decision | Rationale |
@@ -93,3 +120,7 @@ Rollback is per server: `git checkout <previous commit>` (or
 | 2026-10-31 | Silence only "no certificate" for Cloudflare | Those origins legitimately have no public cert |
 | 2026-10-31 | Keep EXPIRED warnings even behind Cloudflare | Full/strict TLS would break the site |
 | 2026-10-31 | Dead/moved domains keep WARNING with a cause label | They need cleanup, not silence |
+| 2026-11-03 | brolit never changes a zone's SSL mode automatically | Mode changes affect redirects/mixed content and are an operator decision; the report only reads via API |
+| 2026-11-03 | Grey for flexible/off, WARNING for full/strict when the origin cert is missing | flexible/off never use the origin certificate; full/strict do |
+| 2026-11-03 | Unknown SSL mode degrades to grey unless BROLIT_CERT_CF_UNKNOWN=warn | An unreachable API must not produce daily noise |
+| 2026-11-03 | Expected-mode map (BROLIT_CLOUDFLARE_SSL_EXPECT) matched by zone suffix | Lets the operator adjust expectations per zone without code changes |

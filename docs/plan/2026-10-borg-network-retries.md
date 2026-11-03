@@ -128,6 +128,61 @@ covered by tests:
   safe under `set -u` (the previous form only worked because cron does not use
   `set -u`).
 
+## Second-night fixes (2026-11-03, commits afa5a7a8..5a6fdcc8)
+
+The 2026-11-03 nightly run surfaced four real defects, all fixed and rolled
+out to all 14 servers:
+
+1. **Stale destination locks stayed forever** (`epica-apps01`, `gaucho-dev04`,
+   and any multi-destination config). A Storage Box kept a `lock.roster` from
+   a borg process that died with its ssh session; borg waits `lock_wait` and
+   gives up, and every later run repeats it, so the secondary
+   (disaster-recovery) destination stopped receiving backups for days
+   (`draw.epicahub.com`'s secondary last archived 2026-10-28). Fix:
+   `borgmatic break-lock` on the config (covers every repository; guessing
+   the failing URL from label-only output was unreliable) when the create or
+   the preflight classifies `lock`, then one retry. Guard: never break while
+   any local borg process is alive (a real lock must survive). Verified live:
+   break + re-create succeeded for `draw.epicahub.com` and
+   `wiki.epicahub.com`.
+2. **The `on_error` hook called a function that does not exist for borgmatic.**
+   `send_notification` lives in brolit's `notification_controller.sh`, but
+   borgmatic runs hooks under `/bin/sh` without those libs, so every failing
+   backup ended with `send_notification: not found` (exit 127) and borgmatic
+   surfaced the hook failure instead of the repository reason. Templates now
+   ship a plain `echo` hook and `sanitize_borgmatic_notification_hooks`
+   rewrites configs generated from the old templates.
+3. **The docker log-collection hook failed completed backups.** Non-Docker
+   projects have no `docker-compose.yml`, so `docker compose ... logs` exited
+   1 and borgmatic reported the repository action as failed even though the
+   archive had been created (`support.broobe.net` failed nightly for this).
+   The template hook is now a no-op without a compose file and
+   `sanitize_borgmatic_docker_log_hooks` rewrites existing configs.
+4. **Stale configs and unclassified failures.** A config whose project
+   directory is gone now classifies as `missing_source` (was `unknown`), and
+   the create failure status carries its class (`FAIL (<reason>)`) so the
+   email states one actionable cause per project.
+
+Fleet operations done the same night:
+
+- `redcoach-docker01`: borgmatic 1.8.11 -> 2.1.7 via pipx; preflight
+  (`repo-list`) now works, so its `unknown` init class is gone.
+- `gaucho-automate01`: diverged master realigned to `5a6fdcc8`
+  (`backup/pre-rollout-20261103` = 7b05939e). Borg stays disabled per
+  operator config; the certificate triage is live.
+- `redcoach-test`: `dev.provider` had `database: ${POSTGRES_DB}` left
+  unsubstituted (borgmatic's env interpolation failed under cron) ->
+  substituted to `postgres` from the project `.env`; `dev.bustracker`,
+  `dev.socket` and `stage.booking` verified healthy by dry-run.
+- `arqa-web-vm`: `bonus.arqa.com` failed because `/var/www/.../dumps/` did
+  not exist (dump hook target) -> directory created, backup green;
+  `dev.arqa.com` references a dead MySQL database (`arqa_dev`, project
+  decommissioned: no code, no `.env`) -> config regenerated with the
+  explicit no-database opt-out (`BROLIT_DB_ENGINE=none`), backup green.
+- `epica-apps01`: stale config `support.broobe.net` (project directory
+  removed) deleted with a backup copy at
+  `/root/support.broobe.net.yml.removed-20261103`.
+
 ## Tests
 
 `tests/test_borg_network_retries.sh` (offline, fake borgmatic + stubbed init
@@ -138,7 +193,13 @@ timeout-124 classification, and malformed retry values.
 
 `tests/test_borg_storage_remediation.sh` covers the new classes in the
 classifier, parent directory creation, lock cleanup including the "real
-repository present" guard, and the IPv4 fallback.
+repository present" guard, the IPv4 fallback, the `missing_source` class,
+and the `lock` remediation (break-lock invoked per config, the live-process
+guard, failed break reported, preflight lock retried).
+
+`tests/test_borgmatic_pause_hooks.sh` additionally covers the
+`send_notification` hook replacement, the guarded docker log hook, template
+hygiene, and the nightly wiring of both sanitizers.
 
 ## Decisions Log
 
