@@ -49,5 +49,9 @@ check_last: 3
 after_backup:
     - docker compose -f /var/www/{project}/docker-compose.yml logs -t > /var/log/{project}_docker.log
 
+# The on_error hook runs under /bin/sh without brolit's libs sourced, so it
+# must be a plain command. `send_notification` only exists inside brolit and
+# made every failing backup end with "not found" (exit 127) instead of the
+# real reason; brolit already sends its own email for the same failure.
 on_error:
-    - send_notification "Borgmatic" "Error during backup for {project}" "alert"
+    - echo "Borgmatic failed for {project}; see the brolit backup log for the classified reason"

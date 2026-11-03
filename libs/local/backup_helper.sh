@@ -707,6 +707,19 @@ function backup_borgmatic_config_once() {
       continue
     fi
 
+    # A lock-class failure is a lock left on the destination by a session that
+    # died: borg waits `lock_wait` and gives up, and every later run repeats
+    # it, so that destination stays unbacked for days without anyone noticing
+    # which one. Break it (guarded, see borg_storage_break_repo_lock) and
+    # retry once inside the same attempt budget as network failures.
+    if [[ "${reason}" == "lock" && ${attempt} -lt ${max_attempts} ]] \
+        && borg_storage_break_locks_from_output "${create_output}"; then
+      log_event "warning" "Broke stale Borg lock for ${config_label} (attempt ${attempt}/${max_attempts}); retrying" "false"
+      display --indent 8 --text "Stale lock cleared, retry ${attempt}/$((max_attempts - 1))" --tcolor YELLOW
+      attempt=$((attempt + 1))
+      continue
+    fi
+
     log_event "error" "Borgmatic backup failed for ${config_label} (${reason})" "false"
     display --indent 8 --text "Backup failed" --result "FAIL" --color RED
     borg_project_status_line="${config_label};FAIL"

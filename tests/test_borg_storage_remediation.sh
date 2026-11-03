@@ -62,6 +62,15 @@ if [[ "${action}" == "repo-list" ]]; then
         echo "Remote: ssh: connect to host example port 23: Network is unreachable" >&2
         exit 1
     fi
+    if [[ "${BORG_FAKE_MODE}" == "lock_preflight" ]]; then
+        if [[ ${n} -le 1 ]]; then
+            echo "Command 'borg repo-list ssh://u391408@u391408.your-storagebox.de:23/home/applications/g/h/site/x::x' failed" >&2
+            echo "Failed to create/acquire the lock /home/applications/g/h/site/x/lock (timeout)." >&2
+            exit 1
+        fi
+        echo "x-2026-01-01"
+        exit 0
+    fi
     echo "/x is not a valid repository. Check repo config." >&2
     exit 1
 fi
@@ -86,6 +95,22 @@ fi
 exit 0
 EOF
     chmod +x "${tmp}/bin/borgmatic"
+
+    # Fake borg: records break-lock calls and honours BORG_BREAK_RC.
+    cat > "${tmp}/bin/borg" <<'EOF'
+#!/usr/bin/env bash
+echo "$*" >> "${BORG_LOG}"
+exit "${BORG_BREAK_RC:-0}"
+EOF
+    chmod +x "${tmp}/bin/borg"
+
+    # Fake pgrep: PGREP_LIVE simulates a real local borg process on the repo.
+    cat > "${tmp}/bin/pgrep" <<'EOF'
+#!/usr/bin/env bash
+[[ -n ${PGREP_LIVE:-} ]] && printf '%s\n' "${PGREP_LIVE}"
+exit 0
+EOF
+    chmod +x "${tmp}/bin/pgrep"
 
     source "${root}/libs/borg_storage_controller.sh"
     function log_event() { :; }
@@ -184,6 +209,44 @@ EOF
     [[ ${rc} -eq 0 ]]
     grep -qF 'rm /home/applications/g/h/site/x/lock.exclusive/owner' "${SFTP_LOG}"
     grep -qF 'rmdir /home/applications/g/h/site/x/lock.exclusive' "${SFTP_LOG}"
+
+    # Lock-class remediation: the supported `borg break-lock` is used for each
+    # distinct repository in the failed output, archive suffixes stripped and
+    # duplicates collapsed (the same repo appears in several error lines).
+    export BORG_LOG="${tmp}/borg.log"
+    : > "${BORG_LOG}"
+    unset PGREP_LIVE BORG_BREAK_RC
+    lock_output='Command '"'"'borg create ssh://u391408@u391408.your-storagebox.de:23/home/applications/g/h/site/x::x-files-2026-11-03'"'"' failed
+Failed to create/acquire the lock /home/applications/g/h/site/x/lock (timeout).
+Command '"'"'borg create ssh://u391408@u391408.your-storagebox.de:23/home/applications/g/h/site/x::x-files-2026-11-03'"'"' returned non-zero exit status 2.'
+    rc=0; borg_storage_break_locks_from_output "${lock_output}" || rc=$?
+    [[ ${rc} -eq 0 ]]
+    [[ "$(grep -c 'break-lock' "${BORG_LOG}")" -eq 1 ]]
+    grep -qF 'break-lock ssh://u391408@u391408.your-storagebox.de:23/home/applications/g/h/site/x' "${BORG_LOG}"
+    ! grep -qF '::' "${BORG_LOG}"
+
+    # Guard: a live local borg process on that repository vetoes the break.
+    : > "${BORG_LOG}"
+    export PGREP_LIVE="4242 borg create ssh://u391408@u391408.your-storagebox.de:23/home/applications/g/h/site/x"
+    rc=0; borg_storage_break_repo_lock "ssh://u391408@u391408.your-storagebox.de:23/home/applications/g/h/site/x" || rc=$?
+    [[ ${rc} -eq 1 ]]
+    [[ ! -s "${BORG_LOG}" ]]
+    unset PGREP_LIVE
+
+    # A failed break-lock is reported, never swallowed as success.
+    : > "${BORG_LOG}"
+    export BORG_BREAK_RC=2
+    rc=0; borg_storage_break_repo_lock "ssh://u391408@u391408.your-storagebox.de:23/home/applications/g/h/site/x" || rc=$?
+    [[ ${rc} -eq 1 ]]
+    unset BORG_BREAK_RC
+
+    # Preflight blocked by a lock: broken once, preflight retried, init path OK.
+    : > "${BORG_LOG}"
+    : > "${BORG_FAKE_COUNT}"
+    export BORG_FAKE_MODE=lock_preflight
+    rc=0; _initialize_repository_for_config "${config_file}" "borgmatic" || rc=$?
+    [[ ${rc} -eq 0 ]]
+    grep -qF 'break-lock' "${BORG_LOG}"
 
     # Precedence: an authentication failure outranks a missing repository,
     # and malformed/root URLs are rejected instead of being operated on.

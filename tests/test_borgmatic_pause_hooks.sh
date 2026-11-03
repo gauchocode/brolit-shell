@@ -70,7 +70,7 @@ check "pause entry removed" "! grep -q 'pause' '${TEST_TMP}/project.yml'"
 check "unpause entry removed" "! grep -q 'unpause' '${TEST_TMP}/project.yml'"
 check "echo hook kept" "grep -q 'echo \"Starting backup\"' '${TEST_TMP}/project.yml'"
 check "docker logs hook kept" "grep -q 'docker-compose.yml logs' '${TEST_TMP}/project.yml'"
-check "on_error hook kept" "grep -q 'send_notification' '${TEST_TMP}/project.yml'"
+check "on_error hook kept (pause sanitizer does not touch it)" "grep -q 'send_notification' '${TEST_TMP}/project.yml'"
 check "before_backup key still present" "grep -q 'before_backup:' '${TEST_TMP}/project.yml'"
 
 # 2) Idempotency: running the sed twice changes nothing.
@@ -99,6 +99,21 @@ check "template keeps the docker logs hook" "grep -q 'docker-compose.yml logs' '
 # 5) The function exists and is wired into the nightly preparation.
 check "sanitize function defined" "type sanitize_borgmatic_pause_hooks >/dev/null 2>&1"
 check "wired into prepare_borgmatic_environment" "grep -q 'sanitize_borgmatic_pause_hooks' '${TEST_LOADER_DIR}/../cron/backups_tasks.sh'"
+
+# 6) The on_error hook used to call send_notification, which does not exist in
+# the /bin/sh borgmatic uses for hooks (exit 127, hiding the real reason).
+# Templates must ship a plain command and the sanitizer must rewrite the hook
+# in already-generated configs without breaking the YAML block.
+sed -i -E 's|^([[:space:]]*-[[:space:]]*)send_notification .*$|\1echo "Borgmatic failed; see the brolit backup log for the classified reason"|' "${TEST_TMP}/project.yml"
+check "send_notification hook replaced" "! grep -q 'send_notification' '${TEST_TMP}/project.yml'"
+check "on_error is still a shell command" "grep -q 'on_error:' '${TEST_TMP}/project.yml' && grep -q 'Borgmatic failed' '${TEST_TMP}/project.yml'"
+check "replacement is idempotent" "! grep -qE '^[[:space:]]*-[[:space:]]*send_notification ' '${TEST_TMP}/project.yml'"
+
+for tpl in docker postgres; do
+    check "${tpl} template has no send_notification hook" "! grep -qE '^[[:space:]]*-[[:space:]]*send_notification ' '${TEST_LOADER_DIR}/../config/borg/borgmatic.template-${tpl}.yml'"
+done
+check "notification sanitizer defined" "type sanitize_borgmatic_notification_hooks >/dev/null 2>&1"
+check "notification sanitizer wired nightly" "grep -q 'sanitize_borgmatic_notification_hooks' '${TEST_LOADER_DIR}/../cron/backups_tasks.sh'"
 
 hooks_teardown
 

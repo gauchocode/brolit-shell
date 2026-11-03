@@ -61,5 +61,8 @@ postgresql_databases:
       format: plain
       options: --no-tablespaces
 
+# Plain command only: borgmatic runs hooks under /bin/sh without brolit's libs,
+# so send_notification is not defined there (it failed with exit 127 and hid
+# the real reason). brolit already emails the failure itself.
 on_error:
-    - send_notification "Borgmatic" "Error during backup for {project}" "alert"
+    - echo "Borgmatic failed for {project}; see the brolit backup log for the classified reason"

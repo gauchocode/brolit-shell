@@ -133,6 +133,7 @@ function prepare_borgmatic_environment() {
     load_configurations
     generate_config    # Only generates missing configs
     sanitize_borgmatic_pause_hooks    # Self-heal configs generated before the template dropped the pause hooks
+    sanitize_borgmatic_notification_hooks    # Self-heal configs carrying the undefined send_notification on_error hook
 
     log_event "info" "Borgmatic environment preparation completed" "false"
     

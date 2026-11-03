@@ -1439,6 +1439,94 @@ function borg_storage_clear_stale_locks() {
 }
 
 ################################################################################
+# Private: resolve the borg executable used for lock maintenance.
+#
+# Outputs:
+#   Command string, or empty when borg is not installed.
+################################################################################
+function _borg_resolve_borg_cmd() {
+
+    if command -v borg >/dev/null 2>&1; then
+        echo "borg"
+    elif [[ -x "/root/.local/bin/borg" ]]; then
+        echo "/root/.local/bin/borg"
+    fi
+
+}
+
+################################################################################
+# Break the lock of a repository that a borgmatic call could not acquire.
+#
+# Live incident: a destination Storage Box kept a lock.roster entry from a
+# borg process that died with its ssh session. borg waits `lock_wait` seconds
+# on every run and gives up, so that destination stops receiving backups for
+# days while the nightly email only says the project failed -- and the second
+# (disaster-recovery) destination is precisely the one nobody looks at until
+# it is needed. `borg break-lock` is the supported way to clear it.
+#
+# Guard: never break a lock while this host has a borg process using the same
+# repository; a real lock must survive. Repositories are namespaced per host
+# on the storage side, so the local check covers the only possible owner.
+#
+# Arguments:
+#   ${1} = repository URL (ssh://user@host[:port]/path, optional ::archive)
+# Outputs:
+#   0 when the lock is gone (had none or was broken), 1 otherwise.
+################################################################################
+function borg_storage_break_repo_lock() {
+
+    local url="${1%%::*}"
+    local borg_cmd
+
+    _borg_parse_repo_url "${url}" || return 1
+
+    if pgrep -af "borg" 2>/dev/null | grep -vE "pgrep|grep" | grep -qF -- "${REPO_PATH}"; then
+        log_event "warning" "Borg lock on ${REPO_HOST}:${REPO_PATH} is held by a local process; not breaking it" "false"
+        return 1
+    fi
+
+    borg_cmd="$(_borg_resolve_borg_cmd)"
+    [[ -n "${borg_cmd}" ]] || return 1
+
+    if timeout 120 "${borg_cmd}" break-lock "${url}" >/dev/null 2>&1; then
+        log_event "info" "Broke stale Borg lock on ${REPO_HOST}:${REPO_PATH}" "false"
+        return 0
+    fi
+
+    return 1
+
+}
+
+################################################################################
+# Break every distinct repository lock mentioned in a failed borgmatic output.
+#
+# Arguments:
+#   ${1} = captured stdout+stderr of the failed borgmatic invocation
+# Outputs:
+#   0 when at least one lock was broken, 1 otherwise.
+################################################################################
+function borg_storage_break_locks_from_output() {
+
+    local output="${1}"
+    local url broken=0
+    local -a urls=()
+
+    mapfile -t urls < <(
+        grep -oE 'ssh://[A-Za-z0-9._~:/?#@=-]+' <<<"${output}" \
+            | sed 's/::.*//' \
+            | awk '!seen[$0]++'
+    )
+    [[ ${#urls[@]} -gt 0 ]] || return 1
+
+    for url in "${urls[@]}"; do
+        borg_storage_break_repo_lock "${url}" && broken=1
+    done
+
+    [[ ${broken} -eq 1 ]]
+
+}
+
+################################################################################
 # Private: initialize the repository (or repositories) in a single borgmatic
 # config file, as one combined borgmatic call. Borgmatic aborts the whole
 # command on the first repository it can't reach/init -- fine for a
@@ -1489,6 +1577,25 @@ function _initialize_repository_for_config() {
     if [[ "${exitstatus}" -eq 124 && "${init_reason}" != "config" && "${init_reason}" != "relocation" ]]; then
         init_reason="network"
     fi
+    # A lock left behind on the destination makes the preflight fail even
+    # though the repository is healthy. Break it (guarded) and retry the
+    # preflight once before declaring the repository unavailable.
+    if [[ "${init_reason}" == "lock" ]] && borg_storage_break_locks_from_output "${init_output}"; then
+        log_event "info" "Retrying repository preflight after lock remediation" "false"
+        if init_output=$(eval 'timeout "${init_timeout}" '"${borg_cmd}"' repo-list --short --last 1 --config "${config_file}"' 2>&1); then
+            exitstatus=0
+        else
+            exitstatus=$?
+        fi
+        if [[ "${exitstatus}" -eq 0 ]]; then
+            log_event "info" "Repository already exists (preflight succeeded after lock remediation)" "false"
+            return 0
+        fi
+        init_reason="$(borg_init_failure_reason "${init_output}")"
+        if [[ "${exitstatus}" -eq 124 && "${init_reason}" != "config" && "${init_reason}" != "relocation" ]]; then
+            init_reason="network"
+        fi
+    fi
     if [[ "${init_reason}" == "repo_missing" ]]; then
         if init_output=$(eval 'timeout "${init_timeout}" '"${borg_cmd}"' init --encryption=none --config "${config_file}"' 2>&1); then
             exitstatus=0
@@ -1503,17 +1610,17 @@ function _initialize_repository_for_config() {
         if [[ "${exitstatus}" -eq 124 && "${init_reason}" != "config" && "${init_reason}" != "relocation" ]]; then
             init_reason="network"
         fi
-        # Auto-remediate the two storage-side layouts borg init cannot get
-        # past on its own, then retry once. Both are idempotent and guarded.
-        if [[ "${init_reason}" == "parent_missing" || "${init_reason}" == "stale_lock" ]]; then
+        # Auto-remediate the storage-side layouts borg init cannot get past on
+        # its own, then retry once. All three are idempotent and guarded.
+        if [[ "${init_reason}" == "parent_missing" || "${init_reason}" == "stale_lock" || "${init_reason}" == "lock" ]]; then
             local repo_url remediated="false"
             repo_url="$(grep -oE 'ssh://[A-Za-z0-9._~:/?#@=-]+' <<<"${init_output}" | head -1)"
-            if [[ -n "${repo_url}" ]]; then
-                if [[ "${init_reason}" == "parent_missing" ]]; then
-                    borg_storage_create_parent_dirs "${repo_url}" && remediated="true"
-                else
-                    borg_storage_clear_stale_locks "${repo_url}" && remediated="true"
-                fi
+            if [[ "${init_reason}" == "parent_missing" && -n "${repo_url}" ]]; then
+                borg_storage_create_parent_dirs "${repo_url}" && remediated="true"
+            elif [[ "${init_reason}" == "stale_lock" && -n "${repo_url}" ]]; then
+                borg_storage_clear_stale_locks "${repo_url}" && remediated="true"
+            elif [[ "${init_reason}" == "lock" ]]; then
+                borg_storage_break_locks_from_output "${init_output}" && remediated="true"
             fi
             if [[ "${remediated}" == "true" ]]; then
                 log_event "info" "Retrying repository initialization after ${init_reason} remediation" "false"
@@ -2354,6 +2461,40 @@ function sanitize_borgmatic_pause_hooks() {
         if grep -qE "docker-compose\.yml (pause|unpause)" "${config_file}" 2>/dev/null; then
             sed -i '/docker-compose\.yml pause/d; /docker-compose\.yml unpause/d' "${config_file}"
             log_event "info" "Removed docker pause/unpause backup hooks from ${config_file}" "false"
+        fi
+    done
+
+    return 0
+
+}
+
+################################################################################
+# Replace the broken send_notification on_error hook in existing configs.
+#
+# borgmatic runs hooks through /bin/sh without sourcing brolit's libraries, so
+# send_notification is not a command there: every failed backup reported
+# "/bin/sh: send_notification: not found" (exit 127) and borgmatic surfaced
+# that hook failure instead of the repository reason. The replacement keeps
+# on_error valid YAML and a plain shell command, and brolit's own email still
+# reports the failure with its classified reason.
+#
+# Arguments:
+#   none (operates on BROLIT_BORGMATIC_CONFIG_DIR, default /etc/borgmatic.d)
+# Outputs:
+#   0 always; logs each config it rewrites.
+################################################################################
+function sanitize_borgmatic_notification_hooks() {
+
+    local config_dir="${BROLIT_BORGMATIC_CONFIG_DIR:-/etc/borgmatic.d}"
+    local config_file
+
+    [[ -d "${config_dir}" ]] || return 0
+
+    for config_file in "${config_dir}"/*.yml; do
+        [[ -f "${config_file}" ]] || continue
+        if grep -qE "^[[:space:]]*-[[:space:]]*send_notification " "${config_file}" 2>/dev/null; then
+            sed -i -E 's|^([[:space:]]*-[[:space:]]*)send_notification .*$|\1echo "Borgmatic failed; see the brolit backup log for the classified reason"|' "${config_file}"
+            log_event "info" "Replaced the undefined send_notification hook in ${config_file}" "false"
         fi
     done
 
