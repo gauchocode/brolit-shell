@@ -750,6 +750,7 @@ function docker_list_project_databases() {
         return 1
     fi
 
+    ( set -o pipefail
     docker compose -f "${compose_file}" config --format json 2>/dev/null | jq -r '
       .services | to_entries[]
       | select(.value.image != null)
@@ -765,7 +766,7 @@ function docker_list_project_databases() {
       | select($has_datadir)
       | [$e.key, (if $is_mysql then "mysql" else "postgres" end)]
       | @tsv
-    '
+    ' )
 
 }
 

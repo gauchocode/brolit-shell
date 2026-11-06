@@ -13,10 +13,8 @@
 #   2. Docker projects silently skipped the database: the generic path only
 #      looks for a local MySQL/Postgres, so a containerized DB was never
 #      dumped.
-#   3. The first fix (delegating to backup_docker_project) duplicated the
-#      whole site upload and broke project_delete, which stops the stack
-#      before the final backup: the dump against a stopped container
-#      failed and aborted the deletion.
+#   3. Database-only mode must not duplicate the file upload, and stopped
+#      or ambiguous database containers must not be reported as backed up.
 #
 # The docker path is exercised against the REAL backup_docker_project with
 # a PATH-faked docker binary and a real compose file. No network, no real
@@ -68,15 +66,26 @@ COMPOSE_EOF
 printf '%s\n' "$*" >> "${FAKE_DOCKER_LOG}"
 case "$*" in
     *"config --format json"*)
+        [[ "${FAKE_CONFIG_FAIL:-false}" == "false" ]] || exit 1
         printf '{"services":{"db":{"image":"mysql:8","volumes":[{"target":"/var/lib/mysql"}]}}}\n'
         ;;
-    *"ps --format"*)
-        printf 'proj_db_1\n'
+    *" ps "*)
+        [[ "${FAKE_PS_FAIL:-false}" == "false" ]] || exit 1
+        [[ "${FAKE_PS_EMPTY:-false}" == "false" ]] || exit 0
+        if [[ "${FAKE_REPLICAS:-false}" == "true" ]]; then
+            printf 'proj_db_stopped\nproj_db_running\n'
+            exit 0
+        fi
+        if [[ "${FAKE_CONTAINER_RUNNING:-true}" == "true" || "$*" == *"--all"* ]]; then
+            printf 'proj_db_1\n'
+        fi
         ;;
     *"printenv MYSQL_DATABASE"*)
+        [[ "${FAKE_NAME_FAIL:-false}" == "false" ]] || exit 1
         printf 'site_prod\n'
         ;;
     *"inspect"*)
+        [[ "${FAKE_INSPECT_FAIL:-false}" == "false" ]] || exit 1
         if [[ "${FAKE_CONTAINER_RUNNING:-true}" == "true" ]]; then
             printf 'true\n'
         else
@@ -121,8 +130,10 @@ FAKE_EOF
     # Database detection needs jq (not present in the test image); the
     # detection itself is not what this slice changes, so it is stubbed
     # while the rest of backup_docker_project runs for real.
+    BKPK_REAL_DETECT_FN="$(declare -f docker_list_project_databases)"
     function docker_list_project_databases() {
         local compose_file="${1}"
+        [[ "${FAKE_DISCOVERY_FAIL:-false}" == "false" ]] || return 1
         [[ -f "${compose_file}" ]] || return 1
         printf 'db\tmysql\n'
     }
@@ -250,30 +261,90 @@ function test_docker_database_only_does_not_duplicate_files() {
 
 }
 
-function test_docker_stopped_container_is_skipped() {
+function test_docker_stopped_container_fails() {
 
-    echo "=== Test: a stopped container is skipped instead of failing ==="
+    echo "=== Test: a stopped database fails the project backup ==="
 
     : > "${CALLS_FILE}"
+    : > "${FAKE_DOCKER_LOG}"
     eval "${BKPK_REAL_DOCKER_FN}"
     FAKE_CONTAINER_RUNNING="false" backup_docker_project "site.example.com" "docker_backup" "database_only" >/dev/null 2>&1
     local rc=$?
 
-    if [[ ${rc} -ne 0 ]]; then
-        echo "FAILED: a stopped container must not fail the backup (rc ${rc})"
+    if [[ ${rc} -eq 0 ]]; then
+        echo "FAILED: a stopped database must fail the backup"
         return 1
     fi
     if [[ "$(call_count database)" -ne 0 ]]; then
         echo "FAILED: no dump must be attempted against a stopped container"
         return 1
     fi
-    if ! grep -q "not running" "${EVENTS_FILE}"; then
-        echo "FAILED: expected the skip to be logged"
+    if ! grep -q "stopped or its state is unavailable" "${EVENTS_FILE}"; then
+        echo "FAILED: expected the failure to be logged"
+        return 1
+    fi
+    if ! grep -q 'inspect.*proj_db_1' "${FAKE_DOCKER_LOG}"; then
+        echo "FAILED: stopped Compose container was not discovered and inspected"
         return 1
     fi
 
-    echo "PASSED: stopped container skipped without failing"
+    if FAKE_CONTAINER_RUNNING="false" backup_project "site.example.com" "" >/dev/null 2>&1; then
+        echo "FAILED: stopped database must propagate to backup_project"
+        return 1
+    fi
+    echo "PASSED: stopped database fails and propagates"
 
+}
+
+function test_docker_container_resolution_fails_closed() {
+    local scenario rc
+    eval "${BKPK_REAL_DOCKER_FN}"
+    for scenario in FAKE_REPLICAS FAKE_PS_FAIL FAKE_PS_EMPTY FAKE_INSPECT_FAIL FAKE_NAME_FAIL FAKE_DISCOVERY_FAIL; do
+        : > "${CALLS_FILE}"
+        : > "${FAKE_DOCKER_LOG}"
+        export "${scenario}=true"
+        backup_docker_project "site.example.com" "docker_backup" "database_only" >/dev/null 2>&1
+        rc=$?
+        unset "${scenario}"
+        if [[ ${rc} -eq 0 || "$(call_count database)" -ne 0 ]]; then
+            echo "FAILED: ${scenario} must fail without dumping"
+            return 1
+        fi
+        if [[ ${scenario} == FAKE_REPLICAS ]] && grep -q 'inspect\|printenv' "${FAKE_DOCKER_LOG}"; then
+            echo "FAILED: ambiguous replicas must not be arbitrarily selected"
+            return 1
+        fi
+    done
+    echo "PASSED: replicas, missing containers and inspection errors fail closed"
+}
+
+function test_compose_config_failure_propagates() {
+    local stub
+    stub="$(declare -f docker_list_project_databases)"
+    eval "${BKPK_REAL_DETECT_FN}"
+    if FAKE_CONFIG_FAIL=true docker_list_project_databases "${PROJECTS_PATH}/site.example.com/docker-compose.yml" >/dev/null 2>&1; then
+        echo "FAILED: compose config failure was hidden by jq"
+        eval "${stub}"
+        return 1
+    fi
+    eval "${stub}"
+    echo "PASSED: compose config failure propagates through discovery"
+}
+
+function test_empty_dotenv_does_not_disclose_environment() {
+    local output rc
+    eval "${BKPK_REAL_DOCKER_FN}"
+    : > "${PROJECTS_PATH}/site.example.com/.env"
+    export BKP_SECRET_SENTINEL='private-secret-do-not-print'
+    output="$(backup_docker_project "site.example.com" "docker_backup" "database_only" 2>&1)"
+    rc=$?
+    rm -- "${PROJECTS_PATH}/site.example.com/.env"
+    unset BKP_SECRET_SENTINEL
+    if [[ ${rc} -ne 0 || "${output}" == *private-secret-do-not-print* ]]; then
+        echo "FAILED: empty dotenv caused backup failure or environment disclosure"
+        return 1
+    fi
+    echo "PASSED: empty dotenv does not print environment"
 }
 
 function test_docker_database_failure_is_reported() {
@@ -302,7 +373,7 @@ function test_docker_database_failure_is_reported() {
 
 function test_docker_missing_compose_still_backs_up_files() {
 
-    echo "=== Test: a missing compose file skips the database, not the backup ==="
+    echo "=== Test: a missing compose file fails coverage while saving files ==="
 
     : > "${CALLS_FILE}"
     : > "${EVENTS_FILE}"
@@ -310,8 +381,8 @@ function test_docker_missing_compose_still_backs_up_files() {
     backup_docker_project "nocompose.example.com" "docker_backup" "files_and_db" >/dev/null 2>&1
     local rc=$?
 
-    if [[ ${rc} -ne 0 ]]; then
-        echo "FAILED: a missing compose file must not fail the backup (rc ${rc})"
+    if [[ ${rc} -eq 0 ]]; then
+        echo "FAILED: missing compose file must fail the backup"
         return 1
     fi
     if [[ "$(call_count files)" -lt 1 ]]; then
@@ -327,7 +398,7 @@ function test_docker_missing_compose_still_backs_up_files() {
         return 1
     fi
 
-    echo "PASSED: missing compose file keeps the files backup"
+    echo "PASSED: missing compose file keeps files but fails coverage"
 
 }
 
@@ -397,7 +468,13 @@ function test_backup_project_resilience() {
     echo ""
     test_docker_database_only_does_not_duplicate_files || failed=1
     echo ""
-    test_docker_stopped_container_is_skipped || failed=1
+    test_docker_stopped_container_fails || failed=1
+    echo ""
+    test_docker_container_resolution_fails_closed || failed=1
+    echo ""
+    test_compose_config_failure_propagates || failed=1
+    echo ""
+    test_empty_dotenv_does_not_disclose_environment || failed=1
     echo ""
     test_docker_database_failure_is_reported || failed=1
     echo ""
