@@ -120,6 +120,36 @@ decompress one.
 
 Then roll the fix to every other server running brolit-shell.
 
+### Fleet rollout (staged)
+
+Staged rollout started on 2026-11-11. Stage 1 (same day, ahead of the
+00:45 UTC nightly window) — all pulled cleanly to v3.14.12 (`26d36314`),
+fix marker and `bash -n` verified on each:
+
+| Server | Before | `/var/www` | Free |
+|--------|--------|-----------:|-----:|
+| arqa-web-vm | 3.14.10 | 281G | 57G |
+| gaucho-docker-host04 | 3.14.10 | 67G | 77G |
+| gaucho-automate01 | 3.14.10 | 65G | 96G |
+| tukiverse-apps02 | 3.14.8 | 75G | 346G |
+| gaucho-docker-host03 | 3.14.9 | 39G | 88G |
+| gaucho-host01-vm | 3.14.9 | 19G | 132G |
+| centum-ai-services01 | 3.14.10 | 27G | 132G |
+
+Stage 2 (after verifying stage 1's nightly runs): the remaining
+FF-updatable servers with active backup cron (docker-host01/02, dev02,
+dev04, goseries-master, redcoach-* ×5, tukiverse-dev01/apps03, bmailing,
+epica-apps01, ostiaapp-vm, producir-integral-csusc, spyglass, redcoach
+docker01/dev02).
+
+Stage 3 (needs review first — servers carry local commits never pushed):
+wigou (`6fecc305`), anfibia-cronos (3.14.0, `a6b4e203`), epica-apps02
+(3.14.1, `4ade6763`), gaucho-apps01-ds4, stellacast-vm, VDS-DEV,
+gaucho-dedicate01 (last four have no backup cron — bug dormant).
+
+Unreachable during the survey: constructoradelbosque, stellacast-gpu.
+No brolit-shell: VDS-PROD-EPICA-EXCLUSIVO, VDS-Staging.
+
 Known pre-existing cosmetic issue observed during verification (not part
 of this fix): `backup_helper.sh` around the project-database path does an
 arithmetic `[[` test on a `"<file>;<size>"` string and logs
