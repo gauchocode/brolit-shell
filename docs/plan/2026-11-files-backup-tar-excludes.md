@@ -1,0 +1,118 @@
+# Plan: Files backup tar excludes fix
+
+## Status
+- **Phase**: Complete
+- **Last Updated**: 2026-11-11
+
+## Overview
+
+Every `excluded_on_tar` pattern was silently ignored by the nightly files
+backup. `backup_project_files()` concatenated the patterns into a single
+string with literal single quotes around each one, and `compress()`
+expanded that string unquoted: word splitting does not remove quotes, so
+tar received `--exclude='*recovery-live*'` with the quote characters as
+part of the pattern. No path contains a literal `'`, so nothing was ever
+excluded.
+
+Impact (production): on `tukiverse-apps01` (194.163.180.194) the backup
+temp dir lives on the same disk as the data, so projects with large
+"excluded" directories filled the disk while the nightly backup ran:
+
+- **2026-11-08 ~00:44 UTC**: disk full, `wap2tukitalkcom-postgres-1` died
+  and Docker stopped retrying (down until 2026-11-11, started by hand).
+- **2026-11-11 ~00:40 UTC**: temp archive reached 34 GB (a 29 GB
+  `recovery-live/pg_data` that the config excludes), disk hit 100%,
+  TukiFeedback's Postgres went into a crash/recovery loop.
+
+The 29 GB `recovery-live/` directory was deleted on 2026-11-11 as a
+stopgap. The bug affected every project on every server.
+
+## Implementation
+
+### `libs/commons.sh`
+
+- `compress()` and `decompress()` now take exclusion patterns as
+  **separate arguments** (`${4}...`, one `--exclude=PATTERN` each),
+  collected into a local array and expanded quoted. Empty arguments are
+  filtered, so existing callers passing `""` are unaffected. The unquoted
+  `${exclude_parameters}` expansions (and their `SC2086` suppressions) are
+  gone.
+- `decompress()` zip branch builds the `unzip -x` exclusions as an array
+  as well.
+
+### `libs/local/backup_helper.sh`
+
+- `backup_project_files()` builds `exclude_args` as an array. The old
+  `string_remove_spaces` + `tr '\n' ','` + quoted-concatenation pipeline
+  was replaced by a line reader that:
+  - keeps interior spaces as part of the pattern (the old code destroyed
+    them: `my logs*` became `mylogs*`),
+  - still tolerates comma-separated lists from configs migrated from
+    older versions,
+  - trims only surrounding whitespace and skips empty entries.
+
+## Hardening added in the same change
+
+1. **Free-space guard** in `compress()`: before archiving, the input is
+   estimated with `du -sb` using the same exclusion patterns (also used
+   for the `pv -s` progress size, which previously overstated progress by
+   counting excluded data). If the temp filesystem has less than
+   `estimate × 1.2` bytes free, the backup fails with a clear error
+   instead of filling the disk and taking unrelated services down. When
+   `du` or `df` cannot produce a number the guard is skipped but logs a
+   warning, so the bypass is visible in the run log.
+2. **Pipeline result is no longer ignored**: the tar | pv | compressor
+   pipeline status is checked, so a disk-full mid-archive no longer
+   reports success when the compression test is disabled. The partial
+   output file is deleted on pipeline failure, on compression-test
+   failure, and by `backup_project_files()` when `compress()` fails.
+3. **Visibility**: `compress()` logs the effective pattern count and
+   patterns (`N exclusion pattern(s): ...`), and `backup_project_files()`
+   logs the same for the project, so a regression of this kind is visible
+   in the run log.
+4. **Argument validation**: `_collect_exclude_args()` (shared by
+   `compress()` and `decompress()`) accepts only complete
+   `--exclude=PATTERN` arguments and drops anything else with a warning,
+   so a future caller bug cannot inject arbitrary tar/du flags.
+
+## Tests
+
+`tests/test_backup_tar_excludes.sh` (wired into `tests_suite.sh` as menu
+option 21 and into RUN ALL):
+
+- patterns reach `compress()` as separate, unquoted arguments (the exact
+  old bug fails this), including comma-separated legacy lists,
+- a real tar run excludes `pg_data/`, `recovery-live/`, `*.log`,
+  `node_modules/.cache`, bracket patterns (`data[0-9]`) and
+  space-containing patterns (`my logs*`), while keeping normal files
+  (including `keep notes.txt`); empty and invalid extra arguments are
+  filtered with a warning,
+- `decompress()` applies exclude arguments,
+- `compress()` aborts without creating the archive when free space is
+  insufficient (fake `df`),
+- `compress()` deletes the partial output when the pipeline fails (failing
+  compressor).
+
+`pv`, `df` and the compressor are faked on PATH; no network, no servers.
+The suite fails against the pre-fix code for every case above except the
+decompress one.
+
+## Verification after deploying
+
+On `tukiverse-apps01` (`ssh -F ~/.ssh/config_brolit tukiverse-apps01`),
+with the fixed version: run the files backup for `wap2.tukitalk.com` by
+hand, check the archive size, and confirm
+`tar -tjf <archive> | grep -E 'pg_data|redis_data|\.log$'` returns
+nothing. Then roll the fix to every other server running brolit-shell.
+
+## Decisions Log
+
+| Date | Decision | Rationale |
+|------|----------|-----------|
+| 2026-11-11 | Exclusions passed as variadic args, not a string | Word splitting/globbing cannot corrupt them; quoting survives patterns with spaces and brackets |
+| 2026-11-11 | Free-space guard uses uncompressed estimate × 1.2 | Conservative for incompressible data; a failed backup is cheaper than a disk-full outage |
+| 2026-11-11 | Guard skips with a warning when du/df cannot evaluate | A broken du must not disable backups, but the bypass must be visible in the run log |
+| 2026-11-11 | `compress()` creates the output dir before df | `df` needs an existing path; also fixes callers that forgot `mkdir -p` |
+| 2026-11-11 | Only `--exclude=PATTERN` args accepted (`_collect_exclude_args`) | Closes the tar/du flag-injection surface for future callers |
+| 2026-11-11 | Comma-splitting kept in `backup_project_files()` | Configs migrated from older versions may hold comma-separated lists |
+| 2026-11-11 | `restore_backup_helper.sh` caller unchanged | Its single `--exclude=*.log` string arrives as one array element and expands correctly |

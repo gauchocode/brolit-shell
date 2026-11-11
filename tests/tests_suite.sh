@@ -31,6 +31,7 @@ function tests_suite_menu() {
     "18)" "RUN BORG INIT MISMATCH TESTS"
     "19)" "RUN CLOUDFLARE DNS FLOW TESTS"
     "20)" "RUN BACKUP PROJECT RESILIENCE TESTS"
+    "21)" "RUN BACKUP TAR EXCLUDE TESTS"
   )
 
   chosen_tests_options=$(whiptail --title "TESTS SUITE" --menu " " 20 78 10 "${tests_options[@]}" 3>&1 1>&2 2>&3)
@@ -60,6 +61,10 @@ function tests_suite_menu() {
       test_backup_project_resilience
       test_backup_subject_status
       test_process_scanner_notifications
+      test_backup_tar_excludes || {
+        log_event "error" "Backup TAR exclude regression tests failed" "false"
+        return 1
+      }
       test_borg_scheduled_routing || {
         log_event "error" "Scheduled Borg routing regression tests failed" "false"
         return 1
@@ -147,6 +152,12 @@ function tests_suite_menu() {
     fi
     if [[ ${chosen_tests_options} == *"20"* ]]; then
       test_backup_project_resilience
+    fi
+    if [[ ${chosen_tests_options} == *"21"* ]]; then
+      test_backup_tar_excludes || {
+        log_event "error" "Backup TAR exclude regression tests failed" "false"
+        return 1
+      }
     fi
 
   else

@@ -1532,13 +1532,48 @@ function extract_filename_from_path() {
 }
 
 ################################################################################
+# Collect tar exclude patterns from the variadic arguments of compress()
+# and decompress().
+#
+# Accepts only complete "--exclude=PATTERN" arguments: anything else is
+# dropped with a warning, so a caller bug can never inject arbitrary
+# tar/du flags. Empty arguments (legacy callers pass "") are ignored.
+#
+# Arguments:
+#   ${1} = ${exclude_args_ref} - nameref of the array to fill (reset first)
+#   ${2}... = candidate exclude arguments
+#
+# Outputs:
+#   Fills the array referenced by ${1} with valid "--exclude=PATTERN" items.
+################################################################################
+
+function _collect_exclude_args() {
+
+  local -n exclude_args_ref="${1}"
+  shift
+
+  local arg
+  exclude_args_ref=()
+  for arg in "$@"; do
+    [[ -n "${arg}" ]] || continue
+    if [[ "${arg}" != "--exclude="* ]]; then
+      log_event "warning" "Ignoring invalid exclude argument (expected --exclude=PATTERN): ${arg}" "false"
+      continue
+    fi
+    exclude_args_ref+=("${arg}")
+  done
+
+}
+
+################################################################################
 # Extract compressed files
 #
 # Arguments:
 #   ${1} = ${file_path} - File to uncompress or extract
 #   ${2} = ${directory_to_extract} - Dir to uncompress file
 #   ${3} = ${compress_type} - Optional: compress-program (ex: lbzip2)
-#   ${4} = ${exclude_parameters} - Optional: exclude patterns (ex: "--exclude=*.log --exclude=cache")
+#   ${4}... = ${exclude_args} - Optional: exclude patterns, one per argument
+#          (ex: "--exclude=*.log" "--exclude=cache")
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -1551,7 +1586,14 @@ function decompress() {
   local file_path="${1}"
   local directory_to_extract="${2}"
   local compress_type="${3}"
-  local exclude_parameters="${4}"
+  shift 3
+
+  # Exclusions must arrive as separate arguments (one "--exclude=PATTERN"
+  # each). Passing them concatenated in a single string used to make the
+  # unquoted expansion below split patterns on spaces and glob them against
+  # the current directory.
+  local -a exclude_args=()
+  _collect_exclude_args exclude_args "$@"
 
   # Get filename and file extension
   filename=$(basename -- "${file_path}")
@@ -1560,7 +1602,7 @@ function decompress() {
   # Log
   log_event "info" "Extracting compressed file: ${file_path}" "false"
   log_event "debug" "Compress type: ${compress_type}" "false"
-  [[ -n "${exclude_parameters}" ]] && log_event "debug" "Exclude parameters: ${exclude_parameters}" "false"
+  [[ ${#exclude_args[@]} -gt 0 ]] && log_event "debug" "Exclude parameters: ${exclude_args[*]}" "false"
   display --indent 6 --text "- Extracting compressed file"
 
   if [[ -f "${file_path}" ]]; then
@@ -1569,17 +1611,14 @@ function decompress() {
 
     *.tar.bz2)
       if [[ -n "${compress_type}" ]]; then
-        # shellcheck disable=SC2086
-        pv --width 70 "${file_path}" | tar xp -C "${directory_to_extract}" --use-compress-program="${compress_type}" ${exclude_parameters}
+        pv --width 70 "${file_path}" | tar xp -C "${directory_to_extract}" --use-compress-program="${compress_type}" "${exclude_args[@]}"
       else
-        # shellcheck disable=SC2086
-        pv --width 70 "${file_path}" | tar xp -C "${directory_to_extract}" ${exclude_parameters}
+        pv --width 70 "${file_path}" | tar xp -C "${directory_to_extract}" "${exclude_args[@]}"
       fi
       ;;
 
     *.tar.gz)
-      # shellcheck disable=SC2086
-      pigz -dc "${file_path}" | pv --width 70 | tar xf - -C "${directory_to_extract}" ${exclude_parameters}
+      pigz -dc "${file_path}" | pv --width 70 | tar xf - -C "${directory_to_extract}" "${exclude_args[@]}"
       ;;
 
     *.bz2)
@@ -1587,7 +1626,7 @@ function decompress() {
       ;;
 
     *.rar)
-      if [[ -n "${exclude_parameters}" ]]; then
+      if [[ ${#exclude_args[@]} -gt 0 ]]; then
         log_event "warning" "RAR format does not support exclude patterns via decompress()" "false"
       fi
       unrar x "${file_path}" "${directory_to_extract}" | pv -l >/dev/null
@@ -1598,44 +1637,39 @@ function decompress() {
       ;;
 
     *.tar)
-      # shellcheck disable=SC2086
-      pv --width 70 "${file_path}" | tar xf -C "${directory_to_extract}" ${exclude_parameters}
+      pv --width 70 "${file_path}" | tar xf -C "${directory_to_extract}" "${exclude_args[@]}"
       ;;
 
     *.tbz2)
-      # shellcheck disable=SC2086
-      pv --width 70 "${file_path}" | tar xjf -C "${directory_to_extract}" ${exclude_parameters}
+      pv --width 70 "${file_path}" | tar xjf -C "${directory_to_extract}" "${exclude_args[@]}"
       ;;
 
     *.tgz)
-      # shellcheck disable=SC2086
-      pv --width 70 "${file_path}" | tar xzf -C "${directory_to_extract}" ${exclude_parameters}
+      pv --width 70 "${file_path}" | tar xzf -C "${directory_to_extract}" "${exclude_args[@]}"
       ;;
 
     *.xz)
-      # shellcheck disable=SC2086
-      pv --width 70 "${file_path}" | tar xvf -C "${directory_to_extract}" ${exclude_parameters}
+      pv --width 70 "${file_path}" | tar xvf -C "${directory_to_extract}" "${exclude_args[@]}"
       ;;
 
     *.zip)
-      if [[ -n "${exclude_parameters}" ]]; then
+      if [[ ${#exclude_args[@]} -gt 0 ]]; then
         # Convert tar-style excludes to unzip format
-        local unzip_excludes=""
-        for pattern in ${exclude_parameters}; do
+        local -a unzip_exclude_args=()
+        local pattern
+        for pattern in "${exclude_args[@]}"; do
           # Extract pattern from --exclude=pattern format
           pattern="${pattern#--exclude=}"
-          unzip_excludes="${unzip_excludes} -x ${pattern}"
+          unzip_exclude_args+=(-x "${pattern}")
         done
-        # shellcheck disable=SC2086
-        unzip -o "${file_path}" -d "${directory_to_extract}" ${unzip_excludes} | pv -l >/dev/null
+        unzip -o "${file_path}" -d "${directory_to_extract}" "${unzip_exclude_args[@]}" | pv -l >/dev/null
       else
         unzip -o "${file_path}" -d "${directory_to_extract}" | pv -l >/dev/null
       fi
       ;;
 
     *.zst)
-      # shellcheck disable=SC2086
-      pv --width 70 "${file_path}" | tar xp -C "${directory_to_extract}" --use-compress-program="${compress_type}" ${exclude_parameters}
+      pv --width 70 "${file_path}" | tar xp -C "${directory_to_extract}" --use-compress-program="${compress_type}" "${exclude_args[@]}"
       ;;
 
     *.Z)
@@ -1692,7 +1726,11 @@ function decompress() {
 #   ${1} = ${file_path}
 #   ${2} = ${to_backup} - Could be a file or a directory.
 #   ${3} = ${file_output}
-#   ${4} = ${exclude_parameters}
+#   ${4}... = ${exclude_args} - Optional: tar exclude patterns, one
+#          "--exclude=PATTERN" per argument. Never pass them concatenated
+#          in a single string: unquoted expansion keeps literal quote
+#          characters inside the patterns, tar matches nothing, and the
+#          "excluded" content fills the disk (2026-11-08/11 outages).
 #
 # Outputs:
 #   0 if ok, 1 on error.
@@ -1703,11 +1741,19 @@ function compress() {
   local backup_base_dir="${1}"
   local to_backup="${2}"
   local file_output="${3}"
-  local exclude_parameters="${4}"
+  shift 3
 
   local backup_file_size
   local compress_parameter
   local decompress_parameter
+  local estimated_size
+  local free_space
+  local output_dir
+  local -a pipeline_status
+
+  # Exclusions as an array: one "--exclude=PATTERN" element per argument.
+  local -a exclude_args=()
+  _collect_exclude_args exclude_args "$@"
 
   # Only for better displaying
   [[ ${to_backup} == "." ]] && to_backup_string="$(basename "${backup_base_dir}")" || to_backup_string="${to_backup}"
@@ -1715,6 +1761,7 @@ function compress() {
   # Log
   display --indent 6 --text "- Compressing ${to_backup_string}"
   log_event "info" "Compressing ${to_backup_string} ..." "false"
+  log_event "debug" "Compressing with ${#exclude_args[@]} exclusion pattern(s): ${exclude_args[*]:-none}" "false"
 
   # Prepare compress command
   if [[ -n ${BACKUP_CONFIG_COMPRESSION_CORES} && ${BACKUP_CONFIG_COMPRESSION_TYPE} == "lbzip2" ]]; then
@@ -1727,14 +1774,69 @@ function compress() {
     compress_parameter="${compress_parameter} -${BACKUP_CONFIG_COMPRESSION_LEVEL}"
   fi
 
+  # Estimated size of what tar will actually read, using the same exclusion
+  # patterns as the archive run: keeps the pv progress bar meaningful and
+  # feeds the free-space guard below. Note du matches --exclude against the
+  # walked paths while tar matches archive member names; bare glob patterns
+  # (the config style) behave the same in both.
+  estimated_size="$(du -sb "${exclude_args[@]}" "${backup_base_dir}/${to_backup}" 2>/dev/null | awk '{s+=$1} END {print s+0}')"
+  if [[ ! "${estimated_size}" =~ ^[0-9]+$ ]] || (( estimated_size == 0 )); then
+    # du failed or measured nothing: the guard below cannot evaluate. Keep
+    # going (a broken du must not disable backups) but leave a trace in the
+    # run log, and drop the pv size estimate.
+    log_event "warning" "Could not estimate backup size for ${to_backup_string} (du returned: '${estimated_size}'). Free-space guard skipped." "false"
+    estimated_size=0
+  fi
+
+  # Free-space guard: the archive is built on the temp directory, usually
+  # the same disk as the data. A backup that does not fit fills the disk
+  # and takes every unrelated service down (2026-11-08 and 2026-11-11
+  # outages on tukiverse-apps01). A failed backup is cheaper than that.
+  output_dir="$(dirname -- "${file_output}")"
+  # Created here (not by the caller) so df can always resolve the path.
+  mkdir -p "${output_dir}"
+  free_space="$(df -P -B1 "${output_dir}" 2>/dev/null | awk 'NR==2 {print $4}')"
+  if [[ ! "${free_space}" =~ ^[0-9]+$ ]]; then
+    log_event "warning" "Could not determine free space on ${output_dir}. Free-space guard skipped." "false"
+  elif (( estimated_size > 0 && free_space < estimated_size * 12 / 10 )); then
+    clear_previous_lines "1"
+    display --indent 6 --text "- Compressing ${to_backup_string}" --result "FAIL" --color RED
+    display --indent 8 --text "Not enough free space for the backup (needed: ${estimated_size} bytes, available: ${free_space} bytes)" --tcolor RED
+    log_event "error" "Not enough free space to compress ${to_backup_string} into ${file_output}: estimated ${estimated_size} bytes, available ${free_space} bytes" "false"
+    return 1
+  fi
+
+  # pv size argument (omit when the estimate is unknown or zero)
+  local -a pv_args=(--width 70)
+  (( estimated_size > 0 )) && pv_args+=(-s "${estimated_size}")
+
   if [[ ${BACKUP_CONFIG_FOLLOW_SYMLINKS} == "true" ]]; then
     ## -h will follow symlinks
-    ### IMPORTANT: not add "" on ${exclude_parameters} or ${compress_parameter}
-    log_event "debug" "Running: ${TAR} -cf - --directory=\"${backup_base_dir}\" ${exclude_parameters} -h \"${to_backup}\" | pv --width 70 -s \"$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')\" | ${BACKUP_CONFIG_COMPRESSION_TYPE} ${compress_parameter} >\"${file_output}\"" "false"
-    ${TAR} -cf - --directory="${backup_base_dir}" ${exclude_parameters} -h "${to_backup}" | pv --width 70 -s "$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')" | ${BACKUP_CONFIG_COMPRESSION_TYPE} ${compress_parameter} >"${file_output}"
+    log_event "debug" "Running: ${TAR} -cf - --directory=\"${backup_base_dir}\" ${exclude_args[*]} -h \"${to_backup}\" | pv ${pv_args[*]} | ${BACKUP_CONFIG_COMPRESSION_TYPE} ${compress_parameter} >\"${file_output}\"" "false"
+    "${TAR}" -cf - --directory="${backup_base_dir}" "${exclude_args[@]}" -h "${to_backup}" | pv "${pv_args[@]}" | ${BACKUP_CONFIG_COMPRESSION_TYPE} ${compress_parameter} >"${file_output}"
   else
-    log_event "debug" "Running: ${TAR} -cf - --directory=\"${backup_base_dir}\" ${exclude_parameters} \"${to_backup}\" | pv --width 70 -s \"$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')\" | ${BACKUP_CONFIG_COMPRESSION_TYPE} ${compress_parameter} >\"${file_output}\"" "false"
-    ${TAR} -cf - --directory="${backup_base_dir}" ${exclude_parameters} "${to_backup}" | pv --width 70 -s "$(du -sb "${backup_base_dir}/${to_backup}" | awk '{print $1}')" | ${BACKUP_CONFIG_COMPRESSION_TYPE} ${compress_parameter} >"${file_output}"
+    log_event "debug" "Running: ${TAR} -cf - --directory=\"${backup_base_dir}\" ${exclude_args[*]} \"${to_backup}\" | pv ${pv_args[*]} | ${BACKUP_CONFIG_COMPRESSION_TYPE} ${compress_parameter} >\"${file_output}\"" "false"
+    "${TAR}" -cf - --directory="${backup_base_dir}" "${exclude_args[@]}" "${to_backup}" | pv "${pv_args[@]}" | ${BACKUP_CONFIG_COMPRESSION_TYPE} ${compress_parameter} >"${file_output}"
+  fi
+
+  # The tar pipeline result was previously ignored: with the compression
+  # test disabled, a disk-full mid-archive still reported success and left
+  # a truncated backup on disk.
+  pipeline_status=("${PIPESTATUS[@]}")
+  if [[ ${pipeline_status[0]} -ne 0 || ${pipeline_status[1]} -ne 0 || ${pipeline_status[2]} -ne 0 ]]; then
+
+    # Delete the partial temp file so a failed run cannot fill the disk
+    rm --force "${file_output}"
+    log_event "debug" "Pipeline status: tar=${pipeline_status[0]} pv=${pipeline_status[1]} ${BACKUP_CONFIG_COMPRESSION_TYPE}=${pipeline_status[2]}" "false"
+
+    clear_previous_lines "2"
+    display --indent 6 --text "- Compressing ${to_backup_string}" --result "FAIL" --color RED
+    display --indent 8 --text "Something went wrong making backup file: ${file_output}" --tcolor RED
+
+    log_event "error" "Something went wrong making backup file: ${file_output}" "false"
+
+    return 1
+
   fi
 
   # Compress result
@@ -1768,6 +1870,9 @@ function compress() {
 
       # Log
       clear_previous_lines "2"
+
+      # Delete the partial/corrupt temp file so it cannot fill the disk
+      rm --force "${file_output}"
 
       display --indent 6 --text "- Compressing ${to_backup_string}" --result "FAIL" --color RED
       display --indent 8 --text "Something went wrong making backup file: ${file_output}" --tcolor RED

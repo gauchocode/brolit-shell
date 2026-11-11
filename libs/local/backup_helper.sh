@@ -1015,7 +1015,6 @@ function backup_project_files() {
 
   local backup_file
   local backup_prefix_name
-  local exclude_parameters
   local storage_path
   local storage_result
 
@@ -1038,18 +1037,33 @@ function backup_project_files() {
     log_event "info" "Files backup for : ${directory_to_backup}" "false"
 
     # Excluding files/directories from TAR
-    exclude_parameters=""
-    # String to Array
-    excluded_files_list="$(string_remove_spaces "${EXCLUDED_FILES_LIST}")"
-    excluded_files_list="$(echo "${excluded_files_list}" | tr '\n' ',')"
-    IFS="," read -a excluded_array <<<"${excluded_files_list}"
-    for i in "${excluded_array[@]}"; do
-      :
-      exclude_parameters="${exclude_parameters} --exclude='${i}'"
-    done
+    #
+    # Patterns are passed to compress() as separate array elements. The old
+    # code concatenated them into one string with literal single quotes
+    # around each pattern: word splitting kept the quotes, tar received
+    # patterns like --exclude='*recovery-live*', matched nothing, and every
+    # excluded_on_tar pattern was silently ignored. Files backups then
+    # archived data directories the config excluded and filled the disk
+    # (2026-11-08 and 2026-11-11 outages on tukiverse-apps01).
+    local -a exclude_args=()
+    local excluded_pattern
+    # Config holds one pattern per line; configs migrated from older
+    # versions may hold comma-separated lists. Interior spaces are part of
+    # the pattern, so only the edges of each entry are trimmed.
+    while IFS= read -r excluded_pattern; do
+      local -a pattern_parts=()
+      IFS=',' read -r -a pattern_parts <<<"${excluded_pattern}"
+      local pattern_part
+      for pattern_part in "${pattern_parts[@]}"; do
+        pattern_part="${pattern_part#"${pattern_part%%[![:space:]]*}"}"
+        pattern_part="${pattern_part%"${pattern_part##*[![:space:]]}"}"
+        [[ -n "${pattern_part}" ]] && exclude_args+=("--exclude=${pattern_part}")
+      done
+    done <<<"${EXCLUDED_FILES_LIST}"
+    log_event "debug" "Files backup for ${directory_to_backup} excluding ${#exclude_args[@]} pattern(s): ${exclude_args[*]:-none}" "false"
 
     # Compress backup
-    backup_file_size="$(compress "${backup_path}" "${directory_to_backup}" "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "${exclude_parameters}")"
+    backup_file_size="$(compress "${backup_path}" "${directory_to_backup}" "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "${exclude_args[@]}")"
 
     # Check test result
     compress_result=$?
@@ -1109,6 +1123,10 @@ function backup_project_files() {
       display --indent 8 --text "Please see the log file" --tcolor RED
       log_event "error" "Something went wrong making a backup of ${directory_to_backup}." "false"
       log_event "debug" "compress result: ${compress_result}" "false"
+
+      # Delete the partial temp file (if any) so a failed run cannot fill the disk
+      rm --force "${BROLIT_TMP_DIR}/${NOW}/${backup_file}"
+      log_event "info" "Temp backup deleted from server (compress failed)" "false"
 
       return 1
 
