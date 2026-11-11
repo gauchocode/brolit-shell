@@ -99,11 +99,31 @@ decompress one.
 
 ## Verification after deploying
 
-On `tukiverse-apps01` (`ssh -F ~/.ssh/config_brolit tukiverse-apps01`),
-with the fixed version: run the files backup for `wap2.tukitalk.com` by
-hand, check the archive size, and confirm
-`tar -tjf <archive> | grep -E 'pg_data|redis_data|\.log$'` returns
-nothing. Then roll the fix to every other server running brolit-shell.
+**Executed on `tukiverse-apps01` (194.163.180.194) on 2026-11-11, v3.14.12
+(`b59dd760`):**
+
+- `./runner.sh -t backup -st project -D wap2.tukitalk.com` → EXIT=0,
+  `Project Backup [ DONE ]`, temp dir cleaned, disk stable at 49G free.
+- Run log: `Compressing with 10 exclusion pattern(s)` and the effective
+  command `tar -cf - --directory="/var/www" --exclude=*.log … --exclude=*backup-* -h "wap2.tukitalk.com"`
+  — no quote characters inside the patterns (the old bug showed
+  `--exclude='*.log'`).
+- `pv -s` estimate is exclude-aware: 8.65 GB vs the 11 GB raw project size.
+- Archive content (same tar command, member listing):
+  **0** entries matching `pg_data|redis_data|recovery-live|\.log$|\.tmp$|\.cache$|\.bak$|backup-`;
+  the control run without excludes shows **7,817** such entries — what the
+  buggy version archived nightly.
+- Final archive: 7,380 MiB, uploaded to Dropbox, retention cleanup OK.
+- Side repair: `tukibot_postgres` (down since 2026-11-09 00:44 UTC —
+  third disk-full window — restart count 129) started by hand and
+  recovered (WAL redo, accepting connections).
+
+Then roll the fix to every other server running brolit-shell.
+
+Known pre-existing cosmetic issue observed during verification (not part
+of this fix): `backup_helper.sh` around the project-database path does an
+arithmetic `[[` test on a `"<file>;<size>"` string and logs
+`syntax error: invalid arithmetic operator`; the backup still succeeds.
 
 ## Decisions Log
 
