@@ -82,6 +82,11 @@ function backup_manager_menu() {
         mail_backup_section "none" "none" "borg" "Borg backup disabled - skipped;SKIPPED"
       fi
 
+      # Retention failures are only a warning, but must be visible in the body.
+      retention_backup_result=0
+      [[ ${STORAGE_DELETE_ERRORS} -gt 0 ]] && retention_backup_result=1
+      [[ ${retention_backup_result} -ne 0 ]] && mail_retention_section "${STORAGE_DELETE_ERRORS}"
+
       # Footer
       mail_footer "${SCRIPT_V}"
 
@@ -97,6 +102,7 @@ function backup_manager_menu() {
         "configs_backup_section=${BROLIT_TMP_DIR}/configuration-bk-${NOW}.mail" \
         "files_backup_section=${BROLIT_TMP_DIR}/files-bk-${NOW}.mail" \
         "borg_backup_section=${BROLIT_TMP_DIR}/borg-bk-${NOW}.mail" \
+        "retention_section=${BROLIT_TMP_DIR}/retention-bk-${NOW}.mail" \
         "footer=${BROLIT_TMP_DIR}/footer-${NOW}.mail"; then
         log_event "error" "Failed to assemble complete backup email template" "false"
       fi
@@ -106,8 +112,6 @@ function backup_manager_menu() {
 
       # The subject reports backup outcomes only. Server/package health stays
       # in the detailed body and must not hide or fabricate a backup failure.
-      retention_backup_result=0
-      [[ ${STORAGE_DELETE_ERRORS} -gt 0 ]] && retention_backup_result=1
       email_status="$(mail_backup_subject_status "${database_backup_result}" "${files_backup_result}" "${borg_backup_result}" "${retention_backup_result}")"
 
       email_subject="${email_status} [${NOWDISPLAY}] - Complete Backup on ${SERVER_NAME}"
@@ -119,7 +123,7 @@ function backup_manager_menu() {
         notification_status="alert"
         status_text="completed with errors"
       elif [[ ${retention_backup_result} -ne 0 ]]; then
-        notification_status="alert"
+        notification_status="warning"
         status_text="completed with retention errors"
       fi
 

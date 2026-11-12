@@ -261,7 +261,8 @@ function mail_subject_status() {
 #   ${4} = Retention/storage cleanup exit status
 #
 # Outputs:
-#   A subject prefix: green when every backup result is 0, error otherwise.
+#   A subject prefix: green when every backup result is 0, warning when only
+#   retention failed, error otherwise.
 ################################################################################
 
 function mail_backup_subject_status() {
@@ -273,9 +274,37 @@ function mail_backup_subject_status() {
 
     if [[ "${status_d}:${status_f}:${status_b}:${status_r}" == "0:0:0:0" ]]; then
         echo "🟢"
+    elif [[ "${status_d}:${status_f}:${status_b}" == "0:0:0" && "${status_r}" =~ ^[0-9]+$ ]]; then
+        # Backups succeeded; only retention cleanup failed. Worth attention
+        # (storage may fill up) but not a failed backup run.
+        echo "⚠️ WARNING"
     else
         echo "⛔ ERROR"
     fi
+
+}
+
+################################################################################
+# Mail retention section (only written when old backups could not be deleted).
+#
+# Arguments:
+#   ${1} = Number of old backups that could not be deleted
+################################################################################
+
+function mail_retention_section() {
+
+    local delete_errors="${1:-0}"
+
+    cat >"${BROLIT_TMP_DIR}/retention-bk-${NOW}.mail" <<HTMLEND
+<div style="float:left;width:100%">
+    <div style="font-size:14px;font-weight:bold;color:#fff;float:left;font-family:Verdana,Helvetica,Arial;line-height:36px;background:#e0a03f;padding:5px 0 10px 10px;width:100%;height:30px">
+        Retention Cleanup: WARNING ⚠️</div>
+    <div style="color:#000;font-size:12px;line-height:24px;float:left;font-family:Verdana,Helvetica,Arial;background:#d8d8d8;padding:10px;width:100%">
+        <b>${delete_errors} old backup(s) could not be deleted from remote storage.</b><br>
+        This run's backup completed successfully, but check the log to avoid filling up the storage quota.
+    </div>
+</div>
+HTMLEND
 
 }
 

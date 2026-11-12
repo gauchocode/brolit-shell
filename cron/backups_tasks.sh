@@ -384,6 +384,15 @@ fi
 # Footer
 mail_footer "${SCRIPT_V}"
 
+# Retention/storage cleanup status: were there old backups that could not be
+# deleted from remote storage (e.g. Dropbox)? Left unattended this fills up
+# the storage quota and causes every subsequent backup upload to fail.
+retention_backup_result=0
+[[ ${STORAGE_DELETE_ERRORS} -gt 0 ]] && retention_backup_result=1
+
+# Retention failures are only a warning, but must be visible in the body too.
+[[ ${retention_backup_result} -ne 0 ]] && mail_retention_section "${STORAGE_DELETE_ERRORS}"
+
 # Preparing Mail Notifications Template
 email_html_file="${BROLIT_TMP_DIR}/full-email-${NOW}.mail"
 
@@ -399,6 +408,7 @@ if ! mail_template_assemble "${email_html_file}" "main" \
     "configs_backup_section=${BROLIT_TMP_DIR}/configuration-bk-${NOW}.mail" \
     "files_backup_section=${BROLIT_TMP_DIR}/files-bk-${NOW}.mail" \
     "borg_backup_section=${BROLIT_TMP_DIR}/borg-bk-${NOW}.mail" \
+    "retention_section=${BROLIT_TMP_DIR}/retention-bk-${NOW}.mail" \
     "footer=${BROLIT_TMP_DIR}/footer-${NOW}.mail"; then
     log_event "error" "Failed to assemble email template" "false"
     display --indent 6 --text "- Assembling email template" --result "FAIL" --color RED
@@ -407,12 +417,6 @@ fi
 
 # Send html to a var
 mail_html="$(cat "${email_html_file}")"
-
-# Retention/storage cleanup status: were there old backups that could not be
-# deleted from remote storage (e.g. Dropbox)? Left unattended this fills up
-# the storage quota and causes every subsequent backup upload to fail.
-retention_backup_result=0
-[[ ${STORAGE_DELETE_ERRORS} -gt 0 ]] && retention_backup_result=1
 
 # The complete-backup subject describes this backup run only. Server health,
 # certificates and packages remain visible in the body and in their dedicated
@@ -430,7 +434,7 @@ if [[ ${database_backup_result} -ne 0 ]] || [[ ${files_backup_result} -ne 0 ]] |
     notification_status="alert"
     notification_message="Complete backup completed with errors. Check logs for details."
 elif [[ ${retention_backup_result} -ne 0 ]]; then
-    notification_status="alert"
+    notification_status="warning"
     notification_message="Backup completed, but ${STORAGE_DELETE_ERRORS} old backup(s) could not be deleted from remote storage. Check logs to avoid filling up storage quota."
 fi
 

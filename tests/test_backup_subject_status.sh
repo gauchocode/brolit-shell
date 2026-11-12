@@ -85,7 +85,9 @@ function test_backup_subject_status() {
     assert_backup_subject "⛔ ERROR" 1 0 0 0 || failed=1
     assert_backup_subject "⛔ ERROR" 0 1 0 0 || failed=1
     assert_backup_subject "⛔ ERROR" 0 0 1 0 || failed=1
-    assert_backup_subject "⛔ ERROR" 0 0 0 1 || failed=1
+    assert_backup_subject "⚠️ WARNING" 0 0 0 1 || failed=1
+    assert_backup_subject "⛔ ERROR" 1 0 0 1 || failed=1
+    assert_backup_subject "⛔ ERROR" 0 0 0 bad || failed=1
 
     # Missing or malformed required results must not create a green subject.
     assert_backup_subject "⛔ ERROR" 0 0 || failed=1
@@ -122,12 +124,12 @@ function test_backup_subject_status() {
     # Retention failure must also agree across both notification channels.
     backup_subject_setup
     TEST_RETENTION_ERRORS=2 backup_manager_menu >/dev/null 2>&1
-    [[ "${CAPTURED_MAIL_SUBJECT}" == "⛔ ERROR "* ]] || {
-        echo "FAILED: manual retention failure did not produce an error subject" >&2
+    [[ "${CAPTURED_MAIL_SUBJECT}" == "⚠️ WARNING "* ]] || {
+        echo "FAILED: manual retention failure did not produce a warning subject" >&2
         failed=1
     }
-    [[ "${CAPTURED_NOTIFICATION_STATUS}" == "alert" ]] || {
-        echo "FAILED: manual retention failure did not produce an alert notification" >&2
+    [[ "${CAPTURED_NOTIFICATION_STATUS}" == "warning" ]] || {
+        echo "FAILED: manual retention failure did not produce a warning notification" >&2
         failed=1
     }
     backup_subject_teardown
@@ -146,7 +148,7 @@ function test_backup_subject_status() {
     }
     grep -Fq 'elif [[ ${retention_backup_result} -ne 0 ]]; then' \
         "${BROLIT_MAIN_DIR}/cron/backups_tasks.sh" || {
-        echo "FAILED: scheduled push notification does not classify every nonzero retention result as an alert" >&2
+        echo "FAILED: scheduled push notification does not classify nonzero retention result as a warning" >&2
         failed=1
     }
 
