@@ -436,7 +436,56 @@ function backup_all_server_configs() {
 }
 
 ################################################################################
+# Render the merged "files" mail section.
+#
+# backup_all_projects_files() and backup_additional_dirs() both feed the
+# same "files" section. They used to each call mail_backup_section on the
+# same fixed file, so the second render silently overwrote the first one's
+# error state: a night with failed sites could show "Files Backup: OK ✅"
+# in the body while the subject correctly said ERROR (observed on
+# gaucho-docker-host03, 2026-11-13). Both functions now only APPEND to
+# the global accumulators below, and this is the single place that
+# renders the section.
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  0 if ok, 1 on error.
+################################################################################
+
+function backup_files_mail_render() {
+
+  local error_msg="none"
+  local error_type="none"
+  local exitstatus=0
+
+  [[ -v BACKUP_FILES_MAIL_LIST ]] || declare -g -a BACKUP_FILES_MAIL_LIST=()
+  [[ -v BACKUP_FILES_MAIL_ERRORS ]] || declare -g -a BACKUP_FILES_MAIL_ERRORS=()
+
+  if [[ ${#BACKUP_FILES_MAIL_ERRORS[@]} -gt 0 ]]; then
+    error_type="files_backup"
+    error_msg="Error creating backup file for: $(printf '%s, ' "${BACKUP_FILES_MAIL_ERRORS[@]}")"
+    error_msg="${error_msg%, }"
+  fi
+
+  mail_backup_section "${error_msg}" "${error_type}" "files" "${BACKUP_FILES_MAIL_LIST[@]}"
+  [[ $? -ne 0 ]] && exitstatus=1
+
+  # Reset accumulators so a second run in the same process starts clean.
+  BACKUP_FILES_MAIL_LIST=()
+  BACKUP_FILES_MAIL_ERRORS=()
+
+  return ${exitstatus}
+
+}
+
+################################################################################
 # Make sites files Backup
+#
+# Appends every site result (and failure) to BACKUP_FILES_MAIL_LIST /
+# BACKUP_FILES_MAIL_ERRORS. The mail section itself is rendered once by
+# backup_files_mail_render(), not here.
 #
 # Arguments:
 #  none
@@ -451,12 +500,13 @@ function backup_all_projects_files() {
   local directory_name
   local working_sites_directories
 
-  local backuped_files_index=0
   local backuped_directory_index=0
 
   local got_error=0
-  local error_msg="none"
-  local error_type="none"
+
+  # Mail section accumulators (rendered by backup_files_mail_render).
+  [[ -v BACKUP_FILES_MAIL_LIST ]] || declare -g -a BACKUP_FILES_MAIL_LIST=()
+  [[ -v BACKUP_FILES_MAIL_ERRORS ]] || declare -g -a BACKUP_FILES_MAIL_ERRORS=()
 
   log_subsection "Backup Sites Files"
 
@@ -492,14 +542,12 @@ function backup_all_projects_files() {
       if [[ -n ${backup_file_size} ]]; then
 
         # I'm using only an array, because passing two arrays to a function could be a problem (bash)
-        backuped_files_list[$backuped_files_index]="${directory_name};${backup_file_size}"
-        backuped_files_index=$((backuped_files_index + 1))
+        BACKUP_FILES_MAIL_LIST+=("${directory_name};${backup_file_size}")
 
       else
 
         got_error=1
-        error_type="files_backup"
-        error_msg="Error creating backup file for site: ${directory_name}"
+        BACKUP_FILES_MAIL_ERRORS+=("${directory_name}")
 
       fi
 
@@ -523,8 +571,8 @@ function backup_all_projects_files() {
   # Deleting old backup files
   rm --recursive --force "${BROLIT_TMP_DIR:?}/${NOW}"
 
-  # Configure Files Backup Section for Email Notification
-  mail_backup_section "${error_msg}" "${error_type}" "files" "${backuped_files_list[@]}"
+  # The "files" mail section is rendered once by backup_all_files() via
+  # backup_files_mail_render(), merging this list with the sites list.
 
   return ${got_error}
 
@@ -544,6 +592,11 @@ function backup_all_files() {
 
   local got_error=0
 
+  # Accumulators for the single "files" mail section (see
+  # backup_files_mail_render).
+  BACKUP_FILES_MAIL_LIST=()
+  BACKUP_FILES_MAIL_ERRORS=()
+
   ## SERVER CONFIG FILES
   backup_all_server_configs
   [[ $? -ne 0 ]] && got_error=1
@@ -555,6 +608,11 @@ function backup_all_files() {
   ## ADDITIONAL DIRS
   backup_additional_dirs
   [[ $? -ne 0 ]] && got_error=1
+
+  # Single render of the "files" section with the merged results. This
+  # used to happen inside each sub-function, and the additional-dirs
+  # render overwrote the sites render (and its error state).
+  backup_files_mail_render
 
   return ${got_error}
 
@@ -2320,12 +2378,13 @@ function backup_additional_dirs() {
   local working_sites_directories
 
   local count_total_dirs=0
-  local backuped_files_index=0
   local backuped_directory_index=0
 
   local got_error=0
-  local error_msg="none"
-  local error_type="none"
+
+  # Mail section accumulators (rendered by backup_files_mail_render).
+  [[ -v BACKUP_FILES_MAIL_LIST ]] || declare -g -a BACKUP_FILES_MAIL_LIST=()
+  [[ -v BACKUP_FILES_MAIL_ERRORS ]] || declare -g -a BACKUP_FILES_MAIL_ERRORS=()
 
   log_subsection "Backup Additional Directories"
 
@@ -2354,14 +2413,12 @@ function backup_additional_dirs() {
 
     if [[ -n ${backup_file_size} ]]; then
 
-      backuped_files_list[$backuped_files_index]="${directory_name};${backup_file_size}"
-      backuped_files_index=$((backuped_files_index + 1))
+      BACKUP_FILES_MAIL_LIST+=("${directory_name};${backup_file_size}")
 
     else
 
       got_error=1
-      error_type="files_backup"
-      error_msg="Error creating backup file for site: ${directory_name}"
+      BACKUP_FILES_MAIL_ERRORS+=("${directory_name}")
 
     fi
 
@@ -2375,8 +2432,8 @@ function backup_additional_dirs() {
   # Deleting old backup files
   rm --recursive --force "${BROLIT_TMP_DIR:?}/${NOW}"
 
-  # Configure Files Backup Section for Email Notification
-  mail_backup_section "${error_msg}" "${error_type}" "files" "${backuped_files_list[@]}"
+  # The "files" mail section is rendered once by backup_all_files() via
+  # backup_files_mail_render(), merging this list with the sites list.
 
   return ${got_error}
 

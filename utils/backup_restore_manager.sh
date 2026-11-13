@@ -547,8 +547,11 @@ function subtasks_backup_handler() {
 
     backup_all_server_configs
     backup_all_projects_files
+    exitstatus=$?
+    backup_files_mail_render
+    [[ $? -ne 0 ]] && exitstatus=1
 
-    exit
+    exit ${exitstatus}
     ;;
 
   full-report)
@@ -577,6 +580,8 @@ function subtasks_backup_handler() {
     if [[ ${exitstatus} -ne 0 ]]; then
       log_event "error" "Backup all files failed" "true"
     fi
+    backup_files_mail_render
+    [[ $? -ne 0 ]] && exitstatus=1
 
     if [[ ${BACKUP_BORG_STATUS} == "enabled" ]]; then
       backup_all_files_with_borg
@@ -590,8 +595,11 @@ function subtasks_backup_handler() {
   files)
 
     backup_all_projects_files
+    exitstatus=$?
+    backup_files_mail_render
+    [[ $? -ne 0 ]] && exitstatus=1
 
-    exit
+    exit ${exitstatus}
     ;;
 
   server-config)

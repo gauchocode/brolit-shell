@@ -32,6 +32,7 @@ function tests_suite_menu() {
     "19)" "RUN CLOUDFLARE DNS FLOW TESTS"
     "20)" "RUN BACKUP PROJECT RESILIENCE TESTS"
     "21)" "RUN BACKUP TAR EXCLUDE TESTS"
+    "22)" "RUN BACKUP MAIL SECTION TESTS"
   )
 
   chosen_tests_options=$(whiptail --title "TESTS SUITE" --menu " " 20 78 10 "${tests_options[@]}" 3>&1 1>&2 2>&3)
@@ -63,6 +64,10 @@ function tests_suite_menu() {
       test_process_scanner_notifications
       test_backup_tar_excludes || {
         log_event "error" "Backup TAR exclude regression tests failed" "false"
+        return 1
+      }
+      test_backup_mail_sections || {
+        log_event "error" "Backup mail section regression tests failed" "false"
         return 1
       }
       test_borg_scheduled_routing || {
@@ -156,6 +161,12 @@ function tests_suite_menu() {
     if [[ ${chosen_tests_options} == *"21"* ]]; then
       test_backup_tar_excludes || {
         log_event "error" "Backup TAR exclude regression tests failed" "false"
+        return 1
+      }
+    fi
+    if [[ ${chosen_tests_options} == *"22"* ]]; then
+      test_backup_mail_sections || {
+        log_event "error" "Backup mail section regression tests failed" "false"
         return 1
       }
     fi
