@@ -160,6 +160,22 @@ All stage-1 servers ran the nightly backup with the fix active:
 - gaucho-host01-vm: `exito.com.ar` jumped from 2.7G to 11.8G in one night
   — worth a data-growth check.
 
+### Mail section bug found during verification (fixed 2026-11-13, `893f4b8f`)
+
+The ⛔ ERROR mails of 2026-11-13 showed every section OK while the
+subject said ERROR. Cause: `backup_all_projects_files()` and
+`backup_additional_dirs()` each rendered the same fixed
+`files-bk-${NOW}.mail` section file, so the second render (error_msg
+"none") overwrote the first one's error state; the list array was also
+an undeclared global shared by both functions. Now both only append to
+explicit accumulators and `backup_files_mail_render()` renders once,
+naming every failed site or directory; the `files`/`all` subtasks
+propagate the real exit code. Tests:
+`tests/test_backup_mail_sections.sh` (suite option 22). Known follow-up
+from review: `backuped_config_list` still uses the old undeclared-global
+pattern in `backup_all_server_configs()` (single render per run, benign
+until a function runs twice in one process).
+
 ### Stage 3 notes (from the 2026-11-13 review)
 
 - wigou: **no common ancestor with origin/master** (ancient/divergent
