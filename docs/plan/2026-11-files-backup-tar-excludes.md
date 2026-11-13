@@ -136,6 +136,38 @@ fix marker and `bash -n` verified on each:
 | gaucho-host01-vm | 3.14.9 | 19G | 132G |
 | centum-ai-services01 | 3.14.10 | 27G | 132G |
 
+### Fleet verification (nights of 2026-11-12 and 2026-11-13)
+
+All stage-1 servers ran the nightly backup with the fix active:
+
+- `Compressing with N exclusion pattern(s)` (N=4 or 10) present on every
+  files backup; archives sized accordingly.
+- **Zero `No space left on device` events fleet-wide** (vs. two outages in
+  the three nights before the fix).
+- arqa-web-vm: the free-space guard fired both nights exactly as designed
+  (`Not enough free space ... estimated 296776749883, available 63593132032`)
+  — clean abort instead of the disk-filling gamble. Note: arqa.com has no
+  real files backup (277G `wp-content` vs 60G free, excludes only remove
+  ~125MB); the sustainable path is Borg (already enabled there) — pending
+  decision with the site owner.
+- Remaining per-project failures were all `tar=1 pv=0 lbzip2=0`: GNU
+  tar's "file changed as we read it" warning class on live sites, which
+  the old code silently ignored. Follow-up commit `56f81fce`: tar exit 1
+  is logged as a warning and the archive kept; tar ≥ 2 or pv/compressor
+  failures remain fatal. Deployed to the 8 stage-1 servers.
+- gaucho-docker-host04 runs its backup at 02:15 (not 00:45) — verified
+  separately, working.
+- gaucho-host01-vm: `exito.com.ar` jumped from 2.7G to 11.8G in one night
+  — worth a data-growth check.
+
+### Stage 3 notes (from the 2026-11-13 review)
+
+- wigou: **no common ancestor with origin/master** (ancient/divergent
+  clone, ~2503 commits behind, plus a staged `brolit_lite.sh` change and
+  a modified borgmatic template). Cannot pull; needs capture-diffs →
+  reset to origin/master → re-apply if meaningful.
+- constructoradelbosque, stellacast-gpu: unreachable during the survey.
+
 Stage 2 (after verifying stage 1's nightly runs): the remaining
 FF-updatable servers with active backup cron (docker-host01/02, dev02,
 dev04, goseries-master, redcoach-* ×5, tukiverse-dev01/apps03, bmailing,
