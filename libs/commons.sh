@@ -1823,11 +1823,19 @@ function compress() {
   # test disabled, a disk-full mid-archive still reported success and left
   # a truncated backup on disk.
   pipeline_status=("${PIPESTATUS[@]}")
-  if [[ ${pipeline_status[0]} -ne 0 || ${pipeline_status[1]} -ne 0 || ${pipeline_status[2]} -ne 0 ]]; then
+  log_event "debug" "Pipeline status: tar=${pipeline_status[0]} pv=${pipeline_status[1]} ${BACKUP_CONFIG_COMPRESSION_TYPE}=${pipeline_status[2]}" "false"
+
+  # GNU tar exits 1 for warnings (e.g. "file changed as we read it" on
+  # live sites) and 2+ for fatal errors. Live projects that keep writing
+  # during the nightly run would fail every single backup on exit 1, and a
+  # 99%-consistent archive still beats no archive: the compression test
+  # below validates the output either way. So exit 1 is logged as a
+  # warning and the backup continues; tar >= 2 or a pv/compressor failure
+  # is fatal and the partial output is removed.
+  if [[ ${pipeline_status[1]} -ne 0 || ${pipeline_status[2]} -ne 0 || ${pipeline_status[0]} -ge 2 ]]; then
 
     # Delete the partial temp file so a failed run cannot fill the disk
     rm --force "${file_output}"
-    log_event "debug" "Pipeline status: tar=${pipeline_status[0]} pv=${pipeline_status[1]} ${BACKUP_CONFIG_COMPRESSION_TYPE}=${pipeline_status[2]}" "false"
 
     clear_previous_lines "2"
     display --indent 6 --text "- Compressing ${to_backup_string}" --result "FAIL" --color RED
@@ -1836,6 +1844,10 @@ function compress() {
     log_event "error" "Something went wrong making backup file: ${file_output}" "false"
 
     return 1
+
+  elif [[ ${pipeline_status[0]} -eq 1 ]]; then
+
+    log_event "warning" "tar reported warnings while compressing ${to_backup_string} (exit 1, e.g. files changed as they were read); keeping the archive" "false"
 
   fi
 

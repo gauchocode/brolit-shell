@@ -447,6 +447,67 @@ FAKE_EOF
 
 }
 
+################################################################################
+# 6. GNU tar exit 1 (warnings, e.g. "file changed as we read it" on live
+#    sites) must NOT fail the backup; exit 2+ must fail it and clean up.
+################################################################################
+
+function test_tar_exit_codes_are_classified() {
+
+    # Fake tar wrapper: runs the real tar, then forces a chosen exit code
+    # on success, so the produced archive is complete either way.
+    cat > "${TEST_TMP}/bin/tartest" <<'FAKE_EOF'
+#!/usr/bin/env bash
+/usr/bin/tar "$@"
+rc=$?
+if [[ ${rc} -eq 0 && "${FAKE_TAR_EXIT:-0}" != "0" ]]; then
+    exit "${FAKE_TAR_EXIT}"
+fi
+exit ${rc}
+FAKE_EOF
+    chmod +x "${TEST_TMP}/bin/tartest"
+
+    local site="${PROJECTS_PATH}/churn.example.com"
+    local out="${BROLIT_TMP_DIR}/${NOW}/churn.example.com_site-files_2026-11-11.tar.gz"
+    local real_tar="${TAR}"
+    export TAR="${TEST_TMP}/bin/tartest"
+
+    mkdir -p "${site}"
+    echo 'data' > "${site}/index.php"
+
+    local failed=0
+
+    # tar exit 1 (warnings): keep the archive, return success.
+    : > "${EVENTS_FILE}"
+    FAKE_TAR_EXIT=1 compress "${PROJECTS_PATH}" "churn.example.com" "${out}" >/dev/null 2>&1
+    if [[ $? -ne 0 || ! -f "${out}" ]]; then
+        echo "FAILED: tar exit 1 (warnings) should not fail the backup"
+        failed=1
+    elif ! grep -q "tar reported warnings" "${EVENTS_FILE}"; then
+        echo "FAILED: tar exit 1 warning was not logged"
+        failed=1
+    else
+        echo "PASSED: tar exit 1 (warnings) keeps the archive and succeeds"
+    fi
+    rm --force "${out}"
+    unset FAKE_TAR_EXIT
+
+    # tar exit 2 (fatal): fail and remove the output.
+    : > "${EVENTS_FILE}"
+    FAKE_TAR_EXIT=2 compress "${PROJECTS_PATH}" "churn.example.com" "${out}" >/dev/null 2>&1
+    if [[ $? -eq 0 || -f "${out}" ]]; then
+        echo "FAILED: tar exit 2 (fatal) must fail the backup and clean the output"
+        failed=1
+    else
+        echo "PASSED: tar exit 2 (fatal) fails the backup and cleans the output"
+    fi
+    unset FAKE_TAR_EXIT
+    export TAR="${real_tar}"
+
+    return ${failed}
+
+}
+
 # Suite entry point: runs every case with its own state so the interactive
 # tests suite (tests_suite.sh) can call this by name.
 function test_backup_tar_excludes() {
@@ -463,6 +524,8 @@ function test_backup_tar_excludes() {
     test_compress_aborts_without_free_space || failed=1
     echo ""
     test_compress_cleans_partial_output_on_pipeline_failure || failed=1
+    echo ""
+    test_tar_exit_codes_are_classified || failed=1
     echo ""
 
     bte_teardown
