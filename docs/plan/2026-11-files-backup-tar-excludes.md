@@ -168,11 +168,16 @@ All stage-1 servers ran the nightly backup with the fix active:
   reset to origin/master → re-apply if meaningful.
 - constructoradelbosque, stellacast-gpu: unreachable during the survey.
 
-Stage 2 (after verifying stage 1's nightly runs): the remaining
+Stage 2 (after verifying stage 1's nightly runs): **completed on
+2026-11-13** — the remaining
 FF-updatable servers with active backup cron (docker-host01/02, dev02,
 dev04, goseries-master, redcoach-* ×5, tukiverse-dev01/apps03, bmailing,
 epica-apps01, ostiaapp-vm, producir-integral-csusc, spyglass, redcoach
-docker01/dev02).
+docker01/dev02). All 17 pulled to `ad0d2611` (v3.14.13, includes the
+excludes fix, the guard, tar-exit-1 tolerance and the retention-warning
+fix); fix markers and `bash -n` verified on each. Stage 1's 8 servers
+realigned to the same commit. Fleet FF coverage: **25/25 servers on
+v3.14.13**; first post-deploy nightly verification due 2026-11-14.
 
 Stage 3 (needs review first — servers carry local commits never pushed):
 wigou (`6fecc305`), anfibia-cronos (3.14.0, `a6b4e203`), epica-apps02
