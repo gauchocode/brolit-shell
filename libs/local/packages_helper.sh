@@ -30,6 +30,7 @@ function add_ppa() {
   # Updating packages lists
   apt-get --yes update -qq >/dev/null
 
+  local i
   for i in "$@"; do
 
     grep -h "^deb.*$i" /etc/apt/sources.list.d/* >/dev/null 2>&1

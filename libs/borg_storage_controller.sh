@@ -521,6 +521,7 @@ function check_borg_server_connectivity() {
 function restore_backup_with_borg() {
     
     local storage_box_directory="/mnt/storage-box"
+    local i
 
     # Create storage box directory if not exists where it will be mounted
     [[ ! -d ${storage_box_directory} ]] && mkdir ${storage_box_directory}
@@ -1757,6 +1758,7 @@ function borg_update_templates() {
     local borg_config_dir="/etc/borgmatic.d"
     local template_dir="${BROLIT_MAIN_DIR}/config/borg"
     local backup_dir="${borg_config_dir}/backup-$(date +%Y%m%d-%H%M%S)"
+    local i
     
     # Check if borg is enabled
     if [[ ${BACKUP_BORG_STATUS} != "enabled" ]]; then

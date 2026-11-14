@@ -294,6 +294,7 @@ function storage_create_dir() {
 
         # Check if we have at least one valid server configuration
         local has_valid_server=false
+        local i
 
         for i in $(seq 1 ${number_of_servers})
         do
@@ -634,6 +635,14 @@ function storage_delete_old_backups() {
     local keep_daily=${BACKUP_RETENTION_KEEP_DAILY}
     local keep_weekly=${BACKUP_RETENTION_KEEP_WEEKLY}
     local keep_monthly=${BACKUP_RETENTION_KEEP_MONTHLY}
+    # Loop variables MUST be local: bash dynamic scoping makes a global
+    # loop index here clobber the caller's (observed live: the docker
+    # multi-database loop in backup_docker_project lost its index to the
+    # retention listing and died with a "syntax error: invalid arithmetic
+    # operator" naming a backup filename).
+    local i
+    local backup_list
+    local filenames
 
     # Track deletion failures so callers (and the cron report) can surface them
     # instead of silently accumulating orphaned backups on remote storage.

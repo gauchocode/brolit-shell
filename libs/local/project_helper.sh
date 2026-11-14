@@ -183,6 +183,8 @@ function project_is_ignored() {
   ignored_list="$(string_remove_spaces "${IGNORED_PROJECTS_LIST}")"
   ignored_list="$(echo "${ignored_list}" | tr '\n' ',')"
 
+  local i
+
   # String to Array
   IFS="," read -r -a excluded_projects_array <<<"${ignored_list}"
   for i in "${excluded_projects_array[@]}"; do
