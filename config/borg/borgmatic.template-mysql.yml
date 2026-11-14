@@ -65,10 +65,24 @@ check_last: 3
 # before_actions:
     # - echo Starting actions.
 
+# Command hooks (borgmatic >= 1.9 syntax; the old before_backup/after_backup/
+# on_error sections are deprecated and warn on every run).
 # List of one or more shell commands or scripts to execute before
 # creating a backup, run once per repository.
-before_backup:
-    - echo "Starting backup" 
+commands:
+    - before: action
+      when:
+        - create
+      run:
+        - echo "Starting backup"
+    - after: action
+      when:
+        - create
+      run:
+        - echo "Backup completed!"
+    - after: error
+      run:
+        - echo Error during create/prune/compact/check.
 
 # List of one or more shell commands or scripts to execute before
 # pruning, run once per repository.
@@ -89,11 +103,6 @@ before_backup:
 # extracting a backup, run once per repository.
 # before_extract:
     # - echo Starting extracting.
-
-# List of one or more shell commands or scripts to execute after
-# creating a backup, run once per repository.
-after_backup:
-    - echo "Backup completed!"
 
 mysql_databases:
     # Database name (required if using this hook). Or "all" to
@@ -156,6 +165,3 @@ mysql_databases:
       # dump command, without performing any validation on them.
       # See mysqldump documentation for details.
       options: --no-tablespaces    
-
-on_error:
-    - echo Error during create/prune/compact/check.

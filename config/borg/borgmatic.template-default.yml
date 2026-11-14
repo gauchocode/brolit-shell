@@ -62,11 +62,19 @@ checks:
 
 check_last: 3
 
-before_backup:
-    - echo "Starting backup" 
-
-after_backup:
-    - echo "Backup completed!"
-
-on_error:
-    - echo Error during create/prune/compact/check.
+# Command hooks (borgmatic >= 1.9 syntax; the old before_backup/after_backup/
+# on_error sections are deprecated and warn on every run).
+commands:
+    - before: action
+      when:
+        - create
+      run:
+        - echo "Starting backup"
+    - after: action
+      when:
+        - create
+      run:
+        - echo "Backup completed!"
+    - after: error
+      run:
+        - echo Error during create/prune/compact/check.

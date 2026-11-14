@@ -42,12 +42,25 @@ checks:
 
 check_last: 3
 
-# Backup hooks
-before_backup:
-    - pg_dumpall -U {postgres_user} -W{postgres_password} --clean > /tmp/{project}_backup.sql
-
-after_backup:
-    - rm -f /tmp/{project}_backup.sql
+# Command hooks (borgmatic >= 1.9 syntax; the old before_backup/after_backup/
+# on_error sections are deprecated and warn on every run).
+commands:
+    - before: action
+      when:
+        - create
+      run:
+        - pg_dumpall -U {postgres_user} -W{postgres_password} --clean > /tmp/{project}_backup.sql
+    - after: action
+      when:
+        - create
+      run:
+        - rm -f /tmp/{project}_backup.sql
+    # Plain command only: borgmatic runs hooks under /bin/sh without brolit's libs,
+    # so send_notification is not defined there (it failed with exit 127 and hid
+    # the real reason). brolit already emails the failure itself.
+    - after: error
+      run:
+        - echo "Borgmatic failed for {project}; see the brolit backup log for the classified reason"
 
 postgresql_databases:
     # Quoted -- an unquoted bare "{name}" is valid YAML flow-mapping syntax
@@ -60,9 +73,3 @@ postgresql_databases:
       password: "{postgres_password}"
       format: plain
       options: --no-tablespaces
-
-# Plain command only: borgmatic runs hooks under /bin/sh without brolit's libs,
-# so send_notification is not defined there (it failed with exit 127 and hid
-# the real reason). brolit already emails the failure itself.
-on_error:
-    - echo "Borgmatic failed for {project}; see the brolit backup log for the classified reason"

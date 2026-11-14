@@ -45,17 +45,23 @@ check_last: 3
 # timeout, a crashed borgmatic, a failed compose call — left the containers
 # paused indefinitely. Database consistency is already handled by the
 # database dumps, so the site freeze bought nothing and risked everything.
+# Command hooks (borgmatic >= 1.9 syntax; the old before_backup/after_backup/
+# on_error sections are deprecated and warn on every run).
 # sanitize_borgmatic_pause_hooks() strips them from existing configs too.
 # Log collection is ancillary: it must never turn a completed backup into a
 # failure. Non-Docker projects have no compose file, and `docker compose logs`
 # used to abort the whole config with "no such file or directory" even though
 # the archive had been created.
-after_backup:
-    - compose=/var/www/{project}/docker-compose.yml; if [ -f "$compose" ]; then docker compose -f "$compose" logs -t > /var/log/{project}_docker.log 2>/dev/null || true; fi
-
-# The on_error hook runs under /bin/sh without brolit's libs sourced, so it
-# must be a plain command. `send_notification` only exists inside brolit and
-# made every failing backup end with "not found" (exit 127) instead of the
-# real reason; brolit already sends its own email for the same failure.
-on_error:
-    - echo "Borgmatic failed for {project}; see the brolit backup log for the classified reason"
+commands:
+    - after: action
+      when:
+        - create
+      run:
+        - compose=/var/www/{project}/docker-compose.yml; if [ -f "$compose" ]; then docker compose -f "$compose" logs -t > /var/log/{project}_docker.log 2>/dev/null || true; fi
+    # The on_error hook runs under /bin/sh without brolit's libs sourced, so it
+    # must be a plain command. `send_notification` only exists inside brolit and
+    # made every failing backup end with "not found" (exit 127) instead of the
+    # real reason; brolit already sends its own email for the same failure.
+    - after: error
+      run:
+        - echo "Borgmatic failed for {project}; see the brolit backup log for the classified reason"
