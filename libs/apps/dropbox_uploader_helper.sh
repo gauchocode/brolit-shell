@@ -161,7 +161,7 @@ function dropbox_create_dir() {
 
         else
 
-            log_event "debug" "Can't create directory ${dir_to_create} from Dropbox. Maybe directory already exists." "false"
+            log_event "error" "Can't create directory ${dir_to_create} on Dropbox" "false"
             log_event "debug" "Last command executed: ${DROPBOX_UPLOADER} -q mkdir ${dir_to_create}" "false"
             log_event "debug" "Last command output: ${output}" "false"
 

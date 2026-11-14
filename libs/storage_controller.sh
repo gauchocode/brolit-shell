@@ -455,7 +455,14 @@ function storage_upload_backup() {
         fi
 
         # Upload
-        dropbox_upload "${file_to_upload}" "${remote_directory}"
+        ## Explicit remote file path: a bare directory destination makes the
+        ## uploader store the archive as a FILE named like the folder when
+        ## the folder is missing (observed on wigou, 2026-11-14: mkdir had
+        ## failed silently and a 4.4GB file replaced the folder path, so
+        ## every later retention listing failed with path/not_folder). With
+        ## the explicit path the Dropbox API also creates missing parent
+        ## folders, making the upload self-healing.
+        dropbox_upload "${file_to_upload}" "${remote_directory}/$(basename -- "${file_to_upload}")"
         [[ $? -eq 1 ]] && error_type="dropbox_upload" && got_error=1
 
     fi

@@ -33,6 +33,7 @@ function tests_suite_menu() {
     "20)" "RUN BACKUP PROJECT RESILIENCE TESTS"
     "21)" "RUN BACKUP TAR EXCLUDE TESTS"
     "22)" "RUN BACKUP MAIL SECTION TESTS"
+    "23)" "RUN DROPBOX UPLOAD DESTINATION TESTS"
   )
 
   chosen_tests_options=$(whiptail --title "TESTS SUITE" --menu " " 20 78 10 "${tests_options[@]}" 3>&1 1>&2 2>&3)
@@ -68,6 +69,10 @@ function tests_suite_menu() {
       }
       test_backup_mail_sections || {
         log_event "error" "Backup mail section regression tests failed" "false"
+        return 1
+      }
+      test_dropbox_upload_destination || {
+        log_event "error" "Dropbox upload destination regression tests failed" "false"
         return 1
       }
       test_borg_scheduled_routing || {
@@ -167,6 +172,12 @@ function tests_suite_menu() {
     if [[ ${chosen_tests_options} == *"22"* ]]; then
       test_backup_mail_sections || {
         log_event "error" "Backup mail section regression tests failed" "false"
+        return 1
+      }
+    fi
+    if [[ ${chosen_tests_options} == *"23"* ]]; then
+      test_dropbox_upload_destination || {
+        log_event "error" "Dropbox upload destination regression tests failed" "false"
         return 1
       }
     fi
