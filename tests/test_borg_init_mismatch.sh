@@ -84,6 +84,12 @@ function test_classifier_classes() {
     got="$(borg_init_failure_reason 'Requested encryption mode "none" does not match existing repository encryption mode "repokey"')"
     [[ "${got}" == "encryption_mismatch" ]] || { echo "FAILED: expected encryption_mismatch, got '${got}'"; return 1; }
 
+    got="$(borg_init_failure_reason 'Unrecognized arguments: repo-list --short --last 1')"
+    [[ "${got}" == "borgmatic_version" ]] || { echo "FAILED: expected borgmatic_version, got '${got}'"; return 1; }
+
+    got="$(borg_init_failure_reason "invalid choice: 'repo-list' (choose from 'create', 'prune', 'check')")"
+    [[ "${got}" == "borgmatic_version" ]] || { echo "FAILED: expected borgmatic_version from invalid choice, got '${got}'"; return 1; }
+
     got="$(borg_init_failure_reason 'Failed to create/acquire the lock /repo/lock.exclusive (timeout).')"
     [[ "${got}" == "lock" ]] || { echo "FAILED: expected lock, got '${got}'"; return 1; }
 

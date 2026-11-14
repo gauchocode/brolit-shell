@@ -1159,6 +1159,8 @@ function borg_init_failure_reason() {
         echo "space"
     elif echo "${lower}" | grep -qE "traceback|modulenotfounderror|no module named|importerror|command not found"; then
         echo "python_env"
+    elif echo "${lower}" | grep -qE "unrecognized arguments|invalid choice|unrecognized option"; then
+        echo "borgmatic_version"
     elif echo "${lower}" | grep -qE "does not match existing repository encryption mode"; then
         echo "encryption_mismatch"
     elif echo "${lower}" | grep -qE "repository [^[:space:]]+ does not exist|repository does not exist|repositorynotfound|not a valid repository"; then
@@ -1625,6 +1627,9 @@ function _initialize_repository_for_config() {
 
     BORG_INIT_FAILURE_REASON="${init_reason}"
     log_event "error" "Repository init failure class: ${init_reason}" "false"
+    if [[ "${init_reason}" == "borgmatic_version" ]]; then
+        log_event "error" "Installed borgmatic does not support the repo-list/init subcommands this brolit version uses (borgmatic >= 1.9 required). Upgrade it on this server, e.g.: pipx upgrade borgmatic" "false"
+    fi
     display --indent 8 --text "Failure class: ${init_reason}" --tcolor RED
     return 1
 
