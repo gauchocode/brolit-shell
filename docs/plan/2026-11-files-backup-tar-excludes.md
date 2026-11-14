@@ -178,11 +178,31 @@ until a function runs twice in one process).
 
 ### Stage 3 notes (from the 2026-11-13 review)
 
-- wigou: **no common ancestor with origin/master** (ancient/divergent
-  clone, ~2503 commits behind, plus a staged `brolit_lite.sh` change and
-  a modified borgmatic template). Cannot pull; needs capture-diffs →
-  reset to origin/master → re-apply if meaningful.
-- constructoradelbosque, stellacast-gpu: unreachable during the survey.
+- **wigou — fixed on 2026-11-14**: the repo had no common ancestor with
+  origin (August divergent branch, ~2500 commits behind, superseded borg
+  fixes). Local diffs were captured to `/root/wigou-local-changes/` (a
+  staged brolit_lite.sh hotfix and a borgmatic template tweak, both
+  superseded by master), then `git reset --hard origin/master` → v3.14.13
+  lineage. Verification backup of app.wigou.com.ar (51G → 4.4G archive)
+  exposed two more issues, both fixed:
+  - **Dropbox rogue file**: the project folder was missing on Dropbox and
+    `storage_upload_backup()` passed a bare directory as the upload
+    destination, so the uploader stored the whole archive as a FILE named
+    like the folder; retention then failed nightly with path/not_folder.
+    Fixed in `6de77b26` (explicit `<dir>/<file>` destination, which also
+    auto-creates missing parents; mkdir failures now log at error level).
+    The server's Dropbox state was remediated by hand (file → tmp name,
+    folder created, archive moved in under its proper name).
+  - **Dead-weight nightly backup**: `/var/www/REMOVE.app.wigou.com.ar`
+    (26G, untouched since 2026-02) was being backed up every night
+    (2.26G/night). Moved to `/root/` per decision, out of the backup
+    path (data preserved).
+  - app.wigou.com.ar's docker stack (mysql/php/site) has been down since
+    ~2026-11-11 ("sites down"); the docker-DB backup fails closed while
+    the stack is down — pending a decision on that app.
+- constructoradelbosque, stellacast-gpu: unreachable during the survey
+  (constructoradelosgues nevertheless mailed a 🟢 backup report on
+  2026-11-13).
 
 Stage 2 (after verifying stage 1's nightly runs): **completed on
 2026-11-13** — the remaining
