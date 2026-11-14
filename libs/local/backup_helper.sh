@@ -291,6 +291,10 @@ function backup_all_server_configs() {
   local directory_name
   local directory_path
 
+  # Fully local: this list is built and rendered (mail_backup_section) inside
+  # this function only. It used to be an undeclared global, so a second run
+  # in the same process duplicated the configuration rows in the section.
+  local -a backuped_config_list=()
   local backuped_config_index=0
 
   local got_error=0
