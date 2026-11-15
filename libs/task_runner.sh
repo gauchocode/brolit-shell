@@ -549,7 +549,12 @@ function security_scan_handler() {
   fi
   display --indent 2 --text "Security scan status: ${scan_status}" --tcolor WHITE
 
-  [[ "${scan_failed}" == "true" ]] && return 2
+  # The && above must not become the function's exit status: without this
+  # explicit return every successful scan reported exit code 1.
+  if [[ "${scan_failed}" == "true" ]]; then
+    return 2
+  fi
+  return 0
 
 }
 
