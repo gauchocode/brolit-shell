@@ -115,6 +115,23 @@ function test_process_scanner_notifications() {
     failed=1
   }
 
+  # Container scan must not flag host kernel threads (e.g. [kdevtmpfs]
+  # visible inside the node_exporter container) as miners, while real
+  # unbracketed miners must survive the filter.
+  local busybox_thread="   61 root      0:00 [kdevtmpfs]"
+  local procps_thread="root        61  0.0  0.0      0     0 ?        S<   Nov04   0:00 [kdevtmpfs]"
+  local real_miner="www-data  1234 99.9  0.1 1234 5678 ?        R    06:00  12:34 kdevtmpfsi"
+  local filtered=""
+  filtered="$(security_filter_suspicious_container_procs "${busybox_thread}" "${procps_thread}" "${real_miner}")"
+  if grep -q "kdevtmpfs\]" <<<"${filtered}"; then
+    echo "FAILED: kernel thread [kdevtmpfs] must be excluded from the container scan" >&2
+    failed=1
+  fi
+  if ! grep -q "kdevtmpfsi" <<<"${filtered}"; then
+    echo "FAILED: real unbracketed miner must survive the container filter" >&2
+    failed=1
+  fi
+
   rm -rf "${test_tmp}"
   return ${failed}
 }

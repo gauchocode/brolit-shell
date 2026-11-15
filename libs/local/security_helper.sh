@@ -293,6 +293,34 @@ function security_process_scanner_should_open_menu() {
 #  with a resolvable executable).
 ################################################################################
 
+################################################################################
+# Filter suspicious process lines from a container's `ps aux` output.
+#
+# Kernel threads are excluded: containers share the host kernel, so `ps`
+# inside a container lists host kernel threads (e.g. [kdevtmpfs], no
+# executable); real miners run unbracketed with a resolvable executable.
+# Without this exclusion the official prometheus/node-exporter container
+# raised a nightly "container process matching a miner signature" false
+# positive (gaucho-docker-host04, 2026-11-15).
+#
+# Arguments:
+#  ${1}... = ${container_ps_args} - optional: when given, the lines to
+#           filter; otherwise stdin is filtered.
+#
+# Outputs:
+#  The suspicious (non kernel-thread) lines.
+################################################################################
+
+function security_filter_suspicious_container_procs() {
+
+  if [[ $# -gt 0 ]]; then
+    printf '%s\n' "$@"
+  else
+    cat
+  fi | grep -iE "(xmrig|minerd|ccminer|ethminer|cryptonight|kdevtmpfs)" | grep -v grep | grep -vE '\[[^]]+\][[:space:]]*$'
+
+}
+
 function security_process_scanner() {
 
   local output_mode="${1:-interactive}"
@@ -591,8 +619,9 @@ function security_process_scanner() {
         while IFS=: read -r container_id container_name; do
           echo "Container: ${container_name} (${container_id})" >>"${report_file}"
 
-          # Check for suspicious processes inside container
-          suspicious_container_procs=$(docker exec "${container_id}" ps aux 2>/dev/null | grep -iE "(xmrig|minerd|ccminer|ethminer|cryptonight|kdevtmpfs)" | grep -v grep)
+          # Check for suspicious processes inside container (kernel threads
+          # excluded -- see security_filter_suspicious_container_procs).
+          suspicious_container_procs=$(docker exec "${container_id}" ps aux 2>/dev/null | security_filter_suspicious_container_procs)
 
           if [[ -n "${suspicious_container_procs}" ]]; then
             echo "  ⚠️  Suspicious processes found:" >>"${report_file}"
@@ -801,7 +830,8 @@ function security_scanner_action_menu() {
         local temp_procs
         temp_procs=$(mktemp)
 
-        ps aux | grep -iE "(xmrig|minerd|ccminer|ethminer|cryptonight|coinhive|kdevtmpfsi|kdevtmpfs|linuxsys)" | grep -v grep | grep -v "security_helper" > "${temp_procs}"
+        # Kernel threads excluded: bracketed-only cmdline ([kdevtmpfs] etc.)
+        ps aux | grep -iE "(xmrig|minerd|ccminer|ethminer|cryptonight|coinhive|kdevtmpfsi|kdevtmpfs|linuxsys)" | grep -v grep | grep -v "security_helper" | grep -vE '\[[^]]+\][[:space:]]*$' > "${temp_procs}"
 
         if [[ -s "${temp_procs}" ]]; then
           whiptail --title "Suspicious Processes" --scrolltext --textbox "${temp_procs}" 20 120
