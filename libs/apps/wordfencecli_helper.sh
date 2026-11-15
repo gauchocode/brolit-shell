@@ -247,6 +247,7 @@ function wordfencecli_malware_scan() {
         # process scanner and clamav keep covering malware detection.
         log_event "warning" "Wordfence CLI license not configured on this server; skipping malware scans (clamav and the process scanner remain active)" "false"
         display --indent 6 --text "- Wordfence malware scan" --result "SKIPPED" --color YELLOW >&2
+        echo "skipped"
         return 0
     }
 
@@ -297,6 +298,7 @@ function wordfencecli_malware_scan() {
                 log_event "warning" "Wordfence CLI license rejected (${scan_error_detail:-see debug log}); skipping malware scans" "false"
                 display --indent 6 --text "- Wordfence malware scan" --result "SKIPPED" --color YELLOW >&2
                 rm --force -- "${scan_report_file}"
+                echo "skipped"
                 return 0
             fi
 

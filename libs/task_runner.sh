@@ -456,6 +456,8 @@ function security_scan_handler() {
           scan_status="Found Issues"
         elif [[ "${wf_result}" == "false" ]]; then
           display --indent 2 --text "${domain}" --result "CLEAN" --color GREEN
+        elif [[ "${wf_result}" == "skipped" ]]; then
+          display --indent 2 --text "${domain}" --result "SKIP" --color YELLOW
         else
           display --indent 2 --text "${domain}" --result "ERROR" --color RED
           scan_failed="true"
@@ -480,6 +482,8 @@ function security_scan_handler() {
             scan_status="Found Issues"
           elif [[ "${wf_result}" == "false" ]]; then
             display --indent 2 --text "${project_name}" --result "CLEAN" --color GREEN
+          elif [[ "${wf_result}" == "skipped" ]]; then
+            display --indent 2 --text "${project_name}" --result "SKIP" --color YELLOW
           else
             display --indent 2 --text "${project_name}" --result "ERROR" --color RED
             scan_failed="true"
