@@ -239,11 +239,15 @@ function wordfencecli_malware_scan() {
         return 2
     fi
 
-    # Read license 
+    # Read license
     license="$(wordfencecli_read_license)" || {
-        display --indent 6 --text "- No license found for wordfence-cli" --result "ERROR" --color RED >&2
-        display --indent 8 --text "- Please get a new one from here: https://www.wordfence.com/products/wordfence-cli/" --tcolor RED >&2
-        return 1
+        # A missing/unreadable license is a server-wide condition, not a
+        # per-project failure: skip with a single warning instead of
+        # failing every WordPress project nightly (alert fatigue). The
+        # process scanner and clamav keep covering malware detection.
+        log_event "warning" "Wordfence CLI license not configured on this server; skipping malware scans (clamav and the process scanner remain active)" "false"
+        display --indent 6 --text "- Wordfence malware scan" --result "SKIPPED" --color YELLOW >&2
+        return 0
     }
 
     if [[ -n "${license}" ]]; then
@@ -280,7 +284,24 @@ function wordfencecli_malware_scan() {
             --accept-terms "${scan_directory}" \
             --output-path "/output/${scan_report_file##*/}" 2>&1) || scan_exit=$?
         if [[ ${scan_exit} -ne 0 ]]; then
+            # Surface the real reason: only "exit code 1" was logged before,
+            # hiding e.g. rejected licenses behind a bare status code.
+            local scan_error_detail
+            scan_error_detail="$(grep -iE "error|license|prompt" <<<"${scan_output}" | head -2)"
+            log_event "debug" "Wordfence scan output: ${scan_output}" "false"
+
+            if grep -qiE "invalid license|paid wordfence|free wordfence|license.*required|prompt for configuration" <<<"${scan_output}"; then
+                # License-side failures are a server-wide condition (e.g.
+                # Wordfence retired free CLI licenses in 2026): warn and skip
+                # instead of failing every project nightly.
+                log_event "warning" "Wordfence CLI license rejected (${scan_error_detail:-see debug log}); skipping malware scans" "false"
+                display --indent 6 --text "- Wordfence malware scan" --result "SKIPPED" --color YELLOW >&2
+                rm --force -- "${scan_report_file}"
+                return 0
+            fi
+
             log_event "error" "Wordfence scan failed with exit code ${scan_exit}" "false"
+            [[ -n "${scan_error_detail}" ]] && log_event "error" "Wordfence scan error: ${scan_error_detail}" "false"
             rm --force -- "${scan_report_file}"
             return 2
         fi

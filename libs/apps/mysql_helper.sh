@@ -793,6 +793,13 @@ function mysql_database_exists() {
 
     local result
 
+    # A host without a local MySQL client leaves MYSQL_ROOT empty; invoking
+    # it produced "-e: command not found" (goseries-master, 2026-11-15).
+    if [[ -z "${MYSQL_ROOT:-}" ]]; then
+        log_event "warning" "Local MySQL client is not configured; cannot check if database ${database} exists" "false"
+        return 1
+    fi
+
     # Run command
     result="$(${MYSQL_ROOT} -e "SHOW DATABASES LIKE '${database}';")"
 
