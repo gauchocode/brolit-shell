@@ -1188,7 +1188,14 @@ function db_list_outfile
                 local SIZE=$(convert_bytes $(echo "$line" | sed -n 's/.*"size": *\([0-9]*\).*/\1/p'))
                 local DATE=$(echo "$line" | sed -n 's/.*"client_modified": *"\([^"]*\)".*/\1/p')
 
-                DATE=$(date -d "$DATE" '+%Y-%m-%d;%H:%M:%S')
+                # DROPBOX_LIST_UTC=1 prints the (UTC) client_modified instant as is; by default the
+                # time is converted to the timezone of the calling process, which differs between
+                # cron runs, SSH sessions and hosts.
+                if [[ "${DROPBOX_LIST_UTC:-0}" == "1" ]]; then
+                    DATE=$(date -u -d "$DATE" '+%Y-%m-%d;%H:%M:%S')
+                else
+                    DATE=$(date -d "$DATE" '+%Y-%m-%d;%H:%M:%S')
+                fi
 
                 echo -e "$FILE:$TYPE;$SIZE;$DATE" >> "$OUT_FILE"
 

@@ -2430,7 +2430,8 @@ BROLIT_LITE_VERSION="${BROLIT_RELEASE_VERSION:-3.14.2}"
 _brolit_dropbox_list() {
     local path="${1}"
     local output status=0
-    output="$(timeout 60 "${DROPBOX_UPLOADER}" -q list "${path}" 2>&1)" || status=$?
+    # UTC times: the listing's time column is otherwise rendered in the caller's timezone.
+    output="$(DROPBOX_LIST_UTC=1 timeout 60 "${DROPBOX_UPLOADER}" -q list "${path}" 2>&1)" || status=$?
     if [[ "${status}" -ne 0 ]]; then
         # A project or database path that has never been created is an empty
         # backup set, not a provider outage. Timeouts, auth failures, and
@@ -2471,6 +2472,36 @@ _brolit_dropbox_list() {
         return "${status}"
     fi
     printf '%s\n' "${output}"
+}
+
+################################################################################
+# Upload time (UTC) of a Dropbox listing line
+#
+# The listing line is "[F] <size> <YYYY-MM-DD;HH:MM:SS> <name>" with the time in
+# UTC (see DROPBOX_LIST_UTC in _brolit_dropbox_list). It is Dropbox's
+# client_modified, i.e. when the file was uploaded, not when the backup started.
+#
+# Arguments:
+#   ${1} = ${listing_line}
+#
+# Outputs:
+#   "YYYY-MM-DDTHH:MM:SSZ" on stdout, or nothing if the line has no valid time.
+################################################################################
+
+function _brolit_dropbox_line_time_utc() {
+
+    local listing_line="${1}"
+
+    local time_field
+    # The ';' separator is kept in a variable: it is a command separator inside [[ =~ ]].
+    local time_regex='^([0-9]{4}-[0-9]{2}-[0-9]{2});([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])$'
+
+    time_field="$(echo "${listing_line}" | awk '{print $3;}')"
+
+    if [[ "${time_field}" =~ ${time_regex} ]]; then
+        echo "${BASH_REMATCH[1]}T${BASH_REMATCH[2]}:${BASH_REMATCH[3]}:${BASH_REMATCH[4]}Z"
+    fi
+
 }
 
 _brolit_borg_list() {
@@ -2592,13 +2623,16 @@ show_backup_information() {
                     # size_bytes=0 even though the backup itself was fine.
                     # Treat the file entry itself as the (site-only) backup.
                     (
-                    local project_json="" entry_size entry_date
+                    local project_json="" entry_size entry_date entry_time_json entry_time_utc
                     entry_size="$(echo "${dropbox_entry_line}" | awk '{print $2;}')"
                     [[ -z "${entry_size}" || ! "${entry_size}" =~ ^[0-9]+$ ]] && entry_size=0
                     entry_date="$(echo "${dropbox_entry_line}" | awk '{print $3;}' | grep -Eo '[0-9]{4}-[0-9]{2}-[0-9]{2}')"
                     [[ -z "${entry_date}" ]] && entry_date="unknown"
+                    entry_time_json=""
+                    entry_time_utc="$(_brolit_dropbox_line_time_utc "${dropbox_entry_line}")"
+                    [[ -n "${entry_time_utc}" ]] && entry_time_json=", \"files_time_utc\": \"${entry_time_utc}\""
 
-                    project_json="\"${project_directory}\": { \"files\": \"${project_directory}\", \"files_date\": \"${entry_date}\", \"database\": \"empty\", \"database_date\": \"empty\", \"status\": \"success\", \"size_bytes\": ${entry_size} }"
+                    project_json="\"${project_directory}\": { \"files\": \"${project_directory}\", \"files_date\": \"${entry_date}\"${entry_time_json}, \"database\": \"empty\", \"database_date\": \"empty\", \"status\": \"success\", \"size_bytes\": ${entry_size} }"
                     echo "${project_json}" >> "${dropbox_temp_file}"
                     ) &
 
@@ -2609,7 +2643,7 @@ show_backup_information() {
                 local last_site_backup last_db_backup backup_date_site backup_date_db
                 local site_size=0 db_size=0 backup_size=0 backup_status="unknown"
                 local project_json=""
-                local site_line db_line
+                local site_line db_line site_time_utc db_time_utc site_time_json db_time_json
 
                 # Get last site-files backup. Note: -q only (no -h) so the size column
                 # is raw bytes; with -h it would be human-readable and hard to parse.
@@ -2650,7 +2684,15 @@ show_backup_information() {
                 backup_size=$((site_size + db_size))
                 { [[ "${last_site_backup}" != "empty" ]] || [[ "${last_db_backup}" != "empty" ]]; } && backup_status="success"
 
-                project_json="\"${project_directory}\": { \"files\": \"${last_site_backup}\", \"files_date\": \"${backup_date_site}\", \"database\": \"${last_db_backup}\", \"database_date\": \"${backup_date_db}\", \"status\": \"${backup_status}\", \"size_bytes\": ${backup_size} }"
+                # Upload instants (UTC), only when the listing line carries a valid time.
+                site_time_json=""
+                site_time_utc="$(_brolit_dropbox_line_time_utc "${site_line}")"
+                [[ -n "${site_time_utc}" && "${last_site_backup}" != "empty" ]] && site_time_json=", \"files_time_utc\": \"${site_time_utc}\""
+                db_time_json=""
+                db_time_utc="$(_brolit_dropbox_line_time_utc "${db_line}")"
+                [[ -n "${db_time_utc}" && "${last_db_backup}" != "empty" ]] && db_time_json=", \"database_time_utc\": \"${db_time_utc}\""
+
+                project_json="\"${project_directory}\": { \"files\": \"${last_site_backup}\", \"files_date\": \"${backup_date_site}\"${site_time_json}, \"database\": \"${last_db_backup}\", \"database_date\": \"${backup_date_db}\"${db_time_json}, \"status\": \"${backup_status}\", \"size_bytes\": ${backup_size} }"
                 echo "${project_json}" >> "${dropbox_temp_file}"
                 ) &
 
