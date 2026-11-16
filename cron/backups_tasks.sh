@@ -13,6 +13,15 @@ BROLIT_MAIN_DIR=$(cd "$(dirname "${BROLIT_MAIN_DIR}")" && pwd)
 # shellcheck source=${BROLIT_MAIN_DIR}/libs/commons.sh
 source "${BROLIT_MAIN_DIR}/libs/commons.sh"
 
+# json_read_field is required by _brolit_configuration_load_backup_borg
+# (cron/backups_tasks.sh:load_configurations). commons.sh does not load the
+# json helper, so without this line the borg arrays stayed empty and
+# generate_borg_config failed silently on every cron run -- servers whose
+# borgmatic configs were never generated interactively (stellacast-gpu)
+# never got them and mailed a nightly "configuration-coverage FAIL".
+# shellcheck source=${BROLIT_MAIN_DIR}/libs/local/json_helper.sh
+source "${BROLIT_MAIN_DIR}/libs/local/json_helper.sh"
+
 ################################################################################
 # Helper functions for multi-method backup
 ################################################################################
