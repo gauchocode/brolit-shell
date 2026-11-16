@@ -2507,3 +2507,56 @@ function sanitize_borgmatic_notification_hooks() {
     return 0
 
 }
+
+################################################################################
+# Archive borgmatic configs whose project no longer exists on this server.
+#
+# Deleting a project leaves its borgmatic config behind: every nightly run
+# then fails that project with class missing_source and the email reports a
+# borg error forever (gaucho-host01-vm carried two orphaned configs for
+# deleted sites, 2026-11-16). Configs for vanished projects are moved to
+# an archive directory (nothing is deleted: the borg repository history
+# stays untouched and the config can be restored by moving it back).
+#
+# Special configs are never touched: "configuration-coverage" (server-level
+# coverage) and "html" (the placeholder directory the cron skips).
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  0 always; per-config warnings in the run log.
+################################################################################
+function sanitize_borgmatic_stale_configs() {
+
+    local config_dir="${BROLIT_BORGMATIC_CONFIG_DIR:-/etc/borgmatic.d}"
+    local projects_dir="${PROJECTS_PATH:-/var/www}"
+    local config_file project_name archive_dir
+
+    [[ -d "${config_dir}" ]] || return 0
+
+    for config_file in "${config_dir}"/*.yml; do
+        [[ -f "${config_file}" ]] || continue
+
+        project_name="$(basename -- "${config_file}" .yml)"
+
+        # Server-level and placeholder configs never map to a project dir.
+        [[ "${project_name}" == "configuration-coverage" || "${project_name}" == "html" ]] && continue
+
+        if [[ ! -d "${projects_dir}/${project_name}" ]]; then
+            archive_dir="${config_dir}/backup-orphan-$(date +%Y%m%d)"
+            mkdir --parents "${archive_dir}" 2>/dev/null || {
+                log_event "warning" "Could not create the orphan archive dir ${archive_dir}; keeping config ${project_name}" "false"
+                continue
+            }
+            if mv -- "${config_file}" "${archive_dir}/" 2>/dev/null; then
+                log_event "warning" "Archived borgmatic config for ${project_name}: project directory ${projects_dir}/${project_name} no longer exists (moved to ${archive_dir}; borg history untouched)" "false"
+            else
+                log_event "warning" "Could not archive the stale borgmatic config ${config_file}" "false"
+            fi
+        fi
+    done
+
+    return 0
+
+}

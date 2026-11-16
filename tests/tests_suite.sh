@@ -34,6 +34,7 @@ function tests_suite_menu() {
     "21)" "RUN BACKUP TAR EXCLUDE TESTS"
     "22)" "RUN BACKUP MAIL SECTION TESTS"
     "23)" "RUN DROPBOX UPLOAD DESTINATION TESTS"
+    "24)" "RUN BORGMATIC STALE CONFIG TESTS"
   )
 
   chosen_tests_options=$(whiptail --title "TESTS SUITE" --menu " " 20 78 10 "${tests_options[@]}" 3>&1 1>&2 2>&3)
@@ -73,6 +74,10 @@ function tests_suite_menu() {
       }
       test_dropbox_upload_destination || {
         log_event "error" "Dropbox upload destination regression tests failed" "false"
+        return 1
+      }
+      test_stale_configs || {
+        log_event "error" "Borgmatic stale config sanitizer tests failed" "false"
         return 1
       }
       test_borg_scheduled_routing || {
@@ -178,6 +183,12 @@ function tests_suite_menu() {
     if [[ ${chosen_tests_options} == *"23"* ]]; then
       test_dropbox_upload_destination || {
         log_event "error" "Dropbox upload destination regression tests failed" "false"
+        return 1
+      }
+    fi
+    if [[ ${chosen_tests_options} == *"24"* ]]; then
+      test_stale_configs || {
+        log_event "error" "Borgmatic stale config sanitizer tests failed" "false"
         return 1
       }
     fi

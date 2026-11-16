@@ -144,6 +144,7 @@ function prepare_borgmatic_environment() {
     sanitize_borgmatic_pause_hooks    # Self-heal configs generated before the template dropped the pause hooks
     sanitize_borgmatic_notification_hooks    # Self-heal configs carrying the undefined send_notification on_error hook
     sanitize_borgmatic_docker_log_hooks    # Self-heal configs whose docker log hook fails for non-Docker projects
+    sanitize_borgmatic_stale_configs    # Archive configs of deleted projects instead of failing missing_source forever
 
     log_event "info" "Borgmatic environment preparation completed" "false"
     
