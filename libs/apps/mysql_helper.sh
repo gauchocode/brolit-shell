@@ -263,7 +263,7 @@ function mysql_list_databases() {
             return 1
         fi
 
-        mysql_exec="docker exec -i ${container_name} mysql -u${mysql_container_user} -p${mysql_container_user_pssw}"
+        mysql_exec="docker exec -i ${container_name} mysql -h127.0.0.1 -u${mysql_container_user} -p${mysql_container_user_pssw}"
 
     else
 
@@ -384,7 +384,7 @@ function mysql_users_list() {
         mysql_container_user="$(docker exec -i "${container_name}" printenv MYSQL_USER)"
         mysql_container_user_pssw="$(docker exec -i "${container_name}" printenv MYSQL_PASSWORD)"
 
-        mysql_exec="docker exec -i ${container_name} mysql -u${mysql_container_user} -p${mysql_container_user_pssw}"
+        mysql_exec="docker exec -i ${container_name} mysql -h127.0.0.1 -u${mysql_container_user} -p${mysql_container_user_pssw}"
 
     else
 
@@ -980,7 +980,7 @@ function mysql_database_import() {
         mysql_container_user="$(docker exec -i "${container_name}" printenv MYSQL_USER)"
         mysql_container_user_pssw="$(docker exec -i "${container_name}" printenv MYSQL_PASSWORD)"
 
-        mysql_exec="docker exec -i ${container_name} mysql -u${mysql_container_user} -p${mysql_container_user_pssw} -f -D ${database}"
+        mysql_exec="docker exec -i ${container_name} mysql -h127.0.0.1 -u${mysql_container_user} -p${mysql_container_user_pssw} -f -D ${database}"
 
     else
 
@@ -1057,7 +1057,7 @@ function mysql_database_export() {
         mysql_container_user="$(docker exec -i "${container_name}" printenv MYSQL_USER)"
         mysql_container_user_pssw="$(docker exec -i "${container_name}" printenv MYSQL_PASSWORD)"
 
-        mysql_exec="docker exec -i ${container_name} mysqldump -u${mysql_container_user} -p${mysql_container_user_pssw}"
+        mysql_exec="docker exec -i ${container_name} mysqldump -h127.0.0.1 -u${mysql_container_user} -p${mysql_container_user_pssw}"
 
     else
 
@@ -1205,7 +1205,7 @@ function mysql_database_search_string() {
         mysql_container_user="$(docker exec -i "${container_name}" printenv MYSQL_USER)"
         mysql_container_user_pssw="$(docker exec -i "${container_name}" printenv MYSQL_PASSWORD)"
 
-        mysql_exec="docker exec -i ${container_name} mysql -u${mysql_container_user} -p${mysql_container_user_pssw}"
+        mysql_exec="docker exec -i ${container_name} mysql -h127.0.0.1 -u${mysql_container_user} -p${mysql_container_user_pssw}"
 
     else
 
@@ -1323,7 +1323,7 @@ function mysql_list_tables() {
         mysql_container_user="$(docker exec -i "${container_name}" printenv MYSQL_USER)"
         mysql_container_user_pssw="$(docker exec -i "${container_name}" printenv MYSQL_PASSWORD)"
 
-        mysql_exec="docker exec -i ${container_name} mysql -u${mysql_container_user} -p${mysql_container_user_pssw}"
+        mysql_exec="docker exec -i ${container_name} mysql -h127.0.0.1 -u${mysql_container_user} -p${mysql_container_user_pssw}"
 
     else
 
@@ -1403,7 +1403,7 @@ function mysql_table_drop() {
         mysql_container_user="$(docker exec -i "${container_name}" printenv MYSQL_USER)"
         mysql_container_user_pssw="$(docker exec -i "${container_name}" printenv MYSQL_PASSWORD)"
 
-        mysql_exec="docker exec -i ${container_name} mysql -u${mysql_container_user} -p${mysql_container_user_pssw}"
+        mysql_exec="docker exec -i ${container_name} mysql -h127.0.0.1 -u${mysql_container_user} -p${mysql_container_user_pssw}"
 
     else
 
@@ -1524,7 +1524,7 @@ function mysql_wordpress_malware_scan() {
         mysql_container_user="$(docker exec -i "${container_name}" printenv MYSQL_USER)"
         mysql_container_user_pssw="$(docker exec -i "${container_name}" printenv MYSQL_PASSWORD)"
 
-        mysql_exec="docker exec -i ${container_name} mysql -u${mysql_container_user} -p${mysql_container_user_pssw}"
+        mysql_exec="docker exec -i ${container_name} mysql -h127.0.0.1 -u${mysql_container_user} -p${mysql_container_user_pssw}"
 
     else
 

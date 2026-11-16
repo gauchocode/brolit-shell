@@ -78,13 +78,15 @@ function wordfencecli_read_license() {
     if [[ ${WORDFENCECLI_LICENSE} != "" ]]; then
 
         export WORDFENCECLI_LICENSE
-        
+
         # Return
         echo "${WORDFENCECLI_LICENSE}" && return 0
 
     else
 
-        log_event "error" "Something went wrong reading Wordfence-cli license" "false"
+        # The caller decides how to handle a missing license (the scan
+        # flow skips gracefully); this is diagnostic only, not an alert.
+        log_event "debug" "Wordfence-cli license file is empty or unreadable" "false"
 
         return 1
 
