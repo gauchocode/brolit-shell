@@ -3274,6 +3274,7 @@ function project_compose_archive_deletion_mounts() (
   compose_file="${PROJECTS_PATH}/${project_domain}/docker-compose.yml"
   [[ -f "${compose_file}" ]] || compose_file="${PROJECTS_PATH}/${project_domain}/docker-compose.yaml"
   [[ -f "${compose_file}" ]] || return 1
+  cd "${PROJECTS_PATH}/${project_domain}" || return 1
 
   work_dir="${BROLIT_TMP_DIR}/${NOW}/mounts-${project_domain}"
   mkdir -p "${work_dir}" || return 1
@@ -3385,7 +3386,7 @@ function project_compose_abort_archived_deletion_mounts() {
   compose_file="${PROJECTS_PATH}/${project_domain}/docker-compose.yml"
   [[ -f "${compose_file}" ]] || compose_file="${PROJECTS_PATH}/${project_domain}/docker-compose.yaml"
   if [[ -f "${compose_file}" ]]; then
-    docker compose -f "${compose_file}" start >/dev/null 2>&1 || printf "WARNING: could not restart %s\n" "${project_domain}" >&2
+    (cd "${PROJECTS_PATH}/${project_domain}" && docker compose -f "${compose_file}" start) >/dev/null 2>&1 || printf "WARNING: could not restart %s\n" "${project_domain}" >&2
   fi
   if [[ -n "${receipt}" ]]; then
     rm -rf -- "${BROLIT_TMP_DIR}/${NOW}/mounts-${project_domain}"
@@ -3423,6 +3424,13 @@ function project_compose_finalize_archived_deletion_mounts() (
   work_dir="${BROLIT_TMP_DIR}/${NOW}/mounts-${project_domain}"
   compose_file="${PROJECTS_PATH}/${project_domain}/docker-compose.yml"
   [[ -f "${compose_file}" ]] || compose_file="${PROJECTS_PATH}/${project_domain}/docker-compose.yaml"
+
+  # The rollback trap must never inherit the caller's cwd. Enter the project
+  # before arming it; a cd failure uses the same guarded abort path.
+  if ! cd "${PROJECTS_PATH}/${project_domain}"; then
+    project_compose_abort_archived_deletion_mounts "${project_domain}" "${receipt}"
+    return 1
+  fi
 
   # Cover every return after archiving, including invalid receipt/tool/compose
   # checks, not only failures later in verification.

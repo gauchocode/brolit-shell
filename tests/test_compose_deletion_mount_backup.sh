@@ -17,6 +17,7 @@ function test_compose_deletion_mount_backup() {
   export FAKE_REMOTE_ROOT="${tmp}/remote"
   export FAKE_DOCKER_EVENTS="${tmp}/docker-events"
   export FAKE_COMPRESS_SOURCES="${tmp}/compress-sources"
+  export FAKE_DOCKER_CWDS="${tmp}/docker-cwds"
   mkdir -p "${PROJECTS_PATH}/site.example.com" "${BROLIT_TMP_DIR}/${NOW}" \
     "${FAKE_VOLUME_ROOT}/real-services_db-config" "${FAKE_VOLUME_ROOT}/real-services_deno-cache" \
     "${tmp}/outside:colon" "${FAKE_REMOTE_ROOT}"
@@ -42,6 +43,7 @@ if [[ "${1:-}" == "volume" && "${2:-}" == "inspect" ]]; then
   exit 0
 fi
 if [[ "${1:-}" == "compose" ]]; then
+  pwd >> "${FAKE_DOCKER_CWDS}"
   for last in "$@"; do :; done
   printf '%s\n' "${last}" >> "${FAKE_DOCKER_EVENTS}"
   exit 0
@@ -228,6 +230,12 @@ PY
     echo "FAIL: volume removal failure was accepted"; failed=1
   fi
   unset FAKE_RM_FAIL
+
+  # Check after every success, early-validation and rollback case: no Compose
+  # command may inherit the caller's directory.
+  if ! awk -v expected="${PROJECTS_PATH}/site.example.com" '$0 != expected { bad=1 } END { exit bad }' "${FAKE_DOCKER_CWDS}"; then
+    echo "FAIL: a Compose command ran outside the project directory"; failed=1
+  fi
 
   kill "${socket_pid}" >/dev/null 2>&1 || true
   test_compose_deletion_orchestration || failed=1

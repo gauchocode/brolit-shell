@@ -124,6 +124,9 @@ FAKE_EOF
     function postgres_database_exists() { return 1; }
     function backup_project_database() {
         echo "database" >> "${CALLS_FILE}"
+        if [[ "${FAKE_RETENTION_ERROR:-0}" == "1" ]]; then
+            STORAGE_DELETE_ERRORS=$(( ${STORAGE_DELETE_ERRORS:-0} + 1 ))
+        fi
         [[ -n "${BKP_DB_FAIL:-}" ]] && return 1
         echo "/tmp/x.sql;1MiB"
         return 0
@@ -477,6 +480,22 @@ function test_docker_failure_marks_project_backup_failed() {
 
 }
 
+function test_docker_backup_preserves_retention_error_state() {
+    echo "=== Test: Docker backup preserves retention error state ==="
+
+    eval "${BKPK_REAL_DOCKER_FN}"
+    STORAGE_DELETE_ERRORS=0
+    FAKE_RETENTION_ERROR=1 backup_project "site.example.com" "" >/dev/null 2>&1
+    local rc=$?
+    unset FAKE_RETENTION_ERROR
+
+    if [[ ${STORAGE_DELETE_ERRORS:-0} -ne 1 ]]; then
+        echo "FAILED: Docker backup lost STORAGE_DELETE_ERRORS across its cwd handling"
+        return 1
+    fi
+    echo "PASSED: retention error state survives the Docker backup"
+}
+
 function test_successful_project_backup_shows_done() {
 
     echo "=== Test: a successful project backup shows DONE ==="
@@ -534,6 +553,8 @@ function test_backup_project_resilience() {
     test_docker_missing_compose_still_backs_up_files || failed=1
     echo ""
     test_docker_failure_marks_project_backup_failed || failed=1
+    echo ""
+    test_docker_backup_preserves_retention_error_state || failed=1
     echo ""
     test_successful_project_backup_shows_done || failed=1
     echo ""

@@ -2087,6 +2087,17 @@ function backup_project() {
 ################################################################################
 
 function backup_docker_project() {
+  # Restore the caller's cwd without a subshell: storage retention deliberately
+  # reports errors through the global STORAGE_DELETE_ERRORS counter.
+  local original_cwd="${PWD}"
+  local exitstatus
+  _backup_docker_project_impl "$@"
+  exitstatus=$?
+  cd "${original_cwd}" || return 1
+  return "${exitstatus}"
+}
+
+function _backup_docker_project_impl() {
 
   local project_domain="${1}"
   local backup_type="${2}"
@@ -2117,6 +2128,10 @@ function backup_docker_project() {
     display --indent 6 --text "- Backup for ${project_domain}" --result "FAIL" --color RED
     return 1
   fi
+
+  # Compose must run from the project directory: its .env and project name are
+  # not reliably loaded with only -f from the release directory.
+  cd "${PROJECTS_PATH}/${project_domain}" || return 1
 
   # Check if docker-compose.yml exists
   docker_compose_file="${PROJECTS_PATH}/${project_domain}/docker-compose.yml"
@@ -2428,7 +2443,6 @@ function backup_docker_project() {
   fi
 
 }
-
 ################################################################################
 # Make additional directories Backup
 #
