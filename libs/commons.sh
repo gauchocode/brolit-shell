@@ -1720,6 +1720,187 @@ function decompress() {
 }
 
 ################################################################################
+# Backup progress reporting.
+#
+# Emits one machine readable line per progress event on stderr when
+# BROLIT_PROGRESS=1. stderr is used on purpose: compress() returns the archive
+# size on stdout and every caller captures it, so stdout must stay clean.
+#
+# Line format (one per event, sentinel first so consumers can classify and
+# strip it):
+#   [[BROLIT_PROGRESS]]{"v":1,"phase":"compress","pct":42,"detail":"example.com"}
+#
+# Arguments:
+#   ${1} = phase: compress | upload | database | borg
+#   ${2} = percentage 0-100, or "-" when the phase cannot be measured
+#   ${3} = optional detail; defaults to BROLIT_PROGRESS_DETAIL. It is reduced to
+#          [A-Za-z0-9._-] and truncated to 255 characters, which keeps the JSON
+#          valid and paths out. Callers must still pass a domain, never a
+#          secret: sanitizing is not a secrecy guarantee.
+#
+# Outputs:
+#   0 always.
+################################################################################
+function brolit_progress() {
+
+  local phase="${1:-}"
+  local pct="${2:--}"
+  local detail="${3:-${BROLIT_PROGRESS_DETAIL:-}}"
+
+  [[ "${BROLIT_PROGRESS:-0}" == "1" ]] || return 0
+  [[ "${phase}" =~ ^(compress|upload|database|borg)$ ]] || return 0
+
+  if [[ "${pct}" =~ ^[0-9]{1,3}$ ]]; then
+    pct=$((10#${pct}))
+    (( pct > 100 )) && pct=100
+  else
+    pct="null"
+  fi
+
+  detail="${detail//[^A-Za-z0-9._-]/}"
+  detail="${detail:0:255}"
+
+  printf '[[BROLIT_PROGRESS]]{"v":1,"phase":"%s","pct":%s,"detail":"%s"}\n' \
+    "${phase}" "${pct}" "${detail}" >&2
+
+  return 0
+}
+
+################################################################################
+# Turn pv numeric output into progress events.
+#
+# With "-n -f", pv writes one integer percentage per line on stderr. Forwarding
+# every line would flood the job log, so events are throttled: at least two
+# points of change or three seconds since the last event, plus the last value
+# actually observed.
+#
+# Arguments:
+#   ${1} = phase
+#   ${2} = optional detail
+#
+# Outputs:
+#   0 always.
+################################################################################
+function brolit_progress_pv() {
+
+  local phase="${1:-compress}"
+  local detail="${2:-}"
+  local line value last_value="" last_emitted=-1 last_time=0 now
+
+  if [[ "${BROLIT_PROGRESS:-0}" != "1" ]]; then
+    # Keep the pipe drained so the writer never blocks on a full buffer.
+    cat >/dev/null
+    return 0
+  fi
+
+  while IFS= read -r line; do
+    # pv --numeric prints one integer percentage per line. Anything else is a
+    # diagnostic (for example "pv: ...: No such file or directory") and must
+    # stay visible instead of being swallowed together with the meter. The
+    # 1-3 digit bound also keeps the arithmetic below from overflowing.
+    if [[ ! "${line}" =~ ^[[:space:]]*[0-9]{1,3}[[:space:]]*$ ]]; then
+      [[ -n "${line//[[:space:]]/}" ]] && printf '%s\n' "${line}" >&2
+      continue
+    fi
+    value="${line//[^0-9]/}"
+    value=$((10#${value}))
+    (( value > 100 )) && value=100
+    last_value="${value}"
+    now="${EPOCHSECONDS:-$(date +%s)}"
+    if (( last_emitted < 0 )) || (( value >= last_emitted + 2 )) || (( now - last_time >= 3 )); then
+      brolit_progress "${phase}" "${value}" "${detail}"
+      last_emitted="${value}"
+      last_time="${now}"
+    fi
+  done
+
+  # Close with the last value actually observed, never with an invented 100 and
+  # never with a trailing non-numeric line: a truncated archive must not look
+  # complete.
+  if [[ -n "${last_value}" ]]; then
+    brolit_progress "${phase}" "${last_value}" "${detail}"
+  fi
+
+  return 0
+}
+
+################################################################################
+# pv wrapper for the compression pipeline.
+#
+# Arguments:
+#   ${1} = ${detail}
+#   ${2}... = pv arguments
+#
+# Outputs:
+#   pv exit status (so PIPESTATUS stays meaningful).
+################################################################################
+function brolit_progress_pv_filter() {
+
+  local detail="${1:-}"
+  (( $# > 0 )) && shift
+
+  if [[ "${BROLIT_PROGRESS:-0}" == "1" ]]; then
+    pv --numeric --force "$@" 2> >(brolit_progress_pv compress "${detail}")
+  else
+    pv "$@"
+  fi
+}
+
+################################################################################
+# Turn a curl progress meter into upload progress events.
+#
+# dropbox_uploader.sh -p uses curl's --progress-bar, which writes
+# "#######  42.5%" separated by carriage returns on stderr.
+#
+# Arguments:
+#   ${1} = optional phase (default upload)
+#   ${2} = optional detail
+#
+# Outputs:
+#   0 always.
+################################################################################
+function brolit_progress_meter() {
+
+  local phase="${1:-upload}"
+  local detail="${2:-}"
+
+  local line match value
+  local last_emitted=-1
+
+  if [[ "${BROLIT_PROGRESS:-0}" != "1" ]]; then
+    cat >/dev/null
+    return 0
+  fi
+
+  while IFS= read -r line; do
+    match="$(printf '%s\n' "${line}" | grep -oE '[0-9]+([.][0-9]+)?%' | tail -n 1)"
+    if [[ -z "${match}" ]]; then
+      # Not a meter line: curl's own errors (--show-error) must stay visible.
+      [[ -n "${line//[[:space:]]/}" ]] && printf '%s\n' "${line}" >&2
+      continue
+    fi
+    match="${match%%%*}"
+    value="${match%%.*}"
+    [[ "${value}" =~ ^[0-9]{1,3}$ ]] || continue
+    value=$((10#${value}))
+    (( value > 100 )) && value=100
+
+    # The meter never reports completion: only the caller knows whether the
+    # upload and its final commit succeeded. This reader is used for simple,
+    # single-request uploads only; chunked uploads have one meter per request
+    # and retries, so they report phase boundaries instead of a false percentage.
+    (( value > 99 )) && value=99
+
+    if (( last_emitted < 0 )) || (( value >= last_emitted + 2 )); then
+      brolit_progress "${phase}" "${value}" "${detail}"
+      last_emitted="${value}"
+    fi
+  done < <(tr '\r' '\n')
+
+  return 0
+}
+
+################################################################################
 # Compress files or directories
 #
 # Arguments:
@@ -1810,13 +1991,20 @@ function compress() {
   local -a pv_args=(--width 70)
   (( estimated_size > 0 )) && pv_args+=(-s "${estimated_size}")
 
+  # Phase detail for progress events: the project domain when the caller set
+  # the context, otherwise whatever is being compressed (already restricted to
+  # [A-Za-z0-9._-] by brolit_progress).
+  local progress_detail="${BROLIT_PROGRESS_DETAIL:-${to_backup_string}}"
+
+  brolit_progress compress 0 "${progress_detail}"
+
   if [[ ${BACKUP_CONFIG_FOLLOW_SYMLINKS} == "true" ]]; then
     ## -h will follow symlinks
     log_event "debug" "Running: ${TAR} -cf - --directory=\"${backup_base_dir}\" ${exclude_args[*]} -h \"${to_backup}\" | pv ${pv_args[*]} | ${BACKUP_CONFIG_COMPRESSION_TYPE} ${compress_parameter} >\"${file_output}\"" "false"
-    "${TAR}" -cf - --directory="${backup_base_dir}" "${exclude_args[@]}" -h "${to_backup}" | pv "${pv_args[@]}" | ${BACKUP_CONFIG_COMPRESSION_TYPE} ${compress_parameter} >"${file_output}"
+    "${TAR}" -cf - --directory="${backup_base_dir}" "${exclude_args[@]}" -h "${to_backup}" | brolit_progress_pv_filter "${progress_detail}" "${pv_args[@]}" | ${BACKUP_CONFIG_COMPRESSION_TYPE} ${compress_parameter} >"${file_output}"
   else
     log_event "debug" "Running: ${TAR} -cf - --directory=\"${backup_base_dir}\" ${exclude_args[*]} \"${to_backup}\" | pv ${pv_args[*]} | ${BACKUP_CONFIG_COMPRESSION_TYPE} ${compress_parameter} >\"${file_output}\"" "false"
-    "${TAR}" -cf - --directory="${backup_base_dir}" "${exclude_args[@]}" "${to_backup}" | pv "${pv_args[@]}" | ${BACKUP_CONFIG_COMPRESSION_TYPE} ${compress_parameter} >"${file_output}"
+    "${TAR}" -cf - --directory="${backup_base_dir}" "${exclude_args[@]}" "${to_backup}" | brolit_progress_pv_filter "${progress_detail}" "${pv_args[@]}" | ${BACKUP_CONFIG_COMPRESSION_TYPE} ${compress_parameter} >"${file_output}"
   fi
 
   # The tar pipeline result was previously ignored: with the compression
@@ -1850,6 +2038,9 @@ function compress() {
     log_event "warning" "tar reported warnings while compressing ${to_backup_string} (exit 1, e.g. files changed as they were read); keeping the archive" "false"
 
   fi
+
+  # The archive was built: close the phase even when pv never printed 100.
+  brolit_progress compress 100 "${progress_detail}"
 
   # Compress result
   if [[ ${BACKUP_CONFIG_COMPRESSION_TEST} == "true" ]]; then

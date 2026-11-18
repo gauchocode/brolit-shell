@@ -84,7 +84,7 @@ jq -n \
     --argjson protocol_version "${BROLIT_REPORT_PROTOCOL_VERSION}" \
     --argjson min_admin_protocol "${BROLIT_MIN_ADMIN_PROTOCOL}" \
     --arg sha256 "${artifact_sha256}" \
-    --argjson capabilities '["inventory.v2","backup-history.v2","backup-dropbox-line-parser","backup-borg-latest"]' \
+    --argjson capabilities '["inventory.v2","backup-history.v2","backup-dropbox-line-parser","backup-borg-latest","backup-progress.v1"]' \
     '{product:$product,version:$version,commit:$commit,protocol_version:$protocol_version,min_admin_protocol:$min_admin_protocol,sha256:$sha256,capabilities:$capabilities}' \
     > "${release_dir}/manifest.json"
 

@@ -191,6 +191,7 @@ function dropbox_upload() {
 
     local output
     local dropbox_file_to_upload_result
+    local file_size=0
 
     spinner_start "- Uploading file to Dropbox"
 
@@ -199,8 +200,41 @@ function dropbox_upload() {
     log_event "debug" "Executing: \"${DROPBOX_UPLOADER}\" -q upload \"${file_to_upload}\" \"${dropbox_directory}\"" "false"
 
     # Command
-    output="$("${DROPBOX_UPLOADER}" -q upload "${file_to_upload}" "${dropbox_directory}")"
-    dropbox_file_to_upload_result=$?
+    if [[ "${BROLIT_PROGRESS:-0}" == "1" ]]; then
+
+        # -p enables curl's progress meter (brolit_progress_meter turns it into
+        # machine readable events). -q would suppress it, and this branch is
+        # only reachable when the platform asked for progress.
+        file_size="$(stat -c %s -- "${file_to_upload}" 2>/dev/null || printf '0')"
+        [[ "${file_size}" =~ ^[0-9]+$ ]] || file_size=0
+
+        brolit_progress upload 0 "${BROLIT_PROGRESS_DETAIL:-}"
+
+        if (( file_size > 157286000 )); then
+            # Above 150 MB the uploader uses independent 50 MiB requests, each
+            # with its own 0-100 meter, and retries failed chunks. There are no
+            # explicit chunk boundaries on that stream, so a folded percentage
+            # would be wrong (including premature 100 or overcounted retries).
+            # v1 reports only the honest boundaries for this case.
+            log_event "debug" "Executing: \"${DROPBOX_UPLOADER}\" -q upload \"${file_to_upload}\" \"${dropbox_directory}\" (chunked; progress boundaries only)" "false"
+            output="$("${DROPBOX_UPLOADER}" -q upload "${file_to_upload}" "${dropbox_directory}")"
+            dropbox_file_to_upload_result=$?
+        else
+            log_event "debug" "Executing: \"${DROPBOX_UPLOADER}\" -p upload \"${file_to_upload}\" \"${dropbox_directory}\"" "false"
+            output="$("${DROPBOX_UPLOADER}" -p upload "${file_to_upload}" "${dropbox_directory}" 2> >(brolit_progress_meter upload "${BROLIT_PROGRESS_DETAIL:-}"))"
+            dropbox_file_to_upload_result=$?
+        fi
+
+        # Completion is claimed here, never by the meter: only this exit status
+        # covers every chunk and the final commit.
+        [[ ${dropbox_file_to_upload_result} -eq 0 ]] && brolit_progress upload 100 "${BROLIT_PROGRESS_DETAIL:-}"
+
+    else
+
+        output="$("${DROPBOX_UPLOADER}" -q upload "${file_to_upload}" "${dropbox_directory}")"
+        dropbox_file_to_upload_result=$?
+
+    fi
 
     spinner_stop "${dropbox_file_to_upload_result}"
 

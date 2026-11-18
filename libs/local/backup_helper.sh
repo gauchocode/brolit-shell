@@ -1522,6 +1522,7 @@ function backup_project_database() {
   local storage_result
   local error_type
   local error_msg
+  local progress_detail="${BROLIT_PROGRESS_DETAIL:-${database}}"
 
   log_event "info" "Creating new database backup of '${database}'" "false"
 
@@ -1533,6 +1534,10 @@ function backup_project_database() {
     return 0
 
   fi
+
+  # The export step is the part that runs for minutes with no other signal: the
+  # archive compression and the upload report their own percentages.
+  brolit_progress database 0 "${progress_detail}"
 
   # Backups file names
   backup_prefix_name="${storage_key}_database"
@@ -1557,6 +1562,8 @@ function backup_project_database() {
 
   export_result=$?
   if [[ ${export_result} -eq 0 ]]; then
+
+    brolit_progress database 100 "${progress_detail}"
 
     # Compress backup
     backup_file_size="$(compress "${BROLIT_TMP_DIR}/${NOW}/" "${dump_file}" "${BROLIT_TMP_DIR}/${NOW}/${backup_file}" "")"
@@ -1668,6 +1675,12 @@ function backup_project_with_borg() {
 
   local got_error=0
 
+  # Progress context: every event below names the project, never a path.
+  # Local on purpose: bash's dynamic scoping passes it to callees and to the
+  # process substitutions, and restores the previous value on return, so an
+  # unrelated later compression cannot inherit this project's domain.
+  local BROLIT_PROGRESS_DETAIL="${project_domain}"
+
   display --indent 6 --text "- Project backup with Borg" --result "RUNNING" --color YELLOW
 
   # Backup files
@@ -1701,9 +1714,14 @@ function backup_project_with_borg() {
       log_event "error" "Borgmatic executable not found via PATH, /root/.local/bin, pipx, or python3 -m" "true"
       return 1
     fi
+    # borgmatic does not forward --progress, so v1 reports the phase boundaries
+    # only. Real percentages need a separate design.
+    brolit_progress borg 0 "${project_domain}"
     eval "timeout \"${BROLIT_BORG_BACKUP_TIMEOUT:-28800}\" ${borg_cmd} --config \"${config_directory}\""
     if [[ $? -eq 0 ]]; then
-    
+
+      brolit_progress borg 100 "${project_domain}"
+
       display --indent 6 --text "- Project backup with Borg" --result "DONE" --color GREEN
       log_event "success" "Borg backup completed for ${project_domain}" "true"
 
@@ -1924,7 +1942,13 @@ function backup_project() {
   local db_engine
   local backup_file
   local project_type
-  
+
+  # Progress context: every event below names the project, never a path.
+  # Local on purpose: bash's dynamic scoping passes it to callees and to the
+  # process substitutions, and restores the previous value on return, so an
+  # unrelated later compression cannot inherit this project's domain.
+  local BROLIT_PROGRESS_DETAIL="${project_domain}"
+
   log_subsection "Backup Project Files"
 
   # Backup files
@@ -2075,6 +2099,12 @@ function backup_docker_project() {
   local has_database_service
   local mysql_database_var
   local postgres_database_var
+
+  # Progress context: every event below names the project, never a path.
+  # Local on purpose: bash's dynamic scoping passes it to callees and to the
+  # process substitutions, and restores the previous value on return, so an
+  # unrelated later compression cannot inherit this project's domain.
+  local BROLIT_PROGRESS_DETAIL="${project_domain}"
 
   # Get project install type
   project_install_type="$(project_get_install_type "${PROJECTS_PATH}/${project_domain}")"

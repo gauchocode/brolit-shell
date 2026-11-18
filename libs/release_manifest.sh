@@ -68,6 +68,6 @@ release_manifest_capabilities() {
     if [[ -f "${manifest}" ]] && command -v jq >/dev/null 2>&1; then
         jq -c '.capabilities // []' "${manifest}" 2>/dev/null
     else
-        printf '%s\n' '["inventory.v2","backup-history.v2","backup-dropbox-line-parser","backup-borg-latest"]'
+        printf '%s\n' '["inventory.v2","backup-history.v2","backup-dropbox-line-parser","backup-borg-latest","backup-progress.v1"]'
     fi
 }
