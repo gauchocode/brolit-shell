@@ -1,7 +1,7 @@
 # Plan: Compose deletion gate — verified mount coverage
 
 ## Status
-- **Phase**: Review
+- **Phase**: Complete
 - **Last Updated**: 2026-11-17
 
 ## Overview
@@ -219,6 +219,21 @@ and several medium ones. All of them are addressed:
 | Block message did not distinguish rc 1 from rc 2 | `project_display_deletion_block` takes the gate exit code |
 | Bind source through a symlink counted as covered | `realpath -e` containment re-check |
 | Plan said volumes are "destroyed"; they are orphaned | Wording corrected below |
+
+## Deployment and live verification
+
+- Released as 3.14.16 (`bbaf1a79513feed08d2bfb610275af6cafe56f23`), pushed to
+  `origin/master` and installed through the staged installer on `gaucho-dev02`
+  and `gaucho-dev04`. Both report the release commit, `backup-progress.v1`, and
+  `valid` validation after an Admin sync.
+- The first staged deployment exposed that Admin still invoked the legacy
+  `/root/brolit-shell/runner.sh`; Admin commit `75ed380` now selects
+  `/opt/brolit-shell/current/runner.sh` when the synced release metadata exists.
+- All requested deletions on `gaucho-dev02` completed: app
+  (`e82f3f19-a30f-4b8b-aa1d-588fb1321de5`), Supabase
+  (`99220eac-cdef-430c-bdb4-6bc802f51ddd`) and Firecrawl
+  (`264038a0-5826-4755-9fa7-69a60cb37926`). The final inventory has 7 sites and
+  none of the three domains remains.
 
 ## Open Questions
 
