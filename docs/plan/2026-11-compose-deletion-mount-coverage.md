@@ -234,6 +234,19 @@ and several medium ones. All of them are addressed:
   (`99220eac-cdef-430c-bdb4-6bc802f51ddd`) and Firecrawl
   (`264038a0-5826-4755-9fa7-69a60cb37926`). The final inventory has 7 sites and
   none of the three domains remains.
+- Fleet rollout completed for every host that ran 3.14.14 through the staged
+  installer: canary `tukiverse-dev01`, then batches of 3, 6 and 16. Result: 28
+  servers on 3.14.16 with `valid` validation. `stellacast-gpu` (3.14.13), the
+  3.6/3.9 legacy trees, offline hosts and hosts without brolit were not touched.
+  `epica-apps02` had two inventory timeouts during rollout; connectivity and a
+  server-status task succeeded, and its later inventory reports 3.14.16 as valid.
+- Backup verification: the deleted app's Dropbox archive was downloaded to a
+  temporary directory, fully listed and extracted (1,404 entries, including the
+  Compose file and `.env`), then removed. No site was recreated or overwritten.
+- Borg test debt: all 59 `tests/test_*.sh` scripts now exit 0. One stale
+  classifier expectation was fixed; three live/manual Borg tests are explicit
+  SKIP unless `BROLIT_RUN_LIVE_BORG_TESTS=1`, and are inert when sourced by the
+  suite (`ef6d25f3`).
 
 ## Open Questions
 
