@@ -355,6 +355,11 @@ FAKE
     echo "FAIL: quiet upload emitted progress"; failed=1
   fi
 
+  # Machine-readable progress must not be interleaved with spinner control
+  # characters on the same stderr line.
+  events="$(bash -c 'source "$1"; QUIET=false; BROLIT_EXEC_TYPE=default; BROLIT_PROGRESS=1; spinner_start "Uploading"; spinner_stop 0' _ "$(pwd)/libs/local/log_and_display_helper.sh" 2>&1)"
+  assert_stream "spinner in progress mode" "${events}" "empty"
+
   rm -rf -- "${tmp}"
   # Never leak the fake pv into the caller's PATH.
   PATH="${saved_path}"

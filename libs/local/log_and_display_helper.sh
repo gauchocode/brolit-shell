@@ -99,7 +99,7 @@ function spinner_start() {
 
   local msg_to_display="${1}"
 
-  [[ ${QUIET} == "true" || ${BROLIT_EXEC_TYPE} != "default" ]] && return 0
+  [[ ${QUIET} == "true" || ${BROLIT_EXEC_TYPE} != "default" || ${BROLIT_PROGRESS:-0} == "1" ]] && return 0
 
   _spinner "start" "${msg_to_display}" &
 
@@ -123,7 +123,7 @@ function spinner_stop() {
 
   local exit_status="${1}"
 
-  [[ ${QUIET} == "true" || ${BROLIT_EXEC_TYPE} != "default" ]] && return 0
+  [[ ${QUIET} == "true" || ${BROLIT_EXEC_TYPE} != "default" || ${BROLIT_PROGRESS:-0} == "1" ]] && return 0
 
   _spinner "stop" "${exit_status}" "${_sp_pid}"
   unset _sp_pid
