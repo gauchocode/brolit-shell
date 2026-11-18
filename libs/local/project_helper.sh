@@ -3312,7 +3312,7 @@ function project_delete() {
     clear_previous_lines "1"
 
     # Make one last backup.
-    if ! backup_project "${project_domain}" "all"; then
+    if ! backup_project "${project_domain}" "all" "deletion"; then
       return 1
     fi
 

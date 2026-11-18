@@ -1934,6 +1934,9 @@ function backup_project() {
 
   local project_domain="${1}"
   local backup_type="${2}"
+  # "deletion" is set only by project_delete after its mount-coverage gate
+  # passed. Every ordinary backup keeps the strict container checks.
+  local backup_purpose="${3:-backup}"
 
   local got_error=0
 
@@ -2022,7 +2025,7 @@ function backup_project() {
       log_event "info" "Docker project detected, backing up the containerized database..." "false"
       log_subsection "Backup Project Database (Docker)"
 
-      backup_docker_project "${project_domain}" "docker_backup" "database_only"
+      backup_docker_project "${project_domain}" "docker_backup" "database_only" "${backup_purpose}"
       exitstatus=$?
       if [[ ${exitstatus} -ne 0 ]]; then
         got_error=1
@@ -2088,6 +2091,7 @@ function backup_docker_project() {
   local project_domain="${1}"
   local backup_type="${2}"
   local mode="${3:-files_and_db}"
+  local backup_purpose="${4:-backup}"
 
   local got_error=0
 
@@ -2228,13 +2232,34 @@ function backup_docker_project() {
       # one container, including stopped ones, and fail on missing/ambiguous state.
       local container_names container_running
       if ! container_names="$(docker compose -f "${docker_compose_file}" ps --all --format '{{.Name}}' "${db_service}" 2>/dev/null)" ||
-         [[ -z "${container_names}" || "${container_names}" == *$'\n'* ]]; then
-        log_event "error" "Database service container is missing or ambiguous; database backup failed" "false"
+         [[ "${container_names}" == *$'\n'* ]]; then
+        log_event "error" "Database service container is ambiguous or cannot be inspected; database backup failed" "false"
+        got_error=1
+        continue
+      fi
+      if [[ -z "${container_names}" ]]; then
+        if [[ "${backup_purpose}" == "deletion" ]]; then
+          # project_delete already proved that no volume or external bind can
+          # hold uncovered data. An absent container has no live DB to dump;
+          # any in-project database files are inside the files archive.
+          log_event "info" "No database container remains for ${db_service}; skipping the dump during deletion after mount coverage passed" "false"
+          continue
+        fi
+        log_event "error" "Database service container is missing; database backup failed" "false"
         got_error=1
         continue
       fi
       db_service_container="${container_names}"
-      if ! container_running="$(docker inspect -f '{{.State.Running}}' "${db_service_container}" 2>/dev/null)" || [[ "${container_running}" != "true" ]]; then
+      if ! container_running="$(docker inspect -f '{{.State.Running}}' "${db_service_container}" 2>/dev/null)"; then
+        log_event "error" "Database service state is unavailable; database backup failed" "false"
+        got_error=1
+        continue
+      fi
+      if [[ "${container_running}" != "true" ]]; then
+        if [[ "${backup_purpose}" == "deletion" && "${container_running}" == "false" ]]; then
+          log_event "info" "Database container ${db_service} is stopped; skipping the dump during deletion after mount coverage passed" "false"
+          continue
+        fi
         log_event "error" "Database service is stopped or its state is unavailable; database backup failed" "false"
         got_error=1
         continue
@@ -2324,9 +2349,19 @@ function backup_docker_project() {
         # Recheck immediately before dumping; stopped or uncertain is failure.
         if [[ -n "${db_container}" ]]; then
           local container_running
-          if ! container_running="$(docker inspect -f '{{.State.Running}}' "${db_container}" 2>/dev/null)" || [[ "${container_running}" != "true" ]]; then
-            log_event "error" "Database container stopped or state unavailable; database backup failed" "false"
+          if ! container_running="$(docker inspect -f '{{.State.Running}}' "${db_container}" 2>/dev/null)"; then
+            log_event "error" "Database container state unavailable; database backup failed" "false"
             display --indent 8 --text "Container state unavailable, database failed" --tcolor RED
+            got_error=1
+            continue
+          fi
+          if [[ "${container_running}" != "true" ]]; then
+            if [[ "${backup_purpose}" == "deletion" && "${container_running}" == "false" ]]; then
+              log_event "info" "Database container stopped before the deletion dump; covered by the files archive and the mount gate" "false"
+              continue
+            fi
+            log_event "error" "Database container stopped; database backup failed" "false"
+            display --indent 8 --text "Container stopped, database failed" --tcolor RED
             got_error=1
             continue
           fi

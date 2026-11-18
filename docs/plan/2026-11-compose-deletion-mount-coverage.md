@@ -199,6 +199,7 @@ Full `tests/test_*.sh` sweep: 5 pre-existing failures, all in `test_borg_*`
 | 2026-11-17 | `.env` `COMPOSE_PROJECT_NAME` widens the volume search instead of blocking | brolit always writes it (install and restore), so blocking would re-break every Docker site; a hit under any candidate namespace still blocks |
 | 2026-11-17 | Bind sources resolved with `realpath -e`; a missing source is covered | A path that does not exist holds no data; a symlink resolving outside the project is data the tarball does not contain |
 | 2026-11-17 | Related containers only require `.project`, not `.working_dir` | The label names the volume namespace; requiring both blocked containers from `docker run` and old Compose |
+| 2026-11-17 | A deletion may skip an absent/stopped DB dump only after the mount gate passes | A missing container has no live DB to dump; volumes/external binds still block, and in-project data is in the files archive. Unknown inspect output always fails |
 
 ## Review findings
 

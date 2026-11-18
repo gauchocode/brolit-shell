@@ -86,6 +86,10 @@ case "$*" in
         ;;
     *"inspect"*)
         [[ "${FAKE_INSPECT_FAIL:-false}" == "false" ]] || exit 1
+        if [[ "${FAKE_INSPECT_UNKNOWN:-false}" == "true" ]]; then
+            printf '<no value>\n'
+            exit 0
+        fi
         if [[ "${FAKE_CONTAINER_RUNNING:-true}" == "true" ]]; then
             printf 'true\n'
         else
@@ -299,7 +303,7 @@ function test_docker_stopped_container_fails() {
 function test_docker_container_resolution_fails_closed() {
     local scenario rc
     eval "${BKPK_REAL_DOCKER_FN}"
-    for scenario in FAKE_REPLICAS FAKE_PS_FAIL FAKE_PS_EMPTY FAKE_INSPECT_FAIL FAKE_NAME_FAIL FAKE_DISCOVERY_FAIL; do
+    for scenario in FAKE_REPLICAS FAKE_PS_FAIL FAKE_PS_EMPTY FAKE_INSPECT_FAIL FAKE_INSPECT_UNKNOWN FAKE_NAME_FAIL FAKE_DISCOVERY_FAIL; do
         : > "${CALLS_FILE}"
         : > "${FAKE_DOCKER_LOG}"
         export "${scenario}=true"
@@ -316,6 +320,53 @@ function test_docker_container_resolution_fails_closed() {
         fi
     done
     echo "PASSED: replicas, missing containers and inspection errors fail closed"
+}
+
+function test_docker_missing_container_allowed_only_after_deletion_gate() {
+    local scenario rc
+    eval "${BKPK_REAL_DOCKER_FN}"
+    for scenario in FAKE_PS_EMPTY FAKE_CONTAINER_RUNNING; do
+        : > "${CALLS_FILE}"
+        : > "${EVENTS_FILE}"
+        local scenario_value="true"
+        [[ "${scenario}" == "FAKE_CONTAINER_RUNNING" ]] && scenario_value="false"
+        export "${scenario}=${scenario_value}"
+
+        # Ordinary backups remain fail-closed.
+        backup_docker_project "site.example.com" "docker_backup" "database_only" >/dev/null 2>&1
+        rc=$?
+        if [[ ${rc} -eq 0 || "$(call_count database)" -ne 0 ]]; then
+            echo "FAILED: ${scenario} must fail an ordinary backup without dumping"
+            unset "${scenario}"
+            return 1
+        fi
+
+        # A deletion reaches this point only after the mount gate passed.
+        backup_docker_project "site.example.com" "docker_backup" "database_only" "deletion" >/dev/null 2>&1
+        rc=$?
+        if [[ ${rc} -ne 0 || "$(call_count database)" -ne 0 ]]; then
+            echo "FAILED: ${scenario} should skip an unavailable dump during deletion"
+            unset "${scenario}"
+            return 1
+        fi
+        if ! grep -q "during deletion\|before the deletion dump" "${EVENTS_FILE}"; then
+            echo "FAILED: ${scenario} deletion skip was not logged"
+            unset "${scenario}"
+            return 1
+        fi
+        unset "${scenario}"
+    done
+
+    # A successful inspect with an unknown value is not proof of a stopped
+    # container: even a gated deletion must fail closed.
+    FAKE_INSPECT_UNKNOWN=true backup_docker_project "site.example.com" "docker_backup" "database_only" "deletion" >/dev/null 2>&1
+    rc=$?
+    unset FAKE_INSPECT_UNKNOWN
+    if [[ ${rc} -eq 0 || "$(call_count database)" -ne 0 ]]; then
+        echo "FAILED: unknown container state must fail even during deletion"
+        return 1
+    fi
+    echo "PASSED: missing/stopped database is skipped only for a gated deletion"
 }
 
 function test_compose_config_failure_propagates() {
@@ -471,6 +522,8 @@ function test_backup_project_resilience() {
     test_docker_stopped_container_fails || failed=1
     echo ""
     test_docker_container_resolution_fails_closed || failed=1
+    echo ""
+    test_docker_missing_container_allowed_only_after_deletion_gate || failed=1
     echo ""
     test_compose_config_failure_propagates || failed=1
     echo ""
