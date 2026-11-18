@@ -3412,6 +3412,14 @@ function project_compose_finalize_archived_deletion_mounts() (
   local verify_dir actual_hash compose_file work_dir
   local down_done="false" success="false"
 
+  # This function is a subshell: exit aborts it and runs the rollback trap,
+  # without terminating the caller.
+  function finalize_fail() {
+    log_event "error" "Mount finalization for ${project_domain} failed: ${1}" "false"
+    display --indent 8 --text "- Mount finalization: ${1}" --tcolor RED
+    exit 1
+  }
+
   work_dir="${BROLIT_TMP_DIR}/${NOW}/mounts-${project_domain}"
   compose_file="${PROJECTS_PATH}/${project_domain}/docker-compose.yml"
   [[ -f "${compose_file}" ]] || compose_file="${PROJECTS_PATH}/${project_domain}/docker-compose.yaml"
@@ -3420,9 +3428,9 @@ function project_compose_finalize_archived_deletion_mounts() (
   # checks, not only failures later in verification.
   trap 'if [[ "${success}" != "true" && "${down_done}" != "true" ]]; then docker compose -f "${compose_file}" start >/dev/null 2>&1 || printf "WARNING: could not restart %s\n" "${project_domain}" >&2; fi; if [[ "${success}" != "true" ]]; then rm -rf -- "${work_dir}"; fi' EXIT
 
-  [[ -n "${project_domain}" && -n "${receipt}" && -f "${receipt}" && ! -L "${receipt}" ]] || return 1
-  command -v docker >/dev/null 2>&1 && command -v jq >/dev/null 2>&1 || return 1
-  [[ -f "${compose_file}" ]] || return 1
+  [[ -n "${project_domain}" && -n "${receipt}" && -f "${receipt}" && ! -L "${receipt}" ]] || finalize_fail "receipt is missing or unsafe"
+  command -v docker >/dev/null 2>&1 && command -v jq >/dev/null 2>&1 || finalize_fail "docker or jq is unavailable"
+  [[ -f "${compose_file}" ]] || finalize_fail "Compose file is missing"
 
   # Validate the complete receipt and every remote archive before `down`.
   while IFS= read -r item; do
@@ -3434,7 +3442,7 @@ function project_compose_finalize_archived_deletion_mounts() (
       (.mountpoint | type == "string") and
       (.archive | type == "string" and length > 0 and (contains("/") | not)) and
       (.remote | type == "string" and length > 0) and
-      (.sha256 | type == "string" and test("^[a-f0-9]{64}$"))' >/dev/null 2>&1 || return 1
+      (.sha256 | type == "string" and test("^[a-f0-9]{64}$"))' >/dev/null 2>&1 || finalize_fail "invalid receipt entry schema"
 
     kind="$(printf '%s' "${item}" | jq -r '.kind')"
     source="$(printf '%s' "${item}" | jq -r '.source')"
@@ -3447,26 +3455,26 @@ function project_compose_finalize_archived_deletion_mounts() (
     identity="${kind}:${source}"
     mount_id="$(printf '%s' "${identity}" | sha256sum | cut -c1-12)"
     if [[ "${kind}" == "volume" ]]; then
-      safe_name="$(project_compose_sanitize_name "${source}")" || return 1
-      [[ -n "${mountpoint}" ]] || return 1
-      [[ "$(docker volume inspect --format '{{.Mountpoint}}' "${source}" 2>/dev/null)" == "${mountpoint}" ]] || return 1
+      safe_name="$(project_compose_sanitize_name "${source}")" || finalize_fail "invalid volume name"
+      [[ -n "${mountpoint}" ]] || finalize_fail "volume mountpoint is empty"
+      [[ "$(docker volume inspect --format '{{.Mountpoint}}' "${source}" 2>/dev/null)" == "${mountpoint}" ]] || finalize_fail "volume mountpoint changed for ${source}"
     else
-      safe_name="$(project_compose_sanitize_name "$(basename -- "${source}")")" || return 1
+      safe_name="$(project_compose_sanitize_name "$(basename -- "${source}")")" || finalize_fail "invalid bind name"
     fi
-    expected_archive="$(backup_get_filename "${project_domain}_mount-${safe_name}-${mount_id}" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")" || return 1
+    expected_archive="$(backup_get_filename "${project_domain}_mount-${safe_name}-${mount_id}" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")" || finalize_fail "could not derive archive identity"
     expected_remote="${SERVER_NAME}/projects-online/site-mounts/${project_domain}/${expected_archive}"
-    [[ "${archive_name}" == "${expected_archive}" && "${remote_path}" == "${expected_remote}" ]] || return 1
+    [[ "${archive_name}" == "${expected_archive}" && "${remote_path}" == "${expected_remote}" ]] || finalize_fail "archive identity mismatch for ${source}"
 
-    verify_dir="$(mktemp -d "${BROLIT_TMP_DIR}/${NOW}/mount-final-verify.XXXXXX")" || return 1
-    storage_download_backup "${remote_path}" "${verify_dir}" "true" >/dev/null || { rm -rf -- "${verify_dir}"; return 1; }
+    verify_dir="$(mktemp -d "${BROLIT_TMP_DIR}/${NOW}/mount-final-verify.XXXXXX")" || finalize_fail "could not create verification directory"
+    storage_download_backup "${remote_path}" "${verify_dir}" "true" >/dev/null || { rm -rf -- "${verify_dir}"; finalize_fail "could not download archive for ${source}"; }
     actual_hash="$(sha256sum "${verify_dir}/${archive_name}" 2>/dev/null | awk '{print $1}')"
     rm -rf -- "${verify_dir}"
-    [[ "${actual_hash}" == "${expected_hash}" ]] || return 1
+    [[ "${actual_hash}" == "${expected_hash}" ]] || finalize_fail "archive checksum mismatch for ${source}"
   done < "${receipt}"
 
   # `down` without -v removes containers but preserves volumes for the explicit,
   # receipt-bound removal below. No automatic restart is attempted after this.
-  docker compose -f "${compose_file}" down >/dev/null 2>&1 || return 1
+  docker compose -f "${compose_file}" down >/dev/null 2>&1 || finalize_fail "Compose down failed"
   down_done="true"
 
   while IFS= read -r item; do
@@ -3474,7 +3482,7 @@ function project_compose_finalize_archived_deletion_mounts() (
     kind="$(printf '%s' "${item}" | jq -r '.kind')"
     [[ "${kind}" == "volume" ]] || continue
     source="$(printf '%s' "${item}" | jq -r '.source')"
-    docker volume rm -- "${source}" >/dev/null 2>&1 || return 1
+    docker volume rm -- "${source}" >/dev/null 2>&1 || finalize_fail "could not remove volume ${source}"
   done < "${receipt}"
 
   success="true"
