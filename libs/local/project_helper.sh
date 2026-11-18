@@ -2716,16 +2716,19 @@ function project_dotenv_compose_project_names() {
 #
 # Outputs:
 #   0 if no uncovered persistent mount exists (nothing to lose outside the
-#   project directory), 1 with one "UNCOVERED:<kind>:<source>:<destination>"
-#   line per item on stdout, 2 when coverage cannot be established.
+#   project directory), 1 with one item per mount, 2 when coverage cannot be
+#   established. The optional second argument is "text" (default, historical
+#   UNCOVERED lines) or "json" (one compact JSON object per line).
 ################################################################################
 function project_compose_mount_coverage() {
   local dir_path="${1}"
+  local output_format="${2:-text}"
   local project_dir ids id record records='' result uncovered projects
   local name candidate names=() declared=() env_names=() unique_names
   local bind_source bind_destination resolved env_name_list
 
   [[ -n "${dir_path}" && -d "${dir_path}" ]] || return 2
+  [[ "${output_format}" == "text" || "${output_format}" == "json" ]] || return 2
   command -v docker >/dev/null 2>&1 && command -v jq >/dev/null 2>&1 || return 2
 
   project_dir="$(realpath -e -- "${dir_path}" 2>/dev/null)" || return 2
@@ -2792,16 +2795,16 @@ function project_compose_mount_coverage() {
       uncovered: [
         $related[] | .mounts[] |
         if .Type == "tmpfs" then empty
-        elif .Type == "volume" then "UNCOVERED:volume:\(.Name):\(.Destination)"
+        elif .Type == "volume" then {kind:"volume",source:(.Name // ""),destination:.Destination}
         elif .Type == "bind" then
           (if (.Source | within($dir)) then empty
-           else "UNCOVERED:bind:\(.Source):\(.Destination)" end)
-        else "UNCOVERED:\(.Type):\(.Source):\(.Destination)" end
+           else {kind:"bind",source:.Source,destination:.Destination} end)
+        else {kind:.Type,source:.Source,destination:.Destination} end
       ]
     }' 2>/dev/null)" || return 2
 
   projects="$(printf '%s' "${result}" | jq -r '.projects[]?' 2>/dev/null)" || return 2
-  uncovered="$(printf '%s' "${result}" | jq -r '.uncovered[]?' 2>/dev/null)" || return 2
+  uncovered="$(printf '%s' "${result}" | jq -c '.uncovered[]?' 2>/dev/null)" || return 2
 
   while IFS= read -r name; do
     [[ -n "${name}" ]] || continue
@@ -2819,14 +2822,14 @@ function project_compose_mount_coverage() {
       continue
     fi
     if ! resolved="$(realpath -e -- "${bind_source}" 2>/dev/null)"; then
-      uncovered+="UNCOVERED:bind-unresolved:${bind_source}:${bind_destination}"
+      uncovered+="$(jq -c -n --arg source "${bind_source}" --arg destination "${bind_destination}" '{kind:"bind-unresolved",source:$source,destination:$destination}')"
       uncovered+=$'\n'
       continue
     fi
     case "${resolved}" in
       "${project_dir}"|"${project_dir}"/*) : ;;
       *)
-        uncovered+="UNCOVERED:bind:${resolved}:${bind_destination}"
+        uncovered+="$(jq -c -n --arg source "${resolved}" --arg destination "${bind_destination}" '{kind:"bind",source:$source,destination:$destination}')"
         uncovered+=$'\n'
         ;;
     esac
@@ -2875,15 +2878,19 @@ function project_compose_mount_coverage() {
   if [[ -n "${existing_volumes}" ]]; then
     while IFS= read -r name; do
       [[ -n "${name}" ]] || continue
-      uncovered+="UNCOVERED:volume-namespace:${name}:docker-volume"
+      uncovered+="$(jq -c -n --arg source "${name}" '{kind:"volume-namespace",source:$source,destination:"docker-volume"}')"
       uncovered+=$'\n'
     done <<< "${existing_volumes}"
   fi
 
-  uncovered="$(printf '%s' "${uncovered}" | sed '/^$/d' | sort -u)"
+  uncovered="$(printf '%s\n' "${uncovered}" | sed '/^$/d' | jq -sc 'unique_by(.kind,.source,.destination) | .[]' 2>/dev/null)" || return 2
 
   if [[ -n "${uncovered}" ]]; then
-    printf '%s\n' "${uncovered}"
+    if [[ "${output_format}" == "json" ]]; then
+      printf '%s\n' "${uncovered}"
+    else
+      printf '%s\n' "${uncovered}" | jq -r '"UNCOVERED:\(.kind):\(.source):\(.destination)"'
+    fi
     return 1
   fi
 
@@ -2915,6 +2922,9 @@ function project_display_deletion_block() {
 
   while IFS= read -r item; do
     [[ -n "${item}" ]] || continue
+    if [[ "${item}" == \{* ]]; then
+      item="$(printf '%s' "${item}" | jq -r '"UNCOVERED:\(.kind):\(.source):\(.destination)"' 2>/dev/null)" || continue
+    fi
     log_event "error" "Uncovered persistent mount: ${item}" "false"
     display --indent 8 --text "- ${item}" --tcolor YELLOW
   done <<< "${block_output}"
@@ -2933,13 +2943,13 @@ function project_display_deletion_block() {
 #   persistent mount data is not covered, 2 on inspection failure (blocked).
 ################################################################################
 function project_compose_deletion_safe() {
-  local dir_path="${1}" install_type="${2}" status
+  local dir_path="${1}" install_type="${2}" output_format="${3:-text}" status
 
   # Docker projects: a files backup and a database dump do not cover Compose
   # volumes or bind mounts outside the project, so the deletion is allowed only
   # when no such mount exists.
   if [[ "${install_type}" == docker* ]]; then
-    project_compose_mount_coverage "${dir_path}"
+    project_compose_mount_coverage "${dir_path}" "${output_format}"
     return $?
   fi
 
@@ -3232,6 +3242,247 @@ function project_delete_database() {
 #   0 if ok, 1 on error.
 ################################################################################
 
+################################################################################
+# Archive every uncovered persistent mount before a deletion, verifying each
+# uploaded archive by downloading it again and comparing its SHA-256.
+#
+# The gate supplies one JSON object per mount, so colons/newlines in paths are
+# data, not delimiters. The stack is stopped before archiving to keep the mount
+# contents stable. A failure before completion restarts it and cleans local files.
+#
+# Arguments:
+#   ${1} = project domain
+#   ${2} = newline-delimited gate JSON records
+#
+# Outputs:
+#   Receipt path on stdout; 0 on success, 1 on any failure. The receipt is JSONL
+#   and binds mount identity, archive path and checksum for finalization.
+################################################################################
+function project_compose_archive_deletion_mounts() (
+  local project_domain="${1}" gate_output="${2}"
+  local item kind source destination normalized_kind identity mount_id
+  local name safe_name mountpoint archive_name archive_path archive_size archive_source
+  local remote_directory remote_path verify_dir local_hash downloaded_hash
+  local work_dir receipt compose_file
+  local quiesced="false" keep_work="false"
+  local -A seen=()
+
+  [[ -n "${project_domain}" && -n "${gate_output}" ]] || return 1
+  [[ -n "${BROLIT_TMP_DIR:-}" && -n "${NOW:-}" && -n "${SERVER_NAME:-}" ]] || return 1
+  command -v docker >/dev/null 2>&1 && command -v jq >/dev/null 2>&1 || return 1
+
+  compose_file="${PROJECTS_PATH}/${project_domain}/docker-compose.yml"
+  [[ -f "${compose_file}" ]] || compose_file="${PROJECTS_PATH}/${project_domain}/docker-compose.yaml"
+  [[ -f "${compose_file}" ]] || return 1
+
+  work_dir="${BROLIT_TMP_DIR}/${NOW}/mounts-${project_domain}"
+  mkdir -p "${work_dir}" || return 1
+  receipt="$(mktemp "${work_dir}/receipt.XXXXXX")" || return 1
+  chmod 600 "${receipt}" || return 1
+  remote_directory="${SERVER_NAME}/projects-online/site-mounts/${project_domain}"
+
+  trap 'if [[ "${keep_work}" != "true" ]]; then rm -rf -- "${work_dir}"; fi; if [[ "${quiesced}" == "true" && "${keep_work}" != "true" ]]; then docker compose -f "${compose_file}" start >/dev/null 2>&1 || printf "WARNING: could not restart %s\n" "${project_domain}" >&2; fi' EXIT
+
+  # Quiesce before taking the mount snapshot. Mark the attempt first: Compose
+  # may have stopped some containers even when a later one fails to stop.
+  quiesced="true"
+  docker compose -f "${compose_file}" stop >/dev/null 2>&1 || return 1
+
+  while IFS= read -r item; do
+    [[ -n "${item}" ]] || continue
+    printf '%s' "${item}" | jq -e '
+      type == "object" and (keys == ["destination","kind","source"]) and
+      (.kind | type == "string" and length > 0) and
+      (.source | type == "string" and length > 0) and
+      (.destination | type == "string" and length > 0)' >/dev/null 2>&1 || return 1
+
+    kind="$(printf '%s' "${item}" | jq -r '.kind')"
+    source="$(printf '%s' "${item}" | jq -r '.source')"
+    destination="$(printf '%s' "${item}" | jq -r '.destination')"
+    normalized_kind="${kind}"
+    [[ "${kind}" == "volume-namespace" ]] && normalized_kind="volume"
+
+    # One identity is archived once, even if the gate saw it attached to several
+    # containers or reported it both by mount and by Compose namespace.
+    identity="${normalized_kind}:${source}"
+    [[ -n "${seen[${identity}]:-}" ]] && continue
+    seen[${identity}]=1
+
+    # A mounted socket is an IPC endpoint, not persistent file data.
+    if [[ "${normalized_kind}" == "bind" && -S "${source}" ]]; then
+      continue
+    fi
+    if [[ "${normalized_kind}" == "bind" && ! -e "${source}" && ! -L "${source}" ]]; then
+      continue
+    fi
+
+    mountpoint=""
+    name=""
+    archive_source="${source}"
+    case "${normalized_kind}" in
+      volume)
+        name="${source}"
+        [[ -n "${name}" && "${name}" != "null" ]] || return 1
+        mountpoint="$(docker volume inspect --format '{{.Mountpoint}}' "${name}" 2>/dev/null)" || return 1
+        [[ -n "${mountpoint}" && "${mountpoint}" == /* && "${mountpoint}" != "/" ]] || return 1
+        [[ -d "${mountpoint}" ]] || return 1
+        archive_source="${mountpoint}"
+        ;;
+      bind)
+        ;;
+      *)
+        # Unknown or unresolved evidence cannot be archived safely.
+        return 1
+        ;;
+    esac
+
+    safe_name="$(project_compose_sanitize_name "${name:-$(basename -- "${source}")}")" || return 1
+    # Distinct mounts may share a basename; identity is part of the archive name.
+    mount_id="$(printf '%s' "${identity}" | sha256sum | cut -c1-12)"
+    safe_name="${safe_name}-${mount_id}"
+    archive_name="$(backup_get_filename "${project_domain}_mount-${safe_name}" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")" || return 1
+    archive_path="${work_dir}/${archive_name}"
+    # Unlike nightly backups, a deletion archive cannot accept tar's
+    # "file changed as we read it" warning as success.
+    archive_size="$(BROLIT_STRICT_TAR=1 compress "/" "${archive_source#/}" "${archive_path}" "")" || return 1
+    [[ -s "${archive_path}" ]] || return 1
+
+    remote_path="${remote_directory}/${archive_name}"
+    storage_upload_backup "${archive_path}" "${remote_directory}" "${archive_size}" >/dev/null || return 1
+
+    verify_dir="${work_dir}/verify-${mount_id}"
+    mkdir -p "${verify_dir}" || return 1
+    storage_download_backup "${remote_path}" "${verify_dir}" "true" >/dev/null || return 1
+    [[ -s "${verify_dir}/${archive_name}" ]] || return 1
+    local_hash="$(sha256sum "${archive_path}" | awk '{print $1}')"
+    downloaded_hash="$(sha256sum "${verify_dir}/${archive_name}" | awk '{print $1}')"
+    [[ "${local_hash}" == "${downloaded_hash}" ]] || return 1
+
+    jq -n -c \
+      --arg kind "${normalized_kind}" \
+      --arg source "${source}" \
+      --arg mountpoint "${mountpoint}" \
+      --arg archive "${archive_name}" \
+      --arg remote "${remote_path}" \
+      --arg sha256 "${local_hash}" \
+      '{kind:$kind,source:$source,mountpoint:$mountpoint,archive:$archive,remote:$remote,sha256:$sha256}' \
+      >> "${receipt}" || return 1
+    rm -rf -- "${verify_dir}"
+  done <<< "${gate_output}"
+
+  keep_work="true"
+  printf '%s\n' "${receipt}"
+  return 0
+)
+
+################################################################################
+# Abort a deletion after the mount snapshot was taken but before finalization.
+# Restarts the stopped project and removes only local temporary archives.
+################################################################################
+function project_compose_abort_archived_deletion_mounts() {
+  local project_domain="${1}" receipt="${2}" compose_file
+  [[ -n "${receipt}" ]] || return 0
+  compose_file="${PROJECTS_PATH}/${project_domain}/docker-compose.yml"
+  [[ -f "${compose_file}" ]] || compose_file="${PROJECTS_PATH}/${project_domain}/docker-compose.yaml"
+  if [[ -f "${compose_file}" ]]; then
+    docker compose -f "${compose_file}" start >/dev/null 2>&1 || printf "WARNING: could not restart %s\n" "${project_domain}" >&2
+  fi
+  if [[ -n "${receipt}" ]]; then
+    rm -rf -- "${BROLIT_TMP_DIR}/${NOW}/mounts-${project_domain}"
+  fi
+  return 0
+}
+
+################################################################################
+# After the normal project backup succeeds, verify the mount receipt again,
+# stop the Compose project and remove only the volumes whose archives matched.
+# External bind contents are deliberately left in place.
+#
+# Arguments:
+#   ${1} = project domain
+#   ${2} = receipt path produced by project_compose_archive_deletion_mounts
+#
+# Outputs:
+#   0 on success, 1 on any verification or removal failure.
+################################################################################
+function project_compose_finalize_archived_deletion_mounts() (
+  local project_domain="${1}" receipt="${2}"
+  local item kind source mountpoint archive_name remote_path expected_hash
+  local identity mount_id safe_name expected_archive expected_remote
+  local verify_dir actual_hash compose_file work_dir
+  local down_done="false" success="false"
+
+  work_dir="${BROLIT_TMP_DIR}/${NOW}/mounts-${project_domain}"
+  compose_file="${PROJECTS_PATH}/${project_domain}/docker-compose.yml"
+  [[ -f "${compose_file}" ]] || compose_file="${PROJECTS_PATH}/${project_domain}/docker-compose.yaml"
+
+  # Cover every return after archiving, including invalid receipt/tool/compose
+  # checks, not only failures later in verification.
+  trap 'if [[ "${success}" != "true" && "${down_done}" != "true" ]]; then docker compose -f "${compose_file}" start >/dev/null 2>&1 || printf "WARNING: could not restart %s\n" "${project_domain}" >&2; fi; if [[ "${success}" != "true" ]]; then rm -rf -- "${work_dir}"; fi' EXIT
+
+  [[ -n "${project_domain}" && -n "${receipt}" && -f "${receipt}" && ! -L "${receipt}" ]] || return 1
+  command -v docker >/dev/null 2>&1 && command -v jq >/dev/null 2>&1 || return 1
+  [[ -f "${compose_file}" ]] || return 1
+
+  # Validate the complete receipt and every remote archive before `down`.
+  while IFS= read -r item; do
+    [[ -n "${item}" ]] || continue
+    printf '%s' "${item}" | jq -e '
+      type == "object" and (keys == ["archive","kind","mountpoint","remote","sha256","source"]) and
+      (.kind == "volume" or .kind == "bind") and
+      (.source | type == "string" and length > 0) and
+      (.mountpoint | type == "string") and
+      (.archive | type == "string" and length > 0 and (contains("/") | not)) and
+      (.remote | type == "string" and length > 0) and
+      (.sha256 | type == "string" and test("^[a-f0-9]{64}$"))' >/dev/null 2>&1 || return 1
+
+    kind="$(printf '%s' "${item}" | jq -r '.kind')"
+    source="$(printf '%s' "${item}" | jq -r '.source')"
+    mountpoint="$(printf '%s' "${item}" | jq -r '.mountpoint')"
+    archive_name="$(printf '%s' "${item}" | jq -r '.archive')"
+    remote_path="$(printf '%s' "${item}" | jq -r '.remote')"
+    expected_hash="$(printf '%s' "${item}" | jq -r '.sha256')"
+
+    # Recompute identity instead of trusting a source field next to a valid hash.
+    identity="${kind}:${source}"
+    mount_id="$(printf '%s' "${identity}" | sha256sum | cut -c1-12)"
+    if [[ "${kind}" == "volume" ]]; then
+      safe_name="$(project_compose_sanitize_name "${source}")" || return 1
+      [[ -n "${mountpoint}" ]] || return 1
+      [[ "$(docker volume inspect --format '{{.Mountpoint}}' "${source}" 2>/dev/null)" == "${mountpoint}" ]] || return 1
+    else
+      safe_name="$(project_compose_sanitize_name "$(basename -- "${source}")")" || return 1
+    fi
+    expected_archive="$(backup_get_filename "${project_domain}_mount-${safe_name}-${mount_id}" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")" || return 1
+    expected_remote="${SERVER_NAME}/projects-online/site-mounts/${project_domain}/${expected_archive}"
+    [[ "${archive_name}" == "${expected_archive}" && "${remote_path}" == "${expected_remote}" ]] || return 1
+
+    verify_dir="$(mktemp -d "${BROLIT_TMP_DIR}/${NOW}/mount-final-verify.XXXXXX")" || return 1
+    storage_download_backup "${remote_path}" "${verify_dir}" "true" >/dev/null || { rm -rf -- "${verify_dir}"; return 1; }
+    actual_hash="$(sha256sum "${verify_dir}/${archive_name}" 2>/dev/null | awk '{print $1}')"
+    rm -rf -- "${verify_dir}"
+    [[ "${actual_hash}" == "${expected_hash}" ]] || return 1
+  done < "${receipt}"
+
+  # `down` without -v removes containers but preserves volumes for the explicit,
+  # receipt-bound removal below. No automatic restart is attempted after this.
+  docker compose -f "${compose_file}" down >/dev/null 2>&1 || return 1
+  down_done="true"
+
+  while IFS= read -r item; do
+    [[ -n "${item}" ]] || continue
+    kind="$(printf '%s' "${item}" | jq -r '.kind')"
+    [[ "${kind}" == "volume" ]] || continue
+    source="$(printf '%s' "${item}" | jq -r '.source')"
+    docker volume rm -- "${source}" >/dev/null 2>&1 || return 1
+  done < "${receipt}"
+
+  success="true"
+  rm -rf -- "${work_dir}"
+  return 0
+)
+
+################################################################################
 function project_delete() {
 
   local project_domain="${1}"
@@ -3242,6 +3493,7 @@ function project_delete() {
   local project_install_type
   local deletion_block_output
   local deletion_gate_rc
+  local deletion_mount_receipt=""
 
   local files_skipped="false"
 
@@ -3292,13 +3544,25 @@ function project_delete() {
 
     # Block before stopping services or making any other destructive changes.
     # A files backup and a database dump do not cover Compose persistent mounts.
-    deletion_block_output="$(project_compose_deletion_safe "${PROJECTS_PATH}/${project_domain}" "${project_install_type}")"
+    deletion_block_output="$(project_compose_deletion_safe "${PROJECTS_PATH}/${project_domain}" "${project_install_type}" "json")"
     deletion_gate_rc=$?
     if [[ ${deletion_gate_rc} -ne 0 ]]; then
-      log_event "error" "Docker project deletion blocked: persistent mount backup coverage is not verified." "false"
-      display --indent 6 --text "- Docker persistent mount backup coverage is not verified" --result "FAIL" --color RED
-      project_display_deletion_block "${deletion_gate_rc}" "${deletion_block_output}"
-      return 1
+      if [[ ${deletion_gate_rc} -eq 1 ]]; then
+        # The gate found real data outside the files backup. Archive and verify
+        # it instead of refusing forever; no container or volume is changed here.
+        log_event "info" "Archiving uncovered persistent mounts before deleting ${project_domain}" "false"
+        deletion_mount_receipt="$(project_compose_archive_deletion_mounts "${project_domain}" "${deletion_block_output}")"
+        if [[ $? -ne 0 || -z "${deletion_mount_receipt}" ]]; then
+          log_event "error" "Could not archive and verify every uncovered mount; deletion aborted before any destructive change." "false"
+          display --indent 6 --text "- Persistent mount backup" --result "FAIL" --color RED
+          return 1
+        fi
+      else
+        log_event "error" "Docker project deletion blocked: persistent mount backup coverage is not verified." "false"
+        display --indent 6 --text "- Docker persistent mount backup coverage is not verified" --result "FAIL" --color RED
+        project_display_deletion_block "${deletion_gate_rc}" "${deletion_block_output}"
+        return 1
+      fi
     fi
 
     # Get db credentials from project config
@@ -3313,7 +3577,20 @@ function project_delete() {
 
     # Make one last backup.
     if ! backup_project "${project_domain}" "all" "deletion"; then
+      if [[ -n "${deletion_mount_receipt}" ]]; then
+        project_compose_abort_archived_deletion_mounts "${project_domain}" "${deletion_mount_receipt}"
+      fi
       return 1
+    fi
+
+    # Only after both backups succeeded may the covered mounts be removed. The
+    # second gate in project_delete_files then sees no remaining uncovered mount.
+    if [[ -n "${deletion_mount_receipt}" ]]; then
+      if ! project_compose_finalize_archived_deletion_mounts "${project_domain}" "${deletion_mount_receipt}"; then
+        log_event "error" "Could not finalize the verified mount removal for ${project_domain}" "false"
+        display --indent 6 --text "- Verified mount removal" --result "FAIL" --color RED
+        return 1
+      fi
     fi
 
     # Delete Files

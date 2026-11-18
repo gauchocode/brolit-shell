@@ -2019,8 +2019,9 @@ function compress() {
   # 99%-consistent archive still beats no archive: the compression test
   # below validates the output either way. So exit 1 is logged as a
   # warning and the backup continues; tar >= 2 or a pv/compressor failure
-  # is fatal and the partial output is removed.
-  if [[ ${pipeline_status[1]} -ne 0 || ${pipeline_status[2]} -ne 0 || ${pipeline_status[0]} -ge 2 ]]; then
+  # is fatal and the partial output is removed. BROLIT_STRICT_TAR=1 is used
+  # only for deletion-time mount snapshots, where tar 1 is fatal too.
+  if [[ ${pipeline_status[1]} -ne 0 || ${pipeline_status[2]} -ne 0 || ${pipeline_status[0]} -ge 2 || ( ${pipeline_status[0]} -eq 1 && ${BROLIT_STRICT_TAR:-0} == "1" ) ]]; then
 
     # Delete the partial temp file so a failed run cannot fill the disk
     rm --force "${file_output}"

@@ -1,7 +1,7 @@
 # Plan: Compose deletion gate — verified mount coverage
 
 ## Status
-- **Phase**: Complete
+- **Phase**: In Progress
 - **Last Updated**: 2026-11-17
 
 ## Overview
@@ -200,6 +200,33 @@ Full `tests/test_*.sh` sweep: 5 pre-existing failures, all in `test_borg_*`
 | 2026-11-17 | Bind sources resolved with `realpath -e`; a missing source is covered | A path that does not exist holds no data; a symlink resolving outside the project is data the tarball does not contain |
 | 2026-11-17 | Related containers only require `.project`, not `.working_dir` | The label names the volume namespace; requiring both blocked containers from `docker run` and old Compose |
 | 2026-11-17 | A deletion may skip an absent/stopped DB dump only after the mount gate passes | A missing container has no live DB to dump; volumes/external binds still block, and in-project data is in the files archive. Unknown inspect output always fails |
+
+### Deletion-time mount backup (follow-up)
+
+A real blocked deletion on `gaucho-dev04` required covering data that the files
+archive cannot contain. Instead of adding an operator override:
+
+- The gate can emit newline-delimited JSON records for deletion-time processing,
+  while existing callers retain the human-readable text form. Paths containing
+  colons or newlines are data, never delimiters.
+- `project_compose_archive_deletion_mounts` stops the Compose project, archives
+  each uncovered volume or external bind separately with strict tar handling,
+  uploads it outside normal site retention, downloads it again and verifies
+  SHA-256, and emits a JSONL receipt bound to mount identity.
+- Sockets (for example `/var/run/docker.sock`) are IPC, not file data, and are
+  skipped. Nonexistent bind sources hold no data and are skipped too.
+- Archive names include a hash of mount kind and source so equal basenames cannot
+  overwrite one another.
+- Only after the normal project backup succeeds does
+  `project_compose_finalize_archived_deletion_mounts` re-validate identity,
+  re-inspect volume mountpoints, re-verify every remote archive, run
+  `docker compose down` without `-v`, and remove only receipt-bound volumes.
+  External bind contents are never deleted. Failure before `down` restarts the
+  stopped project; local temporary archives are cleaned on failure.
+- Any upload, checksum, inspect, down or removal failure stops the deletion.
+- `tests/test_compose_deletion_mount_backup.sh` covers the non-destructive
+  archive phase, receipt validation, failure paths and final removal ordering;
+  it is wired into `tests_suite.sh` as option 28.
 
 ## Review findings
 

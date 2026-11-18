@@ -360,6 +360,30 @@ FAKE
   events="$(bash -c 'source "$1"; QUIET=false; BROLIT_EXEC_TYPE=default; BROLIT_PROGRESS=1; spinner_start "Uploading"; spinner_stop 0' _ "$(pwd)/libs/local/log_and_display_helper.sh" 2>&1)"
   assert_stream "spinner in progress mode" "${events}" "empty"
 
+  # Deletion-time mount snapshots are stricter than nightly backups: GNU tar
+  # exit 1 must fail instead of keeping a possibly incomplete archive.
+  mkdir -p "${tmp}/strict-bin"
+  cat > "${tmp}/strict-bin/tar" <<'FAKE'
+#!/usr/bin/env bash
+printf 'partial data\n'
+printf 'file changed as we read it\n' >&2
+exit 1
+FAKE
+  chmod +x "${tmp}/strict-bin/tar"
+  local real_tar="${TAR}"
+  TAR="${tmp}/strict-bin/tar"
+  out="${tmp}/out/tar-warning.tar.gz"
+  compress "${src}" "site" "${out}" "" >/dev/null 2>/dev/null
+  if [[ $? -ne 0 || ! -s "${out}" ]]; then
+    echo "FAIL: ordinary backup no longer tolerates tar warnings"; failed=1
+  fi
+  out="${tmp}/out/tar-strict.tar.gz"
+  BROLIT_STRICT_TAR=1 compress "${src}" "site" "${out}" "" >/dev/null 2>/dev/null
+  if [[ $? -eq 0 || -e "${out}" ]]; then
+    echo "FAIL: strict deletion archive accepted a tar warning"; failed=1
+  fi
+  TAR="${real_tar}"
+
   rm -rf -- "${tmp}"
   # Never leak the fake pv into the caller's PATH.
   PATH="${saved_path}"
