@@ -2572,7 +2572,7 @@ function project_install() {
 ################################################################################
 function project_has_unsupported_compose_file() {
   local dir_path="${1}"
-  local found env_results
+  local found env_status
   [[ -d "${dir_path}" && ! -L "${dir_path}" ]] || return 2
   # Do not follow directory symlinks out of the project. Match symlinked
   # Compose files as hints, including dangling links, without opening them.
@@ -2581,6 +2581,78 @@ function project_has_unsupported_compose_file() {
 
   # Compose can select an arbitrary filename using COMPOSE_FILE. Inspect .env
   # files without printing their contents; inaccessible files are uncertain.
+  project_dotenv_has_compose_file "${dir_path}"
+  env_status=$?
+  [[ ${env_status} -eq 2 ]] && return 2
+  [[ ${env_status} -eq 0 ]] && return 0
+  return 1
+}
+
+################################################################################
+# Sanitize a Compose project name the way Docker Compose does: lowercase and
+# only [a-z0-9_-] kept. Returns the sanitized name on stdout.
+#
+# Arguments:
+#   ${1} = candidate name
+#
+# Outputs:
+#   0 if a non empty sanitized name was produced, 1 otherwise.
+################################################################################
+function project_compose_sanitize_name() {
+  local candidate="${1}" sanitized
+  sanitized="$(printf '%s' "${candidate}" | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z0-9_-')"
+  [[ -n "${sanitized}" ]] || return 1
+  printf '%s\n' "${sanitized}"
+}
+
+################################################################################
+# List Compose project names that own Docker volumes: by the Compose label and
+# by the Compose name prefix (<project>_ and <project>/). Detecting a volume
+# that belongs to the project is enough to refuse the deletion.
+#
+# Arguments:
+#   ${1}... = candidate Compose project names
+#
+# Outputs:
+#   Volume names on stdout; 0 if ok, 2 on inspection error.
+################################################################################
+function project_compose_volume_names() {
+  local name volume_name all_volumes
+  [[ $# -ge 1 ]] || return 2
+  command -v docker >/dev/null 2>&1 || return 2
+
+  all_volumes="$(docker volume ls --format '{{.Name}}' 2>/dev/null)" || return 2
+
+  for name in "$@"; do
+    [[ -n "${name}" ]] || continue
+    # Volumes labelled by Docker Compose for this project.
+    docker volume ls --filter "label=com.docker.compose.project=${name}" --format '{{.Name}}' 2>/dev/null || return 2
+    # Volumes named after the project namespace.
+    while IFS= read -r volume_name; do
+      [[ -n "${volume_name}" ]] || continue
+      if [[ "${volume_name}" == "${name}_"* || "${volume_name}" == "${name}/"* ]]; then
+        printf '%s\n' "${volume_name}"
+      fi
+    done <<< "${all_volumes}"
+  done
+
+  return 0
+}
+
+################################################################################
+# Detect an explicit COMPOSE_FILE declaration in the project's .env files.
+# File contents are never printed; an inaccessible .env is uncertain.
+#
+# Arguments:
+#   ${1} = project directory
+#
+# Outputs:
+#   0 if declared, 1 if not, 2 when the scan cannot be trusted.
+################################################################################
+function project_dotenv_has_compose_file() {
+  local dir_path="${1}" env_results
+  [[ -d "${dir_path}" ]] || return 2
+
   env_results="$(find -P "${dir_path}" -name .env ! -type d -exec sh -c '
     for file do
       if [ ! -f "$file" ]; then printf "ERROR\n"; continue; fi
@@ -2589,9 +2661,265 @@ function project_has_unsupported_compose_file() {
       if [ "$status" -eq 0 ]; then printf "MATCH\n"; elif [ "$status" -ne 1 ]; then printf "ERROR\n"; fi
     done
   ' sh {} + 2>/dev/null)" || return 2
+
   [[ "${env_results}" == *ERROR* ]] && return 2
   [[ "${env_results}" == *MATCH* ]] && return 0
   return 1
+}
+
+################################################################################
+# Read COMPOSE_PROJECT_NAME from the project's top level .env files.
+#
+# brolit writes "${project_name}_stack" there when it installs or restores a
+# Docker project, so the Compose volume namespace is not the directory name and
+# must be searched as well.
+#
+# Arguments:
+#   ${1} = project directory
+#
+# Outputs:
+#   Sanitized names on stdout; 0 if ok, 2 when an existing file is unreadable.
+################################################################################
+function project_dotenv_compose_project_names() {
+  local dir_path="${1}"
+  local env_file value
+  [[ -d "${dir_path}" ]] || return 2
+
+  for env_file in "${dir_path}/.env" "${dir_path}/.env.docker"; do
+    [[ -e "${env_file}" ]] || continue
+    [[ -f "${env_file}" && -r "${env_file}" ]] || return 2
+
+    value="$(LC_ALL=C grep -m1 -E '^[[:space:]]*(export[[:space:]]+)?COMPOSE_PROJECT_NAME[[:space:]]*=' -- "${env_file}" 2>/dev/null)"
+    [[ -n "${value}" ]] || continue
+
+    value="${value#*=}"
+    value="$(printf '%s' "${value}" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//; s/^["'\'']//; s/["'\'']$//')"
+    value="$(project_compose_sanitize_name "${value}")" || continue
+    printf '%s\n' "${value}"
+  done
+
+  return 0
+}
+
+################################################################################
+# Prove whether a Compose project can be deleted without losing persistent
+# mount data that the pre-delete files backup and database dump do not cover.
+#
+# Covered: bind mounts whose source resolves inside the project directory (the
+# files backup archives that directory) and tmpfs mounts (ephemeral).
+# Uncovered: Docker volumes, bind mounts resolving outside the project, an
+# unknown mount type, an unresolvable bind, an unresolvable symlink or an
+# ambiguous Compose context.
+#
+# Arguments:
+#   ${1} = project directory
+#
+# Outputs:
+#   0 if no uncovered persistent mount exists (nothing to lose outside the
+#   project directory), 1 with one "UNCOVERED:<kind>:<source>:<destination>"
+#   line per item on stdout, 2 when coverage cannot be established.
+################################################################################
+function project_compose_mount_coverage() {
+  local dir_path="${1}"
+  local project_dir ids id record records='' result uncovered projects
+  local name candidate names=() declared=() env_names=() unique_names
+  local bind_source bind_destination resolved env_name_list
+
+  [[ -n "${dir_path}" && -d "${dir_path}" ]] || return 2
+  command -v docker >/dev/null 2>&1 && command -v jq >/dev/null 2>&1 || return 2
+
+  project_dir="$(realpath -e -- "${dir_path}" 2>/dev/null)" || return 2
+  [[ -n "${project_dir}" && "${project_dir}" != "/" ]] || return 2
+
+  # An explicit COMPOSE_FILE means the Compose context is not the one we can
+  # reason about: treat it as unknown.
+  project_dotenv_has_compose_file "${project_dir}"
+  case $? in
+    0) return 2 ;;
+    1) : ;;
+    *) return 2 ;;
+  esac
+
+  # Names declared in .env files widen the volume search below. They are not
+  # used for the related-container check: the Compose label is authoritative
+  # there.
+  if ! env_name_list="$(project_dotenv_compose_project_names "${project_dir}")"; then
+    return 2
+  fi
+  while IFS= read -r name; do
+    [[ -n "${name}" ]] || continue
+    env_names+=("${name}")
+  done <<< "${env_name_list}"
+
+  ids="$(docker ps --all --quiet --no-trunc 2>/dev/null)" || return 2
+
+  while IFS= read -r id; do
+    [[ -z "${id}" ]] && continue
+    [[ "${id}" =~ ^[a-f0-9]{12,64}$ ]] || return 2
+    record="$(docker inspect --format '{"id":{{json .Id}},"project":{{json (index .Config.Labels "com.docker.compose.project")}},"working_dir":{{json (index .Config.Labels "com.docker.compose.project.working_dir")}},"mounts":{{json .Mounts}}}' "${id}" 2>/dev/null)" || return 2
+    [[ -n "${record}" ]] || return 2
+    records+="${record}"$'\n'
+  done <<< "${ids}"
+
+  # jq distinguishes "no label" (null) from "wrong label" without relying on
+  # and/or short-circuiting, which is not guaranteed across jq versions.
+  result="$(printf '%s' "${records}" | jq -s -e --arg dir "${project_dir}" '
+    def within($root): . == $root or startswith($root + "/");
+    if any(.[];
+         (type != "object")
+         or (.id | type != "string" or length == 0)
+         or (.mounts | type != "array")
+         or any(.mounts[];
+              ((.Type | type) != "string")
+              or (.Destination | type != "string" or length == 0)
+              or (.Source | type != "string")))
+    then error("incomplete runtime inspection") else . end |
+    [ .[] | select(
+        (if (.working_dir | type) == "string" then (.working_dir | within($dir)) else false end)
+        or any(.mounts[];
+             (.Type == "bind") and ((.Source | type) == "string") and (.Source | within($dir)))
+      ) ] as $related |
+    if any($related[];
+         if (.project | type) == "string" then ((.project | length) == 0) else true end)
+    then error("ambiguous compose context") else . end |
+    {
+      projects: ([ $related[].project ] | unique),
+      covered_binds: [
+        $related[] | .mounts[] |
+        select(.Type == "bind" and (.Source | within($dir))) |
+        {source: .Source, destination: .Destination}
+      ],
+      uncovered: [
+        $related[] | .mounts[] |
+        if .Type == "tmpfs" then empty
+        elif .Type == "volume" then "UNCOVERED:volume:\(.Name):\(.Destination)"
+        elif .Type == "bind" then
+          (if (.Source | within($dir)) then empty
+           else "UNCOVERED:bind:\(.Source):\(.Destination)" end)
+        else "UNCOVERED:\(.Type):\(.Source):\(.Destination)" end
+      ]
+    }' 2>/dev/null)" || return 2
+
+  projects="$(printf '%s' "${result}" | jq -r '.projects[]?' 2>/dev/null)" || return 2
+  uncovered="$(printf '%s' "${result}" | jq -r '.uncovered[]?' 2>/dev/null)" || return 2
+
+  while IFS= read -r name; do
+    [[ -n "${name}" ]] || continue
+    candidate="$(project_compose_sanitize_name "${name}")" || return 2
+    names+=("${candidate}")
+  done <<< "${projects}"
+
+  # A bind mount is "inside" only if the path really resolves inside the
+  # project directory: a symlink pointing out of it leaves data behind that the
+  # files backup does not contain. An unresolvable path is not evidence.
+  while IFS=$'\t' read -r bind_source bind_destination; do
+    [[ -n "${bind_source}" ]] || continue
+    # Nothing exists at the source: there is no data to lose.
+    if [[ ! -e "${bind_source}" && ! -L "${bind_source}" ]]; then
+      continue
+    fi
+    if ! resolved="$(realpath -e -- "${bind_source}" 2>/dev/null)"; then
+      uncovered+="UNCOVERED:bind-unresolved:${bind_source}:${bind_destination}"
+      uncovered+=$'\n'
+      continue
+    fi
+    case "${resolved}" in
+      "${project_dir}"|"${project_dir}"/*) : ;;
+      *)
+        uncovered+="UNCOVERED:bind:${resolved}:${bind_destination}"
+        uncovered+=$'\n'
+        ;;
+    esac
+  done < <(printf '%s' "${result}" | jq -r '.covered_binds[]? | [.source, .destination] | @tsv' 2>/dev/null)
+
+  # With no related container the Compose name comes from the top level "name:"
+  # of the Compose file when present, otherwise from the directory name. A
+  # declared name must be unambiguous across the project's Compose files.
+  if [[ ${#names[@]} -eq 0 ]]; then
+    while IFS= read -r name; do
+      [[ -n "${name}" ]] || continue
+      # An interpolated value ("${PROJECT}") cannot be resolved here.
+      [[ "${name}" == *'$'* ]] && return 2
+      candidate="$(project_compose_sanitize_name "${name}")" || return 2
+      declared+=("${candidate}")
+    done < <(find -P "${project_dir}" -maxdepth 1 -type f \
+      \( -name 'docker-compose.yml' -o -name 'docker-compose.yaml' -o -name 'compose.yml' -o -name 'compose.yaml' \) \
+      -exec grep -m1 -hE '^name:[[:space:]]*' {} + 2>/dev/null \
+      | sed -E 's/[[:space:]]+#.*$//; s/^name:[[:space:]]*//; s/[[:space:]]+$//; s/^["'\'']//; s/["'\'']$//')
+
+    if [[ ${#declared[@]} -gt 0 ]]; then
+      [[ "$(printf '%s\n' "${declared[@]}" | sort -u | wc -l)" -eq 1 ]] || return 2
+      names+=("${declared[0]}")
+    else
+      candidate="$(project_compose_sanitize_name "$(basename -- "${project_dir}")")" || return 2
+      names+=("${candidate}")
+    fi
+  fi
+
+  if [[ ${#names[@]} -gt 1 ]]; then
+    # Several Compose projects in the same namespace would make the volume
+    # ownership ambiguous.
+    unique_names="$(printf '%s\n' "${names[@]}" | sort -u | wc -l)"
+    [[ ${unique_names} -eq 1 ]] || return 2
+  fi
+
+  # Every candidate namespace is searched. A volume found under any of them
+  # blocks, so extra candidates can only make the verdict stricter.
+  local existing_volumes
+  for env_name in "${env_names[@]}"; do
+    [[ " ${names[*]} " == *" ${env_name} "* ]] || names+=("${env_name}")
+  done
+
+  existing_volumes="$(project_compose_volume_names "${names[@]}")" || return 2
+
+  if [[ -n "${existing_volumes}" ]]; then
+    while IFS= read -r name; do
+      [[ -n "${name}" ]] || continue
+      uncovered+="UNCOVERED:volume-namespace:${name}:docker-volume"
+      uncovered+=$'\n'
+    done <<< "${existing_volumes}"
+  fi
+
+  uncovered="$(printf '%s' "${uncovered}" | sed '/^$/d' | sort -u)"
+
+  if [[ -n "${uncovered}" ]]; then
+    printf '%s\n' "${uncovered}"
+    return 1
+  fi
+
+  return 0
+}
+
+################################################################################
+# Show why a Compose deletion is blocked, distinguishing uncovered items from a
+# coverage that could not be established. Nothing sensitive beyond mount paths
+# and volume names is printed.
+#
+# Arguments:
+#   ${1} = gate exit code (1 = uncovered items, 2 = cannot verify)
+#   ${2} = newline separated "UNCOVERED:<kind>:<source>:<destination>" lines
+#
+# Outputs:
+#   0 always.
+################################################################################
+function project_display_deletion_block() {
+  local block_rc="${1:-1}" block_output="${2:-}" item
+
+  if [[ "${block_rc}" -eq 2 ]]; then
+    log_event "error" "Docker project deletion blocked: persistent mount coverage could not be verified (docker or jq unavailable, daemon error or ambiguous Compose context)." "false"
+    display --indent 8 --text "- Coverage could not be verified (docker, jq, daemon error or ambiguous Compose context)" --tcolor YELLOW
+    return 0
+  fi
+
+  [[ -n "${block_output}" ]] || return 0
+
+  while IFS= read -r item; do
+    [[ -n "${item}" ]] || continue
+    log_event "error" "Uncovered persistent mount: ${item}" "false"
+    display --indent 8 --text "- ${item}" --tcolor YELLOW
+  done <<< "${block_output}"
+
+  return 0
 }
 
 ################################################################################
@@ -2601,17 +2929,28 @@ function project_has_unsupported_compose_file() {
 #   ${1} = project directory, ${2} = installation type
 #
 # Outputs:
-#   0 if no known Compose hint was found, 1 if blocked or inspection failed.
+#   0 if the deletion can proceed, 1 with uncovered mount lines on stdout when
+#   persistent mount data is not covered, 2 on inspection failure (blocked).
 ################################################################################
 function project_compose_deletion_safe() {
   local dir_path="${1}" install_type="${2}" status
-  [[ "${install_type}" == docker* ]] && return 1
+
+  # Docker projects: a files backup and a database dump do not cover Compose
+  # volumes or bind mounts outside the project, so the deletion is allowed only
+  # when no such mount exists.
+  if [[ "${install_type}" == docker* ]]; then
+    project_compose_mount_coverage "${dir_path}"
+    return $?
+  fi
+
   if project_has_unsupported_compose_file "${dir_path}"; then
     return 1
   else
     status=$?
   fi
-  [[ ${status} -eq 1 ]]
+  # 2 means the scan itself failed: not the same as "a compose file was found".
+  [[ ${status} -eq 1 ]] && return 0
+  return 2
 }
 
 ################################################################################
@@ -2697,6 +3036,8 @@ function project_delete_files() {
   local backup_type
   local project_type
   local project_install_type
+  local deletion_block_output
+  local deletion_gate_rc
 
   backup_type="site"
 
@@ -2712,13 +3053,16 @@ function project_delete_files() {
   if [[ -n ${project_type} && -n ${project_install_type} ]]; then
 
     # Docker deletion is blocked until persistent mount coverage is verified.
-    if ! project_compose_deletion_safe "${PROJECTS_PATH}/${project_domain}" "${project_install_type}"; then
+    deletion_block_output="$(project_compose_deletion_safe "${PROJECTS_PATH}/${project_domain}" "${project_install_type}")"
+    deletion_gate_rc=$?
+    if [[ ${deletion_gate_rc} -ne 0 ]]; then
 
       # A file backup and database dump do not establish coverage of Compose
-      # volumes or external bind mounts. Until verified coverage exists, even
-      # direct callers of this destructive helper must fail closed.
+      # volumes or external bind mounts. Even direct callers of this
+      # destructive helper must fail closed.
       log_event "error" "Docker project deletion blocked: persistent mount backup coverage is not verified." "false"
       display --indent 6 --text "- Docker persistent mount backup coverage is not verified" --result "FAIL" --color RED
+      project_display_deletion_block "${deletion_gate_rc}" "${deletion_block_output}"
       return 1
 
     fi
@@ -2896,6 +3240,8 @@ function project_delete() {
   local project_type
   local project_root_domain
   local project_install_type
+  local deletion_block_output
+  local deletion_gate_rc
 
   local files_skipped="false"
 
@@ -2945,10 +3291,13 @@ function project_delete() {
     fi
 
     # Block before stopping services or making any other destructive changes.
-    # No current backup verifies coverage of Compose persistent mounts.
-    if ! project_compose_deletion_safe "${PROJECTS_PATH}/${project_domain}" "${project_install_type}"; then
+    # A files backup and a database dump do not cover Compose persistent mounts.
+    deletion_block_output="$(project_compose_deletion_safe "${PROJECTS_PATH}/${project_domain}" "${project_install_type}")"
+    deletion_gate_rc=$?
+    if [[ ${deletion_gate_rc} -ne 0 ]]; then
       log_event "error" "Docker project deletion blocked: persistent mount backup coverage is not verified." "false"
       display --indent 6 --text "- Docker persistent mount backup coverage is not verified" --result "FAIL" --color RED
+      project_display_deletion_block "${deletion_gate_rc}" "${deletion_block_output}"
       return 1
     fi
 

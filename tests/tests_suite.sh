@@ -35,6 +35,8 @@ function tests_suite_menu() {
     "22)" "RUN BACKUP MAIL SECTION TESTS"
     "23)" "RUN DROPBOX UPLOAD DESTINATION TESTS"
     "24)" "RUN BORGMATIC STALE CONFIG TESTS"
+    "25)" "RUN COMPOSE DELETION GATE TESTS"
+    "26)" "RUN COMPOSE MOUNT COVERAGE TESTS"
   )
 
   chosen_tests_options=$(whiptail --title "TESTS SUITE" --menu " " 20 78 10 "${tests_options[@]}" 3>&1 1>&2 2>&3)
@@ -82,6 +84,14 @@ function tests_suite_menu() {
       }
       test_borg_scheduled_routing || {
         log_event "error" "Scheduled Borg routing regression tests failed" "false"
+        return 1
+      }
+      test_compose_mount_coverage || {
+        log_event "error" "Compose mount coverage gate tests failed" "false"
+        return 1
+      }
+      test_compose_delete_safety || {
+        log_event "error" "Compose deletion gate regression tests failed" "false"
         return 1
       }
     fi
@@ -189,6 +199,18 @@ function tests_suite_menu() {
     if [[ ${chosen_tests_options} == *"24"* ]]; then
       test_stale_configs || {
         log_event "error" "Borgmatic stale config sanitizer tests failed" "false"
+        return 1
+      }
+    fi
+    if [[ ${chosen_tests_options} == *"25"* ]]; then
+      test_compose_delete_safety || {
+        log_event "error" "Compose deletion gate regression tests failed" "false"
+        return 1
+      }
+    fi
+    if [[ ${chosen_tests_options} == *"26"* ]]; then
+      test_compose_mount_coverage || {
+        log_event "error" "Compose mount coverage gate tests failed" "false"
         return 1
       }
     fi

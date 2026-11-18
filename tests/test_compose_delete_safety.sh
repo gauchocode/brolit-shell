@@ -6,10 +6,51 @@ source "$(dirname "${BASH_SOURCE[0]}")/../libs/local/project_helper.sh"
 
 function test_compose_delete_safety() {
   local tmp events test_install_type test_project_type failed=0
+  local saved_path="${PATH}"
   tmp="$(mktemp -d)"
   events="${tmp}/events"
   PROJECTS_PATH="${tmp}/projects"
   mkdir -p "${PROJECTS_PATH}/site"
+
+  # Hermetic docker: the gate inspects the daemon, so every case runs against a
+  # fake binary driven by a mode file instead of the host's Docker.
+  FAKE_DOCKER_MODE="${tmp}/docker-mode"
+  mkdir -p "${tmp}/bin"
+  cat > "${tmp}/bin/docker" <<'FAKE'
+#!/usr/bin/env bash
+mode="$(cat "${FAKE_DOCKER_MODE:-/dev/null}" 2>/dev/null || printf 'clean')"
+case "${1:-}" in
+  ps)
+    [[ "${mode}" == "broken" ]] && exit 1
+    if [[ "${mode}" == "containers" ]]; then
+      printf '%s\n' "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    fi
+    exit 0
+    ;;
+  volume)
+    [[ "${mode}" == "broken" ]] && exit 1
+    if [[ "${mode}" == "volume" ]]; then
+      shift
+      [[ "${1:-}" == "ls" ]] && printf '%s\n' "site_data"
+    fi
+    exit 0
+    ;;
+  inspect)
+    [[ "${mode}" == "broken" ]] && exit 1
+    if [[ "${mode}" == "containers" ]]; then
+      printf '{"id":"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef","project":"site","working_dir":"%s/projects/site","mounts":[{"Type":"bind","Source":"%s/projects/site/uploads","Destination":"/var/www/uploads"}]}\n' "${FAKE_PROJECTS_PATH}" "${FAKE_PROJECTS_PATH}"
+    fi
+    exit 0
+    ;;
+  *) exit 0 ;;
+esac
+FAKE
+  chmod +x "${tmp}/bin/docker"
+  printf 'clean' > "${FAKE_DOCKER_MODE}"
+  PATH="${tmp}/bin:${PATH}"
+  FAKE_PROJECTS_PATH="${PROJECTS_PATH}"
+  export FAKE_DOCKER_MODE FAKE_PROJECTS_PATH PATH
+
   : > "${events}"
   function log_section() { :; }
   function log_subsection() { :; }
@@ -37,12 +78,24 @@ function test_compose_delete_safety() {
       expected=default
       [[ ${name} == docker-compose.* ]] && expected=docker-compose
       if [[ ${detected} != "${expected}" ]]; then echo "FAIL: ${name} classified as ${detected}"; failed=1; fi
-      if project_delete site true; then echo "FAIL: deletion allowed for ${location}/${name}"; failed=1; fi
-      if project_delete_files site; then echo "FAIL: direct deletion allowed for ${location}/${name}"; failed=1; fi
-      if grep -Eq '^(stop|remove|backup|move)$' "${events}" || [[ ! -f "${location}/${name}" ]]; then
-        echo "FAIL: deletion changed ${location}/${name}"; failed=1
+      if [[ ${name} == docker-compose.* ]]; then
+        # A Docker project with no uncovered persistent mount is deletable: the
+        # gate lets it reach the mocked backup and storage move.
+        if project_delete site true; then echo "FAIL: deletion succeeded with a failing backup for ${location}/${name}"; failed=1; fi
+        if ! grep -q '^backup$' "${events}"; then echo "FAIL: Docker deletion blocked before backup for ${location}/${name}"; failed=1; fi
+        if project_delete_files site; then echo "FAIL: direct deletion succeeded with a failing storage move for ${location}/${name}"; failed=1; fi
+        if ! grep -q '^move$' "${events}"; then echo "FAIL: Docker deletion blocked before storage move for ${location}/${name}"; failed=1; fi
+        if grep -Eq '^(stop|remove)$' "${events}" || [[ ! -f "${location}/${name}" ]]; then
+          echo "FAIL: deletion changed ${location}/${name}"; failed=1
+        fi
+      else
+        if project_delete site true; then echo "FAIL: deletion allowed for ${location}/${name}"; failed=1; fi
+        if project_delete_files site; then echo "FAIL: direct deletion allowed for ${location}/${name}"; failed=1; fi
+        if grep -Eq '^(stop|remove|backup|move)$' "${events}" || [[ ! -f "${location}/${name}" ]]; then
+          echo "FAIL: deletion changed ${location}/${name}"; failed=1
+        fi
+        if ! grep -q 'coverage is not verified' "${events}"; then echo "FAIL: missing coverage diagnostic for ${name}"; failed=1; fi
       fi
-      if ! grep -q 'coverage is not verified' "${events}"; then echo "FAIL: missing coverage diagnostic for ${name}"; failed=1; fi
       rm -- "${location}/${name}"
     done
   done
@@ -110,14 +163,49 @@ function test_compose_delete_safety() {
   # Exercise explicit Docker and unknown types separately from real detection.
   function project_get_install_type() { printf '%s\n' "${test_install_type}"; }
   for test_install_type in docker docker-compose; do
+    # A project with a running container bound to a directory inside the
+    # project: the real production shape. Covered by the files backup, so the
+    # gate lets it through to the mocked backup and storage move.
+    mkdir -p "${PROJECTS_PATH}/site/uploads"
     : > "${events}"
-    if project_delete site true; then echo "FAIL: Docker deletion succeeded"; failed=1; fi
-    if project_delete_files site; then echo "FAIL: direct Docker deletion succeeded"; failed=1; fi
+    printf 'containers' > "${FAKE_DOCKER_MODE}"
+    if project_delete site true; then echo "FAIL: Docker deletion succeeded with a failing backup"; failed=1; fi
+    if ! grep -q '^backup$' "${events}"; then echo "FAIL: container with an in-project bind blocked before backup"; failed=1; fi
+    if grep -q 'coverage is not verified' "${events}"; then echo "FAIL: covered container reported as uncovered"; failed=1; fi
+    : > "${events}"
+    if project_delete_files site; then echo "FAIL: direct Docker deletion succeeded with a failing storage move"; failed=1; fi
+    if ! grep -q '^move$' "${events}"; then echo "FAIL: container with an in-project bind blocked before storage move"; failed=1; fi
+    printf 'clean' > "${FAKE_DOCKER_MODE}"
+
+    # Clean project: nothing persistent outside the project directory, so the
+    # gate allows the deletion and it reaches the (mocked, failing) backup.
+    : > "${events}"
+    printf 'clean' > "${FAKE_DOCKER_MODE}"
+    if project_delete site true; then echo "FAIL: Docker deletion succeeded with a failing backup"; failed=1; fi
+    if ! grep -q '^backup$' "${events}"; then echo "FAIL: clean Docker project blocked before backup"; failed=1; fi
+    if grep -Eq '^(stop|remove)$' "${events}"; then echo "FAIL: blocked deletion changed project state"; failed=1; fi
+    : > "${events}"
+    if project_delete_files site; then echo "FAIL: direct Docker deletion succeeded with a failing storage move"; failed=1; fi
+    if ! grep -q '^move$' "${events}"; then echo "FAIL: clean Docker project blocked before storage move"; failed=1; fi
+
+    # Leftover volume in the project namespace: blocked before any change.
+    : > "${events}"
+    printf 'volume' > "${FAKE_DOCKER_MODE}"
+    if project_delete site true; then echo "FAIL: Docker deletion with an uncovered volume succeeded"; failed=1; fi
+    if project_delete_files site; then echo "FAIL: direct Docker deletion with an uncovered volume succeeded"; failed=1; fi
     if grep -Eq '^(stop|remove|backup|move)$' "${events}" || [[ ! -d "${PROJECTS_PATH}/site" ]]; then
-      echo "FAIL: blocked deletion changed project state"; failed=1
+      echo "FAIL: volume-blocked deletion changed project state"; failed=1
     fi
     if ! grep -q 'coverage is not verified' "${events}"; then echo "FAIL: missing coverage diagnostic"; failed=1; fi
+    if ! grep -q 'volume-namespace' "${events}"; then echo "FAIL: uncovered volume not named in the diagnostic"; failed=1; fi
+
+    # A failed inspection is uncertain and must block.
+    : > "${events}"
+    printf 'broken' > "${FAKE_DOCKER_MODE}"
+    if project_delete site true || project_delete_files site; then echo "FAIL: broken inspection allowed Docker deletion"; failed=1; fi
+    if grep -Eq '^(stop|remove|backup|move)$' "${events}"; then echo "FAIL: broken inspection changed project state"; failed=1; fi
   done
+  printf 'clean' > "${FAKE_DOCKER_MODE}"
 
   : > "${events}"
   test_install_type=""
@@ -135,6 +223,9 @@ function test_compose_delete_safety() {
   if project_delete_files site; then echo "FAIL: failed storage move accepted"; failed=1; fi
   if ! grep -q '^move$' "${events}" || [[ ! -d "${PROJECTS_PATH}/site" ]]; then echo "FAIL: non-Docker deletion did not preserve existing behavior"; failed=1; fi
   rm -rf -- "${tmp}"
+  # Never leak the fake docker into the caller's PATH (the suite runs every
+  # test in the same shell).
+  PATH="${saved_path}"
   return "${failed}"
 }
 
