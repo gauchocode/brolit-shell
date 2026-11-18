@@ -1,7 +1,7 @@
 # Plan: Compose deletion gate — verified mount coverage
 
 ## Status
-- **Phase**: In Progress
+- **Phase**: Complete
 - **Last Updated**: 2026-11-17
 
 ## Overview
@@ -270,7 +270,17 @@ and several medium ones. All of them are addressed:
 - Backup verification: the deleted app's Dropbox archive was downloaded to a
   temporary directory, fully listed and extracted (1,404 entries, including the
   Compose file and `.env`), then removed. No site was recreated or overwritten.
-- Borg test debt: all 59 `tests/test_*.sh` scripts now exit 0. One stale
+- Borg test debt: all 59 `tests/test_*.sh` scripts now exit 0.- Deletion-time mount backup released in 3.14.18/3.14.19 and used on
+  `gaucho-dev04`: `stage.supabase.realservices.app` completed after its
+  db-config and deno-cache volumes were archived, downloaded and checksum
+  verified. `stage.realservices.app` also completed. The final dev04 inventory
+  before the migration contained only `dev.test.livriz.broobe.net`.
+- Migration `dev.broobe.com` from `gaucho-dev02` to `gaucho-dev04` used the
+  shell's `migrate site` flow with local/rsync transport, no source decommission,
+  and a temporary SSH key removed from both hosts afterwards. Destination HTTPS
+  verification passed; the public site returns the full BROOBE HTML and dev04's
+  sync now lists the domain.
+ One stale
   classifier expectation was fixed; three live/manual Borg tests are explicit
   SKIP unless `BROLIT_RUN_LIVE_BORG_TESTS=1`, and are inert when sourced by the
   suite (`ef6d25f3`).
