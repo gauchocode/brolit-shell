@@ -4,6 +4,12 @@
 # This script tests the corrected index extraction in restore_backup_with_borg and mount_storage_box functions
 #
 
+# Pure offline test; sourcing this file from tests_suite.sh must not run it.
+if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
+    return 0
+fi
+BROLIT_MAIN_DIR="${BROLIT_MAIN_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)}"
+
 # Source the main brolit configuration
 if [[ -f "${BROLIT_MAIN_DIR}/utils/brolit_configuration_manager.sh" ]]; then
     source "${BROLIT_MAIN_DIR}/utils/brolit_configuration_manager.sh"

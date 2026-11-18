@@ -4,6 +4,17 @@
 # This script tests the integrated connectivity check in mount and restore functions
 #
 
+# Live/manual test: may contact configured Borg servers or mount/restore.
+# Never run it merely because the test suite sourced this file.
+if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
+    return 0
+fi
+if [[ "${BROLIT_RUN_LIVE_BORG_TESTS:-0}" != "1" ]]; then
+    echo "SKIP: test_borg_integration.sh is live; set BROLIT_RUN_LIVE_BORG_TESTS=1 to run it"
+    exit 0
+fi
+BROLIT_MAIN_DIR="${BROLIT_MAIN_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)}"
+
 # Source the main brolit configuration
 if [[ -f "${BROLIT_MAIN_DIR}/utils/brolit_configuration_manager.sh" ]]; then
     source "${BROLIT_MAIN_DIR}/utils/brolit_configuration_manager.sh"

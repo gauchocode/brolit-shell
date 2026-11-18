@@ -89,7 +89,7 @@ FAKE
         : > "${FAKE_CALLS}"
         if initialize_repository "${tmp}/config.yml"; then return 1; fi
         expected="${mode}"
-        case "${mode}" in exists|generic_missing_file|missing_key|unsupported) expected=unknown ;; timeout) expected=network ;; esac
+        case "${mode}" in exists|generic_missing_file|missing_key) expected=unknown ;; unsupported) expected=borgmatic_version ;; timeout) expected=network ;; esac
         [[ "${BORG_INIT_FAILURE_REASON}" == "${expected}" && "$(cat "${FAKE_CALLS}")" == repo-list ]]
     done
     export FAKE_PROBE_MODE=missing
