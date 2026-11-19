@@ -126,8 +126,9 @@ function wp_config_path() {
     # Log
     log_event "info" "Searching WordPress Installation on directory: ${dir_to_search}" "false"
 
-    # Find where wp-config.php is
-    find_output="$(find "${dir_to_search}" -name "wp-config.php" | sed 's|/[^/]*$||')"
+    # Find where wp-config.php is, shallowest first (then alphabetical), so the
+    # first line is the live install and not, for example, a copy under backups/
+    find_output="$(find "${dir_to_search}" -name "wp-config.php" | sed 's|/[^/]*$||' | awk -F/ '{ print NF, $0 }' | sort -k1,1n -k2 | cut -d' ' -f2-)"
 
     if [[ -z ${find_output} ]]; then
 
@@ -138,7 +139,7 @@ function wp_config_path() {
 
     fi
 
-    # If found more thant one directory, print the first one
+    # If found more than one directory, print the first one (the shallowest)
     if [[ $(echo "${find_output}" | wc -l) -gt 1 ]]; then
 
       # Log
