@@ -19,6 +19,20 @@ declare -g MIGRATE_DEST_BROLIT_DIR="/root/brolit-shell"
 # source and the destination.
 declare -g MIGRATE_LOCAL_STAGING_PATH_DEFAULT="/root/.brolit_migrate_staging"
 
+# State of the migration in progress, used to remove its staged captures when it
+# ends (see migrate_site / migrate_cleanup_staging). Empty outside a migration.
+declare -g MIGRATE_RUN_DOMAIN=""
+declare -g MIGRATE_RUN_DEST_HOST=""
+declare -g MIGRATE_RUN_DEST_USER=""
+declare -g MIGRATE_RUN_DEST_PORT="22"
+declare -g MIGRATE_RUN_DEST_SSH_KEY=""
+declare -g MIGRATE_RUN_DEST_SERVER_NAME=""
+declare -g MIGRATE_RUN_DB_NAME=""
+# "1" while a termination signal may remove the staged captures: only the
+# capture and transfer phases. During the remote restore the destination reads
+# them, so a signal there must not delete anything.
+declare -g MIGRATE_STAGING_SIGNAL_SAFE="0"
+
 ################################################################################
 # Private: run a command on the destination over SSH
 #
@@ -77,6 +91,37 @@ function _migrate_rsync_push() {
   rsync --archive --compress --recursive \
     -e "ssh -i '${dest_ssh_key}' -p '${dest_port}' -o BatchMode=yes -o StrictHostKeyChecking=accept-new" \
     "${local_path}" "${dest_user}@${dest_host}:${remote_path}"
+
+}
+
+################################################################################
+# Private: HTTP status code a destination answers for a domain
+#
+# Arguments:
+#   ${1} = ${scheme} (http or https)
+#   ${2} = ${port}
+#   ${3} = ${domain}
+#   ${4} = ${dest_ip}
+#
+# Outputs:
+#   Three-digit status code, "000" when there was no answer at all.
+################################################################################
+
+function _migrate_probe_status() {
+
+  local scheme="${1}"
+  local port="${2}"
+  local domain="${3}"
+  local dest_ip="${4}"
+
+  local status
+
+  status="$(curl --silent --output /dev/null --max-time 15 --write-out '%{http_code}' \
+    --resolve "${domain}:${port}:${dest_ip}" "${scheme}://${domain}/" 2>/dev/null)"
+
+  [[ ${status} =~ ^[0-9]{3}$ ]] || status="000"
+
+  echo "${status}"
 
 }
 
@@ -530,6 +575,8 @@ function migrate_transfer_artifact() {
   local db_name
   db_name="$(project_get_configured_database "${PROJECTS_PATH}/${domain}" "$(project_get_type "${PROJECTS_PATH}/${domain}")" "$(project_get_install_type "${PROJECTS_PATH}/${domain}")")"
 
+  MIGRATE_RUN_DB_NAME="${db_name}"
+
   local source_site_path="${MIGRATE_LOCAL_STAGING_PATH_DEFAULT}/${SERVER_NAME}/projects-online/site/${domain}/"
   local dest_site_path="${MIGRATE_LOCAL_STAGING_PATH_DEFAULT}/${dest_server_name}/projects-online/site/${domain}/"
 
@@ -657,6 +704,8 @@ function migrate_verify_destination() {
   local domain="${5}"
 
   local dest_ip="${dest_host}"
+  local https_status
+  local http_status
 
   # If dest_host is a hostname rather than an IP, resolve the destination's
   # own public IP over SSH instead of relying on local DNS resolution.
@@ -672,21 +721,34 @@ function migrate_verify_destination() {
     return 1
   fi
 
-  curl --silent --fail --max-time 15 --resolve "${domain}:443:${dest_ip}" "https://${domain}/" >/dev/null
+  # Judge by the status code, never by `curl --fail`: --fail treats a 3xx as
+  # success, so a stack that is down (HTTPS answers 502) used to pass through
+  # the plain-HTTP redirect to HTTPS, and it rejects a 401/403 from a site that
+  # is up but protected.
+  https_status="$(_migrate_probe_status "https" "443" "${domain}" "${dest_ip}")"
 
-  if [[ $? -eq 0 ]]; then
-    display --indent 6 --text "- Destination verification (HTTPS)" --result "DONE" --color GREEN
+  if [[ ${https_status} != "000" ]]; then
+    if ((10#${https_status} < 500)); then
+      display --indent 6 --text "- Destination verification (HTTPS ${https_status})" --result "DONE" --color GREEN
+      return 0
+    fi
+    # TLS works and the site answers with a server error: it is down.
+    log_event "error" "Migrate: destination answered HTTP ${https_status} for ${domain} at ${dest_ip}" "true"
+    display --indent 6 --text "- Destination verification (HTTPS ${https_status})" --result "FAIL" --color RED
+    return 1
+  fi
+
+  # No HTTPS answer at all (for example the certificate is not ready yet): plain
+  # HTTP may stand in, but only when it serves the site itself. A redirect to the
+  # HTTPS that just failed proves nothing.
+  http_status="$(_migrate_probe_status "http" "80" "${domain}" "${dest_ip}")"
+
+  if ((10#${http_status} >= 200 && 10#${http_status} < 300 || 10#${http_status} >= 400 && 10#${http_status} < 500)); then
+    display --indent 6 --text "- Destination verification (HTTP only ${http_status}, SSL may not be ready yet)" --result "WARNING" --color YELLOW
     return 0
   fi
 
-  curl --silent --fail --max-time 15 --resolve "${domain}:80:${dest_ip}" "http://${domain}/" >/dev/null
-
-  if [[ $? -eq 0 ]]; then
-    display --indent 6 --text "- Destination verification (HTTP only, SSL may not be ready yet)" --result "WARNING" --color YELLOW
-    return 0
-  fi
-
-  log_event "error" "Migrate: destination did not respond for ${domain} at ${dest_ip}" "true"
+  log_event "error" "Migrate: destination did not serve ${domain} at ${dest_ip} (https=${https_status}, http=${http_status})" "true"
   display --indent 6 --text "- Destination verification" --result "FAIL" --color RED
   return 1
 
@@ -761,6 +823,133 @@ function migrate_decommission_source() {
 }
 
 ################################################################################
+# Private: a name that is safe to use as a path component
+#
+# Arguments:
+#   ${1} = ${name}
+#
+# Outputs:
+#   0 if it is a plain name (letters, digits, dot, dash, underscore; no "..",
+#   not starting with a dot), 1 otherwise.
+################################################################################
+
+function _migrate_staging_name_is_safe() {
+
+  local name="${1:-}"
+
+  [[ -n ${name} && ${name} =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ && ${name} != *..* ]]
+
+}
+
+################################################################################
+# Remove the captures a migration staged, on the source and on the destination
+#
+# The staging directory used to grow forever: each migration left its capture
+# behind, on success and on cancel (15-17 GB on two servers after nine
+# migrations, one capture alone 12 GB). Only this project's directories under
+# the migrate staging root are removed, never the staging root itself, other
+# projects' captures or anything outside it, and every path component is
+# validated first. Best effort: a failure is logged, never fatal.
+#
+# Arguments:
+#   ${1} = ${domain}
+#   ${2} = ${dest_user} (optional: without it only the source is cleaned)
+#   ${3} = ${dest_host}
+#   ${4} = ${dest_port}
+#   ${5} = ${dest_ssh_key}
+#   ${6} = ${dest_server_name}
+#   ${7} = ${db_name} (optional)
+#
+# Outputs:
+#   0 always when the arguments are valid, 1 when they are not.
+################################################################################
+
+function migrate_cleanup_staging() {
+
+  local domain="${1:-}"
+  local dest_user="${2:-}"
+  local dest_host="${3:-}"
+  local dest_port="${4:-22}"
+  local dest_ssh_key="${5:-}"
+  local dest_server_name="${6:-}"
+  local db_name="${7:-}"
+
+  local root="${MIGRATE_LOCAL_STAGING_PATH_DEFAULT}"
+  local path
+  local remote_cmd
+  local -a source_paths=()
+  local -a dest_paths=()
+
+  if [[ ${root} != /* || ${root} == "/" ]] || ! _migrate_staging_name_is_safe "${domain}"; then
+    log_event "warning" "Migrate: not cleaning staging, unsafe staging root or domain" "false"
+    return 1
+  fi
+
+  if _migrate_staging_name_is_safe "${SERVER_NAME:-}"; then
+    source_paths+=("${root}/${SERVER_NAME}/projects-online/site/${domain}")
+    if _migrate_staging_name_is_safe "${db_name}"; then
+      source_paths+=("${root}/${SERVER_NAME}/projects-online/database/${db_name}")
+    fi
+  fi
+
+  for path in "${source_paths[@]}"; do
+    if [[ -d ${path} && ! -L ${path} ]]; then
+      rm --recursive --force --one-file-system -- "${path}" 2>/dev/null \
+        && log_event "info" "Migrate: removed staged capture ${path}" "false" \
+        || log_event "warning" "Migrate: could not remove staged capture ${path}" "false"
+    fi
+  done
+
+  if [[ -n ${dest_user} && -n ${dest_host} ]] && _migrate_staging_name_is_safe "${dest_server_name}"; then
+    dest_paths+=("${root}/${dest_server_name}/projects-online/site/${domain}")
+    if _migrate_staging_name_is_safe "${db_name}"; then
+      dest_paths+=("${root}/${dest_server_name}/projects-online/database/${db_name}")
+    fi
+    remote_cmd="rm --recursive --force --one-file-system --"
+    for path in "${dest_paths[@]}"; do
+      remote_cmd="${remote_cmd} '${path}'"
+    done
+    # Bounded: this can run inside the grace period between TERM and KILL.
+    timeout 10 bash -c "$(declare -f _migrate_ssh); _migrate_ssh \"\$@\"" _ \
+      "${dest_user}" "${dest_host}" "${dest_port}" "${dest_ssh_key}" "${remote_cmd}" >/dev/null 2>&1 \
+      && log_event "info" "Migrate: removed the staged capture on the destination" "false" \
+      || log_event "warning" "Migrate: could not remove the staged capture on the destination" "false"
+  fi
+
+  return 0
+
+}
+
+################################################################################
+# Private: handler for TERM and INT during a migration
+#
+# Removes the staged captures when the phase allows it, then exits with the
+# conventional status for the signal. A migration cancelled from Admin is TERMed
+# during capture or transfer; it used to leave a partial capture behind.
+#
+# Arguments:
+#   ${1} = ${exit_code} (143 for TERM, 130 for INT)
+#
+# Outputs:
+#   None; exits the process.
+################################################################################
+
+function _migrate_on_signal() {
+
+  local exit_code="${1:-143}"
+
+  trap - TERM INT
+
+  if [[ ${MIGRATE_STAGING_SIGNAL_SAFE} == "1" ]]; then
+    migrate_cleanup_staging "${MIGRATE_RUN_DOMAIN}" "${MIGRATE_RUN_DEST_USER}" "${MIGRATE_RUN_DEST_HOST}" \
+      "${MIGRATE_RUN_DEST_PORT}" "${MIGRATE_RUN_DEST_SSH_KEY}" "${MIGRATE_RUN_DEST_SERVER_NAME}" "${MIGRATE_RUN_DB_NAME}" || true
+  fi
+
+  exit "${exit_code}"
+
+}
+
+################################################################################
 # Top-level orchestrator for `migrate site`
 #
 # Arguments:
@@ -782,7 +971,7 @@ function migrate_decommission_source() {
 #   0 if ok, 1 on error.
 ################################################################################
 
-function migrate_site() {
+function _migrate_site_run() {
 
   local domain="${1}"
   local dest_host="${2}"
@@ -817,11 +1006,13 @@ function migrate_site() {
   if [[ ${transport} == "local" ]]; then
     dest_server_name="$(migrate_get_dest_server_name "${dest_user}" "${dest_host}" "${dest_port}" "${dest_ssh_key}")"
     [[ $? -ne 0 ]] && return 1
+    MIGRATE_RUN_DEST_SERVER_NAME="${dest_server_name}"
   fi
 
   dest_path="$(migrate_resolve_dest_path "${domain}" "${dest_path_override}")"
   migrate_check_dest_path_collision "${dest_user}" "${dest_host}" "${dest_port}" "${dest_ssh_key}" "${dest_path}" "${force}" || return 1
 
+  MIGRATE_STAGING_SIGNAL_SAFE="1"
   migrate_capture_source "${domain}" "${transport}" || return 1
 
   if [[ ${transport} == "local" ]]; then
@@ -831,6 +1022,8 @@ function migrate_site() {
     log_event "info" "Migrate: --transport dropbox, skipping direct rsync transfer (backup_docker_project already uploaded to the shared Dropbox account)" "false"
   fi
 
+  # From here the destination reads the staged capture: a signal must not remove it.
+  MIGRATE_STAGING_SIGNAL_SAFE="0"
   migrate_trigger_remote_restore "${dest_user}" "${dest_host}" "${dest_port}" "${dest_ssh_key}" "${domain}" "${transport}"
   restore_result=$?
 
@@ -850,5 +1043,49 @@ function migrate_site() {
 
   log_event "info" "Migrate: migration of ${domain} to ${dest_host} completed and verified" "true"
   return 0
+
+}
+
+################################################################################
+# Migrate a Dockerized project to another server, then remove its staged captures
+#
+# Wraps _migrate_site_run (same arguments) so that the captures are removed on
+# every way out: success, failure and, during capture or transfer, a TERM or INT
+# such as the one Admin sends to cancel a migration. See migrate_cleanup_staging.
+#
+# Arguments:
+#   Same as _migrate_site_run.
+#
+# Outputs:
+#   The exit status of _migrate_site_run.
+################################################################################
+
+function migrate_site() {
+
+  local run_result
+
+  MIGRATE_RUN_DOMAIN="${1}"
+  MIGRATE_RUN_DEST_HOST="${2}"
+  MIGRATE_RUN_DEST_USER="${3}"
+  MIGRATE_RUN_DEST_PORT="${4:-22}"
+  MIGRATE_RUN_DEST_SSH_KEY="${5}"
+  MIGRATE_RUN_DEST_SERVER_NAME=""
+  MIGRATE_RUN_DB_NAME=""
+  MIGRATE_STAGING_SIGNAL_SAFE="0"
+
+  trap '_migrate_on_signal 143' TERM
+  trap '_migrate_on_signal 130' INT
+
+  _migrate_site_run "$@"
+  run_result=$?
+
+  trap - TERM INT
+
+  migrate_cleanup_staging "${MIGRATE_RUN_DOMAIN}" "${MIGRATE_RUN_DEST_USER}" "${MIGRATE_RUN_DEST_HOST}" \
+    "${MIGRATE_RUN_DEST_PORT}" "${MIGRATE_RUN_DEST_SSH_KEY}" "${MIGRATE_RUN_DEST_SERVER_NAME}" "${MIGRATE_RUN_DB_NAME}" || true
+
+  MIGRATE_STAGING_SIGNAL_SAFE="0"
+
+  return "${run_result}"
 
 }
