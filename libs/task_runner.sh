@@ -52,6 +52,9 @@ function show_help() {
                         user                Subtasks: create, delete, grant-sudo, revoke-sudo,
                                             add-key, remove-key, list-keys, list
                         disk-cleanup        Subtasks: apt, journal, docker, all
+                        cron-install        Subtasks: backups, optimizer, wordpress, security, uptime,
+                                            disk-cleanup (idempotent; -tv "<cron expr>" overrides the
+                                            default schedule)
                         aliases-install     (no subtask)
                         openresty           Subtasks: install, uninstall, reconfigure, status,
                                             api-status, api-routes, create-route, delete-route
@@ -142,6 +145,8 @@ function show_help() {
     ./runner.sh -t project-install -tf /path/to/config.json -tt clean
     ./runner.sh -t user -st create -un deploy --sudo
     ./runner.sh -t user -st add-key -un deploy -tf /tmp/brolit_key.json
+    ./runner.sh -t cron-install -st backups
+    ./runner.sh -t cron-install -st backups -tv "30 01 * * *"
     ./runner.sh -t user -st remove-key -un deploy -tv SHA256:abc123...
     ./runner.sh -t user -st list-keys -un deploy
     ./runner.sh -t user -st revoke-sudo -un deploy
@@ -757,6 +762,16 @@ function tasks_handler() {
     # -tv (optional): contact email override, for install/expand, when
     # NOTIFICATION_EMAIL_EMAIL_TO isn't configured
     execute_task_with_error_handling "certbot-${STASK}" "certbot_tasks_handler" "${STASK}" "${DOMAIN}" "${TVALUE}"
+    exit_code=$?
+    exit ${exit_code}
+    ;;
+
+  cron-install)
+    validate_task_and_subtask "cron-install" "${STASK}" "backups optimizer wordpress security uptime disk-cleanup"
+    exit_code=$?
+    [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
+
+    execute_task_with_error_handling "cron-install-${STASK}" "brolit_cronjob_install_task" "${STASK}" "${TVALUE}"
     exit_code=$?
     exit ${exit_code}
     ;;

@@ -401,7 +401,8 @@ function mail_package_status_section() {
     local pkg_status_icon
 
     # Check for important packages updates
-    pkg_details=$(mail_package_section "${PACKAGES[@]}") # ${PACKAGES[@]} is a Global array with packages names
+    # PACKAGES is a global array with package names; the function takes its NAME (nameref)
+    pkg_details=$(mail_package_section "PACKAGES")
 
     # If not empty, system is outdated
     if [[ -n "${pkg_details}" ]]; then
@@ -453,13 +454,15 @@ function mail_package_status_section() {
 
 function mail_package_section() {
 
-    local -n PACKAGES="${1}"
+    # Nameref must not share the referenced array's name (circular reference).
+    [[ -n "${1:-}" ]] || return 0
+    local -n packages_ref="${1}"
 
     local package
     local package_version_installed
     local package_version_candidate
 
-    for package in "${PACKAGES[@]}"; do
+    for package in "${packages_ref[@]}"; do
 
         package_version_installed="$(apt-cache policy "${package}" | grep Installed | cut -d ':' -f 2)"
 

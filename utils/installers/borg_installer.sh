@@ -111,6 +111,9 @@ function borg_installer() {
     package_install "pipx"
     package_install "python3-venv"
 
+    # yq: needed to generate borgmatic configs
+    yq_installer || log_event "warning" "yq could not be installed; borgmatic config generation will fail" "false"
+
     # Installing borgmatic
     borgmatic_installer
 
@@ -133,6 +136,65 @@ function borg_installer() {
 
         return 0
     fi
+
+}
+
+##############################################################################
+# Install yq (mikefarah, v4), required by the borgmatic config generation
+# (`generate_borg_config` in cron/backups_tasks.sh) and the Borg storage
+# controller. Pinned version, SHA-256 verified; idempotent.
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if yq v4 is available, 1 on error.
+##############################################################################
+
+BROLIT_YQ_VERSION="v4.45.4"
+BROLIT_YQ_SHA256_AMD64="b96de04645707e14a12f52c37e6266832e03c29e95b9b139cddcae7314466e69"
+BROLIT_YQ_SHA256_ARM64="b25d814d8708d7df047874f65bb66e0ee946d53a1bcd9a513ea5d06a153777c1"
+
+function yq_installer() {
+
+    local arch
+    local expected_sha
+    local tmp_file
+
+    # Already a mikefarah yq v4 (the python-yq wrapper is a different tool)
+    if command -v yq >/dev/null 2>&1 && yq --version 2>&1 | grep -q "mikefarah.*version v\?4"; then
+        log_event "debug" "yq v4 already installed" "false"
+        return 0
+    fi
+
+    case "$(uname -m)" in
+    x86_64) arch="amd64"; expected_sha="${BROLIT_YQ_SHA256_AMD64}" ;;
+    aarch64 | arm64) arch="arm64"; expected_sha="${BROLIT_YQ_SHA256_ARM64}" ;;
+    *)
+        log_event "error" "yq: unsupported architecture $(uname -m)" "false"
+        return 1
+        ;;
+    esac
+
+    tmp_file="$(mktemp)"
+
+    if ! curl -fsSL --retry 3 -o "${tmp_file}" "https://github.com/mikefarah/yq/releases/download/${BROLIT_YQ_VERSION}/yq_linux_${arch}"; then
+        rm -f "${tmp_file}"
+        log_event "error" "yq: download failed" "false"
+        return 1
+    fi
+
+    if [[ "$(sha256sum "${tmp_file}" | awk '{print $1}')" != "${expected_sha}" ]]; then
+        rm -f "${tmp_file}"
+        log_event "error" "yq: checksum mismatch, refusing to install" "false"
+        return 1
+    fi
+
+    install -m 0755 "${tmp_file}" /usr/local/bin/yq
+    rm -f "${tmp_file}"
+
+    log_event "info" "yq ${BROLIT_YQ_VERSION} installed" "false"
+    return 0
 
 }
 

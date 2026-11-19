@@ -49,7 +49,7 @@ require_runtime_file() {
 
 while IFS= read -r -d '' relative_path; do
     case "${relative_path}" in
-        brolit_lite.sh|runner.sh|updater.sh|backup_observer.sh|aliases.sh|cron/*|brolit_report.sh|config/*|libs/*|release/*|tools/*|utils/*)
+        brolit_lite.sh|runner.sh|updater.sh|backup_observer.sh|aliases.sh|cron/*|brolit_report.sh|config/*|libs/*|release/*|templates/*|tools/*|utils/*)
             case "${relative_path}" in
                 */.env|*/.env.*|tests/*|*/credentials*|*/private*|*.pem|*.key|*.sig) continue ;;
             esac

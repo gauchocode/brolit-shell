@@ -23,6 +23,7 @@ jq -e '.capabilities | index("job-control.v1") != null' "${release_dir}/manifest
 archive_listing="$(tar -tzf "${release_dir}/brolit-shell-runtime.tar.gz")"
 grep -q './cron/security_tasks.sh' <<<"${archive_listing}" || fail "cron runtime files missing"
 grep -q './libs/local/job_control_helper.sh' <<<"${archive_listing}" || fail "job control helper missing from runtime"
+grep -q './templates/emails/default/footer-tpl.html' <<<"${archive_listing}" || fail "email templates missing from runtime"
 
 install_root="${TEMP_DIR}/install"
 BROLIT_INSTALL_TEST_MODE=1 "${ROOT_DIR}/release/install.sh" install \
