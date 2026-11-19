@@ -60,6 +60,10 @@ function tests_suite_menu() {
       test_borg_helper_funtions
       test_task_runner
       test_site_migration_functions
+      test_job_control || {
+        log_event "error" "Job control regression tests failed" "false"
+        return 1
+      }
       test_wordfencecli_helper
       test_user_manager
       test_borg_repository_recovery
@@ -144,6 +148,10 @@ function tests_suite_menu() {
 
     if [[ ${chosen_tests_options} == *"09"* ]]; then
       test_common_funtions
+      test_job_control || {
+        log_event "error" "Job control regression tests failed" "false"
+        return 1
+      }
 
     fi
     if [[ ${chosen_tests_options} == *"10"* ]]; then

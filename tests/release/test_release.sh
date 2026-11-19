@@ -13,13 +13,16 @@ report="$("${ROOT_DIR}/brolit_report.sh" metadata)"
 echo "${report}" | jq -e '
   .protocol_name == "brolit-shell-report" and
   .protocol_version == 1 and
-  (.capabilities | index("backup-borg-latest")) != null
+  (.capabilities | index("backup-borg-latest")) != null and
+  (.capabilities | index("job-control.v1")) != null
 ' >/dev/null || fail "invalid shell report"
 
 release_dir="$(BROLIT_RELEASE_BUILD_ALLOW_DIRTY=1 "${ROOT_DIR}/release/build-release.sh" "${TEMP_DIR}/dist")"
 jq empty "${release_dir}/manifest.json" || fail "invalid release manifest"
+jq -e '.capabilities | index("job-control.v1") != null' "${release_dir}/manifest.json" >/dev/null || fail "job control capability missing"
 archive_listing="$(tar -tzf "${release_dir}/brolit-shell-runtime.tar.gz")"
 grep -q './cron/security_tasks.sh' <<<"${archive_listing}" || fail "cron runtime files missing"
+grep -q './libs/local/job_control_helper.sh' <<<"${archive_listing}" || fail "job control helper missing from runtime"
 
 install_root="${TEMP_DIR}/install"
 BROLIT_INSTALL_TEST_MODE=1 "${ROOT_DIR}/release/install.sh" install \

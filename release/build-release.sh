@@ -63,7 +63,7 @@ while IFS= read -r -d '' relative_path; do
     esac
 done < <(git -C "${ROOT_DIR}" ls-files -z)
 
-for required_file in brolit_report.sh libs/release_manifest.sh release/version.env release/manifest.schema.json release/build-release.sh release/install.sh release/sign-release.sh release/README.md; do
+for required_file in brolit_report.sh libs/release_manifest.sh libs/local/job_control_helper.sh release/version.env release/manifest.schema.json release/build-release.sh release/install.sh release/sign-release.sh release/README.md; do
     require_runtime_file "${required_file}"
 done
 
@@ -84,7 +84,7 @@ jq -n \
     --argjson protocol_version "${BROLIT_REPORT_PROTOCOL_VERSION}" \
     --argjson min_admin_protocol "${BROLIT_MIN_ADMIN_PROTOCOL}" \
     --arg sha256 "${artifact_sha256}" \
-    --argjson capabilities '["inventory.v2","backup-history.v2","backup-dropbox-line-parser","backup-borg-latest","backup-progress.v1"]' \
+    --argjson capabilities '["inventory.v2","backup-history.v2","backup-dropbox-line-parser","backup-borg-latest","backup-progress.v1","job-control.v1"]' \
     '{product:$product,version:$version,commit:$commit,protocol_version:$protocol_version,min_admin_protocol:$min_admin_protocol,sha256:$sha256,capabilities:$capabilities}' \
     > "${release_dir}/manifest.json"
 

@@ -482,6 +482,7 @@ function migrate_capture_source() {
     declare -g MIGRATE_LOCAL_STAGING_PATH="${MIGRATE_LOCAL_STAGING_PATH_DEFAULT}"
   fi
 
+  brolit_job_control_mark_cancellable
   backup_docker_project "${domain}" "site"
   local capture_result=$?
 
@@ -534,6 +535,7 @@ function migrate_transfer_artifact() {
 
   log_subsection "Migrate: Transfer Artifact"
 
+  brolit_job_control_mark_cancellable
   _migrate_rsync_push "${dest_user}" "${dest_host}" "${dest_port}" "${dest_ssh_key}" \
     "${source_site_path}" "${dest_site_path}"
 
@@ -598,6 +600,8 @@ function migrate_transfer_artifact() {
 ################################################################################
 
 function migrate_trigger_remote_restore() {
+
+  brolit_job_control_mark_noncancellable || return 1
 
   local dest_user="${1}"
   local dest_host="${2}"
