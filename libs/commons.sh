@@ -2117,6 +2117,84 @@ function compress() {
 # Outputs:
 #   0 if ok, 1 on error.
 ################################################################################
+# Non-interactive cron installation for a croneable task (used by
+# `runner.sh --task cron-install --subtask <kind> [-tv "<cron expression>"]`).
+#
+# Same script, schedule and wrapper as the interactive menu, but idempotent:
+# an already installed entry is a success, not an error.
+#
+# Arguments:
+#   ${1} = ${kind} - backups|optimizer|wordpress|security|uptime|disk-cleanup
+#   ${2} = ${cron_expression} - optional, 5 fields; defaults per kind
+#
+# Outputs:
+#   0 if installed or already present, 1 on invalid input or error.
+################################################################################
+
+function brolit_cronjob_install_task() {
+
+  local kind="${1}"
+  local cron_expression="${2:-}"
+
+  local script
+  local default_cron
+  local wrapper=""
+
+  case "${kind}" in
+  backups)
+    script="${BROLIT_MAIN_DIR}/cron/backups_tasks.sh"
+    default_cron="45 00 * * *"
+    # flock skips a run if the previous one is alive; timeout caps one run.
+    wrapper="/usr/bin/flock -n /var/lock/brolit_backups_tasks.lock /usr/bin/timeout 6h"
+    ;;
+  optimizer)
+    script="${BROLIT_MAIN_DIR}/cron/optimizer_tasks.sh"
+    default_cron="45 04 * * *"
+    ;;
+  wordpress)
+    script="${BROLIT_MAIN_DIR}/cron/wordpress_tasks.sh"
+    default_cron="45 23 * * *"
+    ;;
+  security)
+    script="${BROLIT_MAIN_DIR}/cron/security_tasks.sh"
+    default_cron="55 03 * * *"
+    ;;
+  uptime)
+    script="${BROLIT_MAIN_DIR}/cron/uptime_tasks.sh"
+    default_cron="45 22 * * *"
+    ;;
+  disk-cleanup)
+    script="${BROLIT_MAIN_DIR}/cron/disk_cleanup_tasks.sh"
+    default_cron="0 05 * * 0"
+    ;;
+  *)
+    log_event "error" "cron-install: unknown kind '${kind}'" "false"
+    return 1
+    ;;
+  esac
+
+  [[ -z "${cron_expression}" ]] && cron_expression="${default_cron}"
+
+  # Five whitespace-separated fields of cron characters only.
+  if [[ ! "${cron_expression}" =~ ^[0-9*/,-]+([[:space:]]+[0-9*/,-]+){4}$ ]]; then
+    log_event "error" "cron-install: invalid cron expression '${cron_expression}'" "false"
+    display --indent 2 --text "- Cron expression" --result FAIL --color RED
+    return 1
+  fi
+
+  if [[ ! -f "${script}" ]]; then
+    log_event "error" "cron-install: script not found: ${script}" "false"
+    return 1
+  fi
+
+  # brolit_cronjob_install returns 1 when the script is already scheduled, which
+  # is the desired end state here: always success once the entry exists.
+  brolit_cronjob_install "${script}" "${cron_expression}" "${wrapper}"
+  grep -qi "${script}" /var/spool/cron/crontabs/root 2>/dev/null
+
+}
+
+################################################################################
 
 ################################################################################
 # Install script on crontab

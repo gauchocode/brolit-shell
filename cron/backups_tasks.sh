@@ -422,7 +422,9 @@ if ! mail_template_assemble "${email_html_file}" "main" \
     "footer=${BROLIT_TMP_DIR}/footer-${NOW}.mail"; then
     log_event "error" "Failed to assemble email template" "false"
     display --indent 6 --text "- Assembling email template" --result "FAIL" --color RED
-    return 1
+    # Top-level script: `return` is invalid here and aborted nothing useful. The
+    # backup already ran, so send a minimal report instead of losing the notification.
+    printf '%s\n' "<p>Backup finished on ${SERVER_NAME}, but the report template could not be assembled. Check the Brolit log for details.</p>" >"${email_html_file}"
 fi
 
 # Send html to a var
