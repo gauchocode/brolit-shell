@@ -1029,8 +1029,10 @@ function _wp_config_path() {
 
     if [[ -n "${dir_to_search}" && -d "${dir_to_search}" ]]; then
 
-        # Find where wp-config.php is
-        find_output="$(find "${dir_to_search}" -name "wp-config.php" | sed 's|/[^/]*$||')"
+        # Find where wp-config.php is. A project can hold more than one (for
+        # example a copy under backups/): keep the shallowest, and the first
+        # alphabetically on a tie, so the answer is always a single directory.
+        find_output="$(find "${dir_to_search}" -name "wp-config.php" | sed 's|/[^/]*$||' | awk -F/ '{ print NF, $0 }' | sort -k1,1n -k2 | head -n 1 | cut -d' ' -f2-)"
 
         # Check if directory exists
         if [[ -d "${find_output}" ]]; then
