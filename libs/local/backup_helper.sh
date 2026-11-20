@@ -583,6 +583,62 @@ function backup_all_projects_files() {
 }
 
 ################################################################################
+# Back up the persistent Compose mounts of every Docker project
+#
+# The files pass archives each project directory, and the database pass dumps
+# the databases. A volume, or a bind mount outside the project directory, is in
+# neither. This pass covers it for the projects that have such mounts.
+#
+# Off unless BACKUPS.config[].projects[].mounts is "enabled", so it changes
+# nothing on a server until an operator turns it on. A failure is reported in
+# the files section of the report and in the exit status, and never stops the
+# other projects or the passes that already ran.
+#
+# Arguments:
+#  none
+#
+# Outputs:
+#  0 if disabled or ok, 1 if any project failed
+################################################################################
+
+function backup_all_projects_mounts() {
+
+  local working_sites_directories
+  local directory_name
+  local j
+
+  local got_error=0
+
+  project_compose_mounts_backup_enabled || return 0
+
+  # Mail section accumulators (rendered by backup_files_mail_render).
+  [[ -v BACKUP_FILES_MAIL_LIST ]] || declare -g -a BACKUP_FILES_MAIL_LIST=()
+  [[ -v BACKUP_FILES_MAIL_ERRORS ]] || declare -g -a BACKUP_FILES_MAIL_ERRORS=()
+
+  log_subsection "Backup Projects Mounts"
+
+  working_sites_directories="$(get_all_directories "${PROJECTS_PATH}")"
+
+  for j in ${working_sites_directories}; do
+
+    directory_name="$(basename "${j}")"
+
+    [[ "$(project_is_ignored "${directory_name}")" == "false" ]] || continue
+    [[ "$(project_get_install_type "${PROJECTS_PATH}/${directory_name}")" == docker* ]] || continue
+
+    project_compose_backup_mounts "${directory_name}"
+    if [[ $? -ne 0 ]]; then
+      got_error=1
+      BACKUP_FILES_MAIL_ERRORS+=("${directory_name} (mounts)")
+    fi
+
+  done
+
+  return ${got_error}
+
+}
+
+################################################################################
 # Make all files Backup
 #
 # Arguments:
@@ -607,6 +663,10 @@ function backup_all_files() {
 
   ## PROJECTS FILES
   backup_all_projects_files
+  [[ $? -ne 0 ]] && got_error=1
+
+  ## PROJECTS MOUNTS (Docker volumes and binds outside the project directory)
+  backup_all_projects_mounts
   [[ $? -ne 0 ]] && got_error=1
 
   ## ADDITIONAL DIRS
@@ -2029,6 +2089,15 @@ function backup_project() {
       exitstatus=$?
       if [[ ${exitstatus} -ne 0 ]]; then
         got_error=1
+      fi
+
+      # Persistent mounts the files backup and the database dump do not cover.
+      # Off unless the server enables it. Never during a deletion: that path has
+      # its own verified mount archive, and the project is about to be removed.
+      if [[ "${backup_purpose}" != "deletion" ]] && project_compose_mounts_backup_enabled; then
+        log_subsection "Backup Project Mounts"
+        project_compose_backup_mounts "${project_domain}"
+        [[ $? -ne 0 ]] && got_error=1
       fi
 
     fi

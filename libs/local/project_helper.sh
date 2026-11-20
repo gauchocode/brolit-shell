@@ -4499,3 +4499,469 @@ function project_post_install_tasks() {
   fi
 
 }
+
+################################################################################
+# Nightly backup of persistent Compose mounts
+#
+# A files backup archives the project directory and a database dump covers the
+# databases. A named volume, or a bind mount that resolves outside the project,
+# is in neither, so the nightly backup could report success while that data had
+# no copy (found on tukiverse.com and tukigrowth.com, 2026-11-19).
+#
+# This is the scheduled counterpart of the deletion-time archive above, and it
+# reuses the same primitives (the coverage gate, compress, the storage
+# controller). What differs, on purpose:
+#   - it never stops or pauses a container: consistency comes from a strict tar
+#     pass that is retried, and a store too busy for a clean pass is recorded as
+#     "live" instead of being hidden;
+#   - it has its own remote directory and follows the project's retention. The
+#     deletion archives are kept outside retention and are never touched;
+#   - it is off unless BACKUPS.config[].projects[].mounts is "enabled".
+################################################################################
+
+################################################################################
+# Is the nightly mounts backup enabled?
+#
+# Absent or anything other than "enabled" means off, so a server whose
+# configuration predates the key keeps its current behavior.
+#
+# Outputs:
+#   0 if enabled, 1 otherwise.
+################################################################################
+function project_compose_mounts_backup_enabled() {
+  [[ "${BACKUP_CONFIG_MOUNTS:-disabled}" == "enabled" ]]
+}
+
+################################################################################
+# Is this mount the data directory of a database that brolit dumps?
+#
+# Mirrors docker_list_project_databases (libs/apps/docker_helper.sh), the code
+# that decides which databases are dumped: the last path segment of the image
+# must be mysql/mariadb or postgres/postgresql/timescaledb AND the service must
+# mount the engine's data directory. Redis, Valkey, Mongo and a database's other
+# volumes are not dumped, so their data is not covered and must be archived.
+#
+# Arguments:
+#   ${1} = image reference
+#   ${2} = destination path inside the container
+#
+# Outputs:
+#   0 if the mount is dumped database data, 1 otherwise.
+################################################################################
+function project_compose_is_dumped_database_mount() {
+  local image="${1}" destination="${2}" repository
+
+  [[ -n "${image}" && -n "${destination}" ]] || return 1
+
+  repository="${image%%@*}"
+  repository="${repository##*/}"
+  repository="${repository%%:*}"
+  repository="${repository,,}"
+
+  case "${repository}" in
+    mysql | mariadb)
+      [[ "${destination}" =~ ^/var/lib/mysql ]] && return 0
+      ;;
+    postgres | postgresql | timescaledb)
+      [[ "${destination}" =~ ^/var/lib/postgresql ]] && return 0
+      ;;
+  esac
+
+  return 1
+}
+
+################################################################################
+# Every mount of the containers related to a project, one JSON object per line:
+# {project, type, source, destination, image, optout, resolved}.
+#
+# `source` is the volume name for a volume and the declared path for a bind;
+# `resolved` is the real path of a bind. Only mount fields, the image and the
+# brolit.backup label are read: never the environment, the command or any other
+# container configuration, because those can carry credentials.
+#
+# Arguments:
+#   ${1} = existing project directory
+#
+# Outputs:
+#   JSON lines on success; nonzero if the runtime inspection is incomplete.
+################################################################################
+function project_compose_mount_details() {
+  local project_dir ids id record records='' mounts_jsonl line resolved
+
+  project_dir="$(realpath -e -- "${1}" 2>/dev/null)" || return 1
+  [[ -d "${project_dir}" && "${project_dir}" != "/" ]] || return 1
+  command -v docker >/dev/null 2>&1 && command -v jq >/dev/null 2>&1 || return 1
+
+  ids="$(docker ps --all --quiet --no-trunc 2>/dev/null)" || return 1
+  while IFS= read -r id; do
+    [[ -z "${id}" ]] && continue
+    [[ "${id}" =~ ^[a-f0-9]{12,64}$ ]] || return 1
+    record="$(docker inspect --format '{"project":{{json (index .Config.Labels "com.docker.compose.project")}},"working_dir":{{json (index .Config.Labels "com.docker.compose.project.working_dir")}},"image":{{json .Config.Image}},"optout":{{json (index .Config.Labels "brolit.backup")}},"mounts":{{json .Mounts}}}' "${id}" 2>/dev/null)" || return 1
+    [[ -n "${record}" ]] || return 1
+    records+="${record}"$'\n'
+  done <<<"${ids}"
+
+  mounts_jsonl="$(printf '%s' "${records}" | jq -c --arg dir "${project_dir}" '
+    def within($root): . == $root or startswith($root + "/");
+    def related:
+      (if (.working_dir | type) == "string" then (.working_dir | within($dir)) else false end)
+      or any(.mounts[]?; .Type == "bind" and ((.Source | type) == "string") and (.Source | within($dir)));
+    select(related) | . as $c | .mounts[]? |
+    {
+      project: ($c.project // ""),
+      type: .Type,
+      source: (if .Type == "volume" then (.Name // "") else (.Source // "") end),
+      destination: (.Destination // ""),
+      image: ($c.image // ""),
+      optout: ($c.optout // "")
+    }' 2>/dev/null)" || return 1
+
+  while IFS= read -r line; do
+    [[ -n "${line}" ]] || continue
+    resolved=""
+    if [[ "$(printf '%s' "${line}" | jq -r '.type')" == "bind" ]]; then
+      resolved="$(realpath -e -- "$(printf '%s' "${line}" | jq -r '.source')" 2>/dev/null)" || resolved=""
+    fi
+    printf '%s' "${line}" | jq -c --arg resolved "${resolved}" '. + {resolved: $resolved}' || return 1
+  done <<<"${mounts_jsonl}"
+
+  return 0
+}
+
+################################################################################
+# Archive one mount as a consistent snapshot without touching any container.
+#
+# tar exits with status 1 when a file changed while it was read, which is
+# exactly the signal that the copy may be inconsistent. A pass without that
+# warning read files that did not change, so it is a consistent snapshot of a
+# file based store (SQLite with its WAL included). Up to
+# BROLIT_MOUNTS_BACKUP_ATTEMPTS strict passes are tried; if every one sees a
+# change, a last tolerant pass keeps the archive and the result is labelled
+# "live": a crash-consistent copy, weaker evidence, never reported as consistent.
+#
+# SQLite's shared-memory index (*-shm) is excluded: readers update it even when
+# no data changes, which would raise false "changed" warnings, and SQLite
+# rebuilds it from the WAL when the database is opened.
+#
+# Arguments:
+#   ${1} = absolute path of the directory to archive
+#   ${2} = archive path
+#
+# Outputs:
+#   "<size>|<consistent|live>|<attempts>" on stdout; 0 on success, 1 on failure.
+#   A failed archive leaves no partial file behind.
+################################################################################
+function project_compose_archive_mount_snapshot() {
+  local archive_source="${1}" archive_path="${2}"
+  local attempt=0 max_attempts="${BROLIT_MOUNTS_BACKUP_ATTEMPTS:-3}" archive_size
+  local -a exclude_args=("--exclude=*.db-shm" "--exclude=*.sqlite-shm" "--exclude=*.sqlite3-shm")
+
+  [[ -n "${archive_source}" && "${archive_source}" == /* && "${archive_source}" != "/" ]] || return 1
+  [[ -n "${archive_path}" ]] || return 1
+  [[ "${max_attempts}" =~ ^[1-9][0-9]*$ ]] || max_attempts=3
+
+  while [[ ${attempt} -lt ${max_attempts} ]]; do
+    attempt=$((attempt + 1))
+    if archive_size="$(BROLIT_STRICT_TAR=1 compress "/" "${archive_source#/}" "${archive_path}" "${exclude_args[@]}")" &&
+      [[ -s "${archive_path}" ]]; then
+      printf '%s|consistent|%s\n' "${archive_size}" "${attempt}"
+      return 0
+    fi
+    rm --force -- "${archive_path}"
+    [[ ${attempt} -lt ${max_attempts} ]] && sleep "${BROLIT_MOUNTS_RETRY_SLEEP:-3}"
+  done
+
+  # Every strict pass failed. Either the store is busy or tar failed for a real
+  # reason; a tolerant pass tells them apart.
+  if archive_size="$(compress "/" "${archive_source#/}" "${archive_path}" "${exclude_args[@]}")" &&
+    [[ -s "${archive_path}" ]]; then
+    printf '%s|live|%s\n' "${archive_size}" "$((attempt + 1))"
+    return 0
+  fi
+
+  rm --force -- "${archive_path}"
+  return 1
+}
+
+################################################################################
+# Back up the persistent mounts of a Compose project that the files backup and
+# the database dumps do not cover.
+#
+# Selection starts from the coverage gate (project_compose_mount_coverage), the
+# same classifier the deletion path trusts, and drops, recording each reason in
+# the manifest: sockets, sources that do not exist, the data directory of a
+# database that is dumped, mounts labelled brolit.backup=false and mounts above
+# BROLIT_MOUNTS_BACKUP_MAX_MB (default 2048). Each mount gets its own remote
+# directory: retention keeps the newest N files of a directory as a whole, so
+# archives sharing one directory would delete each other.
+#
+# A failure never prevents the files and database backups that already ran, and
+# it never stops a container. Any mount that could not be archived, or whose
+# coverage could not be established, makes the result a failure so the project
+# backup is reported as partial.
+#
+# Arguments:
+#   ${1} = project domain
+#
+# Outputs:
+#   0 if disabled, nothing to back up, or everything was archived; 1 otherwise.
+################################################################################
+function project_compose_backup_mounts() {
+  local project_domain="${1}" work_dir rc
+
+  project_compose_mounts_backup_enabled || return 0
+
+  [[ -n "${project_domain}" && -d "${PROJECTS_PATH}/${project_domain}" ]] || return 1
+  [[ -n "${BROLIT_TMP_DIR:-}" && -n "${NOW:-}" && -n "${SERVER_NAME:-}" ]] || return 1
+  if ! { command -v docker >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; }; then
+    log_event "error" "Mounts backup for ${project_domain} skipped: docker or jq is not available" "false"
+    return 1
+  fi
+
+  work_dir="${BROLIT_TMP_DIR}/${NOW}/mounts-daily-${project_domain}"
+  rm --recursive --force -- "${work_dir}"
+  mkdir --parents -- "${work_dir}" || return 1
+
+  _project_compose_backup_mounts_run "${project_domain}" "${PROJECTS_PATH}/${project_domain}" "${work_dir}"
+  rc=$?
+
+  rm --recursive --force -- "${work_dir}"
+  return ${rc}
+}
+
+# Body of project_compose_backup_mounts; split so the work directory is always
+# removed, whatever the path out of the loop.
+function _project_compose_backup_mounts_run() {
+  local project_domain="${1}" project_dir="${2}" work_dir="${3}"
+  local gate_output gate_rc details item kind source destination normalized_kind identity
+  local matches skip_reason volume_optout mountpoint archive_source image_destination image_ref
+  local size_kb max_mb safe_name mount_id mount_dir archive_name archive_path snapshot
+  local archive_size consistency attempts local_hash archive_bytes remote_root remote_mount_dir
+  local manifest_file manifest_name manifest_json parent_dir
+  local failures=0 archived=0 skipped=0
+  local -A seen=()
+  local -a manifest_items=() manifest_skipped=()
+
+  remote_root="${SERVER_NAME}/projects-online/site-mounts-daily/${project_domain}"
+  max_mb="${BROLIT_MOUNTS_BACKUP_MAX_MB:-2048}"
+  [[ "${max_mb}" =~ ^[0-9]+$ ]] || max_mb=2048
+
+  gate_output="$(project_compose_mount_coverage "${project_dir}" json)"
+  gate_rc=$?
+  case ${gate_rc} in
+    0)
+      log_event "info" "Mounts backup for ${project_domain}: no persistent mount outside the project directory" "false"
+      return 0
+      ;;
+    1) ;;
+    *)
+      log_event "error" "Mounts backup for ${project_domain}: coverage could not be established, nothing was archived" "false"
+      display --indent 6 --text "- Mounts backup for ${project_domain}" --result "FAIL" --color RED
+      return 1
+      ;;
+  esac
+
+  # Without the details the dump and opt-out rules cannot be applied. Archiving
+  # more is the safe direction (the size cap still bounds it), so go on.
+  if ! details="$(project_compose_mount_details "${project_dir}")"; then
+    details=""
+    log_event "warning" "Mounts backup for ${project_domain}: mount details unavailable, database and opt-out rules not applied" "false"
+  fi
+
+  display --indent 6 --text "- Mounts backup for ${YELLOW}${project_domain}${ENDCOLOR}"
+
+  while IFS= read -r item; do
+    [[ -n "${item}" ]] || continue
+
+    printf '%s' "${item}" | jq -e '
+      type == "object" and (keys == ["destination","kind","source"]) and
+      (.kind | type == "string" and length > 0) and
+      (.source | type == "string" and length > 0) and
+      (.destination | type == "string" and length > 0)' >/dev/null 2>&1 || {
+      log_event "error" "Mounts backup for ${project_domain}: malformed coverage record" "false"
+      failures=$((failures + 1))
+      continue
+    }
+
+    kind="$(printf '%s' "${item}" | jq -r '.kind')"
+    source="$(printf '%s' "${item}" | jq -r '.source')"
+    destination="$(printf '%s' "${item}" | jq -r '.destination')"
+    normalized_kind="${kind}"
+    [[ "${kind}" == "volume-namespace" ]] && normalized_kind="volume"
+
+    # One identity is archived once, even if the gate saw it on several
+    # containers or reported it both by mount and by Compose namespace.
+    identity="${normalized_kind}:${source}"
+    [[ -n "${seen[${identity}]:-}" ]] && continue
+    seen[${identity}]=1
+
+    skip_reason=""
+    mountpoint=""
+    archive_source="${source}"
+
+    case "${normalized_kind}" in
+      volume | bind) ;;
+      bind-unresolved)
+        skip_reason="unresolvable"
+        failures=$((failures + 1))
+        ;;
+      *)
+        skip_reason="unsupported_kind"
+        failures=$((failures + 1))
+        ;;
+    esac
+
+    if [[ -z "${skip_reason}" && "${normalized_kind}" == "bind" ]]; then
+      if [[ -S "${source}" ]]; then
+        skip_reason="socket"
+      elif [[ ! -e "${source}" && ! -L "${source}" ]]; then
+        skip_reason="source_missing"
+      fi
+    fi
+
+    # What the mount belongs to: the containers that mount it, from the details.
+    matches=""
+    if [[ -z "${skip_reason}" && -n "${details}" ]]; then
+      matches="$(printf '%s\n' "${details}" | jq -c --arg kind "${normalized_kind}" --arg source "${source}" \
+        'select(.type == $kind and (.source == $source or (.resolved // "") == $source))' 2>/dev/null)"
+    fi
+
+    if [[ -z "${skip_reason}" && -n "${matches}" ]]; then
+      if printf '%s\n' "${matches}" | jq -e 'select(.optout == "false")' >/dev/null 2>&1; then
+        skip_reason="opted_out"
+      else
+        while IFS=$'\t' read -r image_ref image_destination; do
+          if project_compose_is_dumped_database_mount "${image_ref}" "${image_destination}"; then
+            skip_reason="database_dump"
+            break
+          fi
+        done < <(printf '%s\n' "${matches}" | jq -r '[.image, .destination] | @tsv')
+      fi
+    fi
+
+    if [[ -z "${skip_reason}" && "${normalized_kind}" == "volume" ]]; then
+      volume_optout="$(docker volume inspect --format '{{index .Labels "brolit.backup"}}' "${source}" 2>/dev/null)"
+      [[ "${volume_optout}" == "false" ]] && skip_reason="opted_out"
+    fi
+
+    if [[ -z "${skip_reason}" && "${normalized_kind}" == "volume" ]]; then
+      mountpoint="$(docker volume inspect --format '{{.Mountpoint}}' "${source}" 2>/dev/null)"
+      if [[ -n "${mountpoint}" && "${mountpoint}" == /* && "${mountpoint}" != "/" && -d "${mountpoint}" ]]; then
+        archive_source="${mountpoint}"
+      else
+        skip_reason="mountpoint_unavailable"
+        failures=$((failures + 1))
+      fi
+    fi
+
+    # Size guard. An archive that would fill the disk is the failure this
+    # tool's history knows (2026-11-08 and 2026-11-11); compress has its own
+    # free-space guard, this one keeps a huge volume out of a nightly run.
+    if [[ -z "${skip_reason}" ]]; then
+      size_kb="$(timeout 120 du --summarize --block-size=1K -- "${archive_source}" 2>/dev/null | cut -f1)"
+      if [[ ! "${size_kb}" =~ ^[0-9]+$ ]]; then
+        skip_reason="size_unknown"
+        failures=$((failures + 1))
+      elif [[ $((size_kb / 1024)) -gt ${max_mb} ]]; then
+        skip_reason="too_large"
+      fi
+    fi
+
+    if [[ -n "${skip_reason}" ]]; then
+      skipped=$((skipped + 1))
+      log_event "info" "Mounts backup for ${project_domain}: skipped a ${normalized_kind} mount (${skip_reason})" "false"
+      manifest_skipped+=("$(jq -n -c --arg kind "${normalized_kind}" --arg source "${source}" --arg destination "${destination}" --arg reason "${skip_reason}" \
+        '{kind:$kind,source:$source,destination:$destination,reason:$reason}')")
+      continue
+    fi
+
+    safe_name="$(project_compose_sanitize_name "$(basename -- "${source}")")" || {
+      failures=$((failures + 1))
+      continue
+    }
+    # Distinct mounts may share a basename; identity is part of the name.
+    mount_id="$(printf '%s' "${identity}" | sha256sum | cut -c1-12)"
+    mount_dir="${safe_name}-${mount_id}"
+    archive_name="$(backup_get_filename "${project_domain}_mount-${mount_dir}" "${BACKUP_CONFIG_COMPRESSION_EXTENSION}")" || {
+      failures=$((failures + 1))
+      continue
+    }
+    archive_path="${work_dir}/${archive_name}"
+
+    if ! snapshot="$(project_compose_archive_mount_snapshot "${archive_source}" "${archive_path}")"; then
+      log_event "error" "Mounts backup for ${project_domain}: could not archive a ${normalized_kind} mount" "false"
+      failures=$((failures + 1))
+      manifest_skipped+=("$(jq -n -c --arg kind "${normalized_kind}" --arg source "${source}" --arg destination "${destination}" --arg reason "archive_failed" \
+        '{kind:$kind,source:$source,destination:$destination,reason:$reason}')")
+      continue
+    fi
+    IFS='|' read -r archive_size consistency attempts <<<"${snapshot}"
+
+    # One directory per mount: retention treats a directory as one series.
+    remote_mount_dir="${remote_root}/${mount_dir}"
+    for parent_dir in "${SERVER_NAME}" "${SERVER_NAME}/projects-online" "${SERVER_NAME}/projects-online/site-mounts-daily" "${remote_root}" "${remote_mount_dir}"; do
+      storage_create_dir "${parent_dir}"
+    done
+
+    if storage_upload_backup "${archive_path}" "${remote_mount_dir}" "${archive_size}" >/dev/null; then
+      archived=$((archived + 1))
+      local_hash="$(sha256sum "${archive_path}" | awk '{print $1}')"
+      archive_bytes="$(stat --format=%s "${archive_path}")"
+      manifest_items+=("$(jq -n -c \
+        --arg kind "${normalized_kind}" --arg source "${source}" --arg destination "${destination}" \
+        --arg archive "${archive_name}" --arg remote "${remote_mount_dir}/${archive_name}" \
+        --arg sha256 "${local_hash}" --argjson bytes "${archive_bytes}" \
+        --arg consistency "${consistency}" --argjson attempts "${attempts}" \
+        '{kind:$kind,source:$source,destination:$destination,archive:$archive,remote:$remote,sha256:$sha256,bytes:$bytes,consistency:$consistency,attempts:$attempts}')")
+      log_event "info" "Mounts backup for ${project_domain}: archived a ${normalized_kind} mount (${consistency}, attempt ${attempts})" "false"
+    else
+      failures=$((failures + 1))
+      log_event "error" "Mounts backup for ${project_domain}: upload failed for a ${normalized_kind} mount" "false"
+      manifest_skipped+=("$(jq -n -c --arg kind "${normalized_kind}" --arg source "${source}" --arg destination "${destination}" --arg reason "upload_failed" \
+        '{kind:$kind,source:$source,destination:$destination,reason:$reason}')")
+    fi
+
+    # Retention runs even when the upload failed: removing the oldest remote
+    # archives is what frees quota so the next attempt can succeed.
+    storage_delete_old_backups "${remote_mount_dir}"
+    [[ $? -ne 0 ]] && log_event "error" "Retention cleanup failed for mounts backup: ${project_domain}" "false"
+
+    rm --force -- "${archive_path}"
+  done <<<"${gate_output}"
+
+  # The manifest says what was archived, how consistently, and what was left
+  # out and why. It lives in its own directory for the same retention reason.
+  manifest_name="$(backup_get_filename "${project_domain}_mounts-manifest" "json")"
+  manifest_file="${work_dir}/${manifest_name}"
+  manifest_json="$(jq -n -c \
+    --arg domain "${project_domain}" --arg generated_at "$(date --utc +%Y-%m-%dT%H:%M:%SZ)" \
+    --arg shell_version "${BROLIT_VERSION:-unknown}" --argjson failures "${failures}" \
+    --argjson items "$(printf '%s' "$(printf '%s\n' "${manifest_items[@]}")" | jq -s '.')" \
+    --argjson skipped "$(printf '%s' "$(printf '%s\n' "${manifest_skipped[@]}")" | jq -s '.')" \
+    '{schema_version:1,domain:$domain,generated_at:$generated_at,shell_version:$shell_version,failures:$failures,items:$items,skipped:$skipped}')" || {
+    log_event "error" "Mounts backup for ${project_domain}: could not build the manifest" "false"
+    return 1
+  }
+  printf '%s\n' "${manifest_json}" >"${manifest_file}"
+
+  for parent_dir in "${SERVER_NAME}" "${SERVER_NAME}/projects-online" "${SERVER_NAME}/projects-online/site-mounts-daily" "${remote_root}" "${remote_root}/manifest"; do
+    storage_create_dir "${parent_dir}"
+  done
+  if storage_upload_backup "${manifest_file}" "${remote_root}/manifest" "1K" >/dev/null; then
+    storage_delete_old_backups "${remote_root}/manifest"
+  else
+    log_event "error" "Mounts backup for ${project_domain}: manifest upload failed" "false"
+    failures=$((failures + 1))
+  fi
+  rm --force -- "${manifest_file}"
+
+  if [[ ${failures} -eq 0 ]]; then
+    display --indent 6 --text "- Mounts backup for ${YELLOW}${project_domain}${ENDCOLOR}" --result "DONE" --color GREEN
+    display --indent 8 --text "Archived: ${archived}, skipped: ${skipped}" --tcolor GREEN
+    return 0
+  fi
+
+  display --indent 6 --text "- Mounts backup for ${YELLOW}${project_domain}${ENDCOLOR}" --result "FAIL" --color RED
+  display --indent 8 --text "Archived: ${archived}, skipped: ${skipped}, failed: ${failures}" --tcolor RED
+  return 1
+}

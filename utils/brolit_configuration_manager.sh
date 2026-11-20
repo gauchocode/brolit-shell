@@ -388,6 +388,7 @@ function _brolit_configuration_load_backup_config() {
     declare -g BACKUP_CONFIG_SERVER_CFG_STATUS
     declare -g BACKUP_CONFIG_ADDITIONAL_DIRS
     declare -g BACKUP_CONFIG_FOLLOW_SYMLINKS
+    declare -g BACKUP_CONFIG_MOUNTS
     declare -g BACKUP_CONFIG_COMPRESSION_TEST
     declare -g BACKUP_CONFIG_COMPRESSION_TYPE
     declare -g BACKUP_CONFIG_COMPRESSION_LEVEL
@@ -403,6 +404,10 @@ function _brolit_configuration_load_backup_config() {
     [[ -z ${BACKUP_CONFIG_PROJECTS_STATUS} ]] && die "Error reading BACKUP_CONFIG_PROJECTS_STATUS from server config file."
 
     BACKUP_CONFIG_FOLLOW_SYMLINKS="$(json_read_field "${server_config_file}" "BACKUPS.config[].projects[].follow_symlinks")"
+    # Optional: "enabled" turns on the nightly backup of Compose mounts that the
+    # files backup does not cover. Absent (every configuration written before
+    # this key existed) means off.
+    BACKUP_CONFIG_MOUNTS="$(json_read_field "${server_config_file}" "BACKUPS.config[].projects[].mounts")"
     IGNORED_PROJECTS_LIST="$(json_read_field "${server_config_file}" "BACKUPS.config[].projects[].ignored[]")"
     EXCLUDED_FILES_LIST="$(json_read_field "${server_config_file}" "BACKUPS.config[].projects[].excluded_on_tar[]")"
 
@@ -450,7 +455,7 @@ function _brolit_configuration_load_backup_config() {
     BACKUP_CONFIG_COMPRESSION_TEST="$(json_read_field "${server_config_file}" "BACKUPS.config[].compression[].test")"
 
     export BACKUP_CONFIG_PROJECTS_STATUS BACKUP_CONFIG_DATABASES_STATUS BACKUP_CONFIG_SERVER_CFG_STATUS BACKUP_CONFIG_ADDITIONAL_DIRS
-    export BACKUP_CONFIG_FOLLOW_SYMLINKS BACKUP_CONFIG_COMPRESSION_TYPE BACKUP_CONFIG_COMPRESSION_EXTENSION BACKUP_CONFIG_COMPRESSION_LEVEL BACKUP_CONFIG_COMPRESSION_CORES
+    export BACKUP_CONFIG_FOLLOW_SYMLINKS BACKUP_CONFIG_MOUNTS BACKUP_CONFIG_COMPRESSION_TYPE BACKUP_CONFIG_COMPRESSION_EXTENSION BACKUP_CONFIG_COMPRESSION_LEVEL BACKUP_CONFIG_COMPRESSION_CORES
     export BACKUP_CONFIG_COMPRESSION_TEST IGNORED_PROJECTS_LIST EXCLUDED_FILES_LIST EXCLUDED_DATABASES_LIST
 
 }

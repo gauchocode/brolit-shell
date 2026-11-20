@@ -39,6 +39,7 @@ function tests_suite_menu() {
     "26)" "RUN COMPOSE MOUNT COVERAGE TESTS"
     "27)" "RUN BACKUP PROGRESS TESTS"
     "28)" "RUN COMPOSE MOUNT BACKUP TESTS"
+    "29)" "RUN NIGHTLY COMPOSE MOUNT BACKUP TESTS"
   )
 
   chosen_tests_options=$(whiptail --title "TESTS SUITE" --menu " " 20 78 10 "${tests_options[@]}" 3>&1 1>&2 2>&3)
@@ -106,6 +107,10 @@ function tests_suite_menu() {
       }
       test_compose_deletion_mount_backup || {
         log_event "error" "Compose mount backup tests failed" "false"
+        return 1
+      }
+      test_backup_project_mounts || {
+        log_event "error" "Nightly compose mount backup tests failed" "false"
         return 1
       }
     fi
@@ -241,6 +246,12 @@ function tests_suite_menu() {
     if [[ ${chosen_tests_options} == *"28"* ]]; then
       test_compose_deletion_mount_backup || {
         log_event "error" "Compose mount backup tests failed" "false"
+        return 1
+      }
+    fi
+    if [[ ${chosen_tests_options} == *"29"* ]]; then
+      test_backup_project_mounts || {
+        log_event "error" "Nightly compose mount backup tests failed" "false"
         return 1
       }
     fi
