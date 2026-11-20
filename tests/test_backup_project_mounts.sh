@@ -83,6 +83,7 @@ function pbm_setup() {
   export BROLIT_MOUNTS_RETRY_SLEEP=0
   export BROLIT_MOUNTS_BACKUP_MAX_MB=1
   export BACKUP_CONFIG_MOUNTS="enabled"
+  export BROLIT_MAIN_DIR="${PBM_TMP}/main"
   export FAKE_RECORDS="${PBM_TMP}/records"
   export FAKE_IDS="${PBM_TMP}/ids"
   export FAKE_VOLUME_ROOT="${PBM_TMP}/volumes"
@@ -96,6 +97,8 @@ function pbm_setup() {
   export FAKE_BROKEN_INSPECT=0
   export FAKE_COMPRESS_ALWAYS_FAIL=0
 
+  mkdir -p "${PBM_TMP}/main/release"
+  printf '# release metadata\nBROLIT_RELEASE_VERSION="3.14.99"\nBROLIT_REPORT_PROTOCOL_VERSION="1"\n' >"${PBM_TMP}/main/release/version.env"
   mkdir -p "${PROJECTS_PATH}/site.example.com/uploads" "${BROLIT_TMP_DIR}/${NOW}" "${FAKE_RECORDS}" \
     "${FAKE_VOLUME_ROOT}" "${FAKE_REMOTE_ROOT}" "${PBM_TMP}/outside/emdash" "${PBM_TMP}/bin"
   : >"${PROJECTS_PATH}/site.example.com/docker-compose.yml"
@@ -206,7 +209,7 @@ function pbm_teardown() {
   [[ -n "${PBM_SOCKET_PID:-}" ]] && kill "${PBM_SOCKET_PID}" 2>/dev/null
   PBM_SOCKET_PID=""
   rm -rf -- "${PBM_TMP}"
-  unset BACKUP_CONFIG_MOUNTS FAKE_BROKEN_INSPECT FAKE_UPLOAD_FAIL FAKE_COMPRESS_ALWAYS_FAIL BROLIT_MOUNTS_BACKUP_MAX_MB
+  unset BACKUP_CONFIG_MOUNTS BROLIT_MAIN_DIR FAKE_BROKEN_INSPECT FAKE_UPLOAD_FAIL FAKE_COMPRESS_ALWAYS_FAIL BROLIT_MOUNTS_BACKUP_MAX_MB
 }
 
 # The scenario: one app container with an in-project bind (covered), an
@@ -269,6 +272,19 @@ TABLE
   project_compose_is_dumped_database_mount "mysql:8" "" && pbm_fail "empty destination accepted"
 }
 
+function test_shell_version_source() {
+  pbm_setup
+  [[ "$(project_compose_shell_version)" == "3.14.99" ]] || pbm_fail "version: not read from release/version.env"
+  printf 'BROLIT_RELEASE_VERSION=3.15.0\n' >"${BROLIT_MAIN_DIR}/release/version.env"
+  [[ "$(project_compose_shell_version)" == "3.15.0" ]] || pbm_fail "version: an unquoted value was not read"
+  printf 'garbage\n' >"${BROLIT_MAIN_DIR}/release/version.env"
+  [[ "$(project_compose_shell_version)" == "unknown" ]] || pbm_fail "version: garbage was not reported as unknown"
+  rm -f "${BROLIT_MAIN_DIR}/release/version.env"
+  [[ "$(project_compose_shell_version)" == "unknown" ]] || pbm_fail "version: a missing file was not reported as unknown"
+  BROLIT_MAIN_DIR="" project_compose_shell_version | grep -qx unknown || pbm_fail "version: an unset main dir was not reported as unknown"
+  pbm_teardown
+}
+
 function test_flag_off_by_default() {
   pbm_setup
   pbm_scenario
@@ -314,6 +330,7 @@ function test_full_scenario() {
 
   # Manifest metadata and per-archive evidence.
   [[ "$(jq -r '.schema_version' "${manifest}")" == "1" ]] || pbm_fail "scenario: manifest schema version"
+  [[ "$(jq -r '.shell_version' "${manifest}")" == "3.14.99" ]] || pbm_fail "scenario: manifest shell version was $(jq -r '.shell_version' "${manifest}")"
   [[ "$(jq -r '.domain' "${manifest}")" == "site.example.com" ]] || pbm_fail "scenario: manifest domain"
   [[ "$(jq -r '.failures' "${manifest}")" == "0" ]] || pbm_fail "scenario: manifest failures"
   local item remote_path expected_hash actual_hash
@@ -493,6 +510,7 @@ function test_backup_project_mounts() {
   PBM_FAILED=0
 
   test_dumped_database_rule
+  test_shell_version_source
   test_flag_off_by_default
   test_full_scenario
   test_busy_store_is_kept_and_labelled_live

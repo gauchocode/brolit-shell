@@ -4629,6 +4629,25 @@ function project_compose_mount_details() {
 }
 
 ################################################################################
+# Version of the running shell, read from release/version.env.
+#
+# SCRIPT_V is a stale constant and BROLIT_VERSION exists only in brolit_lite.sh,
+# so the release file is the one source that is right on a staged install.
+#
+# Outputs:
+#   The version (for example 3.14.24), or "unknown".
+################################################################################
+function project_compose_shell_version() {
+  local version=""
+
+  if [[ -n "${BROLIT_MAIN_DIR:-}" && -f "${BROLIT_MAIN_DIR}/release/version.env" ]]; then
+    version="$(sed -n 's/^BROLIT_RELEASE_VERSION="\{0,1\}\([0-9][0-9.]*\)"\{0,1\}[[:space:]]*$/\1/p' "${BROLIT_MAIN_DIR}/release/version.env" | head -n 1)"
+  fi
+
+  printf '%s\n' "${version:-unknown}"
+}
+
+################################################################################
 # Archive one mount as a consistent snapshot without touching any container.
 #
 # tar exits with status 1 when a file changed while it was read, which is
@@ -4935,7 +4954,7 @@ function _project_compose_backup_mounts_run() {
   manifest_file="${work_dir}/${manifest_name}"
   manifest_json="$(jq -n -c \
     --arg domain "${project_domain}" --arg generated_at "$(date --utc +%Y-%m-%dT%H:%M:%SZ)" \
-    --arg shell_version "${BROLIT_VERSION:-unknown}" --argjson failures "${failures}" \
+    --arg shell_version "$(project_compose_shell_version)" --argjson failures "${failures}" \
     --argjson items "$(printf '%s' "$(printf '%s\n' "${manifest_items[@]}")" | jq -s '.')" \
     --argjson skipped "$(printf '%s' "$(printf '%s\n' "${manifest_skipped[@]}")" | jq -s '.')" \
     '{schema_version:1,domain:$domain,generated_at:$generated_at,shell_version:$shell_version,failures:$failures,items:$items,skipped:$skipped}')" || {
