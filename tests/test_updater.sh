@@ -191,6 +191,17 @@ git -C "${t}" show v1.1.0:updater.sh >"${TMP}/boot-updater.sh"
 out="$(bash "${TMP}/boot-updater.sh" update v1.1.0 --root "${t}" 2>&1)"; rc=$?
 [[ ${rc} -eq 0 && "$(git -C "${t}" rev-parse HEAD)" == "$(git -C "${SEED}" rev-parse v1.1.0^{commit})" ]] || fail "bootstrap from the tag's updater failed (rc=${rc}): ${out}"
 
+# 21. a stale local tag that differs from the remote does not block an update of
+#     another tag (a real host carried an old v3.2-RC3 that GitHub had moved)
+git -C "${SEED}" tag -a v0.1.0 -m old "$(git -C "${SEED}" rev-parse v1.0.0^{commit})"; git -C "${SEED}" push -q origin v0.1.0
+t="$(new_tree stale)"
+git -C "${t}" tag -f v0.1.0 "$(git -C "${t}" rev-parse HEAD)" >/dev/null   # lightweight, differs from the annotated remote tag
+git -C "${t}" fetch --tags origin >/dev/null 2>&1 && fail "setup: the stale tag should make a plain 'fetch --tags' fail"
+out="$("${t}/updater.sh" update v1.1.0 2>&1)"; rc=$?
+[[ ${rc} -eq 0 && "$(result "${out}")" == "updated" ]] || fail "a stale unrelated tag blocked the update (rc=${rc}): ${out}"
+out="$("${t}/updater.sh" status --fetch 2>&1)"; rc=$?
+[[ ${rc} -eq 0 ]] || fail "status --fetch must tolerate a stale tag (rc=${rc}): ${out}"
+
 # 20. a tag moved upstream (last: it re-points v1.1.0 in the origin for good) makes the fetch fail instead of changing the release
 t="$(new_tree moved)"
 "${t}/updater.sh" update v1.1.0 >/dev/null 2>&1 || fail "setup update failed"

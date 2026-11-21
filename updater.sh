@@ -179,7 +179,9 @@ function require_clean_tree() {
 ################################################################################
 function cmd_status() {
   if [[ "${1:-}" == "fetch" ]]; then
-    git -C "${ROOT_DIR}" fetch --tags --quiet "${REMOTE}" || { echo "updater: fetch failed" >&2; exit 5; }
+    git -C "${ROOT_DIR}" fetch --quiet "${REMOTE}" || { echo "updater: fetch failed" >&2; exit 5; }
+    # Stale local tags that differ from the remote are reported by git and skipped.
+    git -C "${ROOT_DIR}" fetch --quiet --tags "${REMOTE}" 2>/dev/null || echo "updater: some local tags differ from the remote and were not updated" >&2
   fi
   local head version
   head="$(git -C "${ROOT_DIR}" rev-parse HEAD 2>/dev/null || true)"
@@ -221,19 +223,42 @@ function move_tree() {
   local previous commit declared
   previous="$(git -C "${ROOT_DIR}" rev-parse HEAD)"
 
-  # Without --force, git refuses to move a tag that already exists locally, so
-  # a tag that was re-pointed upstream makes the fetch fail instead of silently
-  # changing what a release means.
-  git -C "${ROOT_DIR}" fetch --tags --quiet "${REMOTE}" || {
-    echo "updater: fetch failed (network, or a release tag was moved upstream)" >&2
+  # Branches first (the pristine-tree check compares against the remote branch).
+  git -C "${ROOT_DIR}" fetch --quiet "${REMOTE}" || {
+    echo "updater: fetch failed (network)" >&2
     result_line "fetch_failed" "${tag}" "${previous}" "${previous}"
     exit 5
   }
 
+  # With no tag (install), the newest release tag on the remote is the target.
   if [[ -z "${tag}" ]]; then
-    tag="$(git -C "${ROOT_DIR}" tag --list 'v[0-9]*' --sort=-v:refname | head -n 1)"
-    [[ -n "${tag}" ]] || refuse "the repository has no release tags" ""
+    tag="$(git -C "${ROOT_DIR}" ls-remote --tags --refs "${REMOTE}" 'v[0-9]*' 2>/dev/null |
+      sed 's#.*refs/tags/##' | grep -E "${TAG_RE}" | sort -V | tail -n 1)"
+    [[ -n "${tag}" ]] || refuse "the remote has no release tags" ""
   fi
+
+  # A tag the remote does not have is a refusal (3); an unreachable remote is a
+  # fetch failure (5). ls-remote --exit-code answers 2 for "no such ref".
+  git -C "${ROOT_DIR}" ls-remote --exit-code --tags --refs "${REMOTE}" "refs/tags/${tag}" >/dev/null 2>&1
+  case $? in
+  0) ;;
+  2) refuse "unknown release tag ${tag}" "${tag}" ;;
+  *)
+    echo "updater: could not reach ${REMOTE}" >&2
+    result_line "fetch_failed" "${tag}" "${previous}" "${previous}"
+    exit 5
+    ;;
+  esac
+
+  # Only the requested tag is fetched, and never forced: git refuses to move a
+  # tag that already exists locally, so a tag re-pointed upstream fails here
+  # instead of silently changing what the release means. Other tags, however
+  # stale, are not this operation's business.
+  git -C "${ROOT_DIR}" fetch --quiet "${REMOTE}" "refs/tags/${tag}:refs/tags/${tag}" || {
+    echo "updater: could not fetch ${tag} (network, unknown tag, or it was moved upstream)" >&2
+    result_line "fetch_failed" "${tag}" "${previous}" "${previous}"
+    exit 5
+  }
 
   git -C "${ROOT_DIR}" rev-parse -q --verify "refs/tags/${tag}" >/dev/null || refuse "unknown release tag ${tag}" "${tag}"
   [[ "$(git -C "${ROOT_DIR}" cat-file -t "refs/tags/${tag}")" == "tag" ]] || refuse "${tag} is not an annotated tag" "${tag}"
