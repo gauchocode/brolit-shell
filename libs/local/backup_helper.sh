@@ -440,6 +440,62 @@ function backup_all_server_configs() {
 }
 
 ################################################################################
+# Turn plain-text notes into mail-safe HTML: one line each, separated by <br />.
+#
+# The notes can carry container names, paths and storage hostnames and the
+# section is HTML, so they are escaped; a line break inside a note becomes <br />.
+#
+# Arguments:
+#  ${@} = the notes
+#
+# Outputs:
+#  the HTML on stdout, each note preceded by <br />.
+################################################################################
+
+function backup_mail_notes_html() {
+
+  local note note_html out=""
+
+  for note in "$@"; do
+    note_html="$(printf '%s' "${note}" | sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g' -e 's/"/\&quot;/g' | sed -e ':a;N;$!ba;s/\n/<br \/>/g')"
+    out+="<br />${note_html}"
+  done
+
+  printf '%s' "${out}"
+
+}
+
+################################################################################
+# Title of the Borg mail section when something failed: which projects, the
+# shared-destination cause when the circuit breaker named one, and WHY each
+# failed, so a sysadmin can decide from the mail alone.
+#
+# Arguments:
+#  ${1} = the failed projects, joined
+#  ${2} = ${first_failure_reason} - the breaker's class, or empty
+#
+# Outputs:
+#  the title on stdout (HTML-safe: the notes are escaped).
+################################################################################
+
+function borg_mail_failure_title() {
+
+  local title="Borg backup failed for: ${1}"
+
+  if [[ -n "${2:-}" ]]; then
+    title="${title} — repository unavailable (${2})"
+  fi
+
+  [[ -v BORG_FAILURE_NOTES ]] || declare -g -a BORG_FAILURE_NOTES=()
+  if [[ ${#BORG_FAILURE_NOTES[@]} -gt 0 ]]; then
+    title+="<br /><br />Why it failed, and what a sysadmin has to decide:$(backup_mail_notes_html "${BORG_FAILURE_NOTES[@]}")"
+  fi
+
+  printf '%s' "${title}"
+
+}
+
+################################################################################
 # Render the merged "files" mail section.
 #
 # backup_all_projects_files() and backup_additional_dirs() both feed the
@@ -477,12 +533,7 @@ function backup_files_mail_render() {
     # text that can carry container names and paths, and the section is HTML:
     # escape them, then turn the line breaks into <br />.
     if [[ ${#BACKUP_FILES_MAIL_NOTES[@]} -gt 0 ]]; then
-      local note note_html notes_html=""
-      for note in "${BACKUP_FILES_MAIL_NOTES[@]}"; do
-        note_html="$(printf '%s' "${note}" | sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g' -e 's/"/\&quot;/g' | sed -e ':a;N;$!ba;s/\n/<br \/>/g')"
-        notes_html+="<br />${note_html}"
-      done
-      error_msg+="<br /><br />Why it failed, and what a sysadmin has to decide:${notes_html}"
+      error_msg+="<br /><br />Why it failed, and what a sysadmin has to decide:$(backup_mail_notes_html "${BACKUP_FILES_MAIL_NOTES[@]}")"
     fi
   fi
 
@@ -799,6 +850,7 @@ function backup_borgmatic_config_once() {
       log_event "error" "Borg repository unavailable for ${config_label} (${init_reason}); skipping create attempt" "false"
       display --indent 8 --text "Backup failed" --result "FAIL" --color RED
       borg_project_status_line="${config_label};FAIL (repository: ${init_reason})"
+      declare -F borg_note_failure >/dev/null && borg_note_failure "${config_label}" "${init_reason}"
       return 1
     fi
     borg_record_init_result 0 ""
@@ -808,6 +860,7 @@ function backup_borgmatic_config_once() {
       log_event "error" "Borgmatic executable not found via PATH, /root/.local/bin, pipx, or python3 -m" "false"
       display --indent 8 --text "Backup failed" --result "FAIL" --color RED
       borg_project_status_line="${config_label};FAIL (borgmatic unavailable)"
+      declare -F borg_note_failure >/dev/null && borg_note_failure "${config_label}" "python_env"
       return 1
     fi
 
@@ -868,6 +921,7 @@ function backup_borgmatic_config_once() {
     # Carry the class into the email: a bare "FAIL" made every cause look the
     # same, including a config whose project directory no longer exists.
     borg_project_status_line="${config_label};FAIL (${reason})"
+    declare -F borg_note_failure >/dev/null && borg_note_failure "${config_label}" "${reason}"
     return 1
 
   done

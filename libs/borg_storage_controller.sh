@@ -1200,6 +1200,55 @@ function borg_repo_failure_limit() {
 }
 
 ################################################################################
+# One plain sentence for a Borg failure class, for the log and the mail.
+#
+# The classes (see borg_init_failure_reason) are codes for the program. A
+# sysadmin reading "repository: config" cannot tell a missing tool from an empty
+# config file, so each class says what it means and, where a person has to
+# decide, what.
+#
+# Arguments:
+#   ${1} = ${class}
+#
+# Outputs:
+#   the sentence on stdout.
+################################################################################
+function borg_failure_reason_text() {
+    case "${1:-unknown}" in
+        yq_missing) echo "yq v4 is not installed and could not be installed automatically. Brolit needs it to read the borgmatic repository list. Install it (the Borg installer ships a pinned, checksum-verified build) and the next run continues." ;;
+        missing_source) echo "A directory listed in the borgmatic config does not exist (the project was moved or deleted). Remove or correct that config." ;;
+        config) echo "The borgmatic config is missing, cannot be read, lists no repositories or uses an undefined variable." ;;
+        relocation) echo "Borg says the repository was previously located elsewhere (moved or restored). A sysadmin has to confirm the new location is expected before Borg is allowed to continue." ;;
+        lock) echo "A session that died left a lock on the repository and it could not be cleared safely." ;;
+        stale_lock) echo "Something already exists at the repository path (an interrupted initialisation or a stale file). A sysadmin has to look at it." ;;
+        network) echo "The storage box cannot be reached (network or SSH)." ;;
+        parent_missing) echo "The parent directory of the repository does not exist on the storage box." ;;
+        auth) echo "The storage box refused the SSH key, or the host key does not match." ;;
+        space) echo "The storage box is out of space or over its quota." ;;
+        python_env) echo "borgmatic is not installed or its Python environment is broken." ;;
+        borgmatic_version) echo "The installed borgmatic does not understand options this config uses (version mismatch)." ;;
+        encryption_mismatch) echo "The repository exists with a different encryption mode than the config declares." ;;
+        repo_missing) echo "The repository does not exist at the configured path." ;;
+        *) echo "The failure was not recognised; the log of the run has the detail." ;;
+    esac
+}
+
+################################################################################
+# Remember why a Borg config failed so the mail can say it.
+#
+# Arguments:
+#   ${1} = ${label} - the project or config name
+#   ${2} = ${class} - see borg_failure_reason_text
+#
+# Outputs:
+#   appends to the global BORG_FAILURE_NOTES.
+################################################################################
+function borg_note_failure() {
+    [[ -v BORG_FAILURE_NOTES ]] || declare -g -a BORG_FAILURE_NOTES=()
+    BORG_FAILURE_NOTES+=("${1}: $(borg_failure_reason_text "${2:-unknown}") [${2:-unknown}]")
+}
+
+################################################################################
 # Record an init result in the run-level shared-destination circuit breaker.
 # Project-local, mixed and unknown failures are not evidence of an outage.
 # Arguments:
@@ -1680,6 +1729,21 @@ function initialize_repository() {
         log_event "error" "Borgmatic executable not found via PATH, /root/.local/bin, pipx, or python3 -m" "true"
         display --indent 6 --text "- Borgmatic executable not found" --result "FAIL" --color RED
         return 1
+    fi
+
+    # yq is a prerequisite of the repository list below. A host whose Borg predates
+    # that requirement never ran the Borg installer, so it has none, and used to
+    # fail every project with the unexplained class "config" (spyglass, 2026-11).
+    # The installer's pinned, checksum-verified build is a deterministic fix, not a
+    # judgment call: install it, or say plainly that it could not be.
+    if ! command -v yq >/dev/null 2>&1; then
+        if declare -F yq_installer >/dev/null 2>&1 && yq_installer && command -v yq >/dev/null 2>&1; then
+            log_event "warning" "yq was missing and has been installed (Borg needs it to read the repository list)" "false"
+        else
+            BORG_INIT_FAILURE_REASON="yq_missing"
+            log_event "error" "Repository init failure class: yq_missing (yq is not installed and could not be installed)" "false"
+            return 1
+        fi
     fi
 
     local repo_count

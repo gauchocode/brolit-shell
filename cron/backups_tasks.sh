@@ -303,6 +303,7 @@ log_subsection "Backup Projects with Multi-Method Support"
 # visible in the email body and not only in the subject.
 borg_backup_result=0
 borg_failed_projects=()
+BORG_FAILURE_NOTES=()
 borg_backup_list=()
 BORG_CONFIG_DIR="${BROLIT_BORGMATIC_CONFIG_DIR:-/etc/borgmatic.d}"
 BORG_CONFIG_DIR="${BORG_CONFIG_DIR%/}"
@@ -381,10 +382,7 @@ if [[ "${BACKUP_BORG_STATUS}" == "enabled" ]]; then
     if [[ ${borg_backup_result} -eq 0 ]]; then
         mail_backup_section "none" "none" "borg" "${borg_backup_list[@]}"
     else
-        borg_failure_title="Borg backup failed for: ${borg_failed_projects[*]}"
-        if [[ -n "${BORG_FIRST_FAILURE_REASON}" ]]; then
-            borg_failure_title="${borg_failure_title} — repository unavailable (${BORG_FIRST_FAILURE_REASON})"
-        fi
+        borg_failure_title="$(borg_mail_failure_title "${borg_failed_projects[*]}" "${BORG_FIRST_FAILURE_REASON}")"
         mail_backup_section "${borg_failure_title}" "borg_backup" "borg" "${borg_backup_list[@]}"
     fi
 else
