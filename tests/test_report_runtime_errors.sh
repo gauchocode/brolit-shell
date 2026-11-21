@@ -56,6 +56,18 @@ git -C "${T}" tag -a wip-1 -m wip
 git -C "${T}" tag -a v9.1.1 -m release
 [[ "$(errors)" == "[]" ]] || fail "tagging the commit as a release must clear the drift, got $(errors)"
 
+# a broken package manager is reported next to the runtime errors, and only then
+FAKEBIN="${TMP}/fakebin"; mkdir -p "${FAKEBIN}"
+printf '#!/bin/sh\n[ "$1" = "--audit" ] && echo "The following packages have been unpacked but not yet configured."\nexit 0\n' >"${FAKEBIN}/dpkg"
+printf '#!/bin/sh\n[ "$1" = "--audit" ] && exit 0\nexit 0\n' >"${FAKEBIN}/dpkg-clean"
+chmod +x "${FAKEBIN}/dpkg" "${FAKEBIN}/dpkg-clean"
+[[ "$(PATH="${FAKEBIN}:${PATH}" errors)" == '["package_manager_broken"]' ]] || fail "a broken dpkg must be reported on a clean tree, got $(PATH="${FAKEBIN}:${PATH}" errors)"
+echo "# local" >>"${T}/release/version.env"
+[[ "$(PATH="${FAKEBIN}:${PATH}" errors)" == '["modified_runtime","package_manager_broken"]' ]] || fail "the dpkg error must come after the runtime errors, got $(PATH="${FAKEBIN}:${PATH}" errors)"
+git -C "${T}" checkout -q -- release/version.env
+mv "${FAKEBIN}/dpkg" "${FAKEBIN}/dpkg-broken"; mv "${FAKEBIN}/dpkg-clean" "${FAKEBIN}/dpkg"
+[[ "$(PATH="${FAKEBIN}:${PATH}" errors)" == "[]" ]] || fail "a clean dpkg --audit must add nothing, got $(PATH="${FAKEBIN}:${PATH}" errors)"
+
 # not a git tree and no manifest: legacy
 N="${TMP}/plain"; mkdir -p "${N}/libs" "${N}/release"
 cp "${T}/brolit_report.sh" "${N}/"; cp "${T}/libs/release_manifest.sh" "${N}/libs/"; cp "${T}/release/version.env" "${N}/release/"

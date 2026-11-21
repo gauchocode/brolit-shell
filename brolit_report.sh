@@ -27,6 +27,13 @@ duration_ms=$(( (finished_ns - started_ns) / 1000000 ))
 capabilities="$(release_manifest_capabilities)"
 errors_json="$(release_manifest_runtime_errors)"
 
+# A package manager that is in the middle of an interrupted upgrade is a hazard
+# for anything that installs or purges packages, so it is reported with the rest.
+# `dpkg --audit` prints nothing when every package is fully configured.
+if command -v dpkg >/dev/null 2>&1 && [[ -n "$(dpkg --audit 2>&1)" ]]; then
+    errors_json="$(jq -c '. + ["package_manager_broken"]' <<<"${errors_json}")"
+fi
+
 jq -n \
     --arg producer_version "$(release_manifest_value version)" \
     --arg producer_commit "$(release_manifest_commit)" \
