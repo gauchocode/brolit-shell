@@ -25,10 +25,7 @@ fi
 finished_ns="$(date +%s%N)"
 duration_ms=$(( (finished_ns - started_ns) / 1000000 ))
 capabilities="$(release_manifest_capabilities)"
-errors_json='[]'
-if ! release_manifest_is_immutable; then
-    errors_json='["legacy_runtime"]'
-fi
+errors_json="$(release_manifest_runtime_errors)"
 
 jq -n \
     --arg producer_version "$(release_manifest_value version)" \
