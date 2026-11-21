@@ -101,8 +101,10 @@ packages:
 runcmd:
 - cd /root/
 - git clone https://github.com/gauchocode/brolit-shell
-- chmod +x brolit-shell/runner.sh
+- ./brolit-shell/updater.sh install v3.14.24
 ```
+(Use the newest release tag; `updater.sh install` with no tag picks it. It also
+installs the standard cron jobs. Add `--no-cron` to skip them.)
 
 ### Manual
 Cloning repo:
@@ -110,15 +112,16 @@ Cloning repo:
 git clone https://github.com/gauchocode/brolit-shell
 ```
 
-Change directories to the new ~/brolit-shell directory:
+Move it to a release and install the standard cron jobs:
 ```bash
 cd ~/brolit-shell
+./updater.sh install v3.14.24
 ```
 
-Give the execution permission to the script:
-```bash
-chmod +x runner.sh
-```
+A release is an annotated git tag (`vX.Y.Z`). `./updater.sh status --fetch` lists
+the tags, `./updater.sh update vX.Y.Z` moves the tree to one (fast-forward only,
+refused when tracked files are modified), and `./updater.sh rollback` returns to
+the commit before the last update.
 
 ## :triangular_flag_on_post: First steps
 Execute BROLIT:
@@ -148,7 +151,7 @@ More information here: [FLAGS](./docs/DOC-flags.md)
 Before upgrade:
 
 1. Backup and rename the .brolit_conf.json
-2. Run updater.sh
+2. Run `./updater.sh update vX.Y.Z`
 3. Run runner.sh to regenerate .brolit_conf.json
 4. Edit .brolit_conf.json
 5. If you use Dropbox as backup system, please move old backups to another folder (new directory structure since version 3.2)

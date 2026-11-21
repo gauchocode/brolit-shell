@@ -21,7 +21,7 @@ BASH-based server management tool (LEMP stack). Ubuntu 22.04/24.04/26.04, Docker
 |---|---|
 | `runner.sh` | Main entry — interactive (no args) or CLI (with flags) |
 | `brolit_lite.sh` | Lightweight API for external tools (brolit-ui) |
-| `updater.sh` | Self-update via git pull |
+| `updater.sh` | Install/update/rollback the git tree to a release tag; installs the standard crons |
 
 ## Coding conventions
 

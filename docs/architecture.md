@@ -35,7 +35,7 @@ Brolit Shell is a BASH-based server management tool for LEMP stacks on Ubuntu 22
 |------|---------|------|
 | `runner.sh` | Main entry — interactive or CLI | Both |
 | `brolit_lite.sh` | Lightweight API for external tools (brolit-ui) | Library |
-| `updater.sh` | Self-update via git pull | Standalone |
+| `updater.sh` | `install`, `update` and `rollback` of the git tree to a release tag (annotated `vX.Y.Z`); installs the standard crons | Standalone |
 
 ### 2. Controllers (`libs/`)
 
