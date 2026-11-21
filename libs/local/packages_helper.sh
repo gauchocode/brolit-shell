@@ -129,6 +129,83 @@ function package_is_installed() {
 }
 
 ################################################################################
+# State of a package in dpkg, in three values.
+#
+# package_is_installed answers "is it fully installed" and so reports a package
+# caught in an interrupted upgrade (dpkg state iU, iF, it, ...) as "not
+# installed". A caller that then purges or reinstalls it destroys something that
+# is in fact there. This tells the three situations apart.
+#
+# Arguments:
+#   ${1} = ${package}
+#
+# Outputs:
+#   installed - fully installed and configured (dpkg abbreviation ii or hi)
+#   absent    - not present, or removed with only its configuration left (n, c)
+#   broken    - present but unpacked, half-installed, half-configured or with
+#               triggers pending: the package manager has to be repaired first
+################################################################################
+
+function package_dpkg_state() {
+
+  local package="${1}"
+  local abbreviation
+
+  abbreviation="$(dpkg-query -W -f='${db:Status-Abbrev}' "${package}" 2>/dev/null)"
+  abbreviation="${abbreviation:-}"
+
+  case "${abbreviation}" in
+  "ii " | "hi ")
+    echo "installed"
+    ;;
+  "" | ?"n" | ?"n " | ?"c" | ?"c ")
+    echo "absent"
+    ;;
+  *)
+    echo "broken"
+    ;;
+  esac
+
+}
+
+################################################################################
+# Is the package manager in a state where it is safe to change packages?
+#
+# `dpkg --audit` prints nothing when every package is fully installed and
+# configured. After an interrupted upgrade (a killed apt, a reboot in the middle
+# of unattended-upgrades) it lists what is left half done. Installing, purging or
+# upgrading on top of that fails, and code that reacts to the failure by
+# reinstalling can do harm. Callers skip their package work when this returns 1.
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if healthy, 1 if dpkg reports packages that are not fully configured.
+################################################################################
+
+function package_manager_is_healthy() {
+
+  local audit
+
+  audit="$(dpkg --audit 2>&1)"
+
+  if [[ -n "${audit}" ]]; then
+
+    log_event "error" "dpkg reports packages that are not fully configured; package changes are skipped. Repair with: dpkg --configure -a" "false"
+    log_event "debug" "dpkg --audit: $(echo "${audit}" | tr '\n' ' ' | cut -c1-300)" "false"
+    display --indent 6 --text "- Package manager state" --result "BROKEN" --color RED
+    display --indent 8 --text "Run 'dpkg --configure -a'; package changes are skipped" --tcolor YELLOW
+
+    return 1
+
+  fi
+
+  return 0
+
+}
+
+################################################################################
 # Install package with apt command
 #
 # Arguments:

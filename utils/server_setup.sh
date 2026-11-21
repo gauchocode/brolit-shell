@@ -18,11 +18,17 @@ function server_prepare() {
     # Unattended upgrades (disabled by default)
     #system_unnatended_upgrades
 
-    # Packages update
-    package_update
+    # Packages update and upgrade, only on a package manager that is not in the
+    # middle of an interrupted upgrade (see package_manager_is_healthy).
+    if package_manager_is_healthy; then
 
-    # Packages upgrade
-    package_upgrade_all
+        # Packages update
+        package_update
+
+        # Packages upgrade
+        package_upgrade_all
+
+    fi
 
     # Change global
     SERVER_PREPARED="true"
@@ -34,6 +40,10 @@ function server_prepare() {
 function server_app_setup() {
 
     local app_setup="${1}"
+
+    # Never install or purge on top of an interrupted upgrade: it fails, and what
+    # reacts to the failure can do harm.
+    package_manager_is_healthy || return 1
 
     case "${app_setup}" in
 
@@ -187,22 +197,7 @@ function server_app_setup() {
 
     "docker")
 
-        if [[ ${PACKAGES_DOCKER_STATUS} == "enabled" ]]; then
-            # Check if docker package are installed
-            package_is_installed "docker-ce"
-            docker_installed="$?"
-            if [[ ${docker_installed} -eq 1 ]]; then
-                # Remove old docker packages
-                docker_purge
-                # Install docker
-                docker_installer
-                # Restart docker service
-                service docker restart
-            fi
-        else
-            # Purge docker packages
-            docker_purge
-        fi
+        docker_apply_configuration "${PACKAGES_DOCKER_STATUS}"
 
         ;;
 
