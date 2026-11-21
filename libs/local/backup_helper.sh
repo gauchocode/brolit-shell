@@ -466,11 +466,24 @@ function backup_files_mail_render() {
 
   [[ -v BACKUP_FILES_MAIL_LIST ]] || declare -g -a BACKUP_FILES_MAIL_LIST=()
   [[ -v BACKUP_FILES_MAIL_ERRORS ]] || declare -g -a BACKUP_FILES_MAIL_ERRORS=()
+  [[ -v BACKUP_FILES_MAIL_NOTES ]] || declare -g -a BACKUP_FILES_MAIL_NOTES=()
 
   if [[ ${#BACKUP_FILES_MAIL_ERRORS[@]} -gt 0 ]]; then
     error_type="files_backup"
     error_msg="Error creating backup file for: $(printf '%s, ' "${BACKUP_FILES_MAIL_ERRORS[@]}")"
     error_msg="${error_msg%, }"
+
+    # Why it failed, for the sysadmin who has to decide. The notes are plain
+    # text that can carry container names and paths, and the section is HTML:
+    # escape them, then turn the line breaks into <br />.
+    if [[ ${#BACKUP_FILES_MAIL_NOTES[@]} -gt 0 ]]; then
+      local note note_html notes_html=""
+      for note in "${BACKUP_FILES_MAIL_NOTES[@]}"; do
+        note_html="$(printf '%s' "${note}" | sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g' -e 's/"/\&quot;/g' | sed -e ':a;N;$!ba;s/\n/<br \/>/g')"
+        notes_html+="<br />${note_html}"
+      done
+      error_msg+="<br /><br />Why it failed, and what a sysadmin has to decide:${notes_html}"
+    fi
   fi
 
   mail_backup_section "${error_msg}" "${error_type}" "files" "${BACKUP_FILES_MAIL_LIST[@]}"
@@ -479,6 +492,7 @@ function backup_files_mail_render() {
   # Reset accumulators so a second run in the same process starts clean.
   BACKUP_FILES_MAIL_LIST=()
   BACKUP_FILES_MAIL_ERRORS=()
+  BACKUP_FILES_MAIL_NOTES=()
 
   return ${exitstatus}
 
@@ -614,6 +628,8 @@ function backup_all_projects_mounts() {
   # Mail section accumulators (rendered by backup_files_mail_render).
   [[ -v BACKUP_FILES_MAIL_LIST ]] || declare -g -a BACKUP_FILES_MAIL_LIST=()
   [[ -v BACKUP_FILES_MAIL_ERRORS ]] || declare -g -a BACKUP_FILES_MAIL_ERRORS=()
+  [[ -v BACKUP_FILES_MAIL_NOTES ]] || declare -g -a BACKUP_FILES_MAIL_NOTES=()
+  [[ -v PROJECT_MOUNTS_FAILURE_REASON ]] || declare -g -A PROJECT_MOUNTS_FAILURE_REASON=()
 
   log_subsection "Backup Projects Mounts"
 
@@ -630,6 +646,10 @@ function backup_all_projects_mounts() {
     if [[ $? -ne 0 ]]; then
       got_error=1
       BACKUP_FILES_MAIL_ERRORS+=("${directory_name} (mounts)")
+      # The reason the mounts backup recorded, or a pointer to the log when it
+      # failed for a reason it does not explain (a mount that could not be archived).
+      BACKUP_FILES_MAIL_NOTES+=("${directory_name}: ${PROJECT_MOUNTS_FAILURE_REASON[${directory_name}]:-the mounts backup failed; the log of the run has the detail.}")
+      unset 'PROJECT_MOUNTS_FAILURE_REASON[${directory_name}]'
     fi
 
   done
@@ -656,6 +676,7 @@ function backup_all_files() {
   # backup_files_mail_render).
   BACKUP_FILES_MAIL_LIST=()
   BACKUP_FILES_MAIL_ERRORS=()
+  BACKUP_FILES_MAIL_NOTES=()
 
   ## SERVER CONFIG FILES
   backup_all_server_configs

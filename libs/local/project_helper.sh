@@ -4703,6 +4703,108 @@ function project_compose_archive_mount_snapshot() {
 }
 
 ################################################################################
+# Say WHY project_compose_mount_coverage cannot establish coverage.
+#
+# The gate answers with an exit code only. When it answers "cannot establish"
+# (2) a sysadmin has to decide what to do, and cannot decide from a bare code.
+# This reads the same evidence, changes nothing and prints one plain sentence
+# per cause. The classifier stays as strict as it was: this only explains.
+#
+# The commonest cause in practice: a container that Docker Compose did not
+# create (a `docker run`, a hand-made tool) mounts a path inside the project. It
+# has no Compose project label, so who owns the data is ambiguous.
+#
+# Output contains container names, label values and mount paths only (trimmed to
+# printable characters), never environment variables or command lines.
+#
+# Arguments:
+#   ${1} = project directory
+#
+# Outputs:
+#   the reasons on stdout, one per line; always returns 0.
+################################################################################
+function project_compose_mount_coverage_explain() {
+  local dir_path="${1}"
+  local project_dir ids id record records='' found=0 line
+
+  if [[ -z "${dir_path}" || ! -d "${dir_path}" ]]; then
+    echo "The project directory does not exist."
+    return 0
+  fi
+  if ! command -v docker >/dev/null 2>&1; then
+    echo "Docker is not installed or is not in the PATH of the backup."
+    return 0
+  fi
+  if ! command -v jq >/dev/null 2>&1; then
+    echo "jq is not installed, which the coverage check needs."
+    return 0
+  fi
+  if ! project_dir="$(realpath -e -- "${dir_path}" 2>/dev/null)" || [[ -z "${project_dir}" || "${project_dir}" == "/" ]]; then
+    echo "The project directory cannot be resolved."
+    return 0
+  fi
+
+  project_dotenv_has_compose_file "${project_dir}"
+  case $? in
+    0)
+      echo "The .env of the project sets COMPOSE_FILE, so its Compose context cannot be reasoned about. Remove it, or pass the file on the Compose command line."
+      found=1
+      ;;
+    1) : ;;
+    *)
+      echo "A .env file of the project exists but cannot be read."
+      found=1
+      ;;
+  esac
+
+  if ! ids="$(docker ps --all --quiet --no-trunc 2>/dev/null)"; then
+    echo "docker ps failed: is the Docker daemon running?"
+    return 0
+  fi
+
+  while IFS= read -r id; do
+    [[ -z "${id}" ]] && continue
+    if ! record="$(docker inspect --format '{"id":{{json .Id}},"name":{{json .Name}},"project":{{json (index .Config.Labels "com.docker.compose.project")}},"working_dir":{{json (index .Config.Labels "com.docker.compose.project.working_dir")}},"mounts":{{json .Mounts}}}' "${id}" 2>/dev/null)" || [[ -z "${record}" ]]; then
+      echo "docker inspect failed for container ${id:0:12} (it may have been removed while it was read)."
+      found=1
+      continue
+    fi
+    records+="${record}"$'\n'
+  done <<< "${ids}"
+
+  # A container is related to the project when its Compose working directory or
+  # one of its bind mounts is inside it. Related and without a Compose project
+  # label is exactly what the classifier calls an ambiguous context.
+  while IFS= read -r line; do
+    [[ -n "${line}" ]] || continue
+    echo "${line}"
+    found=1
+  done < <(printf '%s' "${records}" | jq -r --arg dir "${project_dir}" '
+    def within($root): . == $root or startswith($root + "/");
+    select(type == "object") |
+    ((.mounts // []) | map(select(.Type == "bind" and ((.Source | type) == "string") and (.Source | within($dir))) | .Source)) as $binds |
+    select(
+      ((.working_dir | type) == "string" and (.working_dir | within($dir))) or ($binds | length) > 0
+    ) |
+    select(((.project | type) != "string") or ((.project | length) == 0)) |
+    "Container " + ((.name // (.id[0:12])) | ltrimstr("/")) +
+    " was not created by Docker Compose (project label: " +
+    (if (.project | type) == "string" and (.project | length) > 0 then .project else "none" end) +
+    ", working directory label: " +
+    (if (.working_dir | type) == "string" then .working_dir else "none" end) +
+    ") but " +
+    (if ($binds | length) > 0 then "it mounts " + ($binds | join(", ")) else "it uses the directory of this project" end) +
+    ". Remove it, or create it with Docker Compose inside this project, so who owns that data is not ambiguous."
+  ' 2>/dev/null | LC_ALL=C tr -cd '[:print:]\n' | cut -c1-400)
+
+  if [[ ${found} -eq 0 ]]; then
+    echo "Coverage could not be established for a reason this check does not name (several Compose project names for this directory, an interpolated project name, or an incomplete inspection). See the log of the run."
+  fi
+
+  return 0
+}
+
+################################################################################
 # Back up the persistent mounts of a Compose project that the files backup and
 # the database dumps do not cover.
 #
@@ -4753,6 +4855,7 @@ function project_compose_backup_mounts() {
 function _project_compose_backup_mounts_run() {
   local project_domain="${1}" project_dir="${2}" work_dir="${3}"
   local gate_output gate_rc details item kind source destination normalized_kind identity
+  local coverage_reason coverage_line
   local matches skip_reason volume_optout mountpoint archive_source image_destination image_ref
   local size_kb max_mb safe_name mount_id mount_dir archive_name archive_path snapshot
   local archive_size consistency attempts local_hash archive_bytes remote_root remote_mount_dir
@@ -4776,6 +4879,17 @@ function _project_compose_backup_mounts_run() {
     *)
       log_event "error" "Mounts backup for ${project_domain}: coverage could not be established, nothing was archived" "false"
       display --indent 6 --text "- Mounts backup for ${project_domain}" --result "FAIL" --color RED
+      # Say why, in the log and for the mail, so a sysadmin can decide: the gate
+      # stays as strict as it is (it also guards deletions), it only explains.
+      coverage_reason="$(project_compose_mount_coverage_explain "${project_dir}" 2>/dev/null)"
+      [[ -n "${coverage_reason}" ]] || coverage_reason="Coverage could not be established; see the log of the run."
+      while IFS= read -r coverage_line; do
+        [[ -n "${coverage_line}" ]] || continue
+        log_event "error" "Mounts backup for ${project_domain}: ${coverage_line}" "false"
+        display --indent 8 --text "${coverage_line}" --tcolor YELLOW
+      done <<< "${coverage_reason}"
+      [[ -v PROJECT_MOUNTS_FAILURE_REASON ]] || declare -g -A PROJECT_MOUNTS_FAILURE_REASON=()
+      PROJECT_MOUNTS_FAILURE_REASON["${project_domain}"]="${coverage_reason}"
       return 1
       ;;
   esac
