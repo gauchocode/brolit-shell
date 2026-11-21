@@ -1,5 +1,16 @@
 # Brolit Shell releases
 
+> **The staged installer in this directory is retired.** A release is now an
+> annotated git tag (`vX.Y.Z`) and a server runs the git tree `/root/brolit-shell`
+> moved to that tag by `updater.sh install|update vX.Y.Z`. Cron jobs run that
+> same tree, so there is one runtime per server. Create a tag with
+> `release/tag-release.sh` (it reads the version at the tagged commit and never
+> moves an existing tag), then publish it with `git push origin vX.Y.Z`.
+> `install.sh`, `build-release.sh` and the signing scripts remain only until the
+> fleet has been converged; do not use them for new installs.
+
+The text below describes the retired staged installer.
+
 Release bundles are immutable runtime archives. Production updates must verify
 the manifest signature and checksum, then activate a release through
 `install.sh`; they must not modify a Git working tree.
