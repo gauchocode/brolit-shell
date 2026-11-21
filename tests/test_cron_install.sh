@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
-# Verifies brolit_cronjob_install_task (runner.sh --task cron-install) against a
-# throwaway crontab file: default schedule + wrapper, idempotency, custom
-# schedule validation and unknown kinds. No root and no real crontab needed.
+# Verifies the cron registry and brolit_cronjob_converge (runner.sh --task
+# cron-install) against a throwaway crontab file: default line with the standard
+# wrapper for every kind, idempotency, convergence of lines that run another
+# path (/root, an old /opt release) or lack the wrapper, schedule preservation,
+# foreign lines and comments untouched, duplicates reported not removed,
+# --dry-run, rollback of a crontab that does not load, and input validation.
+# No root and no real crontab needed.
 set -uo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
@@ -10,32 +14,94 @@ trap 'rm -rf "${TMP}"' EXIT
 
 fail() { echo "FAIL: $*" >&2; exit 1; }
 
-# Extract the two functions and point them at a temp crontab.
+# Extract the registry and converge functions and point them at a temp crontab.
 {
-  echo 'log_section() { :; }; log_event() { :; }; display() { :; }'
-  echo "crontab() { :; }"
-  sed -n '/^function brolit_cronjob_install() {/,/^}/p;/^function brolit_cronjob_install_task() {/,/^}/p' "${ROOT_DIR}/libs/commons.sh" \
-    | sed "s#/var/spool/cron/crontabs/root#${TMP}/root.cron#g; s#/usr/bin/crontab#true#g"
+  echo 'log_event() { :; }; display() { :; }'
+  echo 'CRONTAB_RC=0; crontab() { return ${CRONTAB_RC}; }'
+  sed -n '/^function brolit_cron_kinds() {/,/^}/p;/^function brolit_cron_kind_spec() {/,/^}/p;/^function brolit_cron_build_line() {/,/^}/p;/^function brolit_cronjob_converge() {/,/^}/p;/^function brolit_cronjob_install_task() {/,/^}/p' "${ROOT_DIR}/libs/commons.sh" \
+    | sed "s#/var/spool/cron/crontabs/root#${TMP}/root.cron#g; s#/usr/bin/crontab#crontab#g"
 } >"${TMP}/fns.sh"
 # shellcheck disable=SC1091
 source "${TMP}/fns.sh"
 
 export BROLIT_MAIN_DIR="${TMP}/brolit"
+CRON="${TMP}/root.cron"
 mkdir -p "${BROLIT_MAIN_DIR}/cron"
-for f in backups optimizer wordpress security uptime disk_cleanup; do : >"${BROLIT_MAIN_DIR}/cron/${f}_tasks.sh"; done
+for f in backups brolit_ui optimizer wordpress security uptime disk_cleanup; do : >"${BROLIT_MAIN_DIR}/cron/${f}_tasks.sh"; done
 
-brolit_cronjob_install_task backups || fail "first install failed"
-grep -q "^45 00 \* \* \* /usr/bin/flock -n /var/lock/brolit_backups_tasks.lock /usr/bin/timeout 6h ${BROLIT_MAIN_DIR}/cron/backups_tasks.sh$" "${TMP}/root.cron" || fail "default line wrong: $(cat "${TMP}/root.cron")"
+wrapper() { echo "/usr/bin/flock -n /var/lock/brolit_${1}.lock /usr/bin/timeout ${2}"; }
 
-brolit_cronjob_install_task backups || fail "second install must succeed (idempotent)"
-[[ "$(grep -c backups_tasks.sh "${TMP}/root.cron")" == "1" ]] || fail "duplicate cron line"
+# 1. every kind gets its default schedule and the standard wrapper
+: >"${CRON}"
+for kind in $(brolit_cron_kinds); do brolit_cronjob_install_task "${kind}" || fail "install ${kind} failed"; done
+grep -qxF "45 00 * * * $(wrapper backups_tasks 6h) ${BROLIT_MAIN_DIR}/cron/backups_tasks.sh" "${CRON}" || fail "backups line wrong: $(cat "${CRON}")"
+grep -qxF "*/30 * * * * $(wrapper ui_tasks 25m) ${BROLIT_MAIN_DIR}/cron/brolit_ui_tasks.sh > /dev/null" "${CRON}" || fail "ui line wrong"
+grep -qxF "55 03 * * * $(wrapper security_tasks 2h) ${BROLIT_MAIN_DIR}/cron/security_tasks.sh" "${CRON}" || fail "security line wrong"
+[[ "$(grep -c . "${CRON}")" == "7" ]] || fail "expected 7 lines, got: $(cat "${CRON}")"
+brolit_cron_kinds | grep -qi borgmatic && fail "there must be no borgmatic kind"
 
-brolit_cronjob_install_task security "10 2 * * 1" || fail "custom schedule rejected"
-grep -q "^10 2 \* \* 1 ${BROLIT_MAIN_DIR}/cron/security_tasks.sh$" "${TMP}/root.cron" || fail "custom schedule not written"
+# 2. idempotent: a second run changes nothing and makes no backup
+before="$(cat "${CRON}")"
+rm -rf "${BROLIT_MAIN_DIR}/log"   # step 1 appended to a non-empty crontab, which keeps a backup
+for kind in $(brolit_cron_kinds); do brolit_cronjob_install_task "${kind}" || fail "second install ${kind} failed"; done
+[[ "$(cat "${CRON}")" == "${before}" ]] || fail "second run changed the crontab"
+[[ ! -d "${BROLIT_MAIN_DIR}/log" ]] || fail "an unchanged crontab must not be backed up"
 
+# 3. convergence: legacy path, an old staged release, and a missing wrapper all
+#    end on this tree's script with the wrapper, keeping the operator's schedule
+cat >"${CRON}" <<EOF
+# keep this comment
+MAILTO=ops@example.com
+5 00 * * * /root/brolit-shell/cron/backups_tasks.sh
+*/30 * * * * /opt/brolit-shell/releases/3.14.23-abc/cron/brolit_ui_tasks.sh > /dev/null
+@daily /usr/bin/something --else
+15 3 * * 1 /usr/local/bin/other.sh /cron/backups_tasks.sh.sample
+EOF
+brolit_cronjob_install_task backups || fail "converge backups failed"
+brolit_cronjob_install_task ui || fail "converge ui failed"
+grep -qxF "5 00 * * * $(wrapper backups_tasks 6h) ${BROLIT_MAIN_DIR}/cron/backups_tasks.sh" "${CRON}" || fail "legacy backups line not converged (schedule must be kept): $(cat "${CRON}")"
+grep -qxF "*/30 * * * * $(wrapper ui_tasks 25m) ${BROLIT_MAIN_DIR}/cron/brolit_ui_tasks.sh > /dev/null" "${CRON}" || fail "staged ui line not converged"
+grep -qxF "# keep this comment" "${CRON}" || fail "comment lost"
+grep -qxF "MAILTO=ops@example.com" "${CRON}" || fail "environment line lost"
+grep -qxF "@daily /usr/bin/something --else" "${CRON}" || fail "foreign line touched"
+grep -q "/root/brolit-shell\|/opt/brolit-shell" "${CRON}" && fail "an old path survived"
+ls "${BROLIT_MAIN_DIR}"/log/crontab.bak-* >/dev/null 2>&1 || fail "no crontab backup was kept"
+grep -qx "5 00 \* \* \* /root/brolit-shell/cron/backups_tasks.sh" "${BROLIT_MAIN_DIR}"/log/crontab.bak-* || fail "backup does not hold the previous crontab"
+
+# 4. an @alias schedule and an explicit schedule
+printf '@daily /root/brolit-shell/cron/uptime_tasks.sh\n' >"${CRON}"
+brolit_cronjob_install_task uptime || fail "alias converge failed"
+grep -qxF "@daily $(wrapper uptime_tasks 2h) ${BROLIT_MAIN_DIR}/cron/uptime_tasks.sh" "${CRON}" || fail "@alias schedule not kept"
+brolit_cronjob_install_task uptime "10 2 * * 1" || fail "explicit schedule rejected"
+grep -qxF "10 2 * * 1 $(wrapper uptime_tasks 2h) ${BROLIT_MAIN_DIR}/cron/uptime_tasks.sh" "${CRON}" || fail "explicit schedule not written"
+
+# 5. a duplicate is reported and left alone, the first line still converges
+printf '1 1 * * * /root/brolit-shell/cron/optimizer_tasks.sh\n2 2 * * * /root/brolit-shell/cron/optimizer_tasks.sh\n' >"${CRON}"
+brolit_cronjob_install_task optimizer || fail "duplicate case failed"
+grep -qxF "1 1 * * * $(wrapper optimizer_tasks 2h) ${BROLIT_MAIN_DIR}/cron/optimizer_tasks.sh" "${CRON}" || fail "first duplicate not converged"
+grep -qxF "2 2 * * * /root/brolit-shell/cron/optimizer_tasks.sh" "${CRON}" || fail "second duplicate was modified or removed"
+
+# 6. --dry-run prints the plan and writes nothing
+printf '5 00 * * * /root/brolit-shell/cron/backups_tasks.sh\n' >"${CRON}"
+rm -rf "${BROLIT_MAIN_DIR}/log"
+plan="$(DRY_RUN=true brolit_cronjob_install_task backups)" || fail "dry run failed"
+echo "${plan}" | grep -q "^CRON_PLAN kind=backups changed=1 line=5 00 \* \* \* $(wrapper backups_tasks 6h) ${BROLIT_MAIN_DIR}/cron/backups_tasks.sh$" || fail "dry run plan wrong: ${plan}"
+[[ "$(cat "${CRON}")" == "5 00 * * * /root/brolit-shell/cron/backups_tasks.sh" ]] || fail "dry run wrote the crontab"
+[[ ! -d "${BROLIT_MAIN_DIR}/log" ]] || fail "dry run made a backup"
+
+# 7. a crontab that does not load is rolled back
+printf '5 00 * * * /root/brolit-shell/cron/backups_tasks.sh\n' >"${CRON}"
+CRONTAB_RC=1 brolit_cronjob_install_task backups && fail "a crontab that did not load was reported as success"
+[[ "$(cat "${CRON}")" == "5 00 * * * /root/brolit-shell/cron/backups_tasks.sh" ]] || fail "failed load was not rolled back: $(cat "${CRON}")"
+
+# 8. input validation writes nothing
+: >"${CRON}"
 brolit_cronjob_install_task uptime "not a cron" && fail "invalid expression accepted"
 brolit_cronjob_install_task uptime "* * * * * ; rm -rf /" && fail "injection accepted"
 brolit_cronjob_install_task nope && fail "unknown kind accepted"
-grep -q "uptime_tasks.sh" "${TMP}/root.cron" && fail "invalid input wrote a line"
+brolit_cronjob_install_task borgmatic && fail "borgmatic kind accepted"
+[[ ! -s "${CRON}" ]] || fail "invalid input wrote a line: $(cat "${CRON}")"
+rm -f "${BROLIT_MAIN_DIR}/cron/uptime_tasks.sh"
+brolit_cronjob_install_task uptime && fail "a missing script was accepted"
 
 echo "cron-install tests passed"

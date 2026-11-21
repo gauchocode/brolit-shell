@@ -52,9 +52,12 @@ function show_help() {
                         user                Subtasks: create, delete, grant-sudo, revoke-sudo,
                                             add-key, remove-key, list-keys, list
                         disk-cleanup        Subtasks: apt, journal, docker, all
-                        cron-install        Subtasks: backups, optimizer, wordpress, security, uptime,
-                                            disk-cleanup (idempotent; -tv "<cron expr>" overrides the
-                                            default schedule)
+                        cron-install        Subtasks: backups, ui, optimizer, wordpress, security,
+                                            uptime, disk-cleanup. Idempotent and convergent: a line
+                                            for the same script under any path is rewritten to this
+                                            tree with the standard flock/timeout wrapper, keeping its
+                                            schedule (-tv "<cron expr>" overrides it; -dr prints the
+                                            plan without writing). Borg runs inside backups.
                         aliases-install     (no subtask)
                         openresty           Subtasks: install, uninstall, reconfigure, status,
                                             api-status, api-routes, create-route, delete-route
@@ -767,7 +770,7 @@ function tasks_handler() {
     ;;
 
   cron-install)
-    validate_task_and_subtask "cron-install" "${STASK}" "backups optimizer wordpress security uptime disk-cleanup"
+    validate_task_and_subtask "cron-install" "${STASK}" "backups ui optimizer wordpress security uptime disk-cleanup"
     exit_code=$?
     [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
 

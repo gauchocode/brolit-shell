@@ -2109,158 +2109,271 @@ function compress() {
 }
 
 ################################################################################
-# Install borgmatic cronjob
+# Cron registry: every croneable Brolit task is described here, once. The
+# non-interactive `cron-install` task and the interactive menu both read it, so
+# a server gets the same line whichever way it was set up.
+#
+# There is deliberately no "borgmatic" kind: Borg runs inside backups_tasks.sh.
 #
 # Arguments:
-#   ${1} = ${scheduled_time}
+#   none
 #
 # Outputs:
-#   0 if ok, 1 on error.
-################################################################################
-# Non-interactive cron installation for a croneable task (used by
-# `runner.sh --task cron-install --subtask <kind> [-tv "<cron expression>"]`).
-#
-# Same script, schedule and wrapper as the interactive menu, but idempotent:
-# an already installed entry is a success, not an error.
-#
-# Arguments:
-#   ${1} = ${kind} - backups|optimizer|wordpress|security|uptime|disk-cleanup
-#   ${2} = ${cron_expression} - optional, 5 fields; defaults per kind
-#
-# Outputs:
-#   0 if installed or already present, 1 on invalid input or error.
+#   the kinds, one per line, in menu order.
 ################################################################################
 
-function brolit_cronjob_install_task() {
+function brolit_cron_kinds() {
+
+  printf '%s\n' backups ui optimizer wordpress security uptime disk-cleanup
+
+}
+
+################################################################################
+# Describe one croneable task. Sets CRON_SPEC_SCRIPT, CRON_SPEC_SCHEDULE,
+# CRON_SPEC_LOCK, CRON_SPEC_TIMEOUT, CRON_SPEC_SUFFIX and CRON_SPEC_LABEL.
+#
+# Arguments:
+#   ${1} = ${kind}
+#
+# Outputs:
+#   0 if the kind exists, 1 otherwise.
+################################################################################
+
+function brolit_cron_kind_spec() {
 
   local kind="${1}"
-  local cron_expression="${2:-}"
 
-  local script
-  local default_cron
-  local wrapper=""
+  CRON_SPEC_SUFFIX=""
+  CRON_SPEC_TIMEOUT="2h"
 
   case "${kind}" in
   backups)
-    script="${BROLIT_MAIN_DIR}/cron/backups_tasks.sh"
-    default_cron="45 00 * * *"
-    # flock skips a run if the previous one is alive; timeout caps one run.
-    wrapper="/usr/bin/flock -n /var/lock/brolit_backups_tasks.lock /usr/bin/timeout 6h"
+    CRON_SPEC_LABEL="BACKUPS TASKS"
+    CRON_SPEC_SCRIPT="backups_tasks.sh"
+    CRON_SPEC_LOCK="backups_tasks"
+    CRON_SPEC_SCHEDULE="45 00 * * *"
+    # backups_tasks.sh drives borg/borgmatic against remote repos and can run
+    # long; timeout reaps a stuck run (e.g. a hung SSH connection).
+    CRON_SPEC_TIMEOUT="6h"
+    ;;
+  ui)
+    CRON_SPEC_LABEL="BROLIT UI HELPER"
+    CRON_SPEC_SCRIPT="brolit_ui_tasks.sh"
+    CRON_SPEC_LOCK="ui_tasks"
+    CRON_SPEC_SCHEDULE="*/30 * * * *"
+    CRON_SPEC_TIMEOUT="25m"
+    CRON_SPEC_SUFFIX=" > /dev/null"
     ;;
   optimizer)
-    script="${BROLIT_MAIN_DIR}/cron/optimizer_tasks.sh"
-    default_cron="45 04 * * *"
+    CRON_SPEC_LABEL="OPTIMIZER TASKS"
+    CRON_SPEC_SCRIPT="optimizer_tasks.sh"
+    CRON_SPEC_LOCK="optimizer_tasks"
+    CRON_SPEC_SCHEDULE="45 04 * * *"
     ;;
   wordpress)
-    script="${BROLIT_MAIN_DIR}/cron/wordpress_tasks.sh"
-    default_cron="45 23 * * *"
+    CRON_SPEC_LABEL="WORDPRESS TASKS"
+    CRON_SPEC_SCRIPT="wordpress_tasks.sh"
+    CRON_SPEC_LOCK="wordpress_tasks"
+    CRON_SPEC_SCHEDULE="45 23 * * *"
     ;;
   security)
-    script="${BROLIT_MAIN_DIR}/cron/security_tasks.sh"
-    default_cron="55 03 * * *"
+    CRON_SPEC_LABEL="SECURITY TASKS"
+    CRON_SPEC_SCRIPT="security_tasks.sh"
+    CRON_SPEC_LOCK="security_tasks"
+    CRON_SPEC_SCHEDULE="55 03 * * *"
     ;;
   uptime)
-    script="${BROLIT_MAIN_DIR}/cron/uptime_tasks.sh"
-    default_cron="45 22 * * *"
+    CRON_SPEC_LABEL="UPTIME TASKS"
+    CRON_SPEC_SCRIPT="uptime_tasks.sh"
+    CRON_SPEC_LOCK="uptime_tasks"
+    CRON_SPEC_SCHEDULE="45 22 * * *"
     ;;
   disk-cleanup)
-    script="${BROLIT_MAIN_DIR}/cron/disk_cleanup_tasks.sh"
-    default_cron="0 05 * * 0"
+    CRON_SPEC_LABEL="DISK CLEANUP TASKS"
+    CRON_SPEC_SCRIPT="disk_cleanup_tasks.sh"
+    CRON_SPEC_LOCK="disk_cleanup_tasks"
+    CRON_SPEC_SCHEDULE="0 05 * * 0"
     ;;
   *)
-    log_event "error" "cron-install: unknown kind '${kind}'" "false"
     return 1
     ;;
   esac
 
-  [[ -z "${cron_expression}" ]] && cron_expression="${default_cron}"
+  return 0
+
+}
+
+################################################################################
+# Build the crontab line of a kind. flock -n skips a new run outright if the
+# previous one is still alive instead of queuing behind it; timeout caps how
+# long a single run can hold the lock.
+#
+# Arguments:
+#   ${1} = ${schedule} - five cron fields or an @alias
+#   ${2} = ${script_path} - absolute path of the script
+#
+# Outputs:
+#   the full line on stdout. Needs brolit_cron_kind_spec to have run.
+################################################################################
+
+function brolit_cron_build_line() {
+
+  local schedule="${1}"
+  local script_path="${2}"
+
+  printf '%s /usr/bin/flock -n /var/lock/brolit_%s.lock /usr/bin/timeout %s %s%s\n' \
+    "${schedule}" "${CRON_SPEC_LOCK}" "${CRON_SPEC_TIMEOUT}" "${script_path}" "${CRON_SPEC_SUFFIX}"
+
+}
+
+################################################################################
+# Make the root crontab carry exactly one canonical line for a kind.
+#
+# - No line for the script: append one (default schedule, or the given one).
+# - A line for the same script under ANY path (/root/brolit-shell, an old
+#   /opt release, ...): rewrite its command to this tree's script and the
+#   standard wrapper. The schedule the operator chose is kept unless one is
+#   given explicitly.
+# - Already canonical: nothing changes.
+# - A second line for the same script is reported and left alone.
+# - Lines of other programs and comments are never touched.
+# The crontab is backed up before it is rewritten and restored if the new one
+# does not load. With DRY_RUN=true only the plan is printed.
+#
+# Arguments:
+#   ${1} = ${kind} - see brolit_cron_kinds
+#   ${2} = ${cron_expression} - optional, five fields; overrides the schedule
+#
+# Outputs:
+#   0 if the crontab is (or, in a dry run, would be) canonical, 1 on error.
+################################################################################
+
+function brolit_cronjob_converge() {
+
+  local kind="${1}"
+  local cron_expression="${2:-}"
+
+  local cron_file="/var/spool/cron/crontabs/root"
+
+  if ! brolit_cron_kind_spec "${kind}"; then
+    log_event "error" "cron-install: unknown kind '${kind}'" "false"
+    return 1
+  fi
 
   # Five whitespace-separated fields of cron characters only.
-  if [[ ! "${cron_expression}" =~ ^[0-9*/,-]+([[:space:]]+[0-9*/,-]+){4}$ ]]; then
+  if [[ -n "${cron_expression}" && ! "${cron_expression}" =~ ^[0-9*/,-]+([[:space:]]+[0-9*/,-]+){4}$ ]]; then
     log_event "error" "cron-install: invalid cron expression '${cron_expression}'" "false"
     display --indent 2 --text "- Cron expression" --result FAIL --color RED
     return 1
   fi
 
-  if [[ ! -f "${script}" ]]; then
-    log_event "error" "cron-install: script not found: ${script}" "false"
+  local script_path="${BROLIT_MAIN_DIR}/cron/${CRON_SPEC_SCRIPT}"
+  if [[ ! -f "${script_path}" ]]; then
+    log_event "error" "cron-install: script not found: ${script_path}" "false"
     return 1
   fi
 
-  # brolit_cronjob_install returns 1 when the script is already scheduled, which
-  # is the desired end state here: always success once the entry exists.
-  brolit_cronjob_install "${script}" "${cron_expression}" "${wrapper}"
-  grep -qi "${script}" /var/spool/cron/crontabs/root 2>/dev/null
+  if [[ ! -f "${cron_file}" && "${DRY_RUN:-false}" != "true" ]]; then
+    log_event "info" "Cron file for root does not exist, creating ..." "false"
+    touch "${cron_file}"
+    /usr/bin/crontab "${cron_file}"
+  fi
+
+  local plan
+  plan="$(mktemp)" || return 1
+
+  local found=0 changed=0 line schedule desired
+  while IFS= read -r line || [[ -n "${line}" ]]; do
+
+    if [[ "${line}" =~ ^[[:space:]]*# || -z "${line//[[:space:]]/}" || "${line}" != *"/cron/${CRON_SPEC_SCRIPT}"* ]]; then
+      printf '%s\n' "${line}" >>"${plan}"
+      continue
+    fi
+
+    if [[ ${found} -eq 1 ]]; then
+      log_event "warning" "cron-install: duplicate ${CRON_SPEC_SCRIPT} line left untouched: ${line}" "false"
+      display --indent 4 --text "Duplicate ${CRON_SPEC_SCRIPT} line left untouched"
+      printf '%s\n' "${line}" >>"${plan}"
+      continue
+    fi
+    found=1
+
+    if [[ -n "${cron_expression}" ]]; then
+      schedule="${cron_expression}"
+    elif [[ "${line}" =~ ^[[:space:]]*(@[a-z]+)[[:space:]] ]]; then
+      schedule="${BASH_REMATCH[1]}"
+    elif [[ "${line}" =~ ^[[:space:]]*(([^[:space:]]+[[:space:]]+){4}[^[:space:]]+)[[:space:]] ]]; then
+      schedule="${BASH_REMATCH[1]}"
+    else
+      schedule="${CRON_SPEC_SCHEDULE}"
+    fi
+
+    desired="$(brolit_cron_build_line "${schedule}" "${script_path}")"
+    [[ "${desired}" != "${line}" ]] && changed=1
+    printf '%s\n' "${desired}" >>"${plan}"
+
+  done < <(cat "${cron_file}" 2>/dev/null || true)
+
+  if [[ ${found} -eq 0 ]]; then
+    desired="$(brolit_cron_build_line "${cron_expression:-${CRON_SPEC_SCHEDULE}}" "${script_path}")"
+    printf '%s\n' "${desired}" >>"${plan}"
+    changed=1
+  fi
+
+  if [[ "${DRY_RUN:-false}" == "true" ]]; then
+    echo "CRON_PLAN kind=${kind} changed=${changed} line=${desired}"
+    rm -f -- "${plan}"
+    return 0
+  fi
+
+  if [[ ${changed} -eq 0 ]]; then
+    log_event "info" "cron-install: ${kind} already canonical" "false"
+    display --indent 2 --text "- Cron job ${kind}" --result "UP TO DATE" --color GREEN
+    rm -f -- "${plan}"
+    return 0
+  fi
+
+  # Keep a copy of the previous crontab so any rewrite can be undone.
+  local backup=""
+  if [[ -s "${cron_file}" ]]; then
+    mkdir -p -- "${BROLIT_MAIN_DIR}/log" 2>/dev/null
+    # mktemp keeps two rewrites in the same second from overwriting the first
+    # backup, which holds the crontab as it was before Brolit touched it.
+    backup="$(mktemp "${BROLIT_MAIN_DIR}/log/crontab.bak-$(date +%Y%m%d-%H%M%S).XXXX")" || backup=""
+    [[ -n "${backup}" ]] && { cp -- "${cron_file}" "${backup}" || backup=""; }
+  fi
+
+  cat "${plan}" >"${cron_file}"
+  if ! /usr/bin/crontab "${cron_file}"; then
+    log_event "error" "cron-install: new crontab did not load, restoring" "false"
+    [[ -n "${backup}" ]] && cat "${backup}" >"${cron_file}" && /usr/bin/crontab "${cron_file}"
+    rm -f -- "${plan}"
+    return 1
+  fi
+
+  rm -f -- "${plan}"
+  log_event "info" "cron-install: ${kind} -> ${desired} (previous crontab: ${backup:-none})" "false"
+  display --indent 2 --text "- Cron job ${kind}" --result DONE --color GREEN
+  return 0
 
 }
 
 ################################################################################
-
-################################################################################
-# Install script on crontab
+# Non-interactive cron installation for a croneable task (used by
+# `runner.sh --task cron-install --subtask <kind> [-tv "<cron expression>"]`).
+# Idempotent and convergent, see brolit_cronjob_converge.
 #
 # Arguments:
-#   ${1} = ${script}
-#   ${2} = ${scheduled_time}
-#   ${3} = ${cron_wrapper} - optional command prefix (e.g. flock/timeout)
-#          run in front of ${script}. Not part of the idempotency check
-#          below, so a script already installed without a wrapper is still
-#          correctly detected as installed and won't get a second, wrapped
-#          duplicate line -- upgrading an already-provisioned host's cron
-#          entry to add/change a wrapper needs a separate migration step.
+#   ${1} = ${kind} - see brolit_cron_kinds
+#   ${2} = ${cron_expression} - optional, 5 fields
 #
 # Outputs:
-#   0 if ok, 1 on error.
+#   0 if the crontab carries the canonical line, 1 on invalid input or error.
 ################################################################################
 
-function brolit_cronjob_install() {
+function brolit_cronjob_install_task() {
 
-  local script="${1}"
-  local scheduled_time="${2}"
-  local cron_wrapper="${3:-}"
-
-  local cron_file
-
-  log_section "Cron Tasks"
-
-  cron_file="/var/spool/cron/crontabs/root"
-
-  if [[ ! -f ${cron_file} ]]; then
-
-    log_event "info" "Cron file for root does not exist, creating ..." "false"
-
-    touch "${cron_file}"
-    /usr/bin/crontab "${cron_file}"
-
-    log_event "info" "Cron file created"
-    display --indent 2 --text "- Creating log file" --result DONE --color GREEN
-
-  fi
-
-  # Command
-  grep -qi "${script}" "${cron_file}"
-
-  grep_result=$?
-  if [[ ${grep_result} -ne 0 ]]; then
-
-    local cron_command="${script}"
-    [[ -n "${cron_wrapper}" ]] && cron_command="${cron_wrapper} ${script}"
-
-    log_event "info" "Updating cron job for script: ${script}" "false"
-    /bin/echo "${scheduled_time} ${cron_command}" >>"${cron_file}"
-
-    display --indent 2 --text "- Updating cron job" --result DONE --color GREEN
-
-    return 0
-
-  else
-    log_event "warning" "Script already installed" "false"
-    display --indent 2 --text "- Updating cron job" --result FAIL --color YELLOW
-    display --indent 4 --text "Script already installed"
-
-    return 1
-
-  fi
+  brolit_cronjob_converge "${1}" "${2:-}"
 
 }
 
@@ -2646,135 +2759,30 @@ function pkg_config_changes_detected() {
 
 function menu_cron_script_tasks() {
 
-  local runner_options
-  local chosen_type
+  local kind
+  local label
+  local runner_options=()
+  local chosen_kind
   local scheduled_time
-  local suggested_cron
 
-  # backups_tasks.sh drives borg/borgmatic against remote repos and can run
-  # long; without this a stuck run (e.g. a hung SSH connection) never gets
-  # reaped and the next day's cron pile up on top of it indefinitely.
-  # flock -n skips a new run outright if the previous one is still alive
-  # instead of queuing behind it; timeout caps how long any single run can
-  # occupy the lock.
-  local backups_cron_wrapper="/usr/bin/flock -n /var/lock/brolit_backups_tasks.lock /usr/bin/timeout 6h"
+  while IFS= read -r kind; do
+    brolit_cron_kind_spec "${kind}"
+    runner_options+=("${kind}" "${CRON_SPEC_LABEL}")
+  done < <(brolit_cron_kinds)
 
-  runner_options=(
-    "01)" "BACKUPS TASKS"
-    "02)" "BORGMATIC TASKS"
-    "03)" "OPTIMIZER TASKS"
-    "04)" "WORDPRESS TASKS"
-    "05)" "SECURITY TASKS"
-    "06)" "UPTIME TASKS"
-    "07)" "BROLIT UI HELPER"
-    "08)" "DISK CLEANUP TASKS"
-  )
-  chosen_type="$(whiptail --title "CRONEABLE TASKS" --menu "\n" 20 78 10 "${runner_options[@]}" 3>&1 1>&2 2>&3)"
+  chosen_kind="$(whiptail --title "CRONEABLE TASKS" --menu "\n" 20 78 10 "${runner_options[@]}" 3>&1 1>&2 2>&3)"
 
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
 
-    if [[ ${chosen_type} == *"01"* ]]; then
+    brolit_cron_kind_spec "${chosen_kind}"
+    label="${CRON_SPEC_LABEL}"
 
-      # BACKUPS-TASKS
-      suggested_cron="45 00 * * *" # Every day at 00:45 AM
-      scheduled_time="$(whiptail_input "CRON BACKUPS-TASKS" "Insert a cron expression for selected task:" "${suggested_cron}")"
-      exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
+    scheduled_time="$(whiptail_input "CRON ${label}" "Insert a cron expression for selected task:" "${CRON_SPEC_SCHEDULE}")"
+    exitstatus=$?
+    if [[ ${exitstatus} -eq 0 ]]; then
 
-        brolit_cronjob_install "${BROLIT_MAIN_DIR}/cron/backups_tasks.sh" "${scheduled_time}" "${backups_cron_wrapper}"
-
-      fi
-
-    fi
-    if [[ ${chosen_type} == *"02"* ]]; then
-
-      # BORGMATIC-TASKS (uses unified backups script)
-      suggested_cron="0 * * * *" # Every hour
-      scheduled_time="$(whiptail_input "CRON BORGMATIC-TASKS" "Insert a cron expression for unified backups (borgmatic) task:" "${suggested_cron}")"
-      exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
-        # Schedule unified backups script instead of legacy borgmatic task
-        brolit_cronjob_install "${BROLIT_MAIN_DIR}/cron/backups_tasks.sh" "${scheduled_time}" "${backups_cron_wrapper}"
-      fi
-
-    fi
-    if [[ ${chosen_type} == *"03"* ]]; then
-
-      # OPTIMIZER-TASKS
-      suggested_cron="45 04 * * *" # Every day at 04:45 AM
-      scheduled_time="$(whiptail_input "CRON OPTIMIZER-TASKS" "Insert a cron expression for selected task:" "${suggested_cron}")"
-      exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
-
-        brolit_cronjob_install "${BROLIT_MAIN_DIR}/cron/optimizer_tasks.sh" "${scheduled_time}"
-
-      fi
-
-    fi
-    if [[ ${chosen_type} == *"04"* ]]; then
-
-      # WORDPRESS-TASKS
-      suggested_cron="45 23 * * *" # Every day at 23:45 AM
-      scheduled_time="$(whiptail_input "CRON WORDPRESS-TASKS" "Insert a cron expression for selected task:" "${suggested_cron}")"
-      exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
-
-        brolit_cronjob_install "${BROLIT_MAIN_DIR}/cron/wordpress_tasks.sh" "${scheduled_time}"
-
-      fi
-
-    fi
-    if [[ ${chosen_type} == *"05"* ]]; then
-
-      # UPTIME-TASKS
-      suggested_cron="55 03 * * *" # Every day at 22:45 AM
-      scheduled_time="$(whiptail_input "CRON SECURITY-TASKS" "Insert a cron expression for selected task:" "${suggested_cron}")"
-      exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
-
-        brolit_cronjob_install "${BROLIT_MAIN_DIR}/cron/security_tasks.sh" "${scheduled_time}"
-
-      fi
-
-    fi
-    if [[ ${chosen_type} == *"06"* ]]; then
-
-      # UPTIME-TASKS
-      suggested_cron="45 22 * * *" # Every day at 22:45 AM
-      scheduled_time="$(whiptail_input "CRON UPTIME-TASKS" "Insert a cron expression for selected task:" "${suggested_cron}")"
-      exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
-
-        brolit_cronjob_install "${BROLIT_MAIN_DIR}/cron/uptime_tasks.sh" "${scheduled_time}"
-
-      fi
-
-    fi
-    if [[ ${chosen_type} == *"07"* ]]; then
-
-      # BROLIT HELPER
-      suggested_cron="*/30 * * * *" # Every 30 minutes
-      scheduled_time="$(whiptail_input "CRON BROLIT-HELPER" "Insert a cron expression for selected task:" "${suggested_cron}")"
-      exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
-
-        brolit_cronjob_install "${BROLIT_MAIN_DIR}/cron/brolit_ui_tasks.sh > /dev/null" "${scheduled_time}"
-
-      fi
-
-    fi
-    if [[ ${chosen_type} == *"08"* ]]; then
-
-      # DISK-CLEANUP-TASKS
-      suggested_cron="0 05 * * 0" # Every Sunday at 05:00 AM
-      scheduled_time="$(whiptail_input "CRON DISK-CLEANUP TASKS" "Insert a cron expression for selected task:" "${suggested_cron}")"
-      exitstatus=$?
-      if [[ ${exitstatus} -eq 0 ]]; then
-
-        brolit_cronjob_install "${BROLIT_MAIN_DIR}/cron/disk_cleanup_tasks.sh" "${scheduled_time}"
-
-      fi
+      brolit_cronjob_converge "${chosen_kind}" "${scheduled_time}"
 
     fi
 
