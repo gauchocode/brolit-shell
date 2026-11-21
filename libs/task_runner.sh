@@ -57,7 +57,8 @@ function show_help() {
                                             for the same script under any path is rewritten to this
                                             tree with the standard flock/timeout wrapper, keeping its
                                             schedule (-tv "<cron expr>" overrides it; -dr prints the
-                                            plan without writing). Borg runs inside backups.
+                                            plan without writing). Borg runs inside backups. Subtask
+                                            "existing" converges only the kinds the crontab already has.
                         aliases-install     (no subtask)
                         openresty           Subtasks: install, uninstall, reconfigure, status,
                                             api-status, api-routes, create-route, delete-route
@@ -770,7 +771,7 @@ function tasks_handler() {
     ;;
 
   cron-install)
-    validate_task_and_subtask "cron-install" "${STASK}" "backups ui optimizer wordpress security uptime disk-cleanup"
+    validate_task_and_subtask "cron-install" "${STASK}" "backups ui optimizer wordpress security uptime disk-cleanup existing"
     exit_code=$?
     [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
 

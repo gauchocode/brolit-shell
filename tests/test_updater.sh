@@ -180,6 +180,21 @@ out="$(CRON_FAIL_KIND=ui "${ROOT_DIR}/updater.sh" install v1.1.0 --root "${TMP}/
 [[ "$(wc -l <"${CRON_LOG}")" == "2" ]] && grep -q 'subtask security' "${CRON_LOG}" || fail "custom cron kinds not honored"
 "${ROOT_DIR}/updater.sh" install v1.1.0 --root "${TMP}/bad/brolit-shell" --repo "${ORIGIN}" --cron-kinds 'backups; rm -rf /' >/dev/null 2>&1; [[ $? -eq 2 ]] || fail "unsafe --cron-kinds accepted"
 
+# 22. crons: standard kinds, only the existing ones, custom kinds, failure exit
+t="${TMP}/kinds/brolit-shell"
+: >"${CRON_LOG}"
+out="$("${t}/updater.sh" crons 2>&1)"; rc=$?
+[[ ${rc} -eq 0 && "$(result "${out}")" == "crons_installed" ]] || fail "crons failed (rc=${rc}): ${out}"
+[[ "$(wc -l <"${CRON_LOG}")" == "2" ]] && grep -q 'subtask backups' "${CRON_LOG}" && grep -q 'subtask ui' "${CRON_LOG}" || fail "crons must install the standard kinds: $(cat "${CRON_LOG}")"
+: >"${CRON_LOG}"
+"${t}/updater.sh" crons --existing >/dev/null 2>&1 || fail "crons --existing failed"
+[[ "$(cat "${CRON_LOG}")" == "runner --task cron-install --subtask existing" ]] || fail "--existing must run the existing subtask only: $(cat "${CRON_LOG}")"
+: >"${CRON_LOG}"
+out="$(CRON_FAIL_KIND=ui "${t}/updater.sh" crons 2>&1)"; rc=$?
+[[ ${rc} -eq 6 && "$(result "${out}")" == "crons_failed" ]] || fail "a failing cron must exit 6 (rc=${rc}): ${out}"
+"${TMP}/does-not-exist/updater.sh" crons >/dev/null 2>&1; [[ $? -ne 0 ]] || fail "crons on a missing tree must fail"
+"${t}/updater.sh" crons --root "${TMP}/nope" >/dev/null 2>&1; [[ $? -eq 2 ]] || fail "crons with a missing --root must be a usage error"
+
 # 19. bootstrap: a host whose own updater.sh is the old one runs the updater of
 #     the target tag instead, taken from git, against its own tree
 t="$(new_tree bootstrap)"

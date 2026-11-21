@@ -9,6 +9,7 @@
 #   updater.sh update   <vX.Y.Z>  [--root DIR]
 #   updater.sh rollback [<commit>] [--root DIR]
 #   updater.sh install  [<vX.Y.Z>] [--root DIR] [--repo URL] [--no-cron] [--cron-kinds "k1 k2"]
+#   updater.sh crons    [--existing] [--cron-kinds "k1 k2"] [--root DIR]
 #
 # `install` is the one way to put the shell on a server, from a terminal, from
 # cloud-init or from brolit-admin: it clones the tree if it is missing, moves it
@@ -16,6 +17,11 @@
 # refused), syntax-checks it and installs the standard crons through
 # `runner.sh --task cron-install` (default kinds: backups ui). With no tag it
 # uses the newest release tag.
+#
+# `crons` installs the standard crons (default kinds: backups ui) on an existing
+# tree, for callers that must write the configuration first. With `--existing`
+# it only converges the crons the server already schedules (what an update
+# does): it repoints and wraps them and never adds one.
 #
 # A release is an annotated tag "vX.Y.Z" whose release/version.env declares the
 # same version. An update only ever fast-forwards: it refuses a tree with
@@ -39,6 +45,7 @@ REMOTE="origin"
 REPO_URL="https://github.com/gauchocode/brolit-shell"
 CRON_KINDS="backups ui"
 INSTALL_CRON="true"
+CRONS_EXISTING=""
 
 readonly TAG_RE='^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.]+)?$'
 
@@ -52,7 +59,7 @@ readonly TAG_RE='^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.]+)?$'
 #   exits 2
 ################################################################################
 function usage() {
-  sed -n '/^#   updater.sh status/,/^#   updater.sh install /p' "${BASH_SOURCE[0]}" | sed 's/^#//' >&2
+  sed -n '/^#   updater.sh status/,/^#   updater.sh crons /p' "${BASH_SOURCE[0]}" | sed 's/^#//' >&2
   exit 2
 }
 
@@ -314,6 +321,58 @@ function cmd_update() {
 }
 
 ################################################################################
+# Install (or converge) crons through the tree's own runner.
+#
+# Arguments:
+#   ${1} = ${existing} - "existing" to converge only the crons already present
+#
+# Outputs:
+#   0 if every cron-install succeeded, 6 otherwise.
+################################################################################
+function run_crons() {
+  local mode="${1:-}"
+  local kind rc=0
+
+  [[ -x "${ROOT_DIR}/runner.sh" ]] || { echo "updater: ${ROOT_DIR}/runner.sh not found" >&2; return 6; }
+
+  if [[ "${mode}" == "existing" ]]; then
+    TERM=dumb "${ROOT_DIR}/runner.sh" --task cron-install --subtask existing </dev/null || {
+      echo "updater: cron-install existing failed" >&2
+      rc=6
+    }
+    return ${rc}
+  fi
+
+  for kind in ${CRON_KINDS}; do
+    if ! TERM=dumb "${ROOT_DIR}/runner.sh" --task cron-install --subtask "${kind}" </dev/null; then
+      echo "updater: cron-install ${kind} failed" >&2
+      rc=6
+    fi
+  done
+  return ${rc}
+}
+
+################################################################################
+# crons: install the standard crons, or converge the existing ones.
+#
+# Arguments:
+#   ${1} = ${existing} - "existing" to only converge what is already scheduled
+#
+# Outputs:
+#   0 on success, 6 if a cron-install failed.
+################################################################################
+function cmd_crons() {
+  local head
+  head="$(git -C "${ROOT_DIR}" rev-parse HEAD 2>/dev/null || true)"
+  if run_crons "${1:-}"; then
+    result_line "crons_installed" "" "${head}" ""
+  else
+    result_line "crons_failed" "" "${head}" ""
+    exit 6
+  fi
+}
+
+################################################################################
 # install: the one way to put brolit-shell on a server. Clones the tree if it is
 # missing, moves it to the tag, then installs the standard crons.
 #
@@ -326,7 +385,7 @@ function cmd_update() {
 function cmd_install() {
   local tag="${1:-}"
   local created=0
-  local rc kind cron_rc=0
+  local rc cron_rc=0
 
   if [[ -n "${tag}" && ! "${tag}" =~ ${TAG_RE} ]]; then
     echo "updater: a release tag like v3.14.24 is required" >&2
@@ -352,12 +411,7 @@ function cmd_install() {
   fi
 
   if [[ "${INSTALL_CRON}" == "true" ]]; then
-    for kind in ${CRON_KINDS}; do
-      if ! TERM=dumb "${ROOT_DIR}/runner.sh" --task cron-install --subtask "${kind}" </dev/null; then
-        echo "updater: cron-install ${kind} failed" >&2
-        cron_rc=6
-      fi
-    done
+    run_crons "" || cron_rc=6
   fi
 
   local head
@@ -440,6 +494,10 @@ while [[ $# -gt 0 ]]; do
     INSTALL_CRON="false"
     shift
     ;;
+  --existing)
+    CRONS_EXISTING="existing"
+    shift
+    ;;
   --fetch)
     fetch_first="fetch"
     shift
@@ -461,5 +519,6 @@ status) cmd_status "${fetch_first}" ;;
 update) cmd_update "${positional[0]:-}" ;;
 rollback) cmd_rollback "${positional[0]:-}" ;;
 install) cmd_install "${positional[0]:-}" ;;
+crons) cmd_crons "${CRONS_EXISTING}" ;;
 *) usage ;;
 esac

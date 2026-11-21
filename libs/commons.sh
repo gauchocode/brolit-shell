@@ -2381,7 +2381,44 @@ function brolit_cronjob_converge() {
 
 function brolit_cronjob_install_task() {
 
-  brolit_cronjob_converge "${1}" "${2:-}"
+  local kind="${1}"
+
+  if [[ "${kind}" == "existing" ]]; then
+    brolit_cronjob_converge_existing
+    return $?
+  fi
+
+  brolit_cronjob_converge "${kind}" "${2:-}"
+
+}
+
+################################################################################
+# Converge every croneable task the root crontab already schedules, and no
+# other. This is what an update runs: it repoints and wraps the lines a server
+# has without adding a cron the server never had.
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if every present kind converged (or none is present), 1 if any failed.
+################################################################################
+
+function brolit_cronjob_converge_existing() {
+
+  local cron_file="/var/spool/cron/crontabs/root"
+  local kind rc=0
+
+  [[ -f "${cron_file}" ]] || return 0
+
+  while IFS= read -r kind; do
+    brolit_cron_kind_spec "${kind}" || continue
+    if grep -v '^[[:space:]]*#' "${cron_file}" | grep -qF "/cron/${CRON_SPEC_SCRIPT}"; then
+      brolit_cronjob_converge "${kind}" || rc=1
+    fi
+  done < <(brolit_cron_kinds)
+
+  return ${rc}
 
 }
 

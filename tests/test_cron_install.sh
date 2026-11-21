@@ -18,7 +18,7 @@ fail() { echo "FAIL: $*" >&2; exit 1; }
 {
   echo 'log_event() { :; }; display() { :; }'
   echo 'CRONTAB_RC=0; crontab() { return ${CRONTAB_RC}; }'
-  sed -n '/^function brolit_cron_kinds() {/,/^}/p;/^function brolit_cron_kind_spec() {/,/^}/p;/^function brolit_cron_build_line() {/,/^}/p;/^function brolit_cronjob_converge() {/,/^}/p;/^function brolit_cronjob_install_task() {/,/^}/p' "${ROOT_DIR}/libs/commons.sh" \
+  sed -n '/^function brolit_cron_kinds() {/,/^}/p;/^function brolit_cron_kind_spec() {/,/^}/p;/^function brolit_cron_build_line() {/,/^}/p;/^function brolit_cronjob_converge() {/,/^}/p;/^function brolit_cronjob_install_task() {/,/^}/p;/^function brolit_cronjob_converge_existing() {/,/^}/p' "${ROOT_DIR}/libs/commons.sh" \
     | sed "s#/var/spool/cron/crontabs/root#${TMP}/root.cron#g; s#/usr/bin/crontab#crontab#g"
 } >"${TMP}/fns.sh"
 # shellcheck disable=SC1091
@@ -107,5 +107,23 @@ brolit_cronjob_install_task borgmatic && fail "borgmatic kind accepted"
 [[ ! -s "${CRON}" ]] || fail "invalid input wrote a line: $(cat "${CRON}")"
 rm -f "${BROLIT_MAIN_DIR}/cron/uptime_tasks.sh"
 brolit_cronjob_install_task uptime && fail "a missing script was accepted"
+
+# 9. "existing" converges only the kinds the crontab already has
+cat >"${CRON}" <<CRONEOF
+5 00 * * * /root/brolit-shell/cron/backups_tasks.sh
+@weekly /usr/bin/other
+# 55 03 * * * /root/brolit-shell/cron/security_tasks.sh
+CRONEOF
+for f in uptime disk_cleanup; do : >"${BROLIT_MAIN_DIR}/cron/${f}_tasks.sh"; done
+brolit_cronjob_install_task existing || fail "existing failed"
+grep -qxF "5 00 * * * $(wrapper backups_tasks 6h) ${BROLIT_MAIN_DIR}/cron/backups_tasks.sh" "${CRON}" || fail "existing did not converge backups"
+grep -q "brolit_ui_tasks.sh\|optimizer_tasks.sh\|wordpress_tasks.sh\|uptime_tasks.sh\|disk_cleanup_tasks.sh" "${CRON}" && fail "existing added a cron the host did not have"
+grep -qxF "# 55 03 * * * /root/brolit-shell/cron/security_tasks.sh" "${CRON}" || fail "a commented line was touched"
+grep -v '^#' "${CRON}" | grep -q "security_tasks.sh" && fail "a commented-out cron was resurrected"
+: >"${CRON}"; brolit_cronjob_install_task existing || fail "existing on an empty crontab must succeed"
+[[ ! -s "${CRON}" ]] || fail "existing wrote into an empty crontab"
+rm -f "${CRON}"; brolit_cronjob_install_task existing || fail "existing without a crontab must succeed"
+printf '1 1 * * * /root/brolit-shell/cron/backups_tasks.sh\n' >"${CRON}"
+plan="$(DRY_RUN=true brolit_cronjob_install_task existing)"; echo "${plan}" | grep -q "CRON_PLAN kind=backups changed=1" || fail "existing dry run wrong: ${plan}"
 
 echo "cron-install tests passed"
