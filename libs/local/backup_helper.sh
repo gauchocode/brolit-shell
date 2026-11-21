@@ -579,6 +579,37 @@ function backup_all_projects_files() {
 
   log_subsection "Backup Sites Files"
 
+  # The compressed files backup needs a destination for compressed files
+  # (Dropbox, SFTP or local). Without one backup_project_files prints nothing, and
+  # an empty result below is an error: a Borg-only host reported "Files Backup:
+  # ERROR" every night with no message although Borg had backed the sites up
+  # (spyglass-hccx13use, 2026-11). The database and the server config already
+  # skip in that case, so do the same, and say so.
+  if ! compression_backup_methods_enabled; then
+
+    if [[ "${BACKUP_BORG_STATUS:-}" == "enabled" ]]; then
+
+      log_event "info" "No compression backup method enabled (Dropbox, SFTP, or Local). Skipping the compressed files backup of the sites; Borg covers them" "false"
+      display --indent 6 --text "- Compressed files backup" --result "SKIPPED" --color YELLOW
+      display --indent 8 --text "Borg is the only enabled method" --tcolor YELLOW
+      BACKUP_FILES_MAIL_LIST+=("Compressed files backup skipped (Borg is the only enabled method);SKIPPED")
+
+      return 0
+
+    fi
+
+    # No method at all: nothing is backed up, and that is a configuration error
+    # a sysadmin has to fix, so it stays an error, with the reason.
+    log_event "error" "No backup method is enabled (Dropbox, SFTP, Local or Borg): the files of the sites are not backed up" "false"
+    display --indent 6 --text "- Files backup" --result "FAIL" --color RED
+    BACKUP_FILES_MAIL_ERRORS+=("all sites (no backup method enabled)")
+    [[ -v BACKUP_FILES_MAIL_NOTES ]] || declare -g -a BACKUP_FILES_MAIL_NOTES=()
+    BACKUP_FILES_MAIL_NOTES+=("No backup method is enabled: Dropbox, SFTP, local and Borg are all disabled in the Brolit configuration, so nothing is backed up. Enable one.")
+
+    return 1
+
+  fi
+
   # Get all directories
   working_sites_directories="$(get_all_directories "${PROJECTS_PATH}")"
 

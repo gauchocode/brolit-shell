@@ -36,6 +36,8 @@ function bms_setup() {
     export BACKUP_CONFIG_ADDITIONAL_DIRS="   "
     export NOW="2026-11-13"
     export COUNT_TOTAL_SITES=0
+    # A host with sites has a backup method; without one the files backup is an error by design.
+    export BACKUP_LOCAL_STATUS="enabled"
     mkdir -p "${PROJECTS_PATH}" "${BROLIT_TMP_DIR}/${NOW}"
 
     # Keep the original helper definitions so the teardown can restore
@@ -70,7 +72,7 @@ function bms_teardown() {
 
     # Restore the real helpers (declaration capture, see setup).
     eval "${HELPERS_BACKUP}"
-    unset PROJECTS_PATH BROLIT_TMP_DIR BACKUP_CONFIG_ADDITIONAL_DIRS NOW COUNT_TOTAL_SITES
+    unset PROJECTS_PATH BROLIT_TMP_DIR BACKUP_CONFIG_ADDITIONAL_DIRS NOW COUNT_TOTAL_SITES BACKUP_LOCAL_STATUS
     unset BACKUP_FILES_MAIL_LIST BACKUP_FILES_MAIL_ERRORS
     rm -rf "${TEST_TMP}"
 
