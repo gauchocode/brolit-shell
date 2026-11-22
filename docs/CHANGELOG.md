@@ -1,5 +1,27 @@
 # Changelog
 
+## 3.15 - 2026-11-22
+
+### Added
+
+- Database backups with Borg (`libs/local/borg_database_inventory.sh`, `libs/local/borg_database_config.sh`, `utils/borg/db_exec.sh`, see `docs/borg-database-backup.md`). A server where Borg is the only method used to skip every database ("No compression backup method enabled") and report OK; the only trace of a containerized database in Borg was a hot copy of its data directory. Now every database is detected (Compose services, other database containers, the host MySQL/MariaDB), resolved to a project by structure or a recorded decision, and dumped by borgmatic's own database hooks through a wrapper that runs the client inside the container, so no credential reaches the host. MariaDB, MySQL and PostgreSQL, with restore tested into scratch containers. In use automatically only when Borg is the only method (`BACKUPS.config[0].databases.borg`: `auto`, `enabled`, `disabled`).
+- A database nobody can place is pending and dumped as standalone; a large one with no writes (and a link that rests only on file references) is held until a decision is recorded (`BACKUPS.config[0].databases.decisions`). Engines that cannot be dumped (ClickHouse, MongoDB, ...) are reported as unsupported.
+- The shell raises borgmatic to 2.0.8 by itself when it is older (`pipx upgrade borgmatic`).
+- "Database Backup" says what is covered, held, ignored or unsupported on Borg-only servers, and is an error only when the configuration step failed.
+- New failure class `database_dump` for a failing dump command, with its own text in the mail.
+
+### Fixed
+
+- A borgmatic too old for the templates (they use `commands:`, borgmatic 2.x) was reported as the generic class `config`; it is now `borgmatic_version` and the text names the 2.x requirement.
+- The Borg configuration-coverage check ignored the ignored-projects list of the host configuration, so an ignored directory failed the Borg section of every nightly; it now agrees with the files backup.
+- Debug log lines wrote the ntfy password, the SMTP user and password, the Telegram bot token and the MySQL/PostgreSQL root password in clear text; they are redacted.
+- 42 shell scripts were stored without the executable bit while the runner makes every `*.sh` executable on each run, so a fresh tree showed 42 modified tracked files and Admin refused to update it. They are stored executable and a test enforces it.
+- On Borg-only servers the compressed files backup of the sites reported `Files Backup: ERROR` every night with no reason; it is skipped when Borg is the only method and an error with its reason when no method is enabled at all.
+
+## 3.14.26 to 3.14.38 - 2026-11-21 and 2026-11-22
+
+One runtime per server: the git tree `/root/brolit-shell`, a release is the annotated tag `vX.Y.Z` (`release/tag-release.sh`), and `updater.sh update|install|rollback|crons` moves a tree and converges the crons (`flock` and `timeout` wrappers). The shell report flags runtime drift (`legacy_runtime`, `untagged_runtime`, `modified_runtime`) and a broken package manager (`package_manager_broken`). The shell no longer purges or reinstalls Docker over a half-done dpkg or while containers run. Borg failures state their reason in the mail (`borg_failure_reason_text`), a missing `yq` is installed by the shell, and a persistent-mount coverage failure mails its reasons for a sysadmin to decide.
+
 ## 3.14 - 2026-09-11
 
 ### Added
