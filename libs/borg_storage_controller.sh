@@ -1142,6 +1142,11 @@ function borg_init_failure_reason() {
 
     if echo "${lower}" | grep -qE "source directories or root pattern paths do not exist|source director(y|ies).*do(es)? not exist"; then
         echo "missing_source"
+    elif echo "${lower}" | grep -qE "db_exec\.sh|mariadb-dump|mysqldump|pg_dump|pg_restore|error dumping|dumping .* databases?.*(failed|error)"; then
+        # The dump command of a database config failed: the database or its
+        # container is unreachable, or the credential inside the container was
+        # refused. It must not read as a repository or configuration problem.
+        echo "database_dump"
     elif echo "${lower}" | grep -qE "additional properties are not allowed|was unexpected|were unexpected"; then
         # A key the config uses is unknown to the installed borgmatic: the
         # templates use "commands:" (borgmatic 2.x) and a 1.9 host rejects them
@@ -1231,6 +1236,7 @@ function borg_failure_reason_text() {
         auth) echo "The storage box refused the SSH key, or the host key does not match." ;;
         space) echo "The storage box is out of space or over its quota." ;;
         python_env) echo "borgmatic is not installed or its Python environment is broken." ;;
+        database_dump) echo "The database dump failed: the database or its container could not be reached, or the credential inside the container was refused. The files backup of the project is not affected." ;;
         borgmatic_version) echo "The installed borgmatic is too old for this config (it does not know options the templates use; borgmatic 2.x is required). Upgrade it on the server: pipx upgrade borgmatic." ;;
         encryption_mismatch) echo "The repository exists with a different encryption mode than the config declares." ;;
         repo_missing) echo "The repository does not exist at the configured path." ;;

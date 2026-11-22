@@ -26,6 +26,27 @@ function bdb_config_dir() {
     echo "${BROLIT_BORGMATIC_DB_CONFIG_DIR:-/etc/borgmatic.d/databases}"
 }
 
+################################################################################
+# Are the Borg database configs in use on this server?
+#   BACKUPS.config[0].databases.borg = enabled | disabled | auto (default)
+# auto: only when Borg is the one method that can hold a dump, i.e. no
+# Dropbox/SFTP/Local, whose own database backup keeps working untouched. Servers
+# with Borg and another method can opt in with "enabled".
+################################################################################
+function bdb_borg_databases_enabled() {
+
+    local mode
+
+    [[ "${BACKUP_BORG_STATUS:-}" == "enabled" ]] || return 1
+    mode="$(jq -r '.BACKUPS.config[0].databases.borg // "auto"' "$(bdb_config_file)" 2>/dev/null)"
+    case "${mode}" in
+    enabled) return 0 ;;
+    disabled) return 1 ;;
+    *) declare -F compression_backup_methods_enabled >/dev/null 2>&1 && ! compression_backup_methods_enabled ;;
+    esac
+
+}
+
 # Version of the installed borgmatic ("2.1.10"), empty when there is none.
 function bdb_borgmatic_version() {
 

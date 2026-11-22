@@ -146,6 +146,16 @@ function prepare_borgmatic_environment() {
     sanitize_borgmatic_docker_log_hooks    # Self-heal configs whose docker log hook fails for non-Docker projects
     sanitize_borgmatic_stale_configs    # Archive configs of deleted projects instead of failing missing_source forever
 
+    # Database dumps: raise borgmatic if needed and converge the database configs with
+    # what is really on the server. Never stops the files backup: a failure here is
+    # reported (Database Backup section) and the databases it left out say so.
+    declare -g BDB_CONVERGE_RC=0
+    if bdb_borg_databases_enabled; then
+        bdb_converge
+        BDB_CONVERGE_RC=$?
+        [[ ${BDB_CONVERGE_RC} -ne 0 ]] && log_event "error" "Database backup configuration did not converge (rc=${BDB_CONVERGE_RC})" "false"
+    fi
+
     log_event "info" "Borgmatic environment preparation completed" "false"
     
 }
@@ -365,6 +375,7 @@ files_backup_result=$?
 # Run custom/standalone configs that were not owned by a project directory.
 # Project configs were already executed above and must never run a second time.
 if [[ ${BACKUP_BORG_STATUS} == "enabled" ]]; then
+    backup_borgmatic_databases borg_backup_result borg_failed_projects borg_backup_list
     backup_unhandled_borgmatic_configs BORG_HANDLED_CONFIGS borg_backup_result borg_failed_projects borg_backup_list
     if ! check_borgmatic_config_coverage; then
         borg_backup_result=1

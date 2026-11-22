@@ -27,7 +27,7 @@ source "${TMP}/fns.sh"
 
 # --- one sentence per class, none empty, the fallback only for unknown ones
 fallback="$(borg_failure_reason_text some-class-nobody-defined)"
-for class in yq_missing missing_source config relocation lock stale_lock network parent_missing auth space python_env borgmatic_version encryption_mismatch repo_missing; do
+for class in yq_missing missing_source config relocation lock stale_lock network parent_missing auth space python_env borgmatic_version database_dump encryption_mismatch repo_missing; do
   text="$(borg_failure_reason_text "${class}")"
   [[ -n "${text}" ]] || fail "class ${class} has no text"
   [[ "${text}" != "${fallback}" ]] || fail "class ${class} falls back to the generic text"
@@ -44,6 +44,12 @@ Configuration validation failed")" == "borgmatic_version" ]] || fail "an unknown
 An error occurred while parsing a configuration file at /etc/borgmatic.d/x.yml:
 mapping values are not allowed in this context")" == "config" ]] || fail "a YAML syntax error must stay config"
 [[ "$(borg_failure_reason_text borgmatic_version)" == *"2.x"*"pipx upgrade borgmatic"* ]] || fail "borgmatic_version must name the fix"
+
+# --- a failing database dump is its own class, not config or repository
+[[ "$(borg_init_failure_reason "Error running actions for repository
+Command '('/root/brolit-shell/utils/borg/db_exec.sh', 'dump', 'mariadb', 'c')' returned non-zero exit status 1.")" == "database_dump" ]] || fail "a failing dump command must be database_dump"
+[[ "$(borg_init_failure_reason "mariadb-dump: Got error: 1045: Access denied")" == "database_dump" ]] || fail "a refused dump credential must be database_dump"
+[[ "$(borg_failure_reason_text database_dump)" == *"files backup"*"not affected"* ]] || fail "the text must say the files backup is not affected"
 
 # --- the note carries the project, the sentence and the class code
 BORG_FAILURE_NOTES=()

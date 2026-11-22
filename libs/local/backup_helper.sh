@@ -960,6 +960,135 @@ function backup_borgmatic_config_once() {
 }
 
 ################################################################################
+# Run the database configs (one per project, one per standalone database).
+#
+# They go through backup_borgmatic_config_once, so they get the repository
+# initialisation, network retries, stale-lock handling, the run-level breaker and
+# the classified reason in the mail like any other config, with the directory of
+# the database configs as the config directory for that call.
+#
+# Arguments (names of the aggregates of the nightly, like the function below):
+#  ${1} = numeric result (set to 1 on failure)  ${2} = failed labels array
+#  ${3} = status lines array
+################################################################################
+
+function backup_borgmatic_databases() {
+
+  local result_name="${1}"
+  local failed_name="${2}"
+  local status_name="${3}"
+  local -n result_ref="${result_name}"
+  local -n failed_ref="${failed_name}"
+  local -n status_ref="${status_name}"
+  local dir config owner label
+
+  declare -F bdb_borg_databases_enabled >/dev/null 2>&1 && bdb_borg_databases_enabled || return 0
+
+  dir="$(bdb_config_dir)"
+  [[ -d "${dir}" ]] || return 0
+
+  log_subsection "Backup Databases (Borg)"
+
+  for config in "${dir}"/*.yml; do
+    [[ -f "${config}" ]] || continue
+    owner="$(basename "${config}" .yml)"
+    label="${owner} (database)"
+    BROLIT_BORGMATIC_CONFIG_DIR="${dir}" backup_borgmatic_config_once "${config}" "${label}"
+    if [[ $? -ne 0 ]]; then
+      result_ref=1
+      failed_ref+=("${label}")
+    fi
+    [[ -n "${borg_project_status_line:-}" ]] && status_ref+=("${borg_project_status_line}")
+  done
+
+  return 0
+
+}
+
+################################################################################
+# The "Database Backup" section of a server where Borg holds the dumps: say what
+# is covered, what is held for a decision and what is ignored, instead of
+# skipping every database and reporting OK. Whether each dump then succeeded is
+# in the Borg section, after the run.
+#
+# Uses the state the nightly wrote when it converged the configs, or computes it.
+#
+# Outputs: 0 when every database that should be dumped has a config, 1 otherwise.
+################################################################################
+
+function backup_all_databases_borg_report() {
+
+  local state_file="${BROLIT_BORG_DB_STATE_FILE:-${BROLIT_RUNTIME_STATE_DIR:-/tmp}/borg_databases_state.tsv}"
+  local kind source engine container database owner evidence size writes dormant state target reason pending
+  local covered=0 held=0 ignored=0 unsupported=0 error_msg="none" error_type="none" image
+  local -a lines=()
+
+  declare -g -a BACKUP_ALL_DATABASES_LIST=()
+  BACKUP_ALL_DATABASES_LIST=()
+
+  if [[ ! -s "${state_file}" || -n "$(find "${state_file}" -mmin +360 2>/dev/null)" ]]; then
+    bdb_collect | bdb_resolve >"${state_file}.tmp" 2>/dev/null && mv -f -- "${state_file}.tmp" "${state_file}"
+  fi
+
+  while IFS=$'\t' read -r kind source engine container database owner evidence size writes dormant state target reason pending; do
+    [[ -n "${database}" ]] || continue
+    case "${state}" in
+    linked)
+      lines+=("${database};Borg: ${target}")
+      covered=$((covered + 1))
+      ;;
+    standalone)
+      if [[ "${pending}" == "1" ]]; then
+        lines+=("${database};Borg: standalone, decision pending")
+      else
+        lines+=("${database};Borg: standalone")
+      fi
+      covered=$((covered + 1))
+      ;;
+    held)
+      lines+=("${database};HELD, decision pending (${size} MB, no writes)")
+      held=$((held + 1))
+      ;;
+    ignored)
+      lines+=("${database};IGNORED")
+      ignored=$((ignored + 1))
+      ;;
+    esac
+  done <"${state_file}"
+
+  while IFS=$'\t' read -r container image owner; do
+    [[ -n "${container}" ]] || continue
+    lines+=("${container};NOT BACKED UP, engine not supported (${image})")
+    unsupported=$((unsupported + 1))
+  done < <(bdb_collect_unsupported 2>/dev/null)
+
+  display --indent 6 --text "- Databases covered by Borg" --result "${covered}" --color WHITE
+  [[ ${held} -gt 0 ]] && display --indent 6 --text "- Databases held for a decision" --result "${held}" --color YELLOW
+  [[ ${ignored} -gt 0 ]] && display --indent 6 --text "- Databases ignored" --result "${ignored}" --color WHITE
+  [[ ${unsupported} -gt 0 ]] && display --indent 6 --text "- Databases of an unsupported engine" --result "${unsupported}" --color YELLOW
+  log_event "info" "Databases: ${covered} covered by Borg, ${held} held for a decision, ${ignored} ignored, ${unsupported} unsupported" "false"
+
+  if [[ ${#lines[@]} -eq 0 ]]; then
+    mail_backup_section "none" "none" "databases" "No database found on the server - nothing to dump;SKIPPED"
+    return 0
+  fi
+
+  if [[ "${BDB_CONVERGE_RC:-0}" -eq 2 ]]; then
+    error_msg="borgmatic is too old for the database backups and could not be raised"
+    error_type="database_backup"
+  elif [[ "${BDB_CONVERGE_RC:-0}" -ne 0 ]]; then
+    error_msg="the database backup configuration could not be completed"
+    error_type="database_backup"
+  fi
+
+  BACKUP_ALL_DATABASES_LIST=("${lines[@]}")
+  mail_backup_section "${error_msg}" "${error_type}" "databases" "${BACKUP_ALL_DATABASES_LIST[@]}"
+
+  [[ "${error_msg}" == "none" ]]
+
+}
+
+################################################################################
 # Run top-level borgmatic configs not already handled by project routing.
 #
 # Arguments:
@@ -1420,6 +1549,14 @@ function backup_all_databases() {
   fi
 
   display --indent 6 --text "- Initializing database backup script" --result "DONE" --color GREEN
+
+  # Borg is the only method that can hold a dump: the databases are dumped by their
+  # borgmatic configs, so this section reports what is covered instead of skipping
+  # each database and saying OK (stellacast-vm, 2026-11).
+  if declare -F bdb_borg_databases_enabled >/dev/null 2>&1 && bdb_borg_databases_enabled && ! compression_backup_methods_enabled; then
+    backup_all_databases_borg_report
+    return $?
+  fi
 
   # MySQL backup from HOST
   if [[ ${PACKAGES_MARIADB_STATUS} == "enabled" ]] || [[ ${PACKAGES_MYSQL_STATUS} == "enabled" ]]; then
