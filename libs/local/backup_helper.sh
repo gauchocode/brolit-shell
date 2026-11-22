@@ -1048,6 +1048,13 @@ function check_borgmatic_config_coverage() {
       [[ -d "${project_dir}" ]] || continue
       project_name="$(basename "${project_dir}")"
       [[ "${project_name}" == "html" ]] && continue
+      # The files backup already honours the ignored-projects list of the host
+      # config; the coverage check must agree with it, or an ignored directory
+      # (stellacast-vm: /var/www/tmp, two maintenance pages) fails the Borg
+      # section of every nightly. project_is_ignored is defined by project_helper.sh.
+      if declare -F project_is_ignored >/dev/null 2>&1 && [[ "$(project_is_ignored "${project_name}")" == "true" ]]; then
+        continue
+      fi
       [[ -z "$(find "${project_dir}" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]] && continue
       [[ -f "${config_dir}/${project_name}.yml" ]] || projects_without_config+=("${project_name}")
     done
