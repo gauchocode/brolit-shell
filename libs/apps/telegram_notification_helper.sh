@@ -84,7 +84,7 @@ function telegram_send_notification() {
 	
 		# Log on failure
 		log_event "error" "Telegram notification error!" "false"
-		log_event "debug" "Telegram api call: curl --silent --insecure --max-time ${timeout} --data chat_id=${NOTIFICATION_TELEGRAM_CHAT_ID} --data disable_notification=${notif_sound} --data parse_mode=${display_mode} --data text=${notif_text} ${notif_url}" "false"
+		log_event "debug" "Telegram api call: curl --silent --insecure --max-time ${timeout} --data chat_id=${NOTIFICATION_TELEGRAM_CHAT_ID} --data disable_notification=${notif_sound} --data parse_mode=${display_mode} --data text=${notif_text} https://api.telegram.org/bot<redacted>/sendMessage" "false"
 		log_event "debug" "Telegram notification result: ${telegram_notif_result}" "false"
 		log_event "debug" "Telegram notification response: ${telegram_notif_response}" "false"
 		display --indent 6 --text "- Sending Telegram notification" --result "FAIL" --color RED

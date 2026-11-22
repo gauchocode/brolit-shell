@@ -44,7 +44,7 @@ function ntfy_send_notification() {
 
     # Log
     log_event "info" "Sending Ntfy notification ..." "false"
-    log_event "debug" "${CURL} -H 'Title: ${notification_title}' -H 'Priority: ${priority}' -d '${notification_content}' -u '${NOTIFICATION_NTFY_USERNAME}:${NOTIFICATION_NTFY_PASSWORD}' '${NOTIFICATION_NTFY_SERVER}/${NOTIFICATION_NTFY_TOPIC}'" "false"
+    log_event "debug" "${CURL} -H 'Title: ${notification_title}' -H 'Priority: ${priority}' -d '${notification_content}' -u '<redacted>' '${NOTIFICATION_NTFY_SERVER}/${NOTIFICATION_NTFY_TOPIC}'" "false"
 
     # Ntfy command with priority
     ${CURL} -H "Title: ${notification_title}" -H "Priority: ${priority}" -d "${notification_content}" -u "${NOTIFICATION_NTFY_USERNAME}:${NOTIFICATION_NTFY_PASSWORD}" "${NOTIFICATION_NTFY_SERVER}/${NOTIFICATION_NTFY_TOPIC}" > /dev/null 2>&1

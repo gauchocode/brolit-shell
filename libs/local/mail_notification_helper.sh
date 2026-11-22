@@ -158,7 +158,7 @@ function mail_send_notification() {
 
     # Log
     log_event "info" "Sending Email to ${NOTIFICATION_EMAIL_EMAIL_TO} ..." "false"
-    log_event "debug" "Running: sendEmail -f \"${from_email}\" -t \"${NOTIFICATION_EMAIL_EMAIL_TO}\" -u \"${email_subject}\" -o message-content-type=html -o message-charset=UTF-8 -m \"${email_content}\" -s \"${NOTIFICATION_EMAIL_SMTP_SERVER}:${NOTIFICATION_EMAIL_SMTP_PORT}\" -o tls=\"${NOTIFICATION_EMAIL_SMTP_TLS}\" -xu \"${NOTIFICATION_EMAIL_SMTP_USER}\" -xp \"${NOTIFICATION_EMAIL_SMTP_UPASS}\"" "false"
+    log_event "debug" "Running: sendEmail -f \"${from_email}\" -t \"${NOTIFICATION_EMAIL_EMAIL_TO}\" -u \"${email_subject}\" -o message-content-type=html -o message-charset=UTF-8 -m \"${email_content}\" -s \"${NOTIFICATION_EMAIL_SMTP_SERVER}:${NOTIFICATION_EMAIL_SMTP_PORT}\" -o tls=\"${NOTIFICATION_EMAIL_SMTP_TLS}\" -xu \"<redacted>\" -xp \"<redacted>\"" "false"
 
     # Sending email
     ## Use -l "/${SCRIPT}/sendemail.log" for custom log file

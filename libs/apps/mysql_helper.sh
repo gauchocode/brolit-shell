@@ -671,7 +671,7 @@ function mysql_root_psw_change() {
         # Log
         display --indent 6 --text "- Setting new password for root" --result "FAIL" --color RED
         log_event "error" "Something went wrong changing MySQL root password." "false"
-        log_event "debug" "Last command executed: mysql mysql -e \"USE mysql;UPDATE user SET Password=PASSWORD('${db_root_psw}') WHERE User='${db_root_user}';FLUSH PRIVILEGES;\"" "false"
+        log_event "debug" "Last command executed: mysql mysql -e \"USE mysql;UPDATE user SET Password=PASSWORD('<redacted>') WHERE User='${db_root_user}';FLUSH PRIVILEGES;\"" "false"
 
         return 1
 
