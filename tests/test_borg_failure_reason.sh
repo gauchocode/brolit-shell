@@ -19,7 +19,7 @@ log_event() { echo "${1}: ${2}" >>"${TMP}/log"; }
 display() { :; }
 
 {
-  sed -n '/^function borg_failure_reason_text() {/,/^}/p;/^function borg_note_failure() {/,/^}/p;/^function initialize_repository() {/,/^}/p' "${ROOT_DIR}/libs/borg_storage_controller.sh"
+  sed -n '/^function borg_init_failure_reason() {/,/^}/p;/^function borg_failure_reason_text() {/,/^}/p;/^function borg_note_failure() {/,/^}/p;/^function initialize_repository() {/,/^}/p' "${ROOT_DIR}/libs/borg_storage_controller.sh"
   sed -n '/^function backup_mail_notes_html() {/,/^}/p;/^function borg_mail_failure_title() {/,/^}/p' "${ROOT_DIR}/libs/local/backup_helper.sh"
 } >"${TMP}/fns.sh"
 # shellcheck disable=SC1091
@@ -35,6 +35,15 @@ done
 [[ "$(borg_failure_reason_text unknown)" == "${fallback}" && "$(borg_failure_reason_text)" == "${fallback}" ]] || fail "unknown/empty must use the fallback"
 [[ "$(borg_failure_reason_text yq_missing)" == *"yq"*"Install"* ]] || fail "yq_missing must say what to install"
 [[ "$(borg_failure_reason_text relocation)" == *"sysadmin has to confirm"* ]] || fail "relocation is a person's decision and must say so"
+
+# --- classification of the two real messages seen on stellacast-vm (2026-11)
+[[ "$(borg_init_failure_reason "An error occurred while parsing a configuration file at /etc/borgmatic.d/x.yml:
+At the top level: Additional properties are not allowed ('commands' was unexpected)
+Configuration validation failed")" == "borgmatic_version" ]] || fail "an unknown key must be borgmatic_version, not config"
+[[ "$(borg_init_failure_reason "Error parsing configuration file
+An error occurred while parsing a configuration file at /etc/borgmatic.d/x.yml:
+mapping values are not allowed in this context")" == "config" ]] || fail "a YAML syntax error must stay config"
+[[ "$(borg_failure_reason_text borgmatic_version)" == *"2.x"*"pipx upgrade borgmatic"* ]] || fail "borgmatic_version must name the fix"
 
 # --- the note carries the project, the sentence and the class code
 BORG_FAILURE_NOTES=()

@@ -1142,6 +1142,11 @@ function borg_init_failure_reason() {
 
     if echo "${lower}" | grep -qE "source directories or root pattern paths do not exist|source director(y|ies).*do(es)? not exist"; then
         echo "missing_source"
+    elif echo "${lower}" | grep -qE "additional properties are not allowed|was unexpected|were unexpected"; then
+        # A key the config uses is unknown to the installed borgmatic: the
+        # templates use "commands:" (borgmatic 2.x) and a 1.9 host rejects them
+        # (stellacast-vm, 2026-11). Checked before the generic config class.
+        echo "borgmatic_version"
     elif echo "${lower}" | grep -qE "cannot find (variable|environment)|environment variable.*(not set|missing|not found)|variable.*(not defined|undefined)|error (parsing|validating) configuration|configuration.*(invalid|validation error)|failed to (parse|validate).*config|could not (read|parse).*configuration|unrecognized configuration option|validationerror"; then
         echo "config"
     elif echo "${lower}" | grep -qE "repository.*(relocated|relocation|previously located|location changed)|previously located repository|borg_relocated_repo_access_is_ok|repository access aborted"; then
@@ -1226,7 +1231,7 @@ function borg_failure_reason_text() {
         auth) echo "The storage box refused the SSH key, or the host key does not match." ;;
         space) echo "The storage box is out of space or over its quota." ;;
         python_env) echo "borgmatic is not installed or its Python environment is broken." ;;
-        borgmatic_version) echo "The installed borgmatic does not understand options this config uses (version mismatch)." ;;
+        borgmatic_version) echo "The installed borgmatic is too old for this config (it does not know options the templates use; borgmatic 2.x is required). Upgrade it on the server: pipx upgrade borgmatic." ;;
         encryption_mismatch) echo "The repository exists with a different encryption mode than the config declares." ;;
         repo_missing) echo "The repository does not exist at the configured path." ;;
         *) echo "The failure was not recognised; the log of the run has the detail." ;;
@@ -1678,7 +1683,7 @@ function _initialize_repository_for_config() {
     BORG_INIT_FAILURE_REASON="${init_reason}"
     log_event "error" "Repository init failure class: ${init_reason}" "false"
     if [[ "${init_reason}" == "borgmatic_version" ]]; then
-        log_event "error" "Installed borgmatic does not support the repo-list/init subcommands this brolit version uses (borgmatic >= 1.9 required). Upgrade it on this server, e.g.: pipx upgrade borgmatic" "false"
+        log_event "error" "Installed borgmatic is too old for the configs and subcommands this brolit version uses (borgmatic >= 2.0 required). Upgrade it on this server, e.g.: pipx upgrade borgmatic" "false"
     fi
     display --indent 8 --text "Failure class: ${init_reason}" --tcolor RED
     return 1
