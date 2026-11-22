@@ -24,18 +24,19 @@ shift 3
 exec "$@"
 EOF
 # Fake clients: record argv and the credential variables they received.
-for c in mariadb-dump mysqldump mariadb mysql pg_dump pg_restore psql; do
+for c in mariadb-dump mysqldump mariadb mysql pg_dump pg_restore psql createdb; do
     cat >"${BIN}/${c}" <<EOF
 #!/usr/bin/env bash
 echo "${c} \$* | MYSQL_PWD=\${MYSQL_PWD:-} PGPASSWORD=\${PGPASSWORD:-}" >>"\${LOG}"
 [[ -t 0 ]] || { read -r -t 1 line && echo "stdin:\$line" >>"\${LOG}"; }
+if [[ "${c}" == "psql" && "\$*" == *pg_database* ]]; then [[ "\${FAKE_DB_EXISTS:-0}" == "1" ]] && echo 1; exit 0; fi
 echo "OUT-${c}"
 exit "\${FAKE_RC:-0}"
 EOF
 done
 chmod +x "${BIN}"/*
 export PATH="${BIN}:${PATH}"
-reset() { : >"${LOG}"; : >"${DLOG}"; unset MYSQL_ROOT_PASSWORD MARIADB_ROOT_PASSWORD MYSQL_ROOT_PASSWORD_FILE POSTGRES_PASSWORD POSTGRES_USER FAKE_RC; }
+reset() { : >"${LOG}"; : >"${DLOG}"; unset MYSQL_ROOT_PASSWORD MARIADB_ROOT_PASSWORD MYSQL_ROOT_PASSWORD_FILE POSTGRES_PASSWORD POSTGRES_USER FAKE_RC FAKE_DB_EXISTS; }
 
 # --- 1. MariaDB dump with the exact argv observed from borgmatic 2.2.0
 reset; export MYSQL_ROOT_PASSWORD="s3cr3t-PW"
@@ -83,6 +84,16 @@ grep -qF "pg-pw" "${DLOG}" && fail "pg credential in host argv"
 reset; export POSTGRES_USER=app POSTGRES_PASSWORD=p
 bash "${WRAPPER}" restore postgres pgc --dbname appdb --clean >/dev/null
 grep -q "^pg_restore -U app --dbname appdb --clean |" "${LOG}" || fail "pg_restore must keep --dbname: $(cat "${LOG}")"
+# a recovered server has no such database: it is created first, and only then restored into
+grep -q "^createdb -U app appdb |" "${LOG}" || fail "a missing database must be created before pg_restore: $(cat "${LOG}")"
+[[ "$(grep -n '^createdb' "${LOG}" | cut -d: -f1)" -lt "$(grep -n '^pg_restore' "${LOG}" | cut -d: -f1)" ]] || fail "createdb must come before pg_restore"
+reset; export FAKE_DB_EXISTS=1 POSTGRES_USER=app
+bash "${WRAPPER}" restore postgres pgc --dbname=appdb >/dev/null
+grep -q "^createdb" "${LOG}" && fail "an existing database must not be created again: $(cat "${LOG}")"
+reset; bash "${WRAPPER}" restore postgres pgc --dbname 'bad;name' >/dev/null 2>&1
+grep -q "^createdb" "${LOG}" && fail "an unsafe database name must never reach createdb"
+reset; bash "${WRAPPER}" dump postgres pgc --file "${TMP}/p9" appdb >/dev/null
+grep -q "^createdb" "${LOG}" && fail "a dump must never create a database"
 reset; echo "select 1" | bash "${WRAPPER}" client postgres pgc --dbname appdb >/dev/null
 grep -q "^psql -U postgres --dbname appdb |" "${LOG}" || fail "psql: $(cat "${LOG}")"
 

@@ -125,6 +125,24 @@ case "$engine" in
             *) bin=psql ;;
         esac
         command -v "$bin" >/dev/null 2>&1 || { echo "db_exec.sh: no $bin in the container" >&2; exit 127; }
+        if [ "$mode" = restore ]; then
+            # pg_restore --clean --dbname needs the database to exist, and on a server
+            # being recovered it does not (a MariaDB dump carries its own CREATE
+            # DATABASE; this one does not). Create it, only here and only when missing.
+            prev=""; db=""
+            for a in "$@"; do
+                [ "$prev" = "--dbname" ] && db="$a"
+                case "$a" in --dbname=*) db="${a#--dbname=}" ;; esac
+                prev="$a"
+            done
+            case "$db" in
+                ""|*[!A-Za-z0-9_.$-]*) ;;
+                *)
+                    psql -U "$user" -d postgres -Atc "SELECT 1 FROM pg_database WHERE datname = '"'"'$db'"'"'" 2>/dev/null | grep -q 1 \
+                        || createdb -U "$user" "$db" || exit 1
+                    ;;
+            esac
+        fi
         exec "$bin" -U "$user" "$@"
         ;;
 esac
