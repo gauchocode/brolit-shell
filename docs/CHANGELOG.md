@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.15.2 - 2026-11-23
+
+### Fixed
+
+- Under cron (`PATH=/usr/bin:/bin`) a tool the shell installs itself was not found in the same run: on `gaucho-dev04` every Borg backup failed with `yq_missing` right after the log said `yq installed`, because yq goes to `/usr/local/bin`. `libs/commons.sh` now appends `/usr/local/sbin`, `/usr/local/bin`, `/usr/sbin`, `/sbin` and `/root/.local/bin` to `PATH` when they are missing (`brolit_ensure_path`). Guard: `tests/test_cron_path.sh`.
+
 ## 3.15.1 - 2026-11-22
 
 ### Fixed

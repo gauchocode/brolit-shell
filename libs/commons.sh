@@ -14,6 +14,22 @@
 #   none
 ################################################################################
 
+# cron runs with PATH=/usr/bin:/bin. Tools the shell installs itself (yq, wp,
+# pipx apps) live in /usr/local/bin and /root/.local/bin, so without this a tool
+# installed during the run was still "missing" for the same run (dev04, 2026-11-22:
+# every Borg backup failed with yq_missing right after "yq installed").
+function brolit_ensure_path() {
+  local dir
+  for dir in /usr/local/sbin /usr/local/bin /usr/sbin /sbin /root/.local/bin; do
+    case ":${PATH}:" in
+      *":${dir}:"*) ;;
+      *) [[ -d "${dir}" ]] && PATH="${PATH}:${dir}" ;;
+    esac
+  done
+  export PATH
+}
+brolit_ensure_path
+
 function _source_all_scripts() {
 
   local libs_apps_path
