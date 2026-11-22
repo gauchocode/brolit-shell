@@ -7,7 +7,7 @@ and says in the report what is covered and what is not. Design and decisions:
 
 ## When it runs
 
-`BACKUPS.config[0].databases.borg` in `/root/.brolit_conf.json`:
+`BACKUPS.config[0].databases[0].borg` in `/root/.brolit_conf.json`:
 
 | Value | Behaviour |
 |---|---|
@@ -49,12 +49,15 @@ A database nobody can place is **pending**: it is dumped as standalone (unless h
 decides. Decisions live in the server configuration:
 
 ```json
-"BACKUPS": { "config": [ { "databases": { "borg": "auto", "decisions": [
+"BACKUPS": { "config": [ { "databases": [ { "status": "enabled", "exclude": ["..."], "borg": "auto", "decisions": [
   { "source": "host", "database": "old_copy", "decision": "ignore" },
   { "source": "host", "database": "shop", "decision": "link", "project": "shop.example.com" },
   { "source": "castinera-staging_mariadb", "database": "stage", "decision": "standalone" }
-] } } ] } }
+] } ] } ] }
 ```
+
+Like every section of the configuration, `databases` is an array holding one object; the new keys sit next to
+the existing `status` and `exclude`.
 
 `source` is `host`, a container name, or `<project>/<service>` for a Compose service.
 

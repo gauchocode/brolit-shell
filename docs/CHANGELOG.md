@@ -1,11 +1,17 @@
 # Changelog
 
+## 3.15.1 - 2026-11-22
+
+### Fixed
+
+- The database backup options were read from `BACKUPS.config[0].databases.borg` and `.decisions`, but `databases` is an array in the real configuration (`[{status, exclude}]`), so `enabled`, `disabled` and the recorded decisions were never read (with the errors silenced it always answered `auto`) and writing them failed. They are `databases[0].borg` and `databases[0].decisions` now, an unreadable file logs a warning instead of silently falling back, and the tests build their configuration from the real template so the shape cannot drift again. Found when enabling the feature on `gaucho-dev04`; 3.15.0 behaves as `auto` whatever the configuration says.
+
 ## 3.15 - 2026-11-22
 
 ### Added
 
-- Database backups with Borg (`libs/local/borg_database_inventory.sh`, `libs/local/borg_database_config.sh`, `utils/borg/db_exec.sh`, see `docs/borg-database-backup.md`). A server where Borg is the only method used to skip every database ("No compression backup method enabled") and report OK; the only trace of a containerized database in Borg was a hot copy of its data directory. Now every database is detected (Compose services, other database containers, the host MySQL/MariaDB), resolved to a project by structure or a recorded decision, and dumped by borgmatic's own database hooks through a wrapper that runs the client inside the container, so no credential reaches the host. MariaDB, MySQL and PostgreSQL, with restore tested into scratch containers. In use automatically only when Borg is the only method (`BACKUPS.config[0].databases.borg`: `auto`, `enabled`, `disabled`).
-- A database nobody can place is pending and dumped as standalone; a large one with no writes (and a link that rests only on file references) is held until a decision is recorded (`BACKUPS.config[0].databases.decisions`). Engines that cannot be dumped (ClickHouse, MongoDB, ...) are reported as unsupported.
+- Database backups with Borg (`libs/local/borg_database_inventory.sh`, `libs/local/borg_database_config.sh`, `utils/borg/db_exec.sh`, see `docs/borg-database-backup.md`). A server where Borg is the only method used to skip every database ("No compression backup method enabled") and report OK; the only trace of a containerized database in Borg was a hot copy of its data directory. Now every database is detected (Compose services, other database containers, the host MySQL/MariaDB), resolved to a project by structure or a recorded decision, and dumped by borgmatic's own database hooks through a wrapper that runs the client inside the container, so no credential reaches the host. MariaDB, MySQL and PostgreSQL, with restore tested into scratch containers. In use automatically only when Borg is the only method (`BACKUPS.config[0].databases[0].borg`: `auto`, `enabled`, `disabled`).
+- A database nobody can place is pending and dumped as standalone; a large one with no writes (and a link that rests only on file references) is held until a decision is recorded (`BACKUPS.config[0].databases[0].decisions`). Engines that cannot be dumped (ClickHouse, MongoDB, ...) are reported as unsupported.
 - The shell raises borgmatic to 2.0.8 by itself when it is older (`pipx upgrade borgmatic`).
 - "Database Backup" says what is covered, held, ignored or unsupported on Borg-only servers, and is an error only when the configuration step failed.
 - New failure class `database_dump` for a failing dump command, with its own text in the mail.

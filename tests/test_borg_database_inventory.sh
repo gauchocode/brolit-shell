@@ -121,7 +121,8 @@ grep -qP "^container\tcastinera-staging_mariadb\tmariadb\tcastinera-staging_mari
 grep -qP "^host\thost\tmysql\t-\tstellacast_tmp\t-\tnone\t" "${TMP}/inv.tsv" || fail "host database has no structural owner"
 
 # ---- 4. resolution -----------------------------------------------------------
-echo '{"BACKUPS":{"config":[{}]}}' >"${BROLIT_CONFIG_FILE}"
+conf() { jq "$1" "${ROOT_DIR}/config/brolit/brolit_conf.json" >"${BROLIT_CONFIG_FILE}"; }
+conf '.'
 res="$(bdb_resolve <"${TMP}/inv.tsv")"
 get() { awk -F'\t' -v s="${1}" -v d="${2}" '$2==s && $5==d {print $11"|"$12"|"$13"|"$14}' <<<"${res}"; }
 [[ "$(get app.stellacast.com/mariadb app_stellacast_prod)" == "linked|app.stellacast.com|structure|0" ]] || fail "live db: $(get app.stellacast.com/mariadb app_stellacast_prod)"
@@ -151,14 +152,11 @@ mkdir -p "${PROJECTS_PATH}/y"
 rm -f "${PROJECTS_PATH}/stage03.stellacast.com/.env"
 
 # ---- 6. recorded decisions win over everything, and are tolerated when stale -----
-cat >"${BROLIT_CONFIG_FILE}" <<'JSON'
-{"BACKUPS":{"config":[{"databases":{"decisions":[
+conf '.BACKUPS.config[0].databases[0].decisions = [
  {"source":"host","database":"app_stellacast_prod","decision":"ignore"},
  {"source":"host","database":"stage03_stellacast_stage","decision":"link","project":"stage03.stellacast.com"},
  {"source":"host","database":"staging_stellacast_stage","decision":"link","project":"staging.stellacast.com"},
- {"source":"host","database":"stellacast_prod","decision":"standalone"}
-]}}]}}
-JSON
+ {"source":"host","database":"stellacast_prod","decision":"standalone"}]'
 res="$(bdb_resolve <"${TMP}/inv.tsv")"
 [[ "$(get host app_stellacast_prod)" == "ignored|-|decision|0" ]] || fail "ignore decision: $(get host app_stellacast_prod)"
 [[ "$(get host stage03_stellacast_stage)" == "linked|stage03.stellacast.com|decision|0" ]] || fail "link decision: $(get host stage03_stellacast_stage)"

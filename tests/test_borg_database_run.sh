@@ -30,13 +30,15 @@ mkdir -p "${BROLIT_BORGMATIC_DB_CONFIG_DIR}"
 
 # ---- A. when the database configs are in use ------------------------------------
 compression_backup_methods_enabled() { [[ "${COMPRESSION:-no}" == "yes" ]]; }
-mode() { echo "{\"BACKUPS\":{\"config\":[{\"databases\":{\"borg\":\"${1}\"}}]}}" >"${BROLIT_CONFIG_FILE}"; }
+# The configuration is built from the real template, so its shape cannot drift from the test's.
+conf() { jq "$1" "${ROOT_DIR}/config/brolit/brolit_conf.json" >"${BROLIT_CONFIG_FILE}"; }
+mode() { conf ".BACKUPS.config[0].databases[0].borg = \"${1}\""; }
 check() { # check <expected y|n> <description>
   bdb_borg_databases_enabled && got=y || got=n
   [[ "${got}" == "${1}" ]] || fail "${2}: expected ${1}, got ${got}"
 }
 BACKUP_BORG_STATUS=enabled
-echo '{"BACKUPS":{"config":[{}]}}' >"${BROLIT_CONFIG_FILE}"
+conf '.'
 COMPRESSION=no;  check y "auto, Borg only"
 COMPRESSION=yes; check n "auto, Borg and Dropbox must keep today's behaviour"
 mode enabled;    check y "explicit enabled with Dropbox"
@@ -45,9 +47,14 @@ mode auto; COMPRESSION=no; check y "explicit auto"
 BACKUP_BORG_STATUS=disabled; mode enabled; check n "Borg itself disabled"
 BACKUP_BORG_STATUS=enabled
 rm -f "${BROLIT_CONFIG_FILE}"; COMPRESSION=no; check y "no readable config means auto"
+echo "not json" >"${BROLIT_CONFIG_FILE}"; check y "an unreadable config means auto, not a crash"
+# the key lives where the real configuration keeps it: inside databases[0], next to status and exclude
+conf '.'; [[ "$(jq -r '.BACKUPS.config[0].databases | type' "${BROLIT_CONFIG_FILE}")" == "array" ]] || fail "the real template must keep databases as an array"
+mode enabled; [[ "$(jq -r '.BACKUPS.config[0].databases[0].status' "${BROLIT_CONFIG_FILE}")" == "enabled" ]] || fail "setting the key must keep the existing databases settings"
+COMPRESSION=yes; check y "explicit enabled read from the real configuration shape"
 
 # ---- B. running the configs --------------------------------------------------------
-echo '{"BACKUPS":{"config":[{}]}}' >"${BROLIT_CONFIG_FILE}"; COMPRESSION=no
+conf '.'; COMPRESSION=no
 D="${BROLIT_BORGMATIC_DB_CONFIG_DIR}"
 touch "${D}/app.example.com.yml" "${D}/standalone-host-tmp.yml"
 backup_borgmatic_config_once() {

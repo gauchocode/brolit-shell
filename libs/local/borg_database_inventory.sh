@@ -302,7 +302,8 @@ function bdb_collect_unsupported() {
 
 ################################################################################
 # Decisions recorded in the server configuration:
-#   BACKUPS.config[0].databases.decisions[] = {source, database, decision, project}
+#   BACKUPS.config[0].databases[0].decisions[] = {source, database, decision, project}
+# (every section of the configuration is an array of one object, databases included)
 # Output: source <TAB> database <TAB> decision(ignore|standalone|link) <TAB> project
 ################################################################################
 function bdb_decisions_tsv() {
@@ -310,7 +311,9 @@ function bdb_decisions_tsv() {
     local file
     file="$(bdb_config_file)"
     [[ -r "${file}" ]] || return 0
-    jq -r '.BACKUPS.config[0].databases.decisions[]? | [.source, .database, .decision, (.project // "")] | @tsv' "${file}" 2>/dev/null
+    if ! jq -r '.BACKUPS.config[0].databases[0].decisions[]? | [.source, .database, .decision, (.project // "")] | @tsv' "${file}" 2>/dev/null; then
+        log_event "warning" "Could not read the database decisions from ${file}; none is applied" "false"
+    fi
 
 }
 

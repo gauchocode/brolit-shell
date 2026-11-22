@@ -17,7 +17,8 @@ source "${ROOT_DIR}/libs/local/borg_database_config.sh"
 export BROLIT_MAIN_DIR="/root/brolit-shell" PROJECTS_PATH="${TMP}/www" BROLIT_CONFIG_FILE="${TMP}/conf.json"
 export BROLIT_BORGMATIC_DB_CONFIG_DIR="${TMP}/cfg" BROLIT_BORG_DB_STATE_FILE="${TMP}/state.tsv"
 mkdir -p "${PROJECTS_PATH}/app.stellacast.com" "${TMP}/bin"
-echo '{"BACKUPS":{"config":[{}]}}' >"${BROLIT_CONFIG_FILE}"
+conf() { jq "$1" "${ROOT_DIR}/config/brolit/brolit_conf.json" >"${BROLIT_CONFIG_FILE}"; }
+conf '.'
 BACKUP_BORG_USERS=(u372319 u391408); BACKUP_BORG_SERVERS=(u372319.your-storagebox.de u391408.your-storagebox.de); BACKUP_BORG_PORTS=(23 23)
 BACKUP_BORG_GROUP="stellacast-hosts"; HOSTNAME="stellacast-vm"
 
@@ -138,13 +139,13 @@ bdb_converge || fail "second converge"
 [[ -z "$(ls -A "${D}/.retired")" ]] || fail "nothing to retire yet: $(ls -A "${D}/.retired")"
 
 # ---- 6. a decision removes what it ignores: the config is retired, not deleted ----
-echo '{"BACKUPS":{"config":[{"databases":{"decisions":[{"source":"host","database":"stellacast_tmp","decision":"ignore"}]}}]}}' >"${BROLIT_CONFIG_FILE}"
+conf '.BACKUPS.config[0].databases[0].decisions = [{"source":"host","database":"stellacast_tmp","decision":"ignore"}]'
 bdb_converge || fail "converge after the decision"
 [[ ! -e "${D}/standalone-host-stellacast_tmp.yml" ]] || fail "an ignored database must lose its config"
 ls "${D}/.retired" | grep -q "^standalone-host-stellacast_tmp\." || fail "the retired config must be kept"
 
 # ---- 7. a config borgmatic refuses is never installed and the previous one stays --
-echo '{"BACKUPS":{"config":[{"databases":{"decisions":[{"source":"host","database":"app_stellacast_prod","decision":"standalone"}]}}]}}' >"${BROLIT_CONFIG_FILE}"
+conf '.BACKUPS.config[0].databases[0].decisions = [{"source":"host","database":"app_stellacast_prod","decision":"standalone"}]'
 export FAKE_VALIDATE_RC=1
 bdb_converge; rc=$?
 [[ ${rc} -eq 1 ]] || fail "a rejected config must make converge fail, rc=${rc}"
@@ -155,7 +156,7 @@ bdb_converge || fail "converge once borgmatic accepts it"
 [[ -f "${D}/standalone-host-app_stellacast_prod.yml" ]] || fail "standalone decision must be honoured (large and dormant, but explicit)"
 
 # ---- 8. borgmatic below the minimum: raised by the shell, or nothing is done ----
-rm -rf "${D}"; echo '{"BACKUPS":{"config":[{}]}}' >"${BROLIT_CONFIG_FILE}"
+rm -rf "${D}"; conf '.'
 echo "2.0.6" >"${FAKE_BM_VERSION_FILE}"
 PATH_SAVE="${PATH}"; export PATH="${TMP}/nopipx:/usr/bin:/bin"; mkdir -p "${TMP}/nopipx"
 bdb_converge; rc=$?

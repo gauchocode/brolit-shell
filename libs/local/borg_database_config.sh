@@ -28,7 +28,7 @@ function bdb_config_dir() {
 
 ################################################################################
 # Are the Borg database configs in use on this server?
-#   BACKUPS.config[0].databases.borg = enabled | disabled | auto (default)
+#   BACKUPS.config[0].databases[0].borg = enabled | disabled | auto (default)
 # auto: only when Borg is the one method that can hold a dump, i.e. no
 # Dropbox/SFTP/Local, whose own database backup keeps working untouched. Servers
 # with Borg and another method can opt in with "enabled".
@@ -38,7 +38,8 @@ function bdb_borg_databases_enabled() {
     local mode
 
     [[ "${BACKUP_BORG_STATUS:-}" == "enabled" ]] || return 1
-    mode="$(jq -r '.BACKUPS.config[0].databases.borg // "auto"' "$(bdb_config_file)" 2>/dev/null)"
+    mode="$(jq -r '.BACKUPS.config[0].databases[0].borg // "auto"' "$(bdb_config_file)" 2>/dev/null)" || mode="auto"
+    [[ -n "${mode}" ]] || mode="auto"
     case "${mode}" in
     enabled) return 0 ;;
     disabled) return 1 ;;
