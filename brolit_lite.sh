@@ -3475,6 +3475,7 @@ function retrieve_cron_jobs() {
     local cron_jobs
     local user_cron
     local system_cron
+    local cron_command
 
     cron_jobs="["
 
@@ -3486,7 +3487,11 @@ function retrieve_cron_jobs() {
 
         while IFS= read -r cron_line; do
         
-            cron_jobs+="{\"schedule\": \"$(echo "${cron_line}" | awk '{print $1,$2,$3,$4,$5}')\", \"command\": \"$(echo "${cron_line}" | cut -d ' ' -f6-)\", \"type\": \"user\"},"
+            # The command is user text: quotes and backslashes must be escaped or one cron
+            # such as `psql -c "VACUUM ..."` makes the whole list invalid JSON, and Admin then
+            # keeps stale cron data for good (gaucho-automate01, since 2026-08-12).
+            cron_command="$(echo "${cron_line}" | cut -d ' ' -f6- | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/\t/\\t/g')"
+            cron_jobs+="{\"schedule\": \"$(echo "${cron_line}" | awk '{print $1,$2,$3,$4,$5}')\", \"command\": \"${cron_command}\", \"type\": \"user\"},"
         
         done <<< "$user_cron"
     

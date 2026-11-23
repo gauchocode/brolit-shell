@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.15.5 - 2026-11-23
+
+### Fixed
+
+- `retrieve_cron_jobs` (`brolit_lite.sh`, what Admin reads on every sync) wrote each cron command into JSON without escaping it. One cron with double quotes, such as `psql -c "VACUUM ..."`, made the whole list invalid JSON; Admin then kept the previous cron data without saying so. On `gaucho-automate01` that froze the list at 2026-08-12 and produced a false `cron-unwrapped` finding months after the crons were wrapped. Quotes, backslashes and tabs are escaped now. Guard: `tests/test_lite_cron_json.sh` (valid JSON and byte-exact round trip; fails without the fix).
+
 ## 3.15.4 - 2026-11-23
 
 ### Fixed
