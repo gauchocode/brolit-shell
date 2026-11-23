@@ -30,7 +30,7 @@ function ftp_download() {
     local local_directory="${5}"
     #local excluded_dirs="${6}"
 
-    log_event "debug" "Running: wget -r -l 0 --reject=log,.ftpquota ftp://${ftp_ip}/${ftp_path} --ftp-user=\"${ftp_user}\" --ftp-password=\"${ftp_pass}\" -nH --cut-dirs=1 --directory-prefix=\"${local_directory}\"" "false"
+    log_event "debug" "Running: wget -r -l 0 --reject=log,.ftpquota ftp://${ftp_ip}/${ftp_path} --ftp-user=\"${ftp_user}\" --ftp-password=\"<redacted>\" -nH --cut-dirs=1 --directory-prefix=\"${local_directory}\"" "false"
 
     # wget -r -l 0 --reject=log,.ftpquota --exclude-directories=/public_html/cgi-bin,/public_html/.well-known ftp://"${ftp_ip}/${ftp_path}" --ftp-user="${ftp_user}" --ftp-password="${ftp_pass}" -nH --cut-dirs=1
     wget -r -l 0 --reject="log,.ftpquota" ftp://"${ftp_ip}/${ftp_path}" --ftp-user="${ftp_user}" --ftp-password="${ftp_pass}" -nH --cut-dirs=1 --directory-prefix="${local_directory}"

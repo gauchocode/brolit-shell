@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.15.3 - 2026-11-23
+
+### Fixed
+
+- The Netdata management key was written in clear to the log on every run (`netdata_helper.sh`, silencing and restoring alarms), and the FTP password in a debug line (`ftp_helper.sh`). Both are redacted. `tests/test_no_secrets_in_debug_logs.sh` now also rejects, at any log level, a log line that interpolates an `X-Auth-Token` or `Authorization` header or `--ftp-password`. Passwords that the shell generates and logs when an operator creates or resets a user (MySQL, PostgreSQL, WordPress, SFTP, project database user) are not covered by this release.
+
 ## 3.15.2 - 2026-11-23
 
 ### Fixed

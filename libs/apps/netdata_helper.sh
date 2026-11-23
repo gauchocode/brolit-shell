@@ -30,7 +30,7 @@ function netdata_alerts_disable() {
 
     # Log
     log_event "info" "Disabling netdata alarms ..." "false"
-    log_event "info" "Running: curl \"http://localhost:19999/api/v1/manage/health?cmd=SILENCE ALL\" -H \"X-Auth-Token: ${netdata_api_key}\"" "false"
+    log_event "info" "Running: curl \"http://localhost:19999/api/v1/manage/health?cmd=SILENCE ALL\" -H \"X-Auth-Token: <redacted>\"" "false"
 
 }
 
@@ -54,6 +54,6 @@ function netdata_alerts_enable() {
 
     # Log
     log_event "info" "Restoring netdata alarms status..." "false"
-    log_event "info" "Running: curl \"http://localhost:19999/api/v1/manage/health?cmd=RESET\" -H \"X-Auth-Token: ${netdata_api_key}\"" "false"
+    log_event "info" "Running: curl \"http://localhost:19999/api/v1/manage/health?cmd=RESET\" -H \"X-Auth-Token: <redacted>\"" "false"
 
 }
