@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.15.4 - 2026-11-23
+
+### Fixed
+
+- The database inventory listed only the first running database container. The clients it runs (`db_exec.sh`, which ends in `docker exec -i`) read standard input, and inside the loop over running containers that input was the container list itself, so every container after the first vanished from the inventory and its databases were neither backed up nor reported. Found by previewing `stellacast-vm` (5 MariaDB containers, 1 inventoried, the production database among the missing ones). The clients now run with `</dev/null`. Guard: `tests/test_borg_database_inventory_stdin.sh`, which uses the real query function and a wrapper that drains stdin like `docker exec -i`. The earlier inventory tests replaced the query function and could not see this.
+
 ## 3.15.3 - 2026-11-23
 
 ### Fixed

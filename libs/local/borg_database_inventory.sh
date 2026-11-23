@@ -65,16 +65,16 @@ function bdb_query() {
     case "${engine}" in
     mariadb | mysql)
         if [[ "${kind}" == "host" ]]; then
-            mysql -N -B -e "${sql}" 2>/dev/null
+            mysql -N -B -e "${sql}" 2>/dev/null </dev/null
         else
-            "$(bdb_exec_path)" client "${engine}" "${container}" -N -B -e "${sql}" 2>/dev/null
+            "$(bdb_exec_path)" client "${engine}" "${container}" -N -B -e "${sql}" 2>/dev/null </dev/null
         fi
         ;;
     postgres)
         if [[ "${kind}" == "host" ]]; then
-            runuser -u postgres -- psql -At -d postgres -c "${sql}" 2>/dev/null
+            runuser -u postgres -- psql -At -d postgres -c "${sql}" 2>/dev/null </dev/null
         else
-            "$(bdb_exec_path)" client postgres "${container}" -At -d postgres -c "${sql}" 2>/dev/null
+            "$(bdb_exec_path)" client postgres "${container}" -At -d postgres -c "${sql}" 2>/dev/null </dev/null
         fi
         ;;
     esac
