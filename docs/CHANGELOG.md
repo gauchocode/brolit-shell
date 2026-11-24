@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.15.6 - 2026-11-24
+
+### Fixed
+
+- A folder of `/var/www` listed in `BACKUPS.config[].projects[].ignored` (for example `tmp`, two maintenance pages on `stellacast-vm`) still went through the Borg configuration generation and the nightly project loop: the nightly logged `ERROR: Failed to generate config for: tmp` and `Borgmatic config missing` warnings every day. Both loops now skip ignored projects, like the files backup and the coverage check already did. Test: `tests/test_backups_tasks_ignored.sh`.
+
 ## 3.15.5 - 2026-11-23
 
 ### Fixed

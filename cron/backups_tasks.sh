@@ -69,6 +69,13 @@ function generate_config() {
                     continue
                 fi
 
+                # Skip what the operator ignored in BACKUPS.config[].projects[].ignored
+                # (the files backup and the coverage check already honour it).
+                if [[ "$(project_is_ignored "${folder_name}")" == "true" ]]; then
+                    log_event "debug" "Project ${folder_name} is in the ignored list -- no borgmatic config" "false"
+                    continue
+                fi
+
                 ((total_projects++))
                 log_event "info" "Processing project: ${folder_name}" "false"
 
@@ -333,6 +340,12 @@ for project_dir in "${PROJECTS_PATH}"/*/; do
     # Verify that the directory exists and is actually a directory
     if [[ -d "${project_dir}" ]]; then
         project_domain=$(basename "${project_dir}")
+
+        # An ignored project has no config on purpose: do not warn about it
+        if [[ "$(project_is_ignored "${project_domain}")" == "true" ]]; then
+            log_event "debug" "Project ${project_domain} is in the ignored list -- skipped" "false"
+            continue
+        fi
 
         # Multi-method backup for each project
         backup_project_all_enabled_methods "${project_domain}"
