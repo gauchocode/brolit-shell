@@ -905,8 +905,23 @@ function migrate_switch_dns() {
     log_event "warning" "Migrate: Cloudflare is not configured on the source, so the previous DNS value cannot be recorded for a rollback" "true"
   fi
 
-  if ! _migrate_ssh "${dest_user}" "${dest_host}" "${dest_port}" "${dest_ssh_key}" \
-    "cd '${MIGRATE_DEST_BROLIT_DIR}' && ./runner.sh -t project -st finalize-domain -D '${domain}' >/dev/null 2>&1"; then
+  # The DNS provider answers errors now and then (a record lookup that times out
+  # reads as "not found", an "Unable to authenticate request" that passes on its
+  # own). The step is idempotent (a record that is already right is skipped), so
+  # it is tried a few times before the migration gives up and puts the DNS back.
+  local finalize_ok=1
+  local finalize_attempt
+  for finalize_attempt in 1 2 3; do
+    if _migrate_ssh "${dest_user}" "${dest_host}" "${dest_port}" "${dest_ssh_key}" \
+      "cd '${MIGRATE_DEST_BROLIT_DIR}' && ./runner.sh -t project -st finalize-domain -D '${domain}' >/dev/null 2>&1"; then
+      finalize_ok=0
+      break
+    fi
+    log_event "warning" "Migrate: switching the DNS of ${domain} failed (attempt ${finalize_attempt} of 3)" "true"
+    [[ ${finalize_attempt} -lt 3 ]] && sleep 20
+  done
+
+  if [[ ${finalize_ok} -ne 0 ]]; then
     log_event "error" "Migrate: switching the DNS of ${domain} to the destination failed" "true"
     display --indent 6 --text "- Switch DNS to the destination" --result "FAIL" --color RED
     migrate_rollback_dns "${domain}" "${previous_content}"

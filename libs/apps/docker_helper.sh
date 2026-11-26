@@ -371,8 +371,10 @@ function docker_compose_expose_on_internal_ip() {
     ' "${compose_file}" "${compose_file}" >"${tmp_file}"
 
     if [[ -s "${tmp_file}" ]] && ! cmp -s "${tmp_file}" "${compose_file}"; then
-        # Only keep it if compose still reads the result.
-        if docker compose -f "${tmp_file}" config >/dev/null 2>&1; then
+        # Only keep it if compose still reads the result. It must be read the way
+        # the project is: from the project directory, where the .env that defines
+        # ${WP_PORT} lives (read from /tmp, an unset port makes any file invalid).
+        if docker compose --project-directory "$(dirname "${compose_file}")" -f "${tmp_file}" config >/dev/null 2>&1; then
             cat "${tmp_file}" >"${compose_file}"
             log_event "info" "Published the web port of ${compose_file} on ${internal_ip} for the OpenResty gateway" "false"
         else

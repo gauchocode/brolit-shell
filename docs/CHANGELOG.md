@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.15.11 - 2026-11-26
+
+### Fixed
+
+- 3.15.10 published a project's web port on the internal address in gateway mode, but the edit was discarded on a real project: the edited compose file was validated from `/tmp`, where the project's `.env` is not found, so a bind mount such as `${MYSQL_DATA_DIR}:/var/lib/mysql` became `:/var/lib/mysql` and compose rejected the file ("invalid spec: empty section between colons"). It is now validated with `--project-directory` set to the project's directory. Its test now uses real docker compose and such a mount, and fails without the fix.
+- The DNS step of `migrate` gave up on the first failure of the DNS provider (an `Unable to authenticate request` that passes on its own, a record lookup that times out and reads as "not found"). The step is idempotent, so it is now tried three times, 20 seconds apart, before the migration rolls the DNS back and fails. Test: `tests/test_migrate_defers_dns.sh`.
+
 ## 3.15.10 - 2026-11-26
 
 ### Fixed

@@ -123,7 +123,33 @@ YML
     PATH="${tmp}/bad/bin:${PATH}" docker_compose_expose_on_internal_ip "${tmp}/d.yml"
     cmp -s "${tmp}/d.yml" "${tmp}/c.before" && echo "PASS: an edit that compose cannot read is discarded" || { echo "FAIL: kept an invalid edit"; failed=1; }
 
-    # 7. wired into the build
+    mkdir -p "${tmp}/bin-ip"; cp "${tmp}/bin/ip" "${tmp}/bin-ip/ip"
+    # 7. validated the way the project is read: from its own directory (real docker, when available)
+    if docker compose version >/dev/null 2>&1; then
+        local real="${tmp}/real"; mkdir -p "${real}"
+        # A bind mount defined by a variable of the .env is what made the file invalid
+        # when it was checked from /tmp (jumpnetcorp: "invalid spec: :/var/lib/mysql").
+        printf 'WP_PORT=83\nMYSQL_DATA_DIR=./mysql_data\n' > "${real}/.env"
+        cat > "${real}/docker-compose.yml" <<'YML'
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - '127.0.0.1:${WP_PORT}:80'
+  mysql:
+    image: mariadb:11
+    volumes:
+      - ${MYSQL_DATA_DIR}:/var/lib/mysql
+YML
+        PATH="${tmp}/bin-ip:${PATH}" docker_compose_expose_on_internal_ip "${real}/docker-compose.yml"
+        if grep -q "10.2.0.104:\${WP_PORT}:80" "${real}/docker-compose.yml"; then
+            echo "PASS: with real docker compose the edit is kept (the .env is read from the project directory)"
+        else echo "FAIL: real docker compose rejected the edit: $(cat "${real}/docker-compose.yml")"; failed=1; fi
+    else
+        echo "SKIP: docker compose is not available here"
+    fi
+
+    # 8. wired into the build
     awk '/^function docker_compose_build/,/^}/' "${TEST_LOADER_DIR}/../libs/apps/docker_helper.sh" | grep -q "docker_compose_expose_on_internal_ip" \
         && echo "PASS: docker_compose_build calls it before building" || { echo "FAIL: not wired into the build"; failed=1; }
 

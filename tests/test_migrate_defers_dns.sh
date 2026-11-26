@@ -233,8 +233,18 @@ function tmd_switch() {
 
     tmd_reset; finalize_rc=1
     migrate_switch_dns "root" "203.0.113.9" "22" "/k" "shop.example.com"
-    [[ $? -ne 0 && "${CALLS}" == *"rollback:5.161.255.48"* ]] && tmd_check "a failed DNS step puts the previous address back" yes || tmd_check "no rollback after failed finalize: ${CALLS}" no
+    [[ $? -ne 0 && "${CALLS}" == *"rollback:5.161.255.48"* ]] && tmd_check "a DNS step that keeps failing puts the previous address back" yes || tmd_check "no rollback after failed finalize: ${CALLS}" no
+    [[ "$(echo "${CALLS}" | grep -o finalize | wc -l | tr -d ' ')" == "3" ]] && tmd_check "the DNS step is tried three times before giving up" yes || tmd_check "attempts: ${CALLS}" no
     finalize_rc=0
+
+    # a transient failure that passes on its own does not fail the migration
+    tmd_reset
+    local tries=0
+    function _migrate_ssh() { CALLS+=" finalize"; tries=$((tries + 1)); [[ ${tries} -ge 2 ]] && return 0; return 1; }
+    migrate_switch_dns "root" "203.0.113.9" "22" "/k" "shop.example.com"
+    [[ $? -eq 0 && "${CALLS}" != *"rollback"* && "$(echo "${CALLS}" | grep -o finalize | wc -l | tr -d ' ')" == "2" ]] \
+        && tmd_check "a transient DNS provider error is retried and the switch goes through" yes || tmd_check "transient failure not retried: ${CALLS}" no
+    function _migrate_ssh() { CALLS+=" finalize"; return ${finalize_rc}; }
 
     tmd_reset; https=502; http=301
     migrate_switch_dns "root" "203.0.113.9" "22" "/k" "shop.example.com"
