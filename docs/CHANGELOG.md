@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.15.7 - 2026-11-26
+
+### Fixed
+
+- Restoring or migrating a Docker project that has no `.env` failed with `Port is required for Docker projects`. `migrate site riverside.edu.ar` (a static site whose port `8081:80` is published only in `docker-compose.yml`) stopped in the remote restore after capture and transfer, leaving the extracted tree on the destination and blocking a retry at the path collision check. Three causes, all fixed: `project_get_port_from_env` returned before trying `docker compose config` when no `.env` existed; the restore-mode `docker_setup_configuration` refused a project without `.env` instead of building it as restored; and a port that is in use or excluded on the destination is now a clear error before the build (there is no variable to reassign it). Test: `tests/test_project_port_without_env.sh` (fails without the fix).
+
 ## 3.15.6 - 2026-11-24
 
 ### Fixed

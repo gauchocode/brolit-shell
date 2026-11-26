@@ -806,6 +806,16 @@ function restore_project_backup() {
             log_event "info" "Detected port from .env: ${project_port}" "false"
         fi
 
+        # A project with no .env keeps the port hardcoded in docker-compose.yml and
+        # there is no variable to reassign it, so a conflict must stop the restore
+        # here instead of starting a container that cannot bind.
+        if [[ -z "$(project_find_env_file "${project_install_path}")" ]]; then
+            if network_port_is_use "${project_port}" || network_port_is_excluded "${project_port}"; then
+                _handle_restore_error 8 "Port ${project_port} from docker-compose.yml is in use or excluded on this server and the project has no .env to reassign it"
+                return 1
+            fi
+        fi
+
         # Setup Docker configuration (build and start containers)
         # This is required for ALL Docker projects, not just those with databases
         docker_setup_configuration "${project_name}" "${project_install_path}" "${project_domain_new}" "restore"
@@ -2439,8 +2449,20 @@ function docker_setup_configuration() {
     env_file="$(project_find_env_file "${project_install_path}")"
 
     if [[ -z "${env_file}" || ! -f "${env_file}" ]]; then
-        log_event "error" "No .env or .env.production found in ${project_install_path}" "false"
-        return 1
+        # Self-contained project (for example a static site): nothing to update,
+        # the compose file is restored as it was. Build it as is.
+        log_event "info" "No .env or .env.production in ${project_install_path}: keeping docker-compose.yml as restored" "false"
+        display --indent 6 --text "- No .env file, keeping docker-compose.yml" --result "DONE" --color GREEN
+
+        if ! docker_compose_build "${project_install_path}/docker-compose.yml"; then
+            clear_previous_lines "1"
+            display --indent 6 --text "- Docker rebuild" --result "ERROR" --color RED
+            log_event "error" "Docker rebuild failed" "false"
+            return 1
+        fi
+
+        display --indent 6 --text "- Docker restore completed successfully" --result "DONE" --color GREEN
+        return 0
     fi
 
     # Update PROJECT_DOMAIN

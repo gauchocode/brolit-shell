@@ -430,11 +430,6 @@ function project_get_port_from_env() {
   env_file="$(project_find_env_file "${project_path}")"
   local port=""
 
-  # Check if .env file exists
-  if [[ -z "${env_file}" ]]; then
-    return 0
-  fi
-
   # Preferred strategy: ask Docker's own compose parser which host port was
   # actually published (resolves ${VAR} interpolation correctly, and is the
   # real ground truth for what nginx should proxy_pass to) instead of
@@ -455,6 +450,13 @@ function project_get_port_from_env() {
       echo "${published_ports}"
       return 0
     fi
+  fi
+
+  # Without a .env file (for example a static site whose port is only published
+  # in docker-compose.yml and the compose strategy found no single port) there
+  # is nothing left to read.
+  if [[ -z "${env_file}" ]]; then
+    return 0
   fi
 
   # Try to extract port from environment variables in priority order
