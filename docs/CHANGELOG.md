@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.15.8 - 2026-11-26
+
+### Fixed
+
+- `migrate --transport local` stages its capture in `MIGRATE_LOCAL_STAGING_PATH`, but the backup retention (`storage_delete_old_backups`) listed that staging directory and then deleted through `storage_delete_backup`, which acts on the configured storage (Dropbox) by name. A leftover staged file from another day could therefore delete a real backup of the same name. Retention is skipped while migrate staging is in use; the staging is removed by the migration itself. Test: `tests/test_migrate_staging_skips_retention.sh` (fails without the fix).
+
 ## 3.15.7 - 2026-11-26
 
 ### Fixed

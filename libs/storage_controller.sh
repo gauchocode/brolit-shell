@@ -631,6 +631,16 @@ function storage_delete_old_backups() {
 
     local storage_path="${1}"
 
+    # `migrate --transport local` stages its capture in MIGRATE_LOCAL_STAGING_PATH
+    # and removes it when the migration ends. Retention must not run on that
+    # listing: storage_delete_backup deletes on the configured storage (Dropbox)
+    # by name, so a leftover staged file could delete a real backup of the same
+    # name there.
+    if [[ -n "${MIGRATE_LOCAL_STAGING_PATH:-}" ]]; then
+        log_event "info" "Skipping backup retention: migrate staging in use" "false"
+        return 0
+    fi
+
     # Configuration for backup retention
     local keep_daily=${BACKUP_RETENTION_KEEP_DAILY}
     local keep_weekly=${BACKUP_RETENTION_KEEP_WEEKLY}
