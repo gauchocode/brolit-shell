@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.15.10 - 2026-11-26
+
+### Fixed
+
+- On a Proxmox guest in gateway mode, a Dockerized project whose compose file publishes its web port on loopback only (`127.0.0.1:${WP_PORT}:80`, written for a server with its own nginx) was unreachable for the OpenResty gateway, which proxies to `http://<internal address>:<port>`: the stack answered locally and the gateway timed out. The migration of jumpnetcorp.com.ar to `gaucho-host01-vm` therefore failed its front-door check after the DNS switch and, as designed since 3.15.9, rolled the DNS back. `docker_compose_build` now publishes the project's web port on the server's internal address too, as the sites already running there do by hand. Only the web port (`WP_PORT`, `APP_PORT`, `PORT`, `WEBSERVER_PORT`, `HTTP_PORT`, or a literal port that the project's `.env` names as one of them): databases and admin tools bound to loopback stay private. Idempotent, and a no-op outside gateway mode. Test: `tests/test_compose_gateway_port.sh`.
+
 ## 3.15.9 - 2026-11-26
 
 ### Fixed

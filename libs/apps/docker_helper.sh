@@ -292,6 +292,100 @@ PWS_EOF
 }
 
 ################################################################################
+# Publish a project's web port on this server's internal address too
+#
+# On a Proxmox guest in gateway mode the OpenResty gateway reaches the project
+# at http://<internal address>:<port>. A compose file written for a server with
+# its own nginx publishes that port on loopback only, so the gateway times out
+# (jumpnetcorp.com.ar, 2026-11-26: the stack answered locally and the gateway
+# could not reach it). For every "127.0.0.1:<port>:<target>" entry that is the
+# project's web port, the same entry is added on the internal address, as the
+# sites already running there do by hand ("10.2.0.104:${WP_PORT}:80"). Only the
+# web port: databases and admin tools bound to loopback stay private. Idempotent;
+# does nothing outside gateway mode.
+#
+# Arguments:
+#   ${1} = ${compose_file}
+#
+# Outputs:
+#   0 always (a file that cannot be changed is left as it was).
+################################################################################
+
+function docker_compose_expose_on_internal_ip() {
+
+    local compose_file="${1}"
+
+    [[ "${PROXMOX_MODE}" == "enabled" && -n "${OPENRESTY_VM_IP}" ]] || return 0
+    [[ -f "${compose_file}" ]] || return 0
+
+    local internal_ip
+    internal_ip="$(network_get_internal_ip)"
+    [[ -n "${internal_ip}" ]] || return 0
+
+    local tmp_file
+    tmp_file="$(mktemp)" || return 0
+
+    # A literal host port counts as the web port only when it is the one the
+    # project's .env names for it.
+    local web_ports
+    web_ports="$(grep -hE '^(WP_PORT|APP_PORT|PORT|WEBSERVER_PORT|HTTP_PORT)=[0-9]+' "$(dirname "${compose_file}")/.env" 2>/dev/null | cut -d= -f2 | tr '\n' ',')"
+
+    # Pass 1 collects what is already published on the internal address; pass 2
+    # writes the file, adding the internal entry right before each loopback web entry.
+    awk -v ip="${internal_ip}" -v webports="${web_ports}" '
+        function rest_of(line,    r) {
+            r = line
+            sub(/^[[:space:]]*-[[:space:]]*["\047]?/, "", r)
+            sub(/["\047]?[[:space:]]*(#.*)?$/, "", r)
+            return r
+        }
+        function is_web_entry(rest,    hostport) {
+            hostport = rest; sub(/^127\.0\.0\.1:/, "", hostport)
+            sub(/:[^:]*$/, "", hostport)
+            if (hostport ~ /^\$\{(WP_PORT|APP_PORT|PORT|WEBSERVER_PORT|HTTP_PORT)(:-[0-9]+)?\}$/) return 1
+            return (hostport ~ /^[0-9]+$/ && (hostport in webport))
+        }
+        BEGIN { n = split(webports, list, ","); for (i = 1; i <= n; i++) if (list[i] != "") webport[list[i]] = 1 }
+        NR == FNR {
+            if ($0 ~ /^[[:space:]]*-[[:space:]]*["\047]?[0-9.]+:/) {
+                r = rest_of($0)
+                if (index(r, ip ":") == 1) seen[substr(r, length(ip) + 2)] = 1
+            }
+            next
+        }
+        {
+            if ($0 ~ /^[[:space:]]*-[[:space:]]*["\047]?127\.0\.0\.1:/) {
+                r = rest_of($0)
+                if (is_web_entry(r)) {
+                    tail = substr(r, length("127.0.0.1:") + 1)
+                    if (!(tail in seen)) {
+                        line = $0
+                        sub(/127\.0\.0\.1:/, ip ":", line)
+                        print line
+                        seen[tail] = 1
+                    }
+                }
+            }
+            print
+        }
+    ' "${compose_file}" "${compose_file}" >"${tmp_file}"
+
+    if [[ -s "${tmp_file}" ]] && ! cmp -s "${tmp_file}" "${compose_file}"; then
+        # Only keep it if compose still reads the result.
+        if docker compose -f "${tmp_file}" config >/dev/null 2>&1; then
+            cat "${tmp_file}" >"${compose_file}"
+            log_event "info" "Published the web port of ${compose_file} on ${internal_ip} for the OpenResty gateway" "false"
+        else
+            log_event "warning" "Could not publish the web port on ${internal_ip}: the edited compose file is not valid, left as it was" "false"
+        fi
+    fi
+
+    rm -f "${tmp_file}"
+    return 0
+
+}
+
+################################################################################
 # Execute a docker compose build
 #
 # Arguments:
@@ -306,6 +400,9 @@ function docker_compose_build() {
     local compose_file="${1}"
 
     local exitstatus
+
+    # Gateway mode: make the web port reachable from the OpenResty gateway.
+    docker_compose_expose_on_internal_ip "${compose_file}"
 
     # Patch pnpm package.json (if any) so pnpm 10+ allows native build scripts
     # (sharp, @swc/core, @parcel/watcher, etc.). Without this, `pnpm install`
