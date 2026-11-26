@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.15.13 - 2026-11-26
+
+### Fixed
+
+- Deleting a Docker project removed its files but left its containers running: they kept serving the site and holding its port (seen when brolit-admin deleted a test site on a Proxmox guest). `project_delete_files` now takes the stack down (`docker compose --project-directory <dir> down --remove-orphans`, volumes untouched) after the backup and before removing the directory; a stack that cannot be taken down keeps its files and the deletion fails. Test: `tests/test_project_delete_stops_stack.sh` (fails without the fix).
+
 ## 3.15.12 - 2026-11-26
 
 ### Added

@@ -3089,6 +3089,21 @@ function project_delete_files() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 ]]; then
 
+      # A Docker project's containers and network must go before their directory:
+      # removing only the files left the stack running, still serving the site and
+      # holding its port. Volumes are not removed here (the gate above only lets a
+      # project through whose persistent data is backed up, and the mount
+      # finalization removes what it archived). A stack that cannot be taken down
+      # keeps its files, so nothing is orphaned.
+      if [[ ${project_install_type} == "docker"* ]] && command -v docker >/dev/null 2>&1; then
+        if ! docker compose --project-directory "${PROJECTS_PATH}/${project_domain}" down --remove-orphans >/dev/null 2>&1; then
+          log_event "error" "Could not take down the Docker stack of ${project_domain}; its files were kept" "false"
+          display --indent 6 --text "- Taking down the Docker stack" --result "FAIL" --color RED
+          return 1
+        fi
+        display --indent 6 --text "- Taking down the Docker stack" --result "DONE" --color GREEN
+      fi
+
       # Delete project files on server
       rm --force --recursive "${PROJECTS_PATH}/${project_domain:?}"
 
