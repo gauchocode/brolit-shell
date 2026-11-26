@@ -527,6 +527,17 @@ function cloudflare_set_record() {
     # Only for convention
     record_name="${domain}"
 
+    # A private address is unreachable from the internet. This function deletes
+    # the existing record before creating the new one, so refusing here, before
+    # anything is touched, is what keeps a NAT'd server (whose interface address
+    # is private) from taking its sites offline.
+    if [[ ${record_type} == "A" ]] && network_is_private_ipv4 "${cur_ip}"; then
+        log_event "error" "Refusing to set ${record_name} to the private address ${cur_ip}; the record was not changed" "true"
+        display --indent 6 --text "- Setting ${record_name} record" --result "FAIL" --color RED
+        display --indent 8 --text "Private address ${cur_ip} cannot be used in DNS" --tcolor RED
+        return 1
+    fi
+
     #TODO: in the future we must rewrite the vars and remove this ugly replace
     ttl=1 #1 for Auto
 
@@ -675,6 +686,13 @@ function cloudflare_update_record() {
     ttl=3600
 
     record_name="${domain}"
+
+    # Same rule as cloudflare_set_record: never publish a private address.
+    if [[ ${record_type} == "A" ]] && network_is_private_ipv4 "${cur_ip}"; then
+        log_event "error" "Refusing to update ${record_name} to the private address ${cur_ip}; the record was not changed" "true"
+        display --indent 6 --text "- Updating ${record_name}" --result "FAIL" --color RED
+        return 1
+    fi
 
     # Accept JSON booleans only; reject lookalike words ("enable"/"disable")
     # that would otherwise ship invalid JSON to the API.

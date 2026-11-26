@@ -292,9 +292,21 @@ function get_server_public_ip() {
 
   local default_interface
   local public_ip
+  local external_ip
 
   default_interface=$(ip route | awk '/default/ {print $5}')
-  public_ip=$(ip addr show dev "${default_interface}" | awk '/inet / {print $2}' | cut -d'/' -f1)
+  public_ip=$(ip addr show dev "${default_interface}" | awk '/inet / {print $2}' | cut -d'/' -f1 | head -n 1)
+
+  # A VM behind NAT (for example a Proxmox guest) has a private address on its
+  # interface; that is not where the world reaches it. Ask what the outside sees
+  # instead, and keep the interface address only if that is unavailable (callers
+  # that write DNS refuse private addresses on their own).
+  if [[ -n ${public_ip} ]] && network_is_private_ipv4 "${public_ip}"; then
+    external_ip="$(curl --silent --max-time 5 http://ipv4.icanhazip.com | tr -d '[:space:]')"
+    if [[ ${external_ip} =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]] && ! network_is_private_ipv4 "${external_ip}"; then
+      public_ip="${external_ip}"
+    fi
+  fi
 
   if [[ -z ${public_ip} ]]; then
     # Alternative method
@@ -303,6 +315,33 @@ function get_server_public_ip() {
 
   # Return
   echo "${public_ip}"
+
+}
+
+################################################################################
+# Whether an IPv4 address is private, loopback, link-local or carrier-grade NAT
+# (RFC 1918, 127/8, 169.254/16, 100.64/10): an address that cannot be reached
+# from the internet and must never be published in DNS.
+#
+# Arguments:
+#   ${1} = ${ip}
+#
+# Outputs:
+#   0 if private, 1 otherwise.
+################################################################################
+
+function network_is_private_ipv4() {
+
+  local ip="${1}"
+
+  [[ ${ip} =~ ^10\. ]] && return 0
+  [[ ${ip} =~ ^192\.168\. ]] && return 0
+  [[ ${ip} =~ ^172\.(1[6-9]|2[0-9]|3[01])\. ]] && return 0
+  [[ ${ip} =~ ^127\. ]] && return 0
+  [[ ${ip} =~ ^169\.254\. ]] && return 0
+  [[ ${ip} =~ ^100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\. ]] && return 0
+
+  return 1
 
 }
 

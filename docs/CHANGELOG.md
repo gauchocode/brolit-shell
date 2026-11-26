@@ -2,6 +2,10 @@
 
 ## 3.15.9 - 2026-11-26
 
+### Fixed
+
+- `get_server_public_ip` returned the address of the default interface, which is private on a server behind NAT (a Proxmox guest has 10.x). `migrate` of jumpnetcorp.com.ar to `gaucho-host01-vm` published `10.2.0.104` in Cloudflare and took the site offline, then the certificate failed because Let's Encrypt cannot reach a private address. The function now asks what the outside sees when the interface address is private, and `cloudflare_set_record` and `cloudflare_update_record` refuse to publish a private, loopback, link-local or carrier-grade NAT address in an A record, before any request (the first one deletes the existing record before creating the new one). Test: `tests/test_private_ip_never_in_dns.sh` (fails without the fix).
+
 ### Added
 
 - `migrate` reports its stages to brolit-admin: one progress event (no percentage) at the start of the transfer, the remote restore and the destination check, next to the backup events it already emitted. The dashboard shows which step a migration is in instead of a spinner. `brolit_progress` accepts the phases `transfer`, `restore` and `verify`; unknown phases are still ignored and nothing is emitted unless `BROLIT_PROGRESS=1`. Test: `tests/test_migrate_progress_phases.sh`.
