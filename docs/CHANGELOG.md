@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.15.12 - 2026-11-26
+
+### Added
+
+- `migrate --dns-mode external`: the caller (brolit-admin) owns the domain's DNS. The migration restores and verifies the destination exactly as before and then stops, with the DNS untouched (the default, `--dns-mode shell`, is unchanged). The caller switches the records with its own Cloudflare connection and asks the destination for the certificate with the new `project finalize-certificate` (`BROLIT_DOMAIN_CONFIG_STAGE=certificate`: certificate only, no web server config, no DNS record). `certbot_certificate_install_auto` writes no Cloudflare record at all when `BROLIT_DNS_WRITES=disabled`. Reason: the migration of jumpnetcorp.com.ar to a Proxmox guest failed three times because Cloudflare throttles `dns_records` from the guests' shared NAT address, while brolit-admin reaches Cloudflare fine. In external mode the destination must run 3.15.12 or newer. Test: `tests/test_migrate_external_dns.sh`.
+
 ## 3.15.11 - 2026-11-26
 
 ### Fixed

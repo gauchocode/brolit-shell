@@ -24,6 +24,9 @@ declare -g MIGRATE_LOCAL_STAGING_PATH_DEFAULT="/root/.brolit_migrate_staging"
 # An older destination would ignore the variable and point the domain at itself
 # before the migration is verified, so it is refused up front.
 declare -g MIGRATE_MIN_DEST_VERSION="3.15.9"
+# With --dns-mode external the caller asks the destination for the certificate only
+# (project finalize-certificate), which exists from 3.15.12.
+declare -g MIGRATE_MIN_DEST_VERSION_EXTERNAL_DNS="3.15.12"
 
 # State of the migration in progress, used to remove its staged captures when it
 # ends (see migrate_site / migrate_cleanup_staging). Empty outside a migration.
@@ -346,20 +349,22 @@ function migrate_check_dest_defer_support() {
 
   local dest_version
   local lowest
+  local min_version="${MIGRATE_MIN_DEST_VERSION}"
+  [[ "${MIGRATE_DNS_MODE:-shell}" == "external" ]] && min_version="${MIGRATE_MIN_DEST_VERSION_EXTERNAL_DNS}"
 
   dest_version="$(_migrate_ssh "${dest_user}" "${dest_host}" "${dest_port}" "${dest_ssh_key}" \
     "grep -oP 'BROLIT_RELEASE_VERSION=\"\\K[0-9]+(\\.[0-9]+)*' '${MIGRATE_DEST_BROLIT_DIR}/release/version.env' 2>/dev/null | head -n 1")"
 
   if [[ -n ${dest_version} ]]; then
-    lowest="$(printf '%s\n%s\n' "${dest_version}" "${MIGRATE_MIN_DEST_VERSION}" | sort -V | head -n 1)"
-    if [[ ${lowest} == "${MIGRATE_MIN_DEST_VERSION}" ]]; then
+    lowest="$(printf '%s\n%s\n' "${dest_version}" "${min_version}" | sort -V | head -n 1)"
+    if [[ ${lowest} == "${min_version}" ]]; then
       display --indent 6 --text "- Destination brolit-shell ${dest_version} (DNS switch after verification)" --result "DONE" --color GREEN
       return 0
     fi
   fi
 
-  log_event "error" "Migrate: the destination runs brolit-shell ${dest_version:-unknown}; ${MIGRATE_MIN_DEST_VERSION} or newer is required so that the domain's DNS is switched only after the destination is verified. Update brolit-shell on the destination first." "true"
-  display --indent 6 --text "- Destination brolit-shell version (needs ${MIGRATE_MIN_DEST_VERSION}+)" --result "FAIL" --color RED
+  log_event "error" "Migrate: the destination runs brolit-shell ${dest_version:-unknown}; ${min_version} or newer is required so that the domain's DNS is switched only after the destination is verified. Update brolit-shell on the destination first." "true"
+  display --indent 6 --text "- Destination brolit-shell version (needs ${min_version}+)" --result "FAIL" --color RED
   return 1
 
 }
@@ -1242,10 +1247,19 @@ function _migrate_site_run() {
     verification_result=$?
   fi
 
-  # The domain is pointed at the destination only now that it is verified.
+  # The domain is pointed at the destination only now that it is verified, and only
+  # by this shell when it owns the DNS. With --dns-mode external the caller (brolit-admin)
+  # switches it with its own Cloudflare connection and asks the destination for the
+  # certificate afterwards: this run ends here, DNS untouched.
   if [[ ${restore_result} -eq 0 && ${verification_result} -eq 0 ]]; then
-    migrate_switch_dns "${dest_user}" "${dest_host}" "${dest_port}" "${dest_ssh_key}" "${domain}"
-    verification_result=$?
+    if [[ "${MIGRATE_DNS_MODE:-shell}" == "external" ]]; then
+      log_subsection "Migrate: DNS left to the caller"
+      log_event "info" "Migrate: ${domain} is verified at the destination; the DNS is switched by the caller (--dns-mode external)" "true"
+      display --indent 6 --text "- Domain DNS (switched by the caller)" --result "DEFERRED" --color YELLOW
+    else
+      migrate_switch_dns "${dest_user}" "${dest_host}" "${dest_port}" "${dest_ssh_key}" "${domain}"
+      verification_result=$?
+    fi
   fi
 
   if [[ ${decommission_source} == "true" ]]; then

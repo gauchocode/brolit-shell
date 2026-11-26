@@ -511,6 +511,30 @@ function project_tasks_handler() {
     exit $?
     ;;
 
+  finalize-certificate)
+
+    # The caller (brolit-admin) already pointed the domain at this server: only
+    # ask for the certificate, and write no DNS record. Exit code is the one of
+    # the update (a certificate that could not be issued is told by the site
+    # not answering over HTTPS, which the caller checks next).
+    local project_path="${sites}/${domain}"
+    local project_type
+    local project_install_type
+    local project_port
+
+    project_type="$(project_get_type "${project_path}")"
+    project_install_type="$(project_get_install_type "${project_path}")"
+    project_port="$(project_get_port_from_env "${project_path}")"
+
+    if [[ ${project_install_type} == "docker"* ]]; then
+      project_install_type="proxy"
+    fi
+
+    BROLIT_DOMAIN_CONFIG_STAGE="certificate" project_update_domain_config "${domain}" "${project_type}" "${project_install_type}" "${project_port}"
+
+    exit $?
+    ;;
+
   verify-local)
 
     # Does the stack answer on this server, whatever the DNS says? Asks the

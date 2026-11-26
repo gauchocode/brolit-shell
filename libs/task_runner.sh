@@ -36,7 +36,8 @@ function show_help() {
                         restore             Subtasks: from-local, from-storage, from-url, from-borg,
                                             download
                         project             Subtasks: delete, online, offline, regen-nginx,
-                                            finalize-domain, verify-local
+                                            finalize-domain, finalize-certificate,
+                                            verify-local
                         project-install     (uses -tf/-tt instead of subtask)
                         database            Subtasks: list_db, create_db, delete_db, rename_db,
                                             import_db, export_db, list_db_user, create_db_user,
@@ -93,6 +94,9 @@ function show_help() {
     -sm, --storage-method  Force a specific storage method (dropbox|local|borg)
                       instead of the default auto-priority, for restore -st
                       from-storage and migrate
+    --dns-mode        Who switches the domain's DNS in migrate: "shell" (default, this
+                      shell does it after verifying the destination) or "external" (the
+                      caller does: migrate stops after verification, DNS untouched)
     --transport       Transport for migrate: "local" (default, direct rsync,
                       requires BACKUPS.methods.local enabled on both servers)
                       or "dropbox" (reuses the already-configured shared
@@ -628,13 +632,13 @@ function tasks_handler() {
 
   project)
     # Validate subtask
-    validate_task_and_subtask "project" "${STASK}" "delete online offline regen-nginx finalize-domain verify-local"
+    validate_task_and_subtask "project" "${STASK}" "delete online offline regen-nginx finalize-domain finalize-certificate verify-local"
     exit_code=$?
     [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
 
     # Validate required params
     case "${STASK}" in
-      delete|online|offline|regen-nginx|finalize-domain|verify-local)
+      delete|online|offline|regen-nginx|finalize-domain|finalize-certificate|verify-local)
         validate_required_params "project-${STASK}" "DOMAIN"
         exit_code=$?
         [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
@@ -1323,6 +1327,15 @@ function flags_handler() {
       shift
       TRANSPORT="${1}"
       export TRANSPORT
+      ;;
+
+    --dns-mode)
+      shift
+      MIGRATE_DNS_MODE="${1}"
+      if [[ "${MIGRATE_DNS_MODE}" != "shell" && "${MIGRATE_DNS_MODE}" != "external" ]]; then
+        die "INVALID --dns-mode '${MIGRATE_DNS_MODE}' (use shell or external)"
+      fi
+      export MIGRATE_DNS_MODE
       ;;
 
     --dest-host)

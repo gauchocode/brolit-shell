@@ -4137,15 +4137,26 @@ function project_update_domain_config() {
   local nginx_config_file=""  # tracks the nginx config filename (redirect_domain for root_domain type)
   local cloudflare_exitstatus=0
 
-  # BROLIT_DOMAIN_CONFIG_STAGE splits this function in two so that `migrate` can
-  # verify the destination before the domain is pointed at it:
-  #   all      (default) everything: web server config, DNS records, certificate
-  #   defer    web server config only; no DNS record is touched and no certificate
-  #            is requested (the certificate step writes DNS records too)
-  #   finalize DNS records and certificate only; the web server config exists
+  # BROLIT_DOMAIN_CONFIG_STAGE splits this function so that `migrate` can verify the
+  # destination before the domain is pointed at it:
+  #   all          (default) web server config, DNS records and certificate
+  #   defer        web server config only; no DNS record is touched and no certificate
+  #                is requested (the certificate step writes DNS records too)
+  #   finalize     DNS records and certificate only; the web server config exists
+  #   certificate  the certificate only, and no DNS write at all: the caller (brolit-admin)
+  #                switched the records itself
   local config_stage="${BROLIT_DOMAIN_CONFIG_STAGE:-all}"
+  local do_web=1 do_dns=1 do_cert=1
   case "${config_stage}" in
-    all | defer | finalize) ;;
+    all) ;;
+    defer) do_dns=0; do_cert=0 ;;
+    finalize) do_web=0 ;;
+    certificate)
+      do_web=0
+      do_dns=0
+      # Even the certificate step writes DNS records unless told not to.
+      local BROLIT_DNS_WRITES="disabled"
+      ;;
     *)
       log_event "error" "Invalid BROLIT_DOMAIN_CONFIG_STAGE '${config_stage}'" "false"
       return 1
@@ -4182,10 +4193,10 @@ function project_update_domain_config() {
     # Nginx config: primary = project_domain (non-www), redirect = www
     # nginx_server_create names root_domain files after the 4th arg (redirect_domains)
     nginx_config_file="www.${project_root_domain}"
-    [[ ${config_stage} != "finalize" ]] && nginx_server_create "${project_domain}" "${project_type}" "root_domain" "${nginx_config_file}" "${project_port}"
+    [[ ${do_web} -eq 1 ]] && nginx_server_create "${project_domain}" "${project_type}" "root_domain" "${nginx_config_file}" "${project_port}"
 
     # Cloudflare
-    if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" && ${config_stage} != "defer" ]]; then
+    if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" && ${do_dns} -eq 1 ]]; then
       ## Nginx redirects: www.root_domain.com -> root_domain.com
       ## So Cloudflare must point: root -> server IP (A), www -> root (CNAME)
 
@@ -4204,10 +4215,10 @@ function project_update_domain_config() {
   elif [[ ${project_domain} == "www.${project_root_domain}" ]]; then
     # User provided www: serve at www, redirect non-www → www
     nginx_config_file="${project_root_domain}"
-    [[ ${config_stage} != "finalize" ]] && nginx_server_create "${project_domain}" "${project_type}" "root_domain" "${nginx_config_file}" "${project_port}"
+    [[ ${do_web} -eq 1 ]] && nginx_server_create "${project_domain}" "${project_type}" "root_domain" "${nginx_config_file}" "${project_port}"
 
     # Cloudflare
-    if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" && ${config_stage} != "defer" ]]; then
+    if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" && ${do_dns} -eq 1 ]]; then
       ## Nginx redirects: root_domain.com -> www.root_domain.com
       ## So Cloudflare must point: www -> server IP (A), root -> www (CNAME)
       cloudflare_delete_record "${project_root_domain}" "www.${project_root_domain}" "CNAME" 2>/dev/null || true
@@ -4224,7 +4235,7 @@ function project_update_domain_config() {
 
   if [[ ${project_domain} == "${project_root_domain}" || ${project_domain} == "www.${project_root_domain}" ]]; then
 
-    if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" && ${config_stage} != "defer" ]]; then
+    if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" && ${do_cert} -eq 1 ]]; then
       # Wait for DNS propagation (independent of Cloudflare status)
       display --indent 6 --text "- Waiting for DNS propagation"
       log_event "info" "Waiting for DNS propagation..." "false"
@@ -4264,16 +4275,16 @@ function project_update_domain_config() {
   else # Working with single domain
 
     # Nginx config
-    [[ ${config_stage} != "finalize" ]] && nginx_server_create "${project_domain}" "${project_type}" "single" "" "${project_port}"
+    [[ ${do_web} -eq 1 ]] && nginx_server_create "${project_domain}" "${project_type}" "single" "" "${project_port}"
 
     # Cloudflare
-    if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" && ${config_stage} != "defer" ]]; then
+    if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" && ${do_dns} -eq 1 ]]; then
       ## Set records
       cloudflare_set_record "${project_root_domain}" "${project_domain}" "A" "false" "${SERVER_IP}"
       cloudflare_exitstatus=$?
     fi
 
-    if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" && ${config_stage} != "defer" ]]; then
+    if [[ ${PACKAGES_CERTBOT_STATUS} == "enabled" && ${do_cert} -eq 1 ]]; then
       # Wait for DNS propagation (independent of Cloudflare status)
       display --indent 6 --text "- Waiting for DNS propagation"
       log_event "info" "Waiting for DNS propagation..." "false"

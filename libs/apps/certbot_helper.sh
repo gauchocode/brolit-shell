@@ -1070,14 +1070,18 @@ function certbot_certificate_install_auto() {
       # the record already exists with proxy ON from a previous setup -
       # Cloudflare's proxy would otherwise intercept the challenge request
       # before it reaches this server. Re-enabled at the end on success.
-      for domain in ${domains//,/ }; do
-        root_domain=$(domain_get_root "${domain}")
-        if [[ "${root_domain}" != "${domain}" ]]; then
-          cloudflare_update_record "${root_domain}" "${domain}" "CNAME" "false" "${root_domain}" 2>/dev/null
-        else
-          cloudflare_update_record "${root_domain}" "${domain}" "A" "false" "${SERVER_IP}" 2>/dev/null
-        fi
-      done
+      # Skipped when the caller owns the DNS (BROLIT_DNS_WRITES=disabled: brolit-admin
+      # switches the records itself and only asks this server for the certificate).
+      if [[ "${BROLIT_DNS_WRITES:-enabled}" != "disabled" ]]; then
+        for domain in ${domains//,/ }; do
+          root_domain=$(domain_get_root "${domain}")
+          if [[ "${root_domain}" != "${domain}" ]]; then
+            cloudflare_update_record "${root_domain}" "${domain}" "CNAME" "false" "${root_domain}" 2>/dev/null
+          else
+            cloudflare_update_record "${root_domain}" "${domain}" "A" "false" "${SERVER_IP}" 2>/dev/null
+          fi
+        done
+      fi
 
       # Step 1: Install certificate with nginx
       display --indent 6 --text "- Installing certificate with nginx" --tcolor CYAN
@@ -1098,8 +1102,10 @@ function certbot_certificate_install_auto() {
 
         if [[ ${exitstatus} -eq 0 ]]; then
 
-          # Enable Cloudflare proxy on records (skip nested subdomains)
+          # Enable Cloudflare proxy on records (skip nested subdomains); not when the
+          # caller owns the DNS and decides the proxy setting itself.
           for domain in ${domains//,/ }; do
+            [[ "${BROLIT_DNS_WRITES:-enabled}" == "disabled" ]] && break
             root_domain=$(domain_get_root "${domain}")
 
             # Check if this is a nested subdomain (2+ levels deep)
@@ -1120,7 +1126,7 @@ function certbot_certificate_install_auto() {
           done
 
           # Set SSL mode to full
-          cloudflare_set_ssl_mode "${domain}" "full"
+          [[ "${BROLIT_DNS_WRITES:-enabled}" != "disabled" ]] && cloudflare_set_ssl_mode "${domain}" "full"
 
         fi
 
