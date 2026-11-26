@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.15.9 - 2026-11-26
+
+### Added
+
+- `migrate` reports its stages to brolit-admin: one progress event (no percentage) at the start of the transfer, the remote restore and the destination check, next to the backup events it already emitted. The dashboard shows which step a migration is in instead of a spinner. `brolit_progress` accepts the phases `transfer`, `restore` and `verify`; unknown phases are still ignored and nothing is emitted unless `BROLIT_PROGRESS=1`. Test: `tests/test_migrate_progress_phases.sh`.
+
 ## 3.15.8 - 2026-11-26
 
 ### Fixed

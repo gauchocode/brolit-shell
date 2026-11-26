@@ -1747,7 +1747,8 @@ function decompress() {
 #   [[BROLIT_PROGRESS]]{"v":1,"phase":"compress","pct":42,"detail":"example.com"}
 #
 # Arguments:
-#   ${1} = phase: compress | upload | database | borg
+#   ${1} = phase: compress | upload | database | borg | transfer | restore | verify
+#          (the last three are the stages of `migrate`, always without a percentage)
 #   ${2} = percentage 0-100, or "-" when the phase cannot be measured
 #   ${3} = optional detail; defaults to BROLIT_PROGRESS_DETAIL. It is reduced to
 #          [A-Za-z0-9._-] and truncated to 255 characters, which keeps the JSON
@@ -1764,7 +1765,7 @@ function brolit_progress() {
   local detail="${3:-${BROLIT_PROGRESS_DETAIL:-}}"
 
   [[ "${BROLIT_PROGRESS:-0}" == "1" ]] || return 0
-  [[ "${phase}" =~ ^(compress|upload|database|borg)$ ]] || return 0
+  [[ "${phase}" =~ ^(compress|upload|database|borg|transfer|restore|verify)$ ]] || return 0
 
   if [[ "${pct}" =~ ^[0-9]{1,3}$ ]]; then
     pct=$((10#${pct}))

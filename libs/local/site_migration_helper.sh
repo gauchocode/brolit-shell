@@ -581,6 +581,8 @@ function migrate_transfer_artifact() {
   local dest_site_path="${MIGRATE_LOCAL_STAGING_PATH_DEFAULT}/${dest_server_name}/projects-online/site/${domain}/"
 
   log_subsection "Migrate: Transfer Artifact"
+  # Stage boundary for brolit-admin's live progress (no percentage).
+  brolit_progress "transfer" "-" "${domain}"
 
   brolit_job_control_mark_cancellable
   _migrate_rsync_push "${dest_user}" "${dest_host}" "${dest_port}" "${dest_ssh_key}" \
@@ -658,6 +660,8 @@ function migrate_trigger_remote_restore() {
   local storage_method="${6:-local}"
 
   log_subsection "Migrate: Remote Restore"
+  # Stage boundary for brolit-admin's live progress (no percentage).
+  brolit_progress "restore" "-" "${domain}"
 
   local remote_cmd="cd '${MIGRATE_DEST_BROLIT_DIR}' && ./runner.sh -t restore -st from-storage -D '${domain}' --storage-method '${storage_method}'"
 
@@ -714,6 +718,8 @@ function migrate_verify_destination() {
   fi
 
   log_subsection "Migrate: Verify Destination"
+  # Stage boundary for brolit-admin's live progress (no percentage).
+  brolit_progress "verify" "-" "${domain}"
 
   if [[ -z "${dest_ip}" ]]; then
     log_event "error" "Migrate: could not resolve destination IP for verification" "true"
