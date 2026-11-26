@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.15.15 - 2026-11-26
+
+### Fixed
+
+- Migrating a site whose root domain is served at `www` (its WordPress `WP_HOME` is `https://www.<root>`) to a Proxmox guest behind the OpenResty gateway left the gateway unable to reload. The restore aligns the domain with the backup's www pattern and creates the gateway route under `www.<root>`, whose certificate path is `/etc/letsencrypt/live/www.<root>/`; the certificate step was then run for the root name the caller used (`-D <root>`) and certbot, which names the certificate after the first domain, issued `<root>`. The route pointed at a directory that did not exist, `openresty -t` failed on the gateway and no route could reload until the route was removed by hand (jumpnet.com.ar, 2026-11-26). Two changes: `project finalize-domain` and `project finalize-certificate` now work on the domain the restore configured (`project_effective_domain`: behind the gateway, a route `www.<root>` and no route `<root>` means www), and behind the gateway the www-primary certificate is requested with the main domain first, so its name is the one the route uses. Other setups keep their order. Tests: `tests/test_migrate_external_dns.sh`.
+
 ## 3.15.14 - 2026-11-26
 
 ### Fixed

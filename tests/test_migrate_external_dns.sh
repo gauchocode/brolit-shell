@@ -78,6 +78,50 @@ function tme_certbot_guard() {
     [[ ${guarded} -ge 3 ]] && tme_check "each Cloudflare write path is guarded (${guarded} guards, ${writes} writes)" yes || tme_check "unguarded writes" no
 }
 
+function tme_gateway_certificate_name() {
+    tme_reload; tme_quiet
+    function domain_get_root() { local d="${1}"; local n; n="$(awk -F. '{print NF}' <<<"${d}")"; if ((n > 3)); then cut -d. -f2- <<<"${d}"; elif [[ ${d} == www.* ]]; then echo "${d#www.}"; else echo "${d}"; fi; }
+    function nginx_server_create() { :; }
+    function cloudflare_delete_record() { return 0; }
+    function cloudflare_set_record() { return 0; }
+    function wait_for_dns_propagation() { return 0; }
+    function certbot_certificate_install_auto() { CALLS+=" domains:${2}"; return 0; }
+    function nginx_server_add_http2_support() { return 0; }
+    SUPPORT_CLOUDFLARE_STATUS="disabled"; PACKAGES_CERTBOT_STATUS="enabled"; PACKAGES_CERTBOT_CONFIG_MAILA="ops@example.com"; SERVER_IP="203.0.113.7"
+
+    local case_name domain mode ip want
+    for case_name in "www.example.com|enabled|10.2.0.105|www.example.com,example.com" \
+                     "example.com|enabled|10.2.0.105|example.com,www.example.com" \
+                     "www.example.com|disabled||example.com,www.example.com" \
+                     "www.example.com|enabled||example.com,www.example.com"; do
+        IFS='|' read -r domain mode ip want <<<"${case_name}"
+        tme_reset
+        PROXMOX_MODE="${mode}" OPENRESTY_VM_IP="${ip}" project_update_domain_config "${domain}" "proxy" "proxy" "8081" >/dev/null
+        [[ "${CALLS}" == *" domains:${want}"* ]] && tme_check "certificate names for ${domain} (proxmox ${mode}, gateway '${ip}'): ${want}" yes || tme_check "${domain}/${mode}/${ip}: wanted ${want}" no
+    done
+}
+
+function tme_effective_domain() {
+    tme_reload; tme_quiet
+    function openresty_is_installed() { return 0; }
+    function openresty_get_conf_dir() { echo "/conf"; }
+    TME_FILES=""
+    function openresty_vm_exec() { local f="${1#test -f /conf/sites-available/}"; f="${f%% &&*}"; [[ " ${TME_FILES} " == *" ${f} "* ]] && echo yes || echo no; }
+    local got
+    PROXMOX_MODE=enabled TME_FILES="www.example.com"; got="$(PROXMOX_MODE=enabled project_effective_domain example.com)"
+    [[ "${got}" == "www.example.com" ]] && tme_check "a www-only gateway route means the project is served at www" yes || tme_check "www-only route: got ${got}" no
+    TME_FILES="example.com"; got="$(PROXMOX_MODE=enabled project_effective_domain example.com)"
+    [[ "${got}" == "example.com" ]] && tme_check "an apex route keeps the apex" yes || tme_check "apex route: got ${got}" no
+    TME_FILES="example.com www.example.com"; got="$(PROXMOX_MODE=enabled project_effective_domain example.com)"
+    [[ "${got}" == "example.com" ]] && tme_check "both routes keep the given name" yes || tme_check "both routes: got ${got}" no
+    TME_FILES=""; got="$(PROXMOX_MODE=enabled project_effective_domain example.com)"
+    [[ "${got}" == "example.com" ]] && tme_check "no route keeps the given name" yes || tme_check "no route: got ${got}" no
+    TME_FILES="www.example.com"; got="$(PROXMOX_MODE=disabled project_effective_domain example.com)"
+    [[ "${got}" == "example.com" ]] && tme_check "outside gateway mode the given name is used" yes || tme_check "no gateway: got ${got}" no
+    got="$(PROXMOX_MODE=enabled project_effective_domain www.example.com)"
+    [[ "${got}" == "www.example.com" ]] && tme_check "a www name is never rewritten" yes || tme_check "www given: got ${got}" no
+}
+
 function tme_orchestration() {
     tme_reload; tme_quiet
     local step
@@ -122,6 +166,8 @@ function test_migrate_external_dns() {
     TME_FAILED=0
     echo "-- certificate stage"; tme_certificate_stage
     echo "-- certbot guard"; tme_certbot_guard
+    echo "-- gateway certificate name"; tme_gateway_certificate_name
+    echo "-- effective domain"; tme_effective_domain
     echo "-- migrate order"; tme_orchestration
     echo "-- destination version"; tme_version_gate
     return ${TME_FAILED}

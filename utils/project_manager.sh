@@ -506,7 +506,7 @@ function project_tasks_handler() {
       project_install_type="proxy"
     fi
 
-    BROLIT_DOMAIN_CONFIG_STAGE="finalize" project_update_domain_config "${domain}" "${project_type}" "${project_install_type}" "${project_port}"
+    BROLIT_DOMAIN_CONFIG_STAGE="finalize" project_update_domain_config "$(project_effective_domain "${domain}")" "${project_type}" "${project_install_type}" "${project_port}"
 
     exit $?
     ;;
@@ -530,7 +530,7 @@ function project_tasks_handler() {
       project_install_type="proxy"
     fi
 
-    BROLIT_DOMAIN_CONFIG_STAGE="certificate" project_update_domain_config "${domain}" "${project_type}" "${project_install_type}" "${project_port}"
+    BROLIT_DOMAIN_CONFIG_STAGE="certificate" project_update_domain_config "$(project_effective_domain "${domain}")" "${project_type}" "${project_install_type}" "${project_port}"
 
     exit $?
     ;;

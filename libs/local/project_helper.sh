@@ -4128,6 +4128,44 @@ function project_installer_php() {
 }
 
 ################################################################################
+# The domain a restored project is served under
+#
+# A restore aligns a root-level domain with the www pattern of the backup (a site
+# whose WP_HOME is www.<root> is served at www.<root>), so a project restored with
+# `-D example.com` can end up with its web server config under www.example.com.
+# The later migration steps (finalize-domain, finalize-certificate) are given the
+# name the caller used and must work on what the restore actually configured.
+# Behind the OpenResty gateway the route is named after its main domain, so a route
+# `www.<domain>` and no route `<domain>` means the project is served at www.
+# Anywhere else, or when nothing says otherwise, the given domain is returned.
+#
+# Arguments:
+#   ${1} = ${project_domain} as given
+#
+# Outputs:
+#   The domain to configure.
+################################################################################
+
+function project_effective_domain() {
+
+  local project_domain="${1}"
+  local conf_dir www_exists plain_exists
+
+  if [[ "${PROXMOX_MODE}" == "enabled" ]] && openresty_is_installed 2>/dev/null && [[ "${project_domain}" != www.* ]]; then
+    conf_dir="$(openresty_get_conf_dir)"
+    www_exists="$(openresty_vm_exec "test -f ${conf_dir}/sites-available/www.${project_domain} && echo yes || echo no" 2>/dev/null)"
+    plain_exists="$(openresty_vm_exec "test -f ${conf_dir}/sites-available/${project_domain} && echo yes || echo no" 2>/dev/null)"
+    if [[ "${www_exists}" == "yes" && "${plain_exists}" != "yes" ]]; then
+      echo "www.${project_domain}"
+      return 0
+    fi
+  fi
+
+  echo "${project_domain}"
+
+}
+
+################################################################################
 # Update domain configuration (Nginx + Cloudflare)
 #
 # Arguments:
@@ -4262,7 +4300,18 @@ function project_update_domain_config() {
 
         # Install certificate (attempt regardless of Cloudflare status)
         # Use non-interactive mode (true) to avoid prompts during automated restoration
-        if certbot_certificate_install_auto "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${project_root_domain},www.${project_root_domain}" "true"; then
+        # certbot names the certificate after the FIRST domain. Behind the OpenResty
+        # gateway the route looks for /etc/letsencrypt/live/<main domain>/, and a
+        # www-primary route's main domain is www.<root>: with the root listed first the
+        # certificate was issued as <root>, the route pointed at a directory that did not
+        # exist and `nginx -t` failed on the gateway, which kept every other route from
+        # reloading. The main domain goes first there; other setups keep their order.
+        local cert_domains="${project_root_domain},www.${project_root_domain}"
+        if [[ ${project_domain} == "www.${project_root_domain}" && "${PROXMOX_MODE}" == "enabled" && -n "${OPENRESTY_VM_IP}" ]]; then
+          cert_domains="www.${project_root_domain},${project_root_domain}"
+        fi
+
+        if certbot_certificate_install_auto "${PACKAGES_CERTBOT_CONFIG_MAILA}" "${cert_domains}" "true"; then
           # Enable HTTP/2 only if not already enabled
           # Use nginx_config_file (redirect_domain) for root_domain type, project_domain for single
           if [[ -n "${nginx_config_file}" ]]; then
