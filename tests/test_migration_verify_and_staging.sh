@@ -66,7 +66,12 @@ function _mvs_verify_tests() {
   function log_subsection() { :; }
   function log_event() { :; }
   function display() { printf '%s|%s\n' "${4}" "${6}" >> "${shown_file}"; }
-  function _migrate_ssh() { printf '203.0.113.9\n'; }
+  # The destination answers the address query; the local stack check (verify-local)
+  # fails unless a case says the stack is up (FAKE_LOCAL_RC=0).
+  function _migrate_ssh() {
+    if [[ "${5}" == *verify-local* ]]; then return "${FAKE_LOCAL_RC:-1}"; fi
+    printf '203.0.113.9\n'
+  }
   # Fake curl: the status comes from FAKE_HTTPS / FAKE_HTTP according to the URL scheme.
   function curl() {
     local url="${*: -1}"
@@ -107,6 +112,22 @@ CASES
   migrate_verify_destination "root" "203.0.113.9" "22" "/unused" "example.com" >/dev/null 2>&1
   _mvs_assert_equal "WARNING" "$(awk -F'|' '{print $2}' "${shown_file}" | tail -1)" \
     "HTTP-only success is reported as a warning" || failed=1
+
+  # A destination behind a gateway has no certificate before the DNS switch and its
+  # plain HTTP only redirects: the stack answering locally is what passes it.
+  : > "${calls_file}"
+  FAKE_HTTPS=000 FAKE_HTTP=301 FAKE_LOCAL_RC=0
+  export FAKE_HTTPS FAKE_HTTP FAKE_LOCAL_RC
+  : > "${shown_file}"
+  migrate_verify_destination "root" "203.0.113.9" "22" "/unused" "example.com" >/dev/null 2>&1
+  _mvs_assert_equal "0:WARNING" "$?:$(awk -F'|' '{print $2}' "${shown_file}" | tail -1)" \
+    "no HTTPS, HTTP only redirects, stack answers locally: passes with a warning" || failed=1
+
+  # A server error over HTTPS is a hard failure whatever the local check says.
+  FAKE_HTTPS=502 FAKE_HTTP=301 FAKE_LOCAL_RC=0
+  migrate_verify_destination "root" "203.0.113.9" "22" "/unused" "example.com" >/dev/null 2>&1
+  _mvs_assert_equal "1" "$?" "HTTPS 502 fails even when the stack answers locally" || failed=1
+  unset FAKE_LOCAL_RC
 
   FAKE_HTTPS=502 FAKE_HTTP=301
   : > "${shown_file}"

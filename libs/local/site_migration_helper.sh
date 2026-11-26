@@ -19,6 +19,12 @@ declare -g MIGRATE_DEST_BROLIT_DIR="/root/brolit-shell"
 # source and the destination.
 declare -g MIGRATE_LOCAL_STAGING_PATH_DEFAULT="/root/.brolit_migrate_staging"
 
+# First brolit-shell release that can restore with the DNS and certificate steps
+# deferred (BROLIT_DOMAIN_CONFIG_STAGE=defer, project finalize-domain/verify-local).
+# An older destination would ignore the variable and point the domain at itself
+# before the migration is verified, so it is refused up front.
+declare -g MIGRATE_MIN_DEST_VERSION="3.15.9"
+
 # State of the migration in progress, used to remove its staged captures when it
 # ends (see migrate_site / migrate_cleanup_staging). Empty outside a migration.
 declare -g MIGRATE_RUN_DOMAIN=""
@@ -319,6 +325,46 @@ function migrate_bootstrap_dest_brolit() {
 }
 
 ################################################################################
+# Verify the destination's brolit-shell can defer the DNS and certificate steps
+#
+# Arguments:
+#   ${1} = ${dest_user}
+#   ${2} = ${dest_host}
+#   ${3} = ${dest_port}
+#   ${4} = ${dest_ssh_key}
+#
+# Outputs:
+#   0 if the destination release is at least MIGRATE_MIN_DEST_VERSION, 1 otherwise.
+################################################################################
+
+function migrate_check_dest_defer_support() {
+
+  local dest_user="${1}"
+  local dest_host="${2}"
+  local dest_port="${3}"
+  local dest_ssh_key="${4}"
+
+  local dest_version
+  local lowest
+
+  dest_version="$(_migrate_ssh "${dest_user}" "${dest_host}" "${dest_port}" "${dest_ssh_key}" \
+    "grep -oP 'BROLIT_RELEASE_VERSION=\"\\K[0-9]+(\\.[0-9]+)*' '${MIGRATE_DEST_BROLIT_DIR}/release/version.env' 2>/dev/null | head -n 1")"
+
+  if [[ -n ${dest_version} ]]; then
+    lowest="$(printf '%s\n%s\n' "${dest_version}" "${MIGRATE_MIN_DEST_VERSION}" | sort -V | head -n 1)"
+    if [[ ${lowest} == "${MIGRATE_MIN_DEST_VERSION}" ]]; then
+      display --indent 6 --text "- Destination brolit-shell ${dest_version} (DNS switch after verification)" --result "DONE" --color GREEN
+      return 0
+    fi
+  fi
+
+  log_event "error" "Migrate: the destination runs brolit-shell ${dest_version:-unknown}; ${MIGRATE_MIN_DEST_VERSION} or newer is required so that the domain's DNS is switched only after the destination is verified. Update brolit-shell on the destination first." "true"
+  display --indent 6 --text "- Destination brolit-shell version (needs ${MIGRATE_MIN_DEST_VERSION}+)" --result "FAIL" --color RED
+  return 1
+
+}
+
+################################################################################
 # Verify the destination has DNS (Cloudflare) and SSL (certbot) configured,
 # since the destination's own restore process depends on this to configure
 # the vhost/DNS/SSL automatically. Optionally bootstraps Cloudflare config
@@ -527,9 +573,14 @@ function migrate_capture_source() {
     declare -g MIGRATE_LOCAL_STAGING_PATH="${MIGRATE_LOCAL_STAGING_PATH_DEFAULT}"
   fi
 
+  # Cold copy: a bind-mounted database data directory is archived with its
+  # database stopped (and started again right after), never while it runs.
+  declare -g BROLIT_BACKUP_QUIESCE_DB=1
   brolit_job_control_mark_cancellable
   backup_docker_project "${domain}" "site"
   local capture_result=$?
+  declare -g BROLIT_BACKUP_QUIESCE_DB=0
+  backup_resume_project_databases || true
 
   MIGRATE_LOCAL_STAGING_PATH=""
 
@@ -663,7 +714,9 @@ function migrate_trigger_remote_restore() {
   # Stage boundary for brolit-admin's live progress (no percentage).
   brolit_progress "restore" "-" "${domain}"
 
-  local remote_cmd="cd '${MIGRATE_DEST_BROLIT_DIR}' && ./runner.sh -t restore -st from-storage -D '${domain}' --storage-method '${storage_method}'"
+  # DNS records and the certificate are deferred: the domain keeps pointing at the
+  # source until the destination has been verified (see migrate_switch_dns).
+  local remote_cmd="cd '${MIGRATE_DEST_BROLIT_DIR}' && BROLIT_DOMAIN_CONFIG_STAGE=defer ./runner.sh -t restore -st from-storage -D '${domain}' --storage-method '${storage_method}'"
 
   if [[ ${storage_method} == "dropbox" ]]; then
     remote_cmd="${remote_cmd} --source-server '${SERVER_NAME}'"
@@ -754,8 +807,140 @@ function migrate_verify_destination() {
     return 0
   fi
 
-  log_event "error" "Migrate: destination did not serve ${domain} at ${dest_ip} (https=${https_status}, http=${http_status})" "true"
+  # Neither door is conclusive from here (for example a guest behind a gateway has
+  # no certificate before the DNS switch, and its plain HTTP only redirects). Ask
+  # the destination about the stack itself; the front door is checked again after
+  # the DNS switch, and the switch is undone if it fails.
+  if _migrate_ssh "${dest_user}" "${dest_host}" "${dest_port}" "${dest_ssh_key}" \
+    "cd '${MIGRATE_DEST_BROLIT_DIR}' && ./runner.sh -t project -st verify-local -D '${domain}' >/dev/null 2>&1"; then
+    display --indent 6 --text "- Destination verification (stack answers locally; front door is checked after the DNS switch)" --result "WARNING" --color YELLOW
+    return 0
+  fi
+
+  log_event "error" "Migrate: destination did not serve ${domain} at ${dest_ip} (https=${https_status}, http=${http_status}) and its stack did not answer locally" "true"
   display --indent 6 --text "- Destination verification" --result "FAIL" --color RED
+  return 1
+
+}
+
+################################################################################
+# Put a domain's DNS record back to what it was before the switch
+#
+# Arguments:
+#   ${1} = ${domain}
+#   ${2} = ${previous_content} (the A record's address before the switch)
+#
+# Outputs:
+#   0 if restored, 1 otherwise.
+################################################################################
+
+function migrate_rollback_dns() {
+
+  local domain="${1}"
+  local previous_content="${2}"
+
+  local root_domain
+
+  if [[ ! ${previous_content} =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]]; then
+    log_event "error" "Migrate: no previous A record recorded for ${domain}; its DNS must be checked by hand" "true"
+    display --indent 6 --text "- DNS rollback for ${domain}" --result "MANUAL" --color RED
+    return 1
+  fi
+
+  root_domain="$(domain_get_root "${domain}")"
+
+  if cloudflare_set_record "${root_domain}" "${domain}" "A" "false" "${previous_content}"; then
+    log_event "warning" "Migrate: DNS of ${domain} restored to ${previous_content}" "true"
+    display --indent 6 --text "- DNS rollback for ${domain} (${previous_content})" --result "DONE" --color YELLOW
+    return 0
+  fi
+
+  log_event "error" "Migrate: could not restore the DNS of ${domain} to ${previous_content}" "true"
+  display --indent 6 --text "- DNS rollback for ${domain}" --result "FAIL" --color RED
+  return 1
+
+}
+
+################################################################################
+# Point the domain at the destination, after the destination was verified
+#
+# Records the current A record first, runs the destination's finalize-domain
+# (DNS records and certificate), then checks the front door again. If the DNS
+# step fails, or the site no longer answers after the switch, the record is put
+# back, so a failed migration never leaves the domain pointing at a broken site.
+#
+# Arguments:
+#   ${1} = ${dest_user}
+#   ${2} = ${dest_host}
+#   ${3} = ${dest_port}
+#   ${4} = ${dest_ssh_key}
+#   ${5} = ${domain}
+#
+# Outputs:
+#   0 if switched and answering, 1 otherwise (DNS rolled back when possible).
+################################################################################
+
+function migrate_switch_dns() {
+
+  local dest_user="${1}"
+  local dest_host="${2}"
+  local dest_port="${3}"
+  local dest_ssh_key="${4}"
+  local domain="${5}"
+
+  local root_domain
+  local previous_content=""
+  local dest_ip="${dest_host}"
+  local https_status="000"
+  local attempt
+
+  log_subsection "Migrate: Switch DNS"
+  # Stage boundary for brolit-admin's live progress (no percentage).
+  brolit_progress "dns" "-" "${domain}"
+
+  if [[ ${SUPPORT_CLOUDFLARE_STATUS} == "enabled" ]]; then
+    root_domain="$(domain_get_root "${domain}")"
+    previous_content="$(cloudflare_get_record_details "${root_domain}" "${domain}" "content" 2>/dev/null)"
+  else
+    log_event "warning" "Migrate: Cloudflare is not configured on the source, so the previous DNS value cannot be recorded for a rollback" "true"
+  fi
+
+  if ! _migrate_ssh "${dest_user}" "${dest_host}" "${dest_port}" "${dest_ssh_key}" \
+    "cd '${MIGRATE_DEST_BROLIT_DIR}' && ./runner.sh -t project -st finalize-domain -D '${domain}' >/dev/null 2>&1"; then
+    log_event "error" "Migrate: switching the DNS of ${domain} to the destination failed" "true"
+    display --indent 6 --text "- Switch DNS to the destination" --result "FAIL" --color RED
+    migrate_rollback_dns "${domain}" "${previous_content}"
+    return 1
+  fi
+
+  display --indent 6 --text "- Switch DNS to the destination" --result "DONE" --color GREEN
+
+  # The certificate exists now (or the destination serves plain HTTP): check the
+  # front door again, giving the new certificate and the route a moment.
+  if ! [[ ${dest_host} =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    dest_ip="$(_migrate_ssh "${dest_user}" "${dest_host}" "${dest_port}" "${dest_ssh_key}" "curl -s https://api.ipify.org")"
+  fi
+
+  for attempt in 1 2 3 4 5 6; do
+    https_status="$(_migrate_probe_status "https" "443" "${domain}" "${dest_ip}")"
+    if [[ ${https_status} != "000" ]] && ((10#${https_status} < 500)); then
+      display --indent 6 --text "- Front door after the switch (HTTPS ${https_status})" --result "DONE" --color GREEN
+      return 0
+    fi
+    [[ ${attempt} -lt 6 ]] && sleep 10
+  done
+
+  # No HTTPS: accept plain HTTP only when it serves the site itself.
+  local http_status
+  http_status="$(_migrate_probe_status "http" "80" "${domain}" "${dest_ip}")"
+  if ((10#${http_status} >= 200 && 10#${http_status} < 300 || 10#${http_status} >= 400 && 10#${http_status} < 500)); then
+    display --indent 6 --text "- Front door after the switch (HTTP only ${http_status}, certificate pending)" --result "WARNING" --color YELLOW
+    return 0
+  fi
+
+  log_event "error" "Migrate: ${domain} does not answer at the destination after the DNS switch (https=${https_status}, http=${http_status}); restoring the DNS" "true"
+  display --indent 6 --text "- Front door after the switch" --result "FAIL" --color RED
+  migrate_rollback_dns "${domain}" "${previous_content}"
   return 1
 
 }
@@ -946,6 +1131,9 @@ function _migrate_on_signal() {
 
   trap - TERM INT
 
+  # A cancelled capture must not leave the site's database stopped.
+  backup_resume_project_databases || true
+
   if [[ ${MIGRATE_STAGING_SIGNAL_SAFE} == "1" ]]; then
     migrate_cleanup_staging "${MIGRATE_RUN_DOMAIN}" "${MIGRATE_RUN_DEST_USER}" "${MIGRATE_RUN_DEST_HOST}" \
       "${MIGRATE_RUN_DEST_PORT}" "${MIGRATE_RUN_DEST_SSH_KEY}" "${MIGRATE_RUN_DEST_SERVER_NAME}" "${MIGRATE_RUN_DB_NAME}" || true
@@ -1007,6 +1195,7 @@ function _migrate_site_run() {
   migrate_check_ssh_connectivity "${dest_user}" "${dest_host}" "${dest_port}" "${dest_ssh_key}" || return 1
   migrate_check_dest_docker "${dest_user}" "${dest_host}" "${dest_port}" "${dest_ssh_key}" || return 1
   migrate_check_dest_brolit "${dest_user}" "${dest_host}" "${dest_port}" "${dest_ssh_key}" || return 1
+  migrate_check_dest_defer_support "${dest_user}" "${dest_host}" "${dest_port}" "${dest_ssh_key}" || return 1
   migrate_check_dest_dns_ssl_config "${dest_user}" "${dest_host}" "${dest_port}" "${dest_ssh_key}" "${bootstrap_dest_config}" || return 1
 
   if [[ ${transport} == "local" ]]; then
@@ -1035,6 +1224,12 @@ function _migrate_site_run() {
 
   if [[ ${restore_result} -eq 0 ]]; then
     migrate_verify_destination "${dest_user}" "${dest_host}" "${dest_port}" "${dest_ssh_key}" "${domain}"
+    verification_result=$?
+  fi
+
+  # The domain is pointed at the destination only now that it is verified.
+  if [[ ${restore_result} -eq 0 && ${verification_result} -eq 0 ]]; then
+    migrate_switch_dns "${dest_user}" "${dest_host}" "${dest_port}" "${dest_ssh_key}" "${domain}"
     verification_result=$?
   fi
 

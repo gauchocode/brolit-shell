@@ -35,7 +35,8 @@ function show_help() {
                                             project, full-report, list, list-all, search
                         restore             Subtasks: from-local, from-storage, from-url, from-borg,
                                             download
-                        project             Subtasks: delete, online, offline, regen-nginx
+                        project             Subtasks: delete, online, offline, regen-nginx,
+                                            finalize-domain, verify-local
                         project-install     (uses -tf/-tt instead of subtask)
                         database            Subtasks: list_db, create_db, delete_db, rename_db,
                                             import_db, export_db, list_db_user, create_db_user,
@@ -627,13 +628,13 @@ function tasks_handler() {
 
   project)
     # Validate subtask
-    validate_task_and_subtask "project" "${STASK}" "delete online offline regen-nginx"
+    validate_task_and_subtask "project" "${STASK}" "delete online offline regen-nginx finalize-domain verify-local"
     exit_code=$?
     [[ ${exit_code} -ne 0 ]] && exit ${exit_code}
 
     # Validate required params
     case "${STASK}" in
-      delete|online|offline|regen-nginx)
+      delete|online|offline|regen-nginx|finalize-domain|verify-local)
         validate_required_params "project-${STASK}" "DOMAIN"
         exit_code=$?
         [[ ${exit_code} -ne 0 ]] && exit ${exit_code}

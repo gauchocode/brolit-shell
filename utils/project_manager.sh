@@ -488,6 +488,56 @@ function project_tasks_handler() {
     exit $?
     ;;
 
+  finalize-domain)
+
+    # Second half of a migration: point the domain's DNS at this server and
+    # install the certificate. `migrate` restored the project with the DNS and
+    # certificate steps deferred and calls this only after it verified the site.
+    local project_path="${sites}/${domain}"
+    local project_type
+    local project_install_type
+    local project_port
+
+    project_type="$(project_get_type "${project_path}")"
+    project_install_type="$(project_get_install_type "${project_path}")"
+    project_port="$(project_get_port_from_env "${project_path}")"
+
+    if [[ ${project_install_type} == "docker"* ]]; then
+      project_install_type="proxy"
+    fi
+
+    BROLIT_DOMAIN_CONFIG_STAGE="finalize" project_update_domain_config "${domain}" "${project_type}" "${project_install_type}" "${project_port}"
+
+    exit $?
+    ;;
+
+  verify-local)
+
+    # Does the stack answer on this server, whatever the DNS says? Asks the
+    # project's own port with the site's Host header and judges by status code.
+    # Exit codes: 0 answers (status < 500), 1 down or error, 2 port unknown.
+    local project_path="${sites}/${domain}"
+    local project_port
+    local local_status
+
+    project_port="$(project_get_port_from_env "${project_path}")"
+    if [[ -z "${project_port}" ]]; then
+      log_event "error" "verify-local: cannot determine the port of ${domain}" "false"
+      exit 2
+    fi
+
+    local_status="$(curl --silent --output /dev/null --max-time 15 --write-out '%{http_code}' \
+      --header "Host: ${domain}" "http://127.0.0.1:${project_port}/" 2>/dev/null)"
+    [[ ${local_status} =~ ^[0-9]{3}$ ]] || local_status="000"
+
+    display --indent 6 --text "- Local stack check (port ${project_port}: ${local_status})" --result "$([[ ${local_status} != "000" && 10#${local_status} -lt 500 ]] && echo DONE || echo FAIL)" --color "$([[ ${local_status} != "000" && 10#${local_status} -lt 500 ]] && echo GREEN || echo RED)"
+
+    if [[ ${local_status} != "000" ]] && ((10#${local_status} < 500)); then
+      exit 0
+    fi
+    exit 1
+    ;;
+
   *)
 
     die "INVALID PROJECT TASK: ${subtask}"

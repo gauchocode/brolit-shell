@@ -2393,6 +2393,121 @@ function backup_project() {
 }
 
 ################################################################################
+# Database containers stopped for a consistent files archive (see
+# backup_quiesce_project_databases); backup_resume_project_databases starts them.
+################################################################################
+
+declare -ga BACKUP_QUIESCED_CONTAINERS=()
+
+################################################################################
+# Stop the database containers whose data directory is inside the project
+#
+# The files archive of a Docker project includes a bind-mounted database data
+# directory (for example ./mysql_data). Copied while the database runs, that
+# directory is not consistent: the restored copy of jumpnetcorp.com.ar failed
+# with "InnoDB: Data structure corruption" and never started. A stopped database
+# has flushed everything, so the copy is good. Only used when explicitly asked
+# (BROLIT_BACKUP_QUIESCE_DB=1, set by `migrate`): the site's database is down
+# until backup_resume_project_databases, which must always be called.
+#
+# Arguments:
+#   ${1} = ${project_domain}
+#   ${2} = ${detected_databases} (output of docker_list_project_databases: "service<TAB>engine" lines)
+#   ${3} = ${docker_compose_file}
+#
+# Outputs:
+#   0 if every database that needed it was stopped (or none did), 1 otherwise.
+################################################################################
+
+function backup_quiesce_project_databases() {
+
+  local project_domain="${1}"
+  local detected_databases="${2}"
+  local docker_compose_file="${3}"
+
+  local project_dir="${PROJECTS_PATH}/${project_domain}/"
+  local db_service db_engine container sources
+
+  while IFS=$'\t' read -r db_service db_engine; do
+    [[ -z "${db_service}" ]] && continue
+
+    container="$(docker compose -f "${docker_compose_file}" ps --format '{{.Name}}' "${db_service}" 2>/dev/null)"
+    [[ -z "${container}" || "${container}" == *$'\n'* ]] && continue
+
+    # Only a data directory inside the project ends up in the files archive.
+    sources="$(docker inspect -f '{{range .Mounts}}{{if eq .Type "bind"}}{{.Source}}{{"\n"}}{{end}}{{end}}' "${container}" 2>/dev/null)"
+    if ! grep -qF -- "${project_dir}" <<<"${sources}"; then
+      continue
+    fi
+
+    log_event "info" "Stopping database container ${container} while the project files are archived (consistent copy of its data directory)" "true"
+    display --indent 6 --text "- Stopping ${db_service} for a consistent copy" --result "DONE" --color YELLOW
+
+    if ! docker stop --time 120 "${container}" >/dev/null 2>&1; then
+      log_event "error" "Could not stop database container ${container}; refusing to copy a live data directory" "true"
+      display --indent 6 --text "- Stopping ${db_service}" --result "FAIL" --color RED
+      return 1
+    fi
+    BACKUP_QUIESCED_CONTAINERS+=("${container}")
+
+  done <<<"${detected_databases}"
+
+  return 0
+
+}
+
+################################################################################
+# Start the database containers stopped by backup_quiesce_project_databases
+#
+# Safe to call at any time and more than once; waits for each database to be
+# healthy again (or a few seconds when it has no healthcheck) so that a dump
+# right after does not race its start.
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   0 if every container is running again, 1 otherwise.
+################################################################################
+
+function backup_resume_project_databases() {
+
+  local container
+  local result=0
+  local waited health
+
+  for container in "${BACKUP_QUIESCED_CONTAINERS[@]}"; do
+
+    if ! docker start "${container}" >/dev/null 2>&1; then
+      log_event "error" "Could not start database container ${container} again: the site's database is DOWN" "true"
+      display --indent 6 --text "- Starting ${container}" --result "FAIL" --color RED
+      result=1
+      continue
+    fi
+
+    health="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "${container}" 2>/dev/null)"
+    if [[ ${health} == "none" ]]; then
+      sleep 10
+    else
+      waited=0
+      while [[ ${waited} -lt 120 && "$(docker inspect -f '{{.State.Health.Status}}' "${container}" 2>/dev/null)" != "healthy" ]]; do
+        sleep 3
+        waited=$((waited + 3))
+      done
+    fi
+
+    log_event "info" "Database container ${container} is running again" "true"
+    display --indent 6 --text "- Starting ${container} again" --result "DONE" --color GREEN
+
+  done
+
+  BACKUP_QUIESCED_CONTAINERS=()
+
+  return ${result}
+
+}
+
+################################################################################
 # Make project Backup
 #
 # Arguments:
@@ -2643,9 +2758,25 @@ function _backup_docker_project_impl() {
     exitstatus=0
   else
     log_subsection "Backup Project Files"
-    backup_file_size="$(backup_project_files "site" "${PROJECTS_PATH}" "${project_domain}")"
 
-    exitstatus=$?
+    # `migrate` asks for a cold copy of a bind-mounted database data directory.
+    local quiesce_failed=0
+    if [[ ${BROLIT_BACKUP_QUIESCE_DB:-0} == "1" && -n "${detected_databases}" ]]; then
+      backup_quiesce_project_databases "${project_domain}" "${detected_databases}" "${docker_compose_file}" || quiesce_failed=1
+    fi
+
+    if [[ ${quiesce_failed} -eq 0 ]]; then
+      backup_file_size="$(backup_project_files "site" "${PROJECTS_PATH}" "${project_domain}")"
+      exitstatus=$?
+    else
+      backup_file_size="0"
+      exitstatus=1
+    fi
+
+    # Always bring the database back, before the dump below needs it.
+    if [[ ${#BACKUP_QUIESCED_CONTAINERS[@]} -gt 0 ]]; then
+      backup_resume_project_databases || got_error=1
+    fi
   fi
   if [[ ${exitstatus} -eq 0 ]]; then
 
