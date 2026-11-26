@@ -35,7 +35,19 @@ function nginx_server_create() {
 
     # Check if Proxmox mode with OpenResty
     if [[ "${PROXMOX_MODE}" == "enabled" ]] && openresty_is_installed 2>/dev/null; then
-        openresty_server_create "${project_domain}" "${project_type}" "${server_type}" "${redirect_domains}" "${proxy_port}"
+
+        # The gateway runs on another machine: without an upstream it proxies a
+        # bare port to ITS OWN loopback, where nothing listens, and the site
+        # answers 502. A Dockerized project listens on this server's internal
+        # address, so the route must say so.
+        local upstream_url=""
+        if [[ -n "${proxy_port}" ]]; then
+            local internal_ip
+            internal_ip="$(network_get_internal_ip)"
+            [[ -n "${internal_ip}" ]] && upstream_url="http://${internal_ip}:${proxy_port}"
+        fi
+
+        openresty_server_create "${project_domain}" "${project_type}" "${server_type}" "${redirect_domains}" "${proxy_port}" "${upstream_url}"
         return $?
     fi
 

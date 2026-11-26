@@ -319,6 +319,28 @@ function get_server_public_ip() {
 }
 
 ################################################################################
+# Address this server uses on its internal network (the source address of the
+# default route). On a Proxmox guest this is the address the OpenResty gateway
+# reaches it on.
+#
+# Arguments:
+#   none
+#
+# Outputs:
+#   IPv4 address, empty if it cannot be determined.
+################################################################################
+
+function network_get_internal_ip() {
+
+  local internal_ip
+
+  internal_ip="$(ip -4 route get 1.1.1.1 2>/dev/null | grep -oP 'src \K[0-9.]+' | head -n 1)"
+
+  echo "${internal_ip}"
+
+}
+
+################################################################################
 # Whether an IPv4 address is private, loopback, link-local or carrier-grade NAT
 # (RFC 1918, 127/8, 169.254/16, 100.64/10): an address that cannot be reached
 # from the internet and must never be published in DNS.
