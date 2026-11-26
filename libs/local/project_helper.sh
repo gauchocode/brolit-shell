@@ -443,7 +443,7 @@ function project_get_port_from_env() {
 
   if [[ -n "${compose_file}" ]] && command -v jq >/dev/null 2>&1; then
     local published_ports
-    published_ports="$(docker compose -f "${compose_file}" config --format json 2>/dev/null \
+    published_ports="$(docker_compose_run "${compose_file}" config --format json 2>/dev/null \
       | jq -r '[.services[].ports[]?.published] | unique | .[]' 2>/dev/null)"
     if [[ "$(echo "${published_ports}" | grep -c '.')" -eq 1 && "${published_ports}" =~ ^[0-9]+$ ]]; then
       log_event "debug" "Found port ${published_ports} via docker compose config (single published port)" "false"
@@ -3299,12 +3299,12 @@ function project_compose_archive_deletion_mounts() (
   chmod 600 "${receipt}" || return 1
   remote_directory="${SERVER_NAME}/projects-online/site-mounts/${project_domain}"
 
-  trap 'if [[ "${keep_work}" != "true" ]]; then rm -rf -- "${work_dir}"; fi; if [[ "${quiesced}" == "true" && "${keep_work}" != "true" ]]; then docker compose -f "${compose_file}" start >/dev/null 2>&1 || printf "WARNING: could not restart %s\n" "${project_domain}" >&2; fi' EXIT
+  trap 'if [[ "${keep_work}" != "true" ]]; then rm -rf -- "${work_dir}"; fi; if [[ "${quiesced}" == "true" && "${keep_work}" != "true" ]]; then docker_compose_run "${compose_file}" start >/dev/null 2>&1 || printf "WARNING: could not restart %s\n" "${project_domain}" >&2; fi' EXIT
 
   # Quiesce before taking the mount snapshot. Mark the attempt first: Compose
   # may have stopped some containers even when a later one fails to stop.
   quiesced="true"
-  docker compose -f "${compose_file}" stop >/dev/null 2>&1 || return 1
+  docker_compose_run "${compose_file}" stop >/dev/null 2>&1 || return 1
 
   while IFS= read -r item; do
     [[ -n "${item}" ]] || continue
@@ -3403,7 +3403,7 @@ function project_compose_abort_archived_deletion_mounts() {
   compose_file="${PROJECTS_PATH}/${project_domain}/docker-compose.yml"
   [[ -f "${compose_file}" ]] || compose_file="${PROJECTS_PATH}/${project_domain}/docker-compose.yaml"
   if [[ -f "${compose_file}" ]]; then
-    (cd "${PROJECTS_PATH}/${project_domain}" && docker compose -f "${compose_file}" start) >/dev/null 2>&1 || printf "WARNING: could not restart %s\n" "${project_domain}" >&2
+    (cd "${PROJECTS_PATH}/${project_domain}" && docker_compose_run "${compose_file}" start) >/dev/null 2>&1 || printf "WARNING: could not restart %s\n" "${project_domain}" >&2
   fi
   if [[ -n "${receipt}" ]]; then
     rm -rf -- "${BROLIT_TMP_DIR}/${NOW}/mounts-${project_domain}"
@@ -3451,7 +3451,7 @@ function project_compose_finalize_archived_deletion_mounts() (
 
   # Cover every return after archiving, including invalid receipt/tool/compose
   # checks, not only failures later in verification.
-  trap 'if [[ "${success}" != "true" && "${down_done}" != "true" ]]; then docker compose -f "${compose_file}" start >/dev/null 2>&1 || printf "WARNING: could not restart %s\n" "${project_domain}" >&2; fi; if [[ "${success}" != "true" ]]; then rm -rf -- "${work_dir}"; fi' EXIT
+  trap 'if [[ "${success}" != "true" && "${down_done}" != "true" ]]; then docker_compose_run "${compose_file}" start >/dev/null 2>&1 || printf "WARNING: could not restart %s\n" "${project_domain}" >&2; fi; if [[ "${success}" != "true" ]]; then rm -rf -- "${work_dir}"; fi' EXIT
 
   [[ -n "${project_domain}" && -n "${receipt}" && -f "${receipt}" && ! -L "${receipt}" ]] || finalize_fail "receipt is missing or unsafe"
   command -v docker >/dev/null 2>&1 && command -v jq >/dev/null 2>&1 || finalize_fail "docker or jq is unavailable"
@@ -3499,7 +3499,7 @@ function project_compose_finalize_archived_deletion_mounts() (
 
   # `down` without -v removes containers but preserves volumes for the explicit,
   # receipt-bound removal below. No automatic restart is attempted after this.
-  docker compose -f "${compose_file}" down >/dev/null 2>&1 || finalize_fail "Compose down failed"
+  docker_compose_run "${compose_file}" down >/dev/null 2>&1 || finalize_fail "Compose down failed"
   down_done="true"
 
   while IFS= read -r item; do

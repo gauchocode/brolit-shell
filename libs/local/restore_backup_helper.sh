@@ -601,7 +601,7 @@ function _configure_restored_project() {
             while IFS=$'\t' read -r db_service db_engine_found; do
                 [[ -z "${db_service}" ]] && continue
 
-                db_container="$(docker compose -f "${compose_file}" ps --format '{{.Name}}' "${db_service}" 2>/dev/null | head -1)"
+                db_container="$(docker_compose_run "${compose_file}" ps --format '{{.Name}}' "${db_service}" 2>/dev/null | head -1)"
                 [[ -z "${db_container}" ]] && continue
 
                 if [[ "${db_engine_found}" == "mysql" ]]; then
@@ -850,7 +850,7 @@ function restore_project_backup() {
             while IFS=$'\t' read -r db_service db_engine_found; do
                 [[ -z "${db_service}" ]] && continue
 
-                db_container_name="$(docker compose -f "${compose_file}" ps --format '{{.Name}}' "${db_service}" 2>/dev/null | head -1)"
+                db_container_name="$(docker_compose_run "${compose_file}" ps --format '{{.Name}}' "${db_service}" 2>/dev/null | head -1)"
 
                 if [[ -z "${db_container_name}" ]] || ! docker ps --format '{{.Names}}' | grep -qx "${db_container_name}"; then
                     log_event "error" "Docker database service '${db_service}' (${db_engine_found}) is not running after restore" "false"

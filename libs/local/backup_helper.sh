@@ -2431,7 +2431,7 @@ function backup_quiesce_project_databases() {
   while IFS=$'\t' read -r db_service db_engine; do
     [[ -z "${db_service}" ]] && continue
 
-    container="$(docker compose -f "${docker_compose_file}" ps --format '{{.Name}}' "${db_service}" 2>/dev/null)"
+    container="$(docker_compose_run "${docker_compose_file}" ps --format '{{.Name}}' "${db_service}" 2>/dev/null)"
     [[ -z "${container}" || "${container}" == *$'\n'* ]] && continue
 
     # Only a data directory inside the project ends up in the files archive.
@@ -2680,7 +2680,7 @@ function _backup_docker_project_impl() {
       # Do not guess which replica contains the required data. Resolve exactly
       # one container, including stopped ones, and fail on missing/ambiguous state.
       local container_names container_running
-      if ! container_names="$(docker compose -f "${docker_compose_file}" ps --all --format '{{.Name}}' "${db_service}" 2>/dev/null)" ||
+      if ! container_names="$(docker_compose_run "${docker_compose_file}" ps --all --format '{{.Name}}' "${db_service}" 2>/dev/null)" ||
          [[ "${container_names}" == *$'\n'* ]]; then
         log_event "error" "Database service container is ambiguous or cannot be inspected; database backup failed" "false"
         got_error=1

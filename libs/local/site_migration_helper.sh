@@ -1002,7 +1002,7 @@ function migrate_decommission_source() {
   local volume_names=""
 
   if [[ ${purge_volumes} == "true" && -f "${compose_file}" ]]; then
-    volume_names="$(docker compose -f "${compose_file}" config --volumes 2>/dev/null)"
+    volume_names="$(docker_compose_run "${compose_file}" config --volumes 2>/dev/null)"
   fi
 
   # project_delete() already: stops the docker stack, makes a final backup,

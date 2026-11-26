@@ -2,6 +2,7 @@
 # Tests for deletion-time backups of uncovered Compose mounts. All Docker,
 # compression and storage operations are fakes; no host data is touched.
 
+source "$(dirname "${BASH_SOURCE[0]}")/../libs/apps/docker_helper.sh" >/dev/null 2>&1
 source "$(dirname "${BASH_SOURCE[0]}")/../libs/local/project_helper.sh"
 
 function test_compose_deletion_mount_backup() {

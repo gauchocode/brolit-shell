@@ -212,7 +212,7 @@ function docker_view_container_status() {
 
   # Show container status
   log_event "info" "Running: docker compose -f ${compose_file} ps" "false"
-  docker compose -f "${compose_file}" ps
+  docker_compose_run "${compose_file}" ps
 
   echo ""
   read -n 1 -s -r -p "Press any key to continue"
@@ -238,7 +238,7 @@ function docker_view_logs_menu() {
 
   # Get list of containers
   local containers
-  containers="$(docker compose -f "${compose_file}" ps --services)"
+  containers="$(docker_compose_run "${compose_file}" ps --services)"
 
   if [[ -z ${containers} ]]; then
     display --indent 6 --text "- No running containers found" --result "FAIL" --color RED
@@ -265,7 +265,7 @@ function docker_view_logs_menu() {
     if [[ ${exitstatus} -eq 0 ]]; then
       [[ -z ${log_lines} ]] && log_lines="100"
       log_event "info" "Showing last ${log_lines} lines for ${container_name}" "false"
-      docker compose -f "${compose_file}" logs --tail="${log_lines}" "${container_name}"
+      docker_compose_run "${compose_file}" logs --tail="${log_lines}" "${container_name}"
       echo ""
       read -n 1 -s -r -p "Press any key to continue"
     fi
@@ -293,7 +293,7 @@ function docker_restart_containers_menu() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
     log_event "info" "Restarting containers in ${project_path}" "false"
-    docker compose -f "${compose_file}" restart
+    docker_compose_run "${compose_file}" restart
     display --indent 6 --text "- Restarting containers" --result "DONE" --color GREEN
   fi
 
@@ -319,7 +319,7 @@ function docker_stop_containers_menu() {
   exitstatus=$?
   if [[ ${exitstatus} -eq 0 ]]; then
     log_event "info" "Stopping containers in ${project_path}" "false"
-    docker compose -f "${compose_file}" stop
+    docker_compose_run "${compose_file}" stop
     display --indent 6 --text "- Stopping containers" --result "DONE" --color GREEN
   fi
 
@@ -341,7 +341,7 @@ function docker_start_containers_menu() {
   local compose_file="${project_path}/docker-compose.yml"
 
   log_event "info" "Starting containers in ${project_path}" "false"
-  docker compose -f "${compose_file}" start
+  docker_compose_run "${compose_file}" start
   display --indent 6 --text "- Starting containers" --result "DONE" --color GREEN
 
 }
@@ -365,7 +365,7 @@ function docker_exec_command_menu() {
 
   # Get list of containers
   local containers
-  containers="$(docker compose -f "${compose_file}" ps --services)"
+  containers="$(docker_compose_run "${compose_file}" ps --services)"
 
   if [[ -z ${containers} ]]; then
     display --indent 6 --text "- No running containers found" --result "FAIL" --color RED
@@ -391,7 +391,7 @@ function docker_exec_command_menu() {
     exitstatus=$?
     if [[ ${exitstatus} -eq 0 && -n ${command_to_exec} ]]; then
       log_event "info" "Executing in ${container_name}: ${command_to_exec}" "false"
-      docker compose -f "${compose_file}" exec "${container_name}" ${command_to_exec}
+      docker_compose_run "${compose_file}" exec "${container_name}" ${command_to_exec}
       echo ""
       read -n 1 -s -r -p "Press any key to continue"
     fi

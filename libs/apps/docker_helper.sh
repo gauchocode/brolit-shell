@@ -61,7 +61,7 @@ function docker_compose_pull() {
     # the whole file fails as soon as one of those returns "pull access
     # denied", even when a later build step would have handled it fine.
     local pullable_services
-    pullable_services="$(docker compose -f "${compose_file}" config --format json 2>/dev/null | jq -r '.services | to_entries[] | select(.value.image != null and .value.build == null) | .key')"
+    pullable_services="$(docker_compose_run "${compose_file}" config --format json 2>/dev/null | jq -r '.services | to_entries[] | select(.value.image != null and .value.build == null) | .key')"
 
     # Execute docker compose command
     ## Options:
@@ -69,7 +69,7 @@ function docker_compose_pull() {
     ##    -s, --stop    Stop the containers, if required, before removing
     ##    -v            Remove any anonymous volumes attached to containers
     if [[ -n "${pullable_services}" ]]; then
-        docker compose -f "${compose_file}" pull ${pullable_services} >/dev/null 2>&1
+        docker_compose_run "${compose_file}" pull ${pullable_services} >/dev/null 2>&1
         exitstatus=$?
     else
         log_event "debug" "No services with a pullable image found in ${compose_file}; skipping pull" "false"
@@ -119,7 +119,7 @@ function docker_compose_up() {
     log_event "debug" "Running: docker compose -f ${compose_file} up --detach" "false"
 
     # Execute docker compose command
-    docker compose -f "${compose_file}" up --detach >/dev/null 2>&1
+    docker_compose_run "${compose_file}" up --detach >/dev/null 2>&1
     exitstatus=$?
 
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -425,7 +425,7 @@ function docker_compose_build() {
     # access denied", even though "docker compose up --build" below would
     # have built it just fine.
     local pullable_services
-    pullable_services="$(docker compose -f "${compose_file}" config --format json 2>/dev/null | jq -r '
+    pullable_services="$(docker_compose_run "${compose_file}" config --format json 2>/dev/null | jq -r '
       .services as $s
       | ($s | to_entries | map(select(.value.build != null) | .value.image) | map(select(. != null))) as $locally_built_images
       | $s | to_entries[]
@@ -436,7 +436,7 @@ function docker_compose_build() {
     if [[ -n "${pullable_services}" ]]; then
 
         # Execute docker compose command and capture output
-        pull_output=$(docker compose -f "${compose_file}" pull ${pullable_services} 2>&1)
+        pull_output=$(docker_compose_run "${compose_file}" pull ${pullable_services} 2>&1)
         pull_status=$?
 
         if [[ ${pull_status} -ne 0 ]]; then
@@ -457,7 +457,7 @@ function docker_compose_build() {
     log_event "debug" "Running: docker compose -f ${compose_file} up --detach --build" "false"
 
     # Execute docker compose command and capture output
-    build_output=$(docker compose -f "${compose_file}" up --detach --build 2>&1)
+    build_output=$(docker_compose_run "${compose_file}" up --detach --build 2>&1)
     exitstatus=$?
     spinner_stop "${exitstatus}"
 
@@ -502,7 +502,7 @@ function docker_compose_stop() {
     log_event "debug" "Running: docker compose -f ${compose_file} stop" "false" 
 
     # Execute docker compose command
-    docker compose -f "${compose_file}" stop >/dev/null 2>&1
+    docker_compose_run "${compose_file}" stop >/dev/null 2>&1
     exitstatus=$?
 
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -550,7 +550,7 @@ function docker_compose_rm() {
     ##    -f, --force   Don't ask to confirm removal
     ##    -s, --stop    Stop the containers, if required, before removing
     ##    -v            Remove any anonymous volumes attached to containers
-    docker compose -f "${compose_file}" rm --stop --force --volumes >/dev/null 2>&1
+    docker_compose_run "${compose_file}" rm --stop --force --volumes >/dev/null 2>&1
     exitstatus=$?
 
     if [[ ${exitstatus} -eq 0 ]]; then
@@ -850,7 +850,7 @@ function docker_list_project_databases() {
     fi
 
     ( set -o pipefail
-    docker compose -f "${compose_file}" config --format json 2>/dev/null | jq -r '
+    docker_compose_run "${compose_file}" config --format json 2>/dev/null | jq -r '
       .services | to_entries[]
       | select(.value.image != null)
       | . as $e
@@ -1205,7 +1205,7 @@ function docker_wait_for_mysql_ready() {
 
     while [ $attempt -lt $max_attempts ]; do
         # Stage 1: Check if mysql container is running
-        if ! docker compose -f "${compose_file}" ps mysql | grep -q "Up"; then
+        if ! docker_compose_run "${compose_file}" ps mysql | grep -q "Up"; then
             log_event "debug" "MySQL container not running (attempt $((attempt + 1)))" "false"
             sleep 2
             attempt=$((attempt + 1))
@@ -1215,7 +1215,7 @@ function docker_wait_for_mysql_ready() {
 
         # Stage 2: Test MySQL service with mysqladmin ping as root
         local ping_result
-        ping_result=$(docker compose -f "${compose_file}" exec mysql mysqladmin ping -uroot -p"${root_pass}" 2>&1)
+        ping_result=$(docker_compose_run "${compose_file}" exec mysql mysqladmin ping -uroot -p"${root_pass}" 2>&1)
         local ping_exit=$?
         if [[ ${ping_exit} -eq 0 && "${ping_result}" == *"mysqld is alive"* ]]; then
             log_event "debug" "Root ping successful (attempt $((attempt + 1)))" "false"
@@ -1224,7 +1224,7 @@ function docker_wait_for_mysql_ready() {
             local app_ready=false
             local app_ping_result
             for app_try in {1..3}; do
-                app_ping_result=$(docker compose -f "${compose_file}" exec mysql mysqladmin ping -u"${mysql_user}" -p"${mysql_pass}" 2>&1)
+                app_ping_result=$(docker_compose_run "${compose_file}" exec mysql mysqladmin ping -u"${mysql_user}" -p"${mysql_pass}" 2>&1)
                 if [[ $? -eq 0 && "${app_ping_result}" == *"mysqld is alive"* ]]; then
                     app_ready=true
                     break
@@ -1424,13 +1424,13 @@ function docker_project_install() {
         # Pre-chown to ensure writable permissions for user 33
         APP_USER_ID="${APP_USER_ID:-33}"
         APP_GROUP_ID="${APP_GROUP_ID:-33}"
-        docker compose -f "${compose_file}" run --rm -u 0 php-fpm chown -R "${APP_USER_ID}:${APP_GROUP_ID}" /wordpress >/dev/null 2>&1
+        docker_compose_run "${compose_file}" run --rm -u 0 php-fpm chown -R "${APP_USER_ID}:${APP_GROUP_ID}" /wordpress >/dev/null 2>&1
 
         # Create wp-config.php directly with docker compose run and retries (suppressed output)
         max_retries=3
         success=false
         for retry in $(seq 1 $max_retries); do
-            if docker compose -f "${compose_file}" run -T -u "${APP_USER_ID}" -e HOME=/tmp -e APP_USER_ID="${APP_USER_ID}" -e APP_GROUP_ID="${APP_GROUP_ID}" --rm wordpress-cli \
+            if docker_compose_run "${compose_file}" run -T -u "${APP_USER_ID}" -e HOME=/tmp -e APP_USER_ID="${APP_USER_ID}" -e APP_GROUP_ID="${APP_GROUP_ID}" --rm wordpress-cli \
                 wp config create \
                 --dbname="${project_database}" \
                 --dbuser="${project_database_user}" \
@@ -1449,7 +1449,7 @@ function docker_project_install() {
         if [[ "${success}" != "true" ]]; then
             log_event "warning" "Direct wp config create failed after $max_retries attempts. Trying fallback: create config as root inside wordpress-cli container" "false"
             # Fallback: create as root (suppressed output)
-            if docker compose -f "${compose_file}" run -T -u 0 -e HOME=/tmp -e APP_USER_ID="${APP_USER_ID}" -e APP_GROUP_ID="${APP_GROUP_ID}" --rm wordpress-cli \
+            if docker_compose_run "${compose_file}" run -T -u 0 -e HOME=/tmp -e APP_USER_ID="${APP_USER_ID}" -e APP_GROUP_ID="${APP_GROUP_ID}" --rm wordpress-cli \
                 wp config create \
                 --dbname="${project_database}" \
                 --dbuser="${project_database_user}" \
@@ -1462,7 +1462,7 @@ function docker_project_install() {
                 --quiet >/dev/null 2>&1; then
                 log_event "info" "wp-config.php created as root inside wordpress-cli container" "false"
                 # Fix ownership in php-fpm container (already suppressed)
-                docker compose -f "${compose_file}" exec -T php-fpm chown -R "${APP_USER_ID}":"${APP_GROUP_ID}" /wordpress >/dev/null 2>&1 || log_event "warning" "Failed to chown inside php-fpm container; check ownership manually" "false"
+                docker_compose_run "${compose_file}" exec -T php-fpm chown -R "${APP_USER_ID}":"${APP_GROUP_ID}" /wordpress >/dev/null 2>&1 || log_event "warning" "Failed to chown inside php-fpm container; check ownership manually" "false"
             else
                 log_event "warning" "Creating wp-config as root failed. Trying host fallback (move sample + inject DB constants)" "false"
                 # Host fallback (no Docker output)
@@ -2600,8 +2600,8 @@ function docker_update_php_version() {
     local running_services
     local total_services
 
-    containers="$(docker compose -f "${compose_file}" ps --services 2>/dev/null)"
-    running_services="$(docker compose -f "${compose_file}" ps --services --filter 'status=running' 2>/dev/null | wc -l)"
+    containers="$(docker_compose_run "${compose_file}" ps --services 2>/dev/null)"
+    running_services="$(docker_compose_run "${compose_file}" ps --services --filter 'status=running' 2>/dev/null | wc -l)"
     total_services="$(echo "${containers}" | wc -l)"
 
     if [[ ${running_services} -lt ${total_services} ]]; then
@@ -2845,8 +2845,8 @@ function docker_update_php_version_revert() {
         log_event "warning" "Revert build failed, attempting docker compose up without build for project $(basename "${project_path}")" "false"
 
         # Fallback: restart stack with cached images (skip build)
-        docker compose -f "${compose_file}" down 2>/dev/null
-        docker compose -f "${compose_file}" up --detach 2>/dev/null
+        docker_compose_run "${compose_file}" down 2>/dev/null
+        docker_compose_run "${compose_file}" up --detach 2>/dev/null
         fallback_status=$?
 
         if [[ ${fallback_status} -eq 0 ]]; then
@@ -2860,5 +2860,52 @@ function docker_update_php_version_revert() {
             return 1
         fi
     fi
+
+}
+
+################################################################################
+# Run `docker compose` for a project's compose file, the way compose itself would
+# when run inside the project directory: `-f <file>` makes compose ignore the
+# project's override file, so a site whose docker-compose.override.yml adds a
+# healthcheck, a port or an env var ran without it (containers `unhealthy`).
+# The override that goes with the base file is added back:
+#   docker-compose.yml -> docker-compose.override.yml|.yaml
+#   compose.yml        -> compose.override.yml|.yaml
+# Any other file name is used alone, as before.
+#
+# Arguments:
+#   ${1} = compose file; the rest are the arguments of `docker compose`
+#
+# Outputs:
+#   Whatever `docker compose` outputs and returns.
+################################################################################
+
+function docker_compose_run() {
+
+    local compose_file="${1}"
+    shift
+
+    local compose_dir compose_name stem ext override
+    local -a file_args=(-f "${compose_file}")
+
+    compose_dir="$(dirname "${compose_file}")"
+    compose_name="$(basename "${compose_file}")"
+    case "${compose_name}" in
+    docker-compose.yml | docker-compose.yaml) stem="docker-compose" ;;
+    compose.yml | compose.yaml) stem="compose" ;;
+    *) stem="" ;;
+    esac
+
+    if [[ -n ${stem} ]]; then
+        for ext in yml yaml; do
+            override="${compose_dir}/${stem}.override.${ext}"
+            if [[ -f ${override} ]]; then
+                file_args+=(-f "${override}")
+                break
+            fi
+        done
+    fi
+
+    docker compose "${file_args[@]}" "$@"
 
 }

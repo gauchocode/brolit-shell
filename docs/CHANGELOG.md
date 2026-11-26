@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.15.14 - 2026-11-26
+
+### Fixed
+
+- The shell ran `docker compose -f <project>/docker-compose.yml ...` everywhere, and `-f` makes compose skip the project's `docker-compose.override.yml` (compose only loads it when no `-f` is given). A site whose override adds a healthcheck, a port mapping or an environment variable was therefore built, started, stopped, restarted and checked without it, and its containers showed as `unhealthy`. New helper `docker_compose_run <compose file> <args>` adds the override that goes with the base file (`docker-compose.override.yml|yaml` for `docker-compose.yml|yaml`, `compose.override.yml|yaml` for `compose.yml|yaml`; any other file name is used alone, as before), and every `docker compose -f` call of the project, backup, restore, migration, wp-cli, optimizer and environment helpers goes through it. Verified against real `docker compose config`. Test: `tests/test_compose_override_file.sh`.
+
 ## 3.15.13 - 2026-11-26
 
 ### Fixed

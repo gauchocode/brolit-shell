@@ -20,6 +20,8 @@ TEST_LOADER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)"
 source "${TEST_LOADER_DIR}/../libs/commons.sh" >/dev/null 2>&1
 # shellcheck disable=SC1090
 source "${TEST_LOADER_DIR}/../libs/local/project_helper.sh" >/dev/null 2>&1
+# shellcheck disable=SC1090
+source "${TEST_LOADER_DIR}/../libs/apps/docker_helper.sh" >/dev/null 2>&1
 
 function tpwe_fake_docker() {
 

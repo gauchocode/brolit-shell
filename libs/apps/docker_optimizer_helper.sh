@@ -63,7 +63,7 @@ function docker_optimizer_get_container_name() {
   fi
 
   # Get container name from docker compose
-  container_name="$(docker compose -f "${compose_file}" ps -q "${service_name}" 2>/dev/null | xargs docker inspect --format='{{.Name}}' 2>/dev/null | sed 's|^/||')"
+  container_name="$(docker_compose_run "${compose_file}" ps -q "${service_name}" 2>/dev/null | xargs docker inspect --format='{{.Name}}' 2>/dev/null | sed 's|^/||')"
 
   if [[ -n ${container_name} ]]; then
     echo "${container_name}"
@@ -94,7 +94,7 @@ function docker_optimizer_detect_services() {
   fi
 
   # List running services
-  docker compose -f "${compose_file}" ps --services --filter "status=running" 2>/dev/null
+  docker_compose_run "${compose_file}" ps --services --filter "status=running" 2>/dev/null
 
 }
 
@@ -458,7 +458,7 @@ OPCACHE_EOF
   # Reload PHP-FPM gracefully (USR2 signal)
   log_event "info" "Reloading PHP-FPM in container" "false"
   log_event "debug" "Running: docker compose -f ${compose_file} exec -T php-fpm kill -USR2 1" "false"
-  docker compose -f "${compose_file}" exec -T php-fpm kill -USR2 1 2>/dev/null
+  docker_compose_run "${compose_file}" exec -T php-fpm kill -USR2 1 2>/dev/null
 
   if [[ $? -eq 0 ]]; then
     display --indent 6 --text "- Reloading PHP-FPM" --result "DONE" --color GREEN
@@ -795,7 +795,7 @@ function docker_nginx_optimize() {
   # Test nginx configuration
   log_event "info" "Testing Nginx configuration" "false"
   log_event "debug" "Running: docker compose -f ${compose_file} exec -T webserver nginx -t" "false"
-  if docker compose -f "${compose_file}" exec -T webserver nginx -t 2>&1 | grep -q "successful"; then
+  if docker_compose_run "${compose_file}" exec -T webserver nginx -t 2>&1 | grep -q "successful"; then
     display --indent 6 --text "- Testing configuration" --result "DONE" --color GREEN
     log_event "info" "Nginx configuration test successful" "false"
   else
@@ -807,7 +807,7 @@ function docker_nginx_optimize() {
   # Reload Nginx
   log_event "info" "Reloading Nginx in container" "false"
   log_event "debug" "Running: docker compose -f ${compose_file} exec -T webserver nginx -s reload" "false"
-  docker compose -f "${compose_file}" exec -T webserver nginx -s reload 2>/dev/null
+  docker_compose_run "${compose_file}" exec -T webserver nginx -s reload 2>/dev/null
 
   if [[ $? -eq 0 ]]; then
     display --indent 6 --text "- Reloading Nginx" --result "DONE" --color GREEN
@@ -1122,7 +1122,7 @@ EOF
     log_event "debug" "Running: docker compose -f ${compose_file} restart mysql" "false"
     display --indent 6 --text "- Restarting MySQL" --result "WORKING" --color YELLOW
 
-    docker compose -f "${compose_file}" restart mysql 2>/dev/null
+    docker_compose_run "${compose_file}" restart mysql 2>/dev/null
 
     # Wait for MySQL to be ready
     log_event "info" "Waiting for MySQL to be ready..." "false"
@@ -1130,7 +1130,7 @@ EOF
     local retries=10
     while [[ ${retries} -gt 0 ]]; do
       log_event "debug" "Running: docker compose -f ${compose_file} exec -T mysql mysqladmin ping -h localhost (retry ${retries})" "false"
-      if docker compose -f "${compose_file}" exec -T mysql mysqladmin ping -h localhost 2>/dev/null | grep -q "mysqld is alive"; then
+      if docker_compose_run "${compose_file}" exec -T mysql mysqladmin ping -h localhost 2>/dev/null | grep -q "mysqld is alive"; then
         display --indent 6 --text "- MySQL ready" --result "DONE" --color GREEN
         log_event "info" "MySQL is ready" "false"
 
@@ -1147,17 +1147,17 @@ EOF
         local verification_failed=false
 
         # Read values from MySQL using SHOW VARIABLES
-        verified_innodb_buffer_pool_size="$(docker compose -f "${compose_file}" exec -T mysql mysql -e "SHOW VARIABLES LIKE 'innodb_buffer_pool_size';" 2>/dev/null | tail -n 1 | awk '{print $2}')"
+        verified_innodb_buffer_pool_size="$(docker_compose_run "${compose_file}" exec -T mysql mysql -e "SHOW VARIABLES LIKE 'innodb_buffer_pool_size';" 2>/dev/null | tail -n 1 | awk '{print $2}')"
         # Convert bytes to MB
         verified_innodb_buffer_pool_size=$((verified_innodb_buffer_pool_size / 1024 / 1024))
 
-        verified_innodb_log_file_size="$(docker compose -f "${compose_file}" exec -T mysql mysql -e "SHOW VARIABLES LIKE 'innodb_log_file_size';" 2>/dev/null | tail -n 1 | awk '{print $2}')"
+        verified_innodb_log_file_size="$(docker_compose_run "${compose_file}" exec -T mysql mysql -e "SHOW VARIABLES LIKE 'innodb_log_file_size';" 2>/dev/null | tail -n 1 | awk '{print $2}')"
         # Convert bytes to MB
         verified_innodb_log_file_size=$((verified_innodb_log_file_size / 1024 / 1024))
 
-        verified_max_connections="$(docker compose -f "${compose_file}" exec -T mysql mysql -e "SHOW VARIABLES LIKE 'max_connections';" 2>/dev/null | tail -n 1 | awk '{print $2}')"
+        verified_max_connections="$(docker_compose_run "${compose_file}" exec -T mysql mysql -e "SHOW VARIABLES LIKE 'max_connections';" 2>/dev/null | tail -n 1 | awk '{print $2}')"
 
-        verified_tmp_table_size="$(docker compose -f "${compose_file}" exec -T mysql mysql -e "SHOW VARIABLES LIKE 'tmp_table_size';" 2>/dev/null | tail -n 1 | awk '{print $2}')"
+        verified_tmp_table_size="$(docker_compose_run "${compose_file}" exec -T mysql mysql -e "SHOW VARIABLES LIKE 'tmp_table_size';" 2>/dev/null | tail -n 1 | awk '{print $2}')"
         # Convert bytes to MB
         verified_tmp_table_size=$((verified_tmp_table_size / 1024 / 1024))
 
@@ -1325,7 +1325,7 @@ function docker_optimize_ram_usage() {
 
   if [[ -n ${php_container} ]]; then
     log_event "info" "Restarting PHP-FPM container" "false"
-    docker compose -f "${compose_file}" restart php-fpm 2>/dev/null
+    docker_compose_run "${compose_file}" restart php-fpm 2>/dev/null
     display --indent 6 --text "- Restarting PHP-FPM" --result "DONE" --color GREEN
   fi
 
