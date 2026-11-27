@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.15.16 - 2026-11-27
+
+### Fixed
+
+- A gateway route whose certificate did not exist yet left the OpenResty gateway unable to reload: `create_route` wrote the vhost, `openresty -t` failed, and from then on no route could be created, changed or reloaded until the route was removed by hand (seen with jumpnet.com.ar on 2026-11-26, about 20 minutes). `config/openresty/api/routes.lua` now rolls such a route back: a domain that already had a working route keeps it untouched, a new route is left written but disabled (no `sites-enabled` link, no stream map), and the API answers with the reload error. To keep the sites created on a Proxmox guest working, the shell enables the route again after the certificate is issued: new `nginx_server_reactivate_gateway_route`, called after a successful certificate in both the root-domain and the single-domain paths of `project_update_domain_config` (no-op outside gateway mode). The new `routes.lua` has to be installed on the gateway (`reconfigure`, or copy it to `/usr/local/openresty/nginx/conf/api/`): it is already on `brolit-openresty`. Guests need this release, otherwise a route created before its certificate stays disabled. Test: `tests/test_migrate_external_dns.sh`.
+
 ## 3.15.15 - 2026-11-26
 
 ### Fixed

@@ -182,6 +182,18 @@ function _M.create_route(data)
         return nil, "Failed to generate config"
     end
     local config_path = SITES_AVAILABLE .. "/" .. domain
+    local map_path = STREAM_MAP_DIR .. "/" .. domain .. ".conf"
+
+    -- What this domain had before, to put it back if the new route cannot load.
+    local function read_file(path)
+        local rf = io.open(path, "r")
+        if not rf then return nil end
+        local content = rf:read("*a")
+        rf:close()
+        return content
+    end
+    local previous_config = read_file(config_path)
+    local previous_map = read_file(map_path)
 
     local f = io.open(config_path, "w")
     if not f then
@@ -222,7 +234,24 @@ function _M.create_route(data)
     -- Reload nginx (test first)
     local reload_result, reload_err = _M._reload()
     if not reload_result then
-        return nil, "Config written but reload failed: " .. (reload_err or "")
+        -- A route that does not load (typically: its certificate is not there yet) must
+        -- not stay enabled: `openresty -t` would fail for EVERY route from now on, and no
+        -- other site could be created, changed or reloaded until someone removed it.
+        local function write_file(path, content)
+            local wf = io.open(path, "w")
+            if not wf then return end
+            wf:write(content)
+            wf:close()
+        end
+        if previous_config then
+            -- The domain already had a working route: put it back, untouched.
+            write_file(config_path, previous_config)
+            if previous_map then write_file(map_path, previous_map) end
+            return nil, "Route not changed (the previous one was kept): reload failed: " .. (reload_err or "")
+        end
+        os.execute("rm -f " .. shell_escape(SITES_ENABLED .. "/" .. domain .. ".conf"))
+        os.execute("rm -f " .. shell_escape(map_path))
+        return nil, "Route written but left disabled: reload failed: " .. (reload_err or "") .. " Create it again once its certificate exists."
     end
 
     return cjson.encode({success = true, domain = domain})

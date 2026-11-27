@@ -53,12 +53,14 @@ function tme_certificate_stage() {
     function wait_for_dns_propagation() { return 0; }
     function certbot_certificate_install_auto() { CALLS+=" cert:${BROLIT_DNS_WRITES:-enabled}"; return 0; }
     function nginx_server_add_http2_support() { return 0; }
+    function nginx_server_reactivate_gateway_route() { CALLS+=" reactivate:${3}"; }
     SUPPORT_CLOUDFLARE_STATUS="enabled"; PACKAGES_CERTBOT_STATUS="enabled"; PACKAGES_CERTBOT_CONFIG_MAILA="ops@example.com"; SERVER_IP="203.0.113.7"
-    local domain
+    local domain want_kind
     for domain in "example.com" "www.example.com" "app.example.com"; do
         tme_reset
+        want_kind="root_domain"; [[ "${domain}" == app.* ]] && want_kind="single"
         BROLIT_DOMAIN_CONFIG_STAGE=certificate project_update_domain_config "${domain}" "proxy" "proxy" "8081" >/dev/null
-        [[ "${CALLS}" == " cert:disabled" ]] && tme_check "${domain}: certificate only, with DNS writes disabled" yes || tme_check "${domain}: certificate stage did '${CALLS}'" no
+        [[ "${CALLS}" == " cert:disabled reactivate:${want_kind}" ]] && tme_check "${domain}: certificate only, DNS writes disabled, route enabled afterwards" yes || tme_check "${domain}: certificate stage did '${CALLS}'" no
     done
     tme_reset
     BROLIT_DOMAIN_CONFIG_STAGE=all project_update_domain_config "example.com" "proxy" "proxy" "8081" >/dev/null
@@ -87,6 +89,7 @@ function tme_gateway_certificate_name() {
     function wait_for_dns_propagation() { return 0; }
     function certbot_certificate_install_auto() { CALLS+=" domains:${2}"; return 0; }
     function nginx_server_add_http2_support() { return 0; }
+    function nginx_server_reactivate_gateway_route() { :; }
     SUPPORT_CLOUDFLARE_STATUS="disabled"; PACKAGES_CERTBOT_STATUS="enabled"; PACKAGES_CERTBOT_CONFIG_MAILA="ops@example.com"; SERVER_IP="203.0.113.7"
 
     local case_name domain mode ip want

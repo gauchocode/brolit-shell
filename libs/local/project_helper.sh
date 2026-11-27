@@ -4320,6 +4320,7 @@ function project_update_domain_config() {
             nginx_server_add_http2_support "${project_domain}"
           fi
           project_https_enable="true"
+          nginx_server_reactivate_gateway_route "${project_domain}" "${project_type}" "root_domain" "${nginx_config_file}" "${project_port}"
         else
           log_event "warning" "Certbot failed, proceeding with HTTP configuration" "false"
           display --indent 6 --text "- SSL Certificate" --result "WARNING" --color YELLOW
@@ -4364,6 +4365,7 @@ function project_update_domain_config() {
           # Enable HTTP/2 only if not already enabled
           nginx_server_add_http2_support "${project_domain}"
           project_https_enable="true"
+          nginx_server_reactivate_gateway_route "${project_domain}" "${project_type}" "single" "" "${project_port}"
         else
           log_event "warning" "Certbot failed, proceeding with HTTP configuration" "false"
           display --indent 6 --text "- SSL Certificate" --result "WARNING" --color YELLOW

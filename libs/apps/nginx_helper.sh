@@ -220,6 +220,33 @@ function nginx_server_delete() {
 }
 
 ################################################################################
+# Enable a gateway route once its certificate exists
+#
+# Behind the OpenResty gateway a route whose certificate is missing cannot load, so
+# the gateway leaves it written but disabled (routes.lua, create_route) instead of
+# breaking every other route. Once the certificate has been issued the same route
+# is created again, which enables it. Does nothing outside gateway mode.
+#
+# Arguments: the same as nginx_server_create
+#
+# Outputs:
+#   0 always (the caller has already issued the certificate)
+################################################################################
+
+function nginx_server_reactivate_gateway_route() {
+
+    if [[ "${PROXMOX_MODE}" != "enabled" ]] || ! openresty_is_installed 2>/dev/null; then
+        return 0
+    fi
+
+    log_event "info" "Enabling the gateway route of ${1} now that its certificate exists" "false"
+    nginx_server_create "$@" || log_event "warning" "The gateway route of ${1} could not be enabled" "false"
+
+    return 0
+
+}
+
+################################################################################
 # Change nginx server status (online or offline)
 #
 # Arguments:
